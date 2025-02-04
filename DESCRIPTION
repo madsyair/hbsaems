@@ -1,0 +1,20 @@
+Package: hbsaems
+Type: Package
+Title: Hierarchical Bayes Small Area Estimation Model using Stan
+Version: 0.1.0
+Authors@R:
+    c(person("Achmad Syahrul", "Choir", email = "madsyair@stis.ac.id",
+             comment = c(ORCID = "0000-0001-7088-0646"), role = c("aut", "cre")),
+      person("Saniyyah Sri", "Nurhayati", role = c("aut")),
+      person("Sofi", "Zamzanah", role = c("aut")),
+      person("Arsyka Laila Oktalia", "Siregar", role = c("aut"))
+      )
+Maintainer: Achmad Syahrul Choir <madsyair@stis.ac.id>
+Description: Provides functions for conducting small area estimation using hierarchical Bayesian models with the brms package. 
+      This package allows for flexible model specification and estimation of various small area parameters.
+Depends: R (>= 3.6.0),brms,coda
+Suggests: kableExtra,knitr, testthat
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.2
