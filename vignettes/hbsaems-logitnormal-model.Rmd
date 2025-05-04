@@ -1,0 +1,202 @@
+---
+title: "Model Logit-Normal Small Area Estimation in hbsaems Package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{hbsaems-logitnormal-model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+The `hbm_logitnormal` function in the `hbsaems` package fits a Hierarchical Bayesian Small Area Estimation model using the **logit-normal distribution** for binomial data. This vignette explains the function's usage, including model formulation, handling missing data, and incorporating random and spatial effects.
+
+The logit-normal model is an extension of the binomial model, where the probability of success follows a logit-normal distribution.
+
+$$
+Y_i | p_i \sim \text{Binomial}(n_i, p_i)
+$$
+
+where $Y_i$ is the count of successes, $n_i$ is the number of trials, and $p_i$ is the probability of success. The logit transformation is applied:
+
+$$
+\text{logit}(p_i) = X_i \beta + v_i 
+$$
+
+where: $X_i$ is the design matrix for fixed effects $\beta$, $v_i$ represents area-specific random effects.
+
+The model assumes that the **logit-transformed** probability follows a normal distribution, leading to a logit-normal structure in a Bayesian hierarchical framework.
+
+To ensure proper model specification, the following conditions must be met. The `trials` variable (denoting the total number of trials in a binomial setting) **must be a positive integer**. If any value is non-positive or non-integer, the function will return an error. The `response` variable (denoting the number of successes) **must be a non-negative integer**. The number of successes (`response`) **cannot exceed the total number of trials**. These conditions ensure that the model is correctly specified for binomial data and prevent computational errors during estimation.
+
+## Simulated Data Example
+
+Let's start by simulating data to fit a logit-normal model.
+
+```{r}
+data("esoph")
+data <- esoph
+data$n <- data$ncases + data$ncontrols
+head(data)
+```
+
+## Fit a Logit-Normal Model
+
+We will attempt to model the number of esophageal cancer cases in different population groups using a hierarchical Bayesian logit-normal model. The dataset used is the Esoph dataset, where the target variable is the number of cancer cases (`ncases`), and the total number of observations (`n`) is used as the binomial denominator. Predictor variables include age group (`agegp`) and tobacco consumption group (`tobgp`).
+
+### 1. Basic Model
+
+```{r}
+model <- hbm_logitnormal(
+   response = "ncases",
+   trials = "n",
+   predictors = c("agegp", "tobgp"),
+   data = data
+)
+```
+
+```{r}
+summary(model)
+```
+
+By default, if we do not explicitly define a random effect, the model will still generate one based on the natural random variations between individual records (rows) in the dataset. However, we can also explicitly define a random effect to account for variations at a specific hierarchical level, such as neighborhoods or residential blocks. We can use paramter re.
+
+```{r}
+data$area <- seq_len(nrow(data))
+```
+
+```{r}
+model_with_defined_re <- hbm_logitnormal(
+   response = "ncases",
+   trials = "n",
+   predictors = c("agegp", "tobgp"),
+   re = "area",
+   data = data
+)
+```
+
+```{r}
+summary(model_with_defined_re)
+```
+
+### 2. Model With Missing Data
+
+Berikut keterangan yang bisa ditambahkan:
+
+The `hbm_logitnormal` function supports three strategies for handling missing data
+
+1.  `"deleted"`: Removes rows with missing values.
+
+2.  `"multiple"`: Performs multiple imputation using the `mice` package.
+
+**Important Note:** The `"model"` option is not available for discrete outcomes, including models fitted using `hbm_logitnormal`. Since `hbm_logitnormal` models binomial data using a logit-normal distribution, missing data must be handled using either `"deleted"` or `"multiple"`.
+
+-   **Handling missing data by deleted (Only if missing in response)**
+
+    ```{r}
+    data_missing <- data
+    data_missing$ncases[3:5] <- NA 
+    ```
+
+    ```{r}
+    model_deleted <- hbm_logitnormal(
+       response = "ncases",
+       trials = "n",
+       predictors = c("agegp", "tobgp"),
+       data = data,
+       handle_missing = "deleted"
+    )
+    ```
+
+    ```{r}
+    summary(model_deleted)
+    ```
+
+-   **Handling missing data** **before model fitting using multiple imputation**
+
+    ```{r}
+    data_missing <- data
+    data_missing$ncases[3:5] <- NA 
+    data_missing$agegp[6:7] <- NA
+    ```
+
+    ```{r}
+    model_multiple <- hbm_logitnormal(
+       response = "ncases",
+       trials = "n",
+       predictors = c("agegp", "tobgp"),
+       data = data,
+       handle_missing = "multiple"
+    )
+    ```
+
+    ```{r}
+    summary(model_multiple)
+    ```
+
+### 3. Model With Spatial Effect
+
+```{r}
+data$region <- seq_len(nrow(data))
+```
+
+```{r}
+library(Matrix)
+data$region <- factor(data$region)
+n <- length(levels(data$region))
+M <- bandSparse(n = n, k = c(-1, 0, 1), 
+                diag = list(rep(1, n - 1), rep(0, n), rep(1, n - 1)))
+rownames(M) <- colnames(M) <- levels(data$region)
+```
+
+```{r}
+model_spatial <- hbm_logitnormal(
+   response = "ncases",
+   trials = "n",
+   predictors = c("agegp", "tobgp"),
+   sre = "region",                # Spatial random effect variable
+   sre_type = "car",
+   car_type = "icar",
+   M = M,
+   data = data
+)
+```
+
+```{r}
+summary(model_spatial)
+```
+
+## Model Diagnostics
+
+Model diagnosis is crucial in Bayesian Small Area Estimation (SAE) to ensure the validity and reliability of the results. Convergence diagnostics, such as the **R-hat statistic (\<1.1)**, **effective sample size (n_eff)**, and **trace plots**, help assess whether the Markov Chain Monte Carlo (MCMC) algorithm has properly converged.
+
+```{r}
+hbcc(model)
+```
+
+## Model Comparison
+
+Model comparison evaluates whether incorporating spatial effects improves predictive performance. A standard logit-normal SAE model assumes independence across areas, whereas a spatial SAE model includes an adjacency matrix to model dependencies between regions using Conditional Autoregressive (CAR) or Simultaneous Autoregressive (SAR) structures. These models are compared using **Leave-One-Out Cross-Validation (LOO)** and **Widely Applicable Information Criterion (WAIC)**, where a lower value indicates better model fit.
+
+```{r}
+hbmc(model, model_spatial)
+```
+
+## Small Area Estimation Predictions
+
+Model prediction in SAE aims to estimate area-level proportions, such as the probability of esophageal cancer cases within different exposure groups. Using the best-performing model, predictions are generated via **posterior predictive distributions**, with uncertainty captured through **credible intervals**.
+
+```{r}
+hbsae(model)
+```
+
+## Conclusion
+
+The `hbm_logitnormal` function in the `hbsaems` package provides a flexible framework for fitting logit-normal models, offering options for handling missing data, incorporating random effects, and modeling spatial dependencies. This approach is particularly useful for small-area estimation, where overdispersion is accounted for by assuming a logit-normal distribution. The function supports missing data handling through deletion and multiple imputation and allows for the inclusion of both **random and spatial effects** to improve estimation accuracy. Model diagnostics, such as convergence checks and posterior predictive assessments, ensure reliability, while model comparison evaluates the impact of spatial effects or to compare with other model. Finally, predictions are generated using posterior distributions. This vignette has demonstrated the use of `hbm_logitnormal` along with supporting functions (`hbcc`, `hbmc`, `hbsae`) for **fitting, diagnosing, comparing, and predicting** with a logit-normal model in small-area estimation.

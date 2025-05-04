@@ -1,0 +1,150 @@
+---
+title: "Handling Missing Data in Small Area Estimation hbsaems Package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{hbsaems-handle-missing}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Introduction
+
+Missing data is a common challenge in data analysis, often introducing bias and reducing statistical power. In **Small Area Estimation (SAE)**, missing values can significantly impact the reliability of estimates, especially when the missingness is not completely random (**Missing Not at Random - MNAR**).
+
+The **`hbsaems`** package provides several approaches to handle missing data before Bayesian modeling. This vignette explores three main methods:
+
+1.  **Deletion (Complete Case Analysis)** – Removing observations with missing values.\
+2.  **Model-Based Imputation (`mi()`)** – Using Bayesian modeling to estimate missing values as part of the inference process.\
+3.  **Multiple Imputation** – Performing multiple imputations before model estimation to account for uncertainty in missing values.
+
+In this vignette, we demonstrate how to apply these methods, with the **`airquality`** dataset as a case study.
+
+## Simulated Data Example
+
+```{r setup}
+library(hbsaems)
+data(airquality)
+```
+
+```{r}
+data <- airquality
+data
+```
+
+## 1. Deletion (Complete Case Analysis)
+
+In the deletion approach, **rows with missing values are removed before fitting the model**. This is the default strategy and is useful when the amount of missing data is small and assumed to be missing completely at random (MCAR).
+
+When using the **deletion** approach with **`handle_missing = "deleted"`**, only observations where the response variable (**y**) is missing will be excluded during model fitting, assuming all predictor variables (**x**) are complete. However, if the response variable is missing, these rows will still be included during the prediction stage, allowing estimates for missing outcomes to be generated.
+
+```{r}
+# Cek missing values di setiap kolom
+colSums(is.na(airquality))
+```
+
+```{r}
+model_deleted <- hbm(
+                 formula = bf(Ozone ~ Wind + Temp),
+                 data = data,
+                 hb_sampling = "gaussian",
+                 hb_link = "identity",
+                 handle_missing = "deleted"
+)
+```
+
+```{r}
+summary(model_deleted)
+```
+
+## 2. Model-Based Imputation using mi()
+
+When **`handle_missing = "model"`** is specified, missing values in covariates are modeled directly using the **`mi()`** function from the **`brms`** package. This method allows for better uncertainty estimation by incorporating missing data directly into the model. It is important to note that this approach is **only applicable to continuous covariates and cannot be used for discrete outcomes**.
+
+Imputation during model fitting is generally considered more complex than imputation before model fitting because it involves handling everything within a single step. For example, consider a multivariate modeling scenario where multiple variables are predicted simultaneously, some of which may have missing values.
+
+The model specification in **`hbm()`** allows for a **multivariate model** where multiple outcome variables are predicted simultaneously, with missing values modeled directly. Here's a breakdown of how the formula for the model works:
+
+```{r}
+model_modelbased <- hbm(
+                 formula = bf(Ozone | mi() ~ mi(Solar.R) + Wind + Temp)
+                          + bf(Solar.R | mi() ~ Wind + Temp),
+                 data = data,
+                 hb_sampling = "gaussian",
+                 hb_link = "identity",
+                 handle_missing = "model"
+)
+```
+
+In this formula, we are modeling two outcome variables (**Ozone** and **Solar.R**) that contain missing values. We apply the **model-based imputation** method to both of these variables using the **`mi()`** function. The missing values in the covariates (**Solar.R**, **Wind**, **Temp**) are imputed as part of the modeling process.
+
+1.  **Ozone \| mi() \~ mi(Solar.R) + Wind + Temp**
+
+```         
+This part of the formula models **Ozone** as the outcome variable. It incorporates imputation for **Solar.R**, which may have missing values, alongside the predictor variables **Wind** and **Temp**. By using **`mi()`** for **Solar.R**, the model imputes missing values in **Solar.R** before predicting **Ozone**.
+```
+
+2.  **Solar.R \| mi() \~ Wind + Temp**
+
+```         
+In the second part of the formula, **Solar.R** is also modeled with missing values. It is predicted based on the covariates **Wind** and **Temp**. This ensures that any missing values in **Solar.R** are estimated within the model itself.
+```
+
+```{r}
+summary(model_modelbased)
+```
+
+If you prefer a more user-friendly approach and do not want to manually specify the **`mi()`** function for imputing missing values, you can use the **`hbm_model()`** function. In this case, the **`mi()`** formula will be generated automatically based on the data, eliminating the need for the user to manually define how missing values should be handled in the model.
+
+This feature is particularly useful for users who may not be familiar with writing complex formulas, as **`hbm_model()`** automatically generates the appropriate structure for imputing missing values, thus simplifying the modeling process.
+
+```{r}
+model_modelbased_log <- hbm_lognormal(
+      response = "Ozone",
+      predictors = c("Solar.R", "Wind", "Temp"),
+      data = data,
+      handle_missing = "model"
+    )
+```
+
+```{r}
+summary(model_modelbased_log)
+```
+
+## 3. Multiple Imputation with brm_multiple()
+
+When dealing with missing data, another powerful approach offered by the **`hbsaems`** package is **multiple imputation**. This method is available by setting **`handle_missing = "multiple"`** in the model specification. Multiple imputation is performed using the **`mice`** package, which generates multiple complete datasets by filling in the missing values through an imputation procedure.
+
+Multiple imputation is a statistical technique used to handle missing data by generating **m** imputed datasets, each containing different plausible values for the missing data. The model is then fit separately to each imputed dataset, and the results are pooled to provide more accurate estimates.
+
+Multiple imputation is particularly beneficial when the missing data is **Missing at Random (MAR)**, meaning that the missingness can be explained by observed data, but not by the unobserved values. By generating several imputed datasets, multiple imputation accounts for the uncertainty introduced by missing data and provides more robust estimates.
+
+```{r}
+model_multiple <- hbm(
+                 formula = bf(Ozone ~ Wind + Temp),
+                 data = data,
+                 hb_sampling = "gaussian",
+                 hb_link = "identity",
+                 handle_missing = "multiple",
+                 m = 5
+)
+```
+
+```{r}
+summary(model_multiple)
+```
+
+## Choosing the Right Strategy
+
+-   **Use "deleted"** when the proportion of missing data is small and the data can be assumed to be **Missing Completely at Random (MCAR)**. This method is computationally efficient and provides simple interpretation, as it excludes missing observations during model fitting.
+
+<!-- -->
+
+-   **Use "model"** when covariates with missing values are continuous and you wish to directly model the missingness. This method allows for better uncertainty estimation by incorporating missing data into the model fitting process.
+
+<!-- -->
+
+-   **Use "multiple"** when the missing data is substantial, and you need to account for the uncertainty caused by the missingness. This approach creates multiple imputed datasets and pools the results to reflect the variability in the imputation process.
+
+## Conclusion
+
+The **hbsaems** package offers flexible methods for handling missing data in small area estimation. By selecting the most appropriate strategy based on the data characteristics and modeling needs, users can ensure more accurate and reliable estimates despite the presence of missing values.

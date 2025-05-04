@@ -1,0 +1,132 @@
+---
+title: "hbsaems-run-app"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{hbsaems-run-app}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+```
+
+## Introduction
+
+The `run_sae_app()` function in the `hbsaems` package provides an interactive **Shiny Dashboard** for **Hierarchical Bayesian Small Area Estimation (HBSAE)** using `brms` for Bayesian inference with `Stan`. This application offers a user-friendly interface to upload data, define models, and obtain estimation results without requiring extensive R coding.
+
+## Install Required Packages
+
+Ensure that you have installed the `hbsaems` package:
+
+```r
+install.packages("hbsaems")
+```
+
+## Load Required Packages
+
+```r
+library(hbsaems)
+```
+
+## Running the Shiny App
+
+To launch the application, simply call:
+
+```r
+run_sae_app()
+```
+
+This will start a Shiny application that runs in your web browser.
+
+## App Structure
+
+The Shiny app consists of three main sections:
+
+### 1. **Data Upload**
+
+-   Upload CSV or Excel File: Import the dataset for analysis.
+
+-   Data Preview: View the uploaded dataset.
+
+### 2. **Modeling**
+
+In this section, users define the model structure, including:
+
+-   Select modeling variables:
+    -   **Direct Estimation Variable**
+    -   **Linear & Nonlinear Auxiliary Variables**
+    -   **Random Effects**
+    -   **Spatial Modeling**: Options for **SAR**/**CAR** spatial effects and type, including spatial weight matrix upload.
+-   Choose the distribution type:
+    -   Choose from predefined distributions (**Lognormal, Logitnormal, Beta**) or specify a **Custom** distribution.
+    -   Choose **Distribution and Link Functions** when using a **Custom** distribution.
+-   **Missing Data Handling:**
+    -   Choose from **deletion**, **modeling**, or **multiple** imputation.
+-   **Input Priors:**
+    -   Set priors for model parameters using `brms` syntax.
+    -   Perform **Prior Predictive Checking** to validate prior assumptions before fitting the model.
+-   **Set MCMC parameters:**
+    -   Configure parameters such as **chains, iterations, warm-up, and adapt_delta** for efficient Stan sampling.
+
+### 3. **Results**
+
+After model fitting, results are displayed across multiple tabs:
+
+-   **Prior Predictive Checking**: Comparison of prior and observed distributions before modelling.
+-   **Model Summary**: Display model output and priors.
+-   **Convergence Diagnostics**:
+    -   Diagnostics test: R-hat, Geweke, Raftery-Lewis, Heidelberger-Welch
+    -   Diagnotics plot: Trace, Density, Autocorrelation Function (acf), NUTS Energy, R-hat, Effective Sample Size (ESS)
+-   **Model Checking**:
+    -   Numerical Model Checks : LOO, WAIC
+    -   Graphical Model Checks : Posterior Predictive Check, Parameter Distributions
+-   **Predictions**:
+    -   View model-based estimates and uncertainty measures.
+    -   Upload new data for predictions.
+-   **Save Outputs**:
+    -   Save fitted model (RDS), Stan code, CODA samples, and plots.
+
+## Example Workflow
+
+1.  **Upload a Dataset** – Import data in CSV or Excel format.
+
+2.  **Define the Model Structure** – Specify the response variable, predictor variable, random effect, Spatial Modeling, distribution, and missing data handling options.
+
+3.  **Set MCMC Parameters** – Configure chains, iterations, warm-up, and `adapt_delta` for model sampling.
+
+4.  **Define Priors & Perform Prior Predictive Checks** – Specify priors and validate them before fitting the model (optional).
+
+5.  **Fit the Model** – Run Bayesian inference using `brms`.
+
+6.  **Generate Predictions & Save Results** – Obtain small area estimates and export results as needed.
+
+## Troubleshooting
+
+If you encounter errors when launching the app:
+
+1.  Ensure all dependencies are installed manually:
+
+    ```r
+    install.packages(c("shiny", "shinyWidgets", "shinydashboard", "readxl", "DT"))
+    ```
+
+2.  Reinstall `hbsaems`:
+
+    ```r
+    remove.packages("hbsaems")
+    install.packages("hbsaems")
+    ```
+
+3.  Check the app directory:
+
+    ```r
+    system.file("shiny/sae_app", package = "hbsaems")
+    ```
+
+## Conclusion
+
+`run_sae_app()` provides an intuitive way to perform HBSAE modeling using a Shiny interface, making Bayesian small area estimation accessible without requiring in-depth coding knowledge. Users can define models, inspect results, and generate predictions interactively.

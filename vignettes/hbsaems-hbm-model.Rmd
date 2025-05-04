@@ -1,0 +1,250 @@
+---
+title: "Hierarchical Bayesian Model Small Area Estimation in hbsaems Package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{hbsaems-hbm-model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Introduction
+
+The **`hbm`** function in the **`hbsaems`** package provides a implementation of the Hierarchical Bayesian Model for Small Area Estimation (SAE). This vignette demonstrates the usage of hbm, and model diagnostics using auxiliary functions like **`hbcc`**, **`hbmc`**, and **`hbsae`**.
+
+**Small Area Estimation (SAE)** is a statistical approach used to produce reliable estimates for small geographic areas or subpopulations where direct survey estimation is limited by small sample sizes. SAE models combine survey data with auxiliary information to enhance precision and reduce the variability of estimates. This vignette provides an overview of the SAE methodology, including model formulations and implementation using the hbsaems package. The area-level model is one of the common SAE approaches, incorporating auxiliary data at the area level to improve estimation accuracy.
+
+Bayesian SAE methods provide a flexible framework for incorporating prior information and quantifying uncertainty. Bayesian models can be specified using **Markov Chain Monte Carlo (MCMC)** methods. Bayesian methods are often used to estimate the area-level model parameters.
+
+The **`hbsaems`** package includes two key functions for modeling: **`hbm()`** and **`hbm_model()`**.
+
+-    **`hbm()`** offers greater flexibility in writing formulas but requires more familiarity with model specification and structure.
+
+-    **`hbm_model()`**, on the other hand, is more user-friendly, designed for those who may not be familiar with writing complex formulas, offering a simpler interface for model specification.
+
+## Model Overview
+
+The `hbm` function fits a hierarchical Bayesian model using the `brms` package. It supports various modeling options, including:
+
+1.  Fixed effects for covariates.
+2.  Random effects for spatial or hierarchical structures.
+3.  Spatial random effects using CAR/SAR structures.
+4.  Handling missing data through deletion, model-based, or multiple imputation.
+5.  Allows user-defined priors for model flexibility.
+6.  Provides model diagnostics, including convergence checks and model comparison.
+7.  Outputs include fitted model objects (`hbmfit`), diagnostic summaries, and predictions for small areas.
+
+The function is designed for Small Area Estimation (SAE) applications, providing flexible modeling capabilities for analyzing complex hierarchical data.
+
+## Simulated Data Example
+
+```{r}
+library(mlbench)
+library(help = "mlbench") # melihat list data dalam library
+```
+
+```{r}
+data("BostonHousing")
+data <- BostonHousing
+head(data)
+```
+
+## Fitting the Model
+
+We will attempt to model housing prices in each residential block using. The dataset used is the Boston Housing dataset, where the target variable is the median value of owner-occupied homes (medv).
+
+### 1. Basic Model
+
+```{r}
+model <- hbm(
+  formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
+  hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+  hb_link = "identity",          # Identity link function (no transformation)
+  data = data,                   # Dataset
+  chains = 4,                    # Number of MCMC chains
+  iter = 4000,                   # Total MCMC iterations
+  warmup = 2000,                 # Number of warmup iterations
+  cores = 2                      # Paralelisasi
+)
+```
+
+```{r}
+summary(model)
+```
+
+By default, if we do not explicitly define a random effect, the model will still generate one based on the natural random variations between individual records (rows) in the dataset. However, we can also explicitly define a random effect to account for variations at a specific hierarchical level, such as neighborhoods or residential blocks. We can use paramter re.
+
+```{r}
+model_with_defined_re <- hbm(
+  formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
+  hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+  hb_link = "identity",          # Identity link function (no transformation)
+  re = ~(1|rad),                 # Defined random effect
+  data = data,                   # Dataset
+  chains = 4,                    # Number of MCMC chains
+  iter = 4000,                   # Total MCMC iterations
+  warmup = 2000,                 # Number of warmup iterations
+  cores = 2                      # Paralelisasi
+)
+```
+
+```{r}
+summary(model_with_defined_re)
+```
+
+### 2. Model With Missing Data
+
+The hbm function supports three strategies for handling missing data:
+
+1.  "deleted": Removes rows with missing values.
+
+2.  "multiple": Performs multiple imputation using mice.
+
+3.  "model": Uses the mi() function to model missingness directly (not available for discrete outcomes).
+
+    ```{r}
+    data_missing <- data
+    data_missing$medv[3:5] <- NA 
+    ```
+
+-   **Handling missing data by deleted (Only if missing in response)**
+
+    ```{r}
+    model_deleted <- hbm(
+      formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
+      hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+      hb_link = "identity",          # Identity link function (no transformation)
+      re = ~(1|rad),                 # Defined random effect
+      data = data_missing,           # Dataset
+      handle_missing = "deleted",    # Handle missing method
+      chains = 4,                    # Number of MCMC chains
+      iter = 4000,                   # Total MCMC iterations
+      warmup = 2000,                 # Number of warmup iterations
+      cores = 2                      # Paralelisasi
+    )
+    ```
+
+    ```{r}
+    summary(model_deleted)
+    ```
+
+-   **Handling missing data** **before model fitting using multiple imputation**
+
+    ```{r}
+    model_multiple <- hbm(
+      formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
+      hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+      hb_link = "identity",          # Identity link function (no transformation)
+      re = ~(1|rad),                 # Defined random effect
+      data = data_missing,           # Dataset
+      handle_missing = "multiple",   # Handle missing method
+      chains = 4,                    # Number of MCMC chains
+      iter = 4000,                   # Total MCMC iterations
+      warmup = 2000,                 # Number of warmup iterations
+      cores = 2                      # Paralelisasi
+    )
+    ```
+
+    ```{r}
+    summary(model_multiple)
+    ```
+
+-   **Handle missing data during model fitting using mi()**
+
+    If we want to handle missing data in the model, we must define the formula correctly. In this case, we need to specify missing data indicators using the `mi()` function.
+
+    ```{r}
+    data_missing$medv[3:5] <- NA 
+    data_missing$crim[6:7] <- NA
+    ```
+
+    ```{r}
+    model_during_model <- hbm(
+      formula = bf(medv | mi() ~ mi(crim) + indus + rm + dis + rad + tax) 
+                + bf(crim | mi () ~ indus + rm + dis + rad + tax),  # Formula model
+      hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+      hb_link = "identity",          # Identity link function (no transformation)
+      re = ~(1|rad),                 # Defined random effect
+      data = data_missing,                   # Dataset
+      handle_missing = "model",    # Handle missing method
+      chains = 4,                    # Number of MCMC chains
+      iter = 4000,                   # Total MCMC iterations
+      warmup = 2000,                 # Number of warmup iterations
+      cores = 2                      # Paralelisasi
+    )
+    ```
+
+    ```{r}
+    summary(model_during_model)
+    ```
+
+### 3. Model With Spatial Effect
+
+```{r}
+# Create a spatial grouping factor based on "dis"
+data$spatial <- cut(data$dis, breaks = 10, labels = FALSE)  
+```
+
+```{r}
+library(Matrix)
+data$spatial <- factor(data$spatial)
+n <- length(levels(data$spatial))
+M <- bandSparse(n = n, k = c(-1, 0, 1), 
+                diag = list(rep(1, n - 1), rep(0, n), rep(1, n - 1)))
+rownames(M) <- colnames(M) <- levels(data$spatial)
+```
+
+```{r}
+model_spatial <- hbm(
+  formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
+  hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+  hb_link = "identity",          # Identity link function (no transformation)
+  data = data,                   # Dataset
+  sre = "spatial",                # Spatial random effect variable
+  sre_type = "car",
+  car_type = "icar",
+  M = M,
+  chains = 4,                    # Number of MCMC chains
+  iter = 4000,                   # Total MCMC iterations
+  warmup = 2000,                 # Number of warmup iterations
+  cores = 2                      # Paralelisasi
+)
+```
+
+```{r}
+summary(model_spatial)
+```
+
+## Model Diagnostics
+
+The `hbcc` function is designed to evaluate the convergence and quality of a Bayesian hierarchical model. It performs several diagnostic tests and generates various plots to assess Markov Chain Monte Carlo (MCMC) performance.
+
+```{r}
+hbcc(model)
+```
+
+## Model Comparison
+
+The `hbmc` function is used to compare Bayesian hierarchical models and assess their posterior predictive performance. It allows for model comparison, posterior predictive checks, and additional diagnostic visualizations.
+
+```{r}
+hbmc(model, model_spatial)
+```
+
+## Small Area Estimation Predictions
+
+The `hbsae()` function implements Hierarchical Bayesian Small Area Estimation (HBSAE**)** using the `brms` package. It generates small area estimates while accounting for uncertainty and hierarchical structure in the data. The function calculates Mean Predictions, Relative Standard Error (RSE), Mean Squared Error (MSE), and Root Mean Squared Error (RMSE) based on the posterior predictive sample from the fitted Bayesian model.
+
+```{r}
+hbsae(model)
+```
+
+## Conclusion
+
+The hbm function in the hbsaems package offers a comprehensive framework for Small Area Estimation hierarchical Bayesian modeling. It supports flexible model specifications, advanced handling of missing data, and integrates well with diagnostic and comparison tools such as hbcc, hbmc, and hbsae.

@@ -1,0 +1,199 @@
+---
+title: "Model Logit-Normal Small Area Estimation in hbsaems Package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{hbsaems-beta-model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(hbsaems)
+```
+
+# Introduction
+
+The `hbm_beta` function in the `hbsaems` package is used for **Hierarchical Bayesian Small Area Estimation (HBSAE)** under the **Beta distribution**.  
+
+This method is particularly useful for modeling **small area estimates** when the response variable follows a beta distribution, allowing for efficient estimation of proportions or rates bounded between 0 and 1 while accounting for the inherent heteroskedasticity and properly modeling mean-dependent variance structures. 
+
+This vignette explains the function's usage including the handling of missing values and incorporating random effects (including spatial effects).
+
+# Data Simulation
+
+```{r setup}
+library(hbsaems)
+library(brms)
+library(ggplot2)
+library(MASS) 
+```
+
+We first create a simulated dataset:
+
+```{r}
+data(Boston)
+df <- Boston
+print(df)
+```
+
+With this dataset, we will build a prediction model for the percentage of low status population or `lstat` (as the response variable) using several predictor variables such as `rm`, `medv`, `crim`, `nox`, and `age`. The selection of these variables is supported by theories of housing segregation and social stratification in urban areas, which suggest that the concentration of low socioeconomic status populations is influenced by factors such as the physical environment, accessibility, housing quality, and property values. 
+
+`lstat` is already a percentage (0-100%), so I just need to divide it by 100 to get a value that ranges from 0 to 1.
+
+```{r}
+df$lstat <- df$lstat / 100
+head(df)
+```
+
+To apply spatial effects to the data, we will cluster into 10 groups based on the variable `dis`. The variable `dis` in the `Boston` dataset is the weighted distance to five job centers in Boston. This is a measure of accessibility to job centers. Clustering based on distance to the city center can reflect spatial patterns in the data so the variable `dis` can be a good proxy for creating spatial clustering.
+
+```{r}
+# Create a spatial grouping factor based on "dis"
+df$spatial <- cut(df$dis, breaks = 10, labels = FALSE)  
+
+library(Matrix)
+
+df$spatial <- factor(df$spatial)
+n <- length(levels(df$spatial))
+M <- bandSparse(n = n, k = c(-1, 0, 1), 
+                diag = list(rep(1, n - 1), rep(0, n), rep(1, n - 1)))
+rownames(M) <- colnames(M) <- levels(df$spatial)
+print(M)
+```
+We split the data into data and new_data. data is used to build the model while new_data is used to test the model on new data.
+
+```{r}
+data <- df[1:406, ] 
+new_data <- df[407:506, c("rm", "medv", "crim", "nox", "age")]
+
+```
+
+
+# Fit Model Kondisi Normal
+```{r}
+model <- hbm_beta(
+  response = "lstat",
+  predictors = c("rm", "medv", "crim", "nox", "age"),
+  data = data
+)
+summary(model)
+```
+
+# Fit Model Spatial
+```{r}
+model_spatial <- hbm_beta(
+  response = "lstat",
+  predictors = c("rm", "medv", "crim", "nox", "age"),
+  sre = "spatial",
+  sre_type = "car",
+  car_type = "escar",
+  M = M,
+  data = data
+)
+summary(model_spatial)
+```
+
+# Fit Model Mising
+```{r}
+# Prepare Missing Data
+data_missing1 <- data
+data_missing1$lstat[sample(1:(length(data)), 3)] <- NA 
+head(data_missing1)
+
+data_missing2 <- data
+data_missing2$lstat[1:3] <- NA 
+data_missing2$medv[1:3] <- NA
+head(data_missing2)
+```
+
+-   **Handling missing data by deleted**
+    Handle missing `deleted` can only be used to handle data that has missing response variables.
+
+    ```{r}
+    model_deleted <- hbm_beta(
+      response = "lstat",
+      predictors = c("rm", "medv", "crim", "nox", "age"),
+      data = data_missing1,
+      handle_missing = "deleted"
+    )
+    summary(model_deleted)
+    ```
+
+-   **Handling missing data using model-based approach**
+    ```{r}
+    model_model <- hbm_beta(
+      response = "lstat",
+      predictors = c("rm", "medv", "crim", "nox", "age"),
+      data = data_missing2,
+      handle_missing = "model"
+    )
+    summary(model_model)
+    ```
+
+-   **Handling missing data using multiple imputation (m=5)**
+    ```{r}
+    model_multiple <- hbm_beta(
+      response = "lstat",
+      predictors = c("rm", "medv", "crim", "nox", "age"),
+      data = data_missing2,
+      handle_missing = "multiple",
+      m = 5
+    )
+    summary(model_multiple)
+    ```
+
+# Model Diagnosis (hbcc)
+
+We can evaluate the model's diagnostics by using the `hbcc` function.
+
+```{r}
+diag_results <- hbcc(model)
+
+# Rhat and ESS diagnostics
+diag_results$rhat_ess
+
+# Trace and density plots
+diag_results$plots$trace
+diag_results$plots$dens
+```
+
+# Model Comparison (hbmc) 
+
+If you have multiple models to compare, you can use the `hbmc` function. Here, we can try by comparing the model results with and without spatial effects.
+
+```{r}
+comparison <- hbmc(model, model_spatial)
+comparison$loo1_values
+comparison$loo2_values
+```
+
+# Small Area Prediction (hbsae)
+
+You can also generate small area predictions using the hbsae function.
+```{r}
+sae_results <- hbsae(model)
+
+# Prediction table
+head(sae_results$pred_table)
+
+# Mean Square Error (MSE) and Root Mean Square Error (RMSE)
+sae_results$mse
+sae_results$rmse
+```
+
+To generate predictions for new data :
+
+```{r}
+hbsae(model, newdata = new_data)
+```
+
+# Conclusion
+
+The `hbm_beta()` function in the **hbsaems** package offers a flexible method to fit a beta distribution. Through this vignette, it has been demonstrated how to use the `hbm_beta` function and some of its supporting functions such as `hbcc`, `hbmc`, and `hbsae`. The demonstration included fitting, diagnosing, comparing, and predicting through small area estimation.

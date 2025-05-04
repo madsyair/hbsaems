@@ -1,0 +1,198 @@
+---
+title: "hbsaems-lognormal-model"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{hbsaems-lognormal-model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Introduction
+
+This vignette demonstrates the usage of the `hbm_lognormal()` function from the `hbsaems` package for **Hierarchical Bayesian Small Area Estimation (HBSAE)** under a **Lognormal distribution**.
+
+This method is particularly useful for modeling **small area estimates** when the response variable follows a lognormal distribution ($X>0$). The response variable is assumed to follow a lognormal distribution:
+
+$$\log(y) \sim N(\mu, \sigma^2)$$
+
+where $\mu$ represents the mean structure and $\sigma$ is the standard deviation in log-space. Internally, the model applies a log transformation to fit a normal model
+
+## Load Required Packages
+
+```{r setup}
+library(hbsaems)
+library(brms)
+library(ggplot2)
+```
+
+## Simulated Data Example
+
+Let's start by simulating data to fit a lognormal model.
+
+```{r}
+data("midwest")
+data_midwest <- midwest[order(midwest$poptotal), ][2:31, ]
+data_midwest$popbelowpoverty <- round(data_midwest$percbelowpoverty/100 * data_midwest$poptotal, 0)
+head(data_midwest)
+```
+
+## Fitting the Model
+
+We estimate the hierarchical Bayesian model using `hbm_lognormal()`
+
+### 1. Basic Model
+
+If a random effect (`re`) is not specified, the function automatically assigns `group` as a default:
+
+```{r}
+model <- hbm_lognormal(
+  response = "popbelowpoverty",
+  predictors = c("popdensity", "perchsd"),
+  data = data_midwest
+)
+```
+
+### 2. Model With Missing Data
+
+```{r}
+# Prepare Missing Data
+data_midwest_missing <- data_midwest
+data_midwest_missing$popbelowpoverty[sample(1:30, 3)] <- NA  # 3 missing values in response
+```
+
+-   **Handling missing data by deleted (Only if missing in response)**
+
+    ```{r}
+    model_deleted <- hbm_lognormal(
+      response = "popbelowpoverty",
+      predictors = c("popdensity", "perchsd"),
+      data = data_midwest_missing,
+      handle_missing = "deleted"
+    )
+    ```
+
+-   **Handling missing data using model-based approach**
+
+    ```{r}
+    model_model <- hbm_lognormal(
+      response = "popbelowpoverty",
+      predictors = c("popdensity", "perchsd"),
+      data = data_midwest_missing,
+      handle_missing = "model"
+    )
+    ```
+
+-   **Handling missing data using multiple imputation (m=5)**
+
+    ```{r}
+    model_multiple <- hbm_lognormal(
+      response = "popbelowpoverty",
+      predictors = c("popdensity", "perchsd"),
+      data = data_midwest_missing,
+      handle_missing = "multiple",
+      m = 5
+    )
+    ```
+
+### 3. Model With Random Effect
+
+```{r}
+model_re <- hbm_lognormal(
+  response = "popbelowpoverty",
+  predictors = c("popdensity", "perchsd"),
+  re = "category",
+  data = data_midwest
+)
+```
+
+### 4. Model With Spatial Effect
+
+```{r}
+# Dummy spatial weight matrix
+M <- matrix(0, 4, 4)
+for (i in 1:(4 - 1)) {
+  M[i, i + 1] <- 1
+  M[i + 1, i] <- 1
+}
+# Set row and column names to match the group levels
+rownames(M) <- unique(data_midwest$state)
+colnames(M) <- unique(data_midwest$state)
+```
+
+```{r}
+model_spatial <- hbm_lognormal(
+  response = "popbelowpoverty",
+  predictors = c("popdensity", "perchsd"),
+  sre = "state",
+  sre_type = "car",
+  car_type = "esicar",
+  M = M,
+  data = data_midwest
+)
+```
+
+## Model Summary
+
+Inspect the model's summary to interpret parameter estimates and convergence diagnostics.
+
+```{r}
+summary(model)
+```
+
+## Model Diagnostics
+
+We can assess model diagnostics using the hbcc function.
+
+```{r}
+diag_results <- hbcc(model)
+
+# Rhat and ESS diagnostics
+diag_results$rhat_ess
+
+# Trace and density plots
+diag_results$plots$trace
+diag_results$plots$dens
+```
+
+## Model Comparison
+
+If you have multiple models to compare, you can use the hbmc function. Here, we compare model with random effect and model with spatial random effect.
+
+```{r}
+comparison <- hbmc(model_re, model2 = model_spatial)
+comparison$loo1_values
+comparison$loo2_values
+```
+
+## Small Area Estimation Predictions
+
+You can generate small area predictions using the hbsae function.
+
+```{r}
+sae_results <- hbsae(model)
+
+# Prediction table
+head(sae_results$pred_table)
+
+# Mean Square Error (MSE) and Root Mean Square Error (RMSE)
+sae_results$mse
+sae_results$rmse
+```
+
+To generate predictions for new data:
+
+```{r}
+new_data <- midwest[31, c("popdensity", "perchsd")]
+hbsae(model, newdata = new_data)
+```
+
+## Conclusion
+
+The `hbm_lognormal()` function in **hbsaems** package provides a flexible way to fit a lognormal distribution. It incorporates random effect, spatial modeling, and handles missing data.This vignette has demonstrated the use of the hbm_lognormal function along with supporting functions (hbcc, hbmc, hbsae) for fitting, diagnosing, comparing, and predicting using a lognormal model for small area estimation.
