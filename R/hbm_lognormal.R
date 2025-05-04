@@ -177,12 +177,12 @@ hbm_lognormal <- function(response,
   fixed_effects <- paste(predictors, collapse = " + ")
   formula <- as.formula(paste(response, "~", fixed_effects))
 
-  # Define default prior
-  if (is.null(prior)) {
-    prior <- c(
-      prior("", class = "b") # Flat prior untuk β (koefisien regresi)
-    )
-  }
+  # # Define default prior
+  # if (is.null(prior)) {
+  #   prior <- c(
+  #     prior("", class = "b") # Flat prior untuk β (koefisien regresi)
+  #   )
+  # }
 
   # Check handle missing for continuous distribution
   if (is.null(handle_missing)) {

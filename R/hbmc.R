@@ -88,16 +88,16 @@ hbmc <- function(model,
   results <- list()
   
   # Posterior Predictive Check Plot
-  results$pp_check <- pp_check(model, ndraws = ndraws, resp=response_var)
+  results$pp_check <- brms::pp_check(model, ndraws = ndraws, resp=response_var)
   
   # Parameter Distribution Plot
   results$params <- plot(model, ask = FALSE) 
   
   # Loo
-  results$loo1_values <- loo(model, moment_match = moment_match, newdata = na.omit(model$data))
+  results$loo1_values <- brms::loo(model, moment_match = moment_match, newdata = na.omit(model$data))
 
   #WAIC
-  results$waic1_values <- waic(model, newdata = na.omit(model$data))
+  results$waic1_values <- brms::waic(model, newdata = na.omit(model$data))
 
   # Model Comparison
   if (!is.null(model2)) {

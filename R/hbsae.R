@@ -87,11 +87,11 @@ hbsae <- function(model,
     newdata$group <- as.factor(seq(n))
 
     if (scale == "response") {
-      preds <- posterior_predict(model, newdata = newdata, allow_new_levels = TRUE)
+      preds <- brms::posterior_predict(model, newdata = newdata, allow_new_levels = TRUE)
     } else if (scale == "linear") {
-      preds <- posterior_linpred(model, newdata = newdata, transform = FALSE)
+      preds <- brms::posterior_linpred(model, newdata = newdata, transform = FALSE)
     } else if (scale == "linear_inverse") {
-      preds <- posterior_linpred(model, newdata = newdata, transform = TRUE)
+      preds <- brms::posterior_linpred(model, newdata = newdata, transform = TRUE)
     }
     
     y_true <- NULL
@@ -99,11 +99,11 @@ hbsae <- function(model,
     # Prediction using model data
     if (!is.null(handle_missing) && handle_missing == "deleted"){ #if handle_missing = deleted was selected
       if (scale == "response") {
-        preds <- posterior_predict(model, newdata = data, allow_new_levels = TRUE)
+        preds <- brms::posterior_predict(model, newdata = data, allow_new_levels = TRUE)
       } else if (scale == "linear") {
-        preds <- posterior_linpred(model, newdata = data, allow_new_levels = TRUE, transform = FALSE)
+        preds <- brms::posterior_linpred(model, newdata = data, allow_new_levels = TRUE, transform = FALSE)
       } else if (scale == "linear_inverse") {
-        preds <- posterior_linpred(model, newdata = data, allow_new_levels = TRUE, transform = TRUE)
+        preds <- brms::posterior_linpred(model, newdata = data, allow_new_levels = TRUE, transform = TRUE)
       }
       
       if (response_var %in% colnames(data)) {
@@ -114,11 +114,11 @@ hbsae <- function(model,
       }
     } else{ 
       if (scale == "response") {
-        preds <- posterior_predict(model)
+        preds <- brms::posterior_predict(model)
       } else if (scale == "linear") {
-        preds <- posterior_linpred(model, transform = FALSE)
+        preds <- brms::posterior_linpred(model, transform = FALSE)
       } else if (scale == "linear_inverse") {
-        preds <- posterior_linpred(model, transform = TRUE)
+        preds <- brms::posterior_linpred(model, transform = TRUE)
       }
       
       y_true <- model$data[[response_var]]  

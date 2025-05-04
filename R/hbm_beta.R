@@ -145,7 +145,7 @@ hbm_beta <- function(response,
     data$phi_fixed <- phi_fixed
     
     prior <- c(
-      set_prior("", class = "b")              
+      brms::prior("", class = "b")              
     )
     
     formula <- brms::bf(formula, phi ~ 0 + offset(phi_fixed))
@@ -164,8 +164,8 @@ hbm_beta <- function(response,
         ", block = "model")
       
       prior <- c(
-        set_prior("", class = "b"),              # Flat prior untuk koefisien β
-        set_prior("gamma(alpha, beta)", class = "phi") # Prior gamma untuk phi
+        brms::prior("", class = "b"),              # Flat prior untuk koefisien β
+        brms::prior("gamma(alpha, beta)", class = "phi") # Prior gamma untuk phi
       )
     }
     

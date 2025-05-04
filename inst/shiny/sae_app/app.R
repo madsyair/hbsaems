@@ -29,7 +29,7 @@ ui <- dashboardPage(
                   style = "overflow-y: auto; max-height: 90vh; padding-right: 6px;",
                     box(
                         title = "Model Variables", width = 12, solidHeader = TRUE,
-                        column(6, selectInput("direct_var", "Direct Estimation Variable", choices = NULL)),
+                        column(6, selectInput("direct_var", "Respons Variable", choices = NULL)),
                         column(6, selectizeInput("linear_aux_vars", "Linear Auxiliary Variables", choices = NULL, multiple = TRUE)),
                         conditionalPanel(
                             condition = "input.dist_type == 'Custom'",

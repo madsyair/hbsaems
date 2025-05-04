@@ -2,7 +2,7 @@
 % Please edit documentation in R/hbm_logitnormal.R
 \name{hbm_logitnormal}
 \alias{hbm_logitnormal}
-\title{Small Area Estimation using Hierarchical Bayesian under Logit-Normal Distribution}
+\title{Small Area Estimation using Hierarchical Bayesian under Logit-Normal Model}
 \usage{
 hbm_logitnormal(
   response,
@@ -72,8 +72,8 @@ hbm_logitnormal(
 A \code{hbmfit} object
 }
 \description{
-This function implements a \strong{Hierarchical Bayesian Small Area Estimation (HBSAE)} model
-under a \strong{logit-normal distribution} using \strong{Bayesian inference} with the \code{brms} package.
+This function implements a \strong{Hierarchical Bayesian Small Area Estimation (HBSAE)}
+under a \strong{Logit-Normal Model} using \strong{Bayesian inference} with the \code{brms} package.
 
 The model accounts for \strong{fixed effects}, \strong{random effects}, \strong{spatial random effects (CAR/SAR models)},
 and \strong{measurement error correction}, allowing for robust small area estimation.

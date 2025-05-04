@@ -24,9 +24,9 @@ Bayesian SAE methods provide a flexible framework for incorporating prior inform
 
 The **`hbsaems`** package includes two key functions for modeling: **`hbm()`** and **`hbm_model()`**.
 
--    **`hbm()`** offers greater flexibility in writing formulas but requires more familiarity with model specification and structure.
+-   **`hbm()`** offers greater flexibility in writing formulas but requires more familiarity with model specification and structure.
 
--    **`hbm_model()`**, on the other hand, is more user-friendly, designed for those who may not be familiar with writing complex formulas, offering a simpler interface for model specification.
+-   **`hbm_model()`**, on the other hand, is more user-friendly, designed for those who may not be familiar with writing complex formulas, offering a simpler interface for model specification.
 
 ## Model Overview
 
@@ -45,6 +45,7 @@ The function is designed for Small Area Estimation (SAE) applications, providing
 ## Simulated Data Example
 
 ```{r}
+library(hbsaems)
 library(mlbench)
 library(help = "mlbench") # melihat list data dalam library
 ```

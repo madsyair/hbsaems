@@ -378,9 +378,9 @@ hbm <- function(formula,
   
   # Add family
   if (!is.null(formula$forms)) {
-    all_formulas$forms[[1]]$family <- brmsfamily(hb_sampling, hb_link, link_phi = link_phi)
+    all_formulas$forms[[1]]$family <- brms::brmsfamily(hb_sampling, hb_link, link_phi = link_phi)
   } else {
-    all_formulas$family <- brmsfamily(hb_sampling, hb_link, link_phi = link_phi)
+    all_formulas$family <- brms::brmsfamily(hb_sampling, hb_link, link_phi = link_phi)
   }
   
   # Check data availability
@@ -394,6 +394,15 @@ hbm <- function(formula,
   # Modelling
   if (multiple) {
     data_multiple <- mice(data, m = m)
+    if(hb_sampling=="binomial"){
+      print("masuk")
+      post_process <- function(data) {
+        data[[response_var[1]]] <- pmin(data[[response_var[1]]], data[[response_var[2]]])
+        return(data)
+      }
+      data_multiple <- complete(data_multiple, action = "all") 
+      data_multiple <- lapply(data_multiple, post_process)
+    }
     model <- brm_multiple(
       formula = all_formulas,
       data = data_multiple,
@@ -405,11 +414,11 @@ hbm <- function(formula,
       cores = cores,
       control = control,
       sample_prior = sample_prior,
-      save_pars = save_pars(all = TRUE),
+      save_pars = brms::save_pars(all = TRUE),
       ...
     )
   } else {
-    model <- brm(
+    model <- brms::brm(
       formula = all_formulas,
       data = data,
       data2 = data2,
@@ -420,7 +429,7 @@ hbm <- function(formula,
       cores = cores,
       control = control,
       sample_prior = sample_prior,
-      save_pars = save_pars(all = TRUE),
+      save_pars = brms::save_pars(all = TRUE),
       ...
     )
   }

@@ -29,6 +29,10 @@ Author: Achmad Syahrul Choir [aut, cre]
   Sofi Zamzanah [aut],
   Arsyka Laila Oktalia Siregar [aut]
 Imports: 
+  shinyWidgets,
+  shinydashboard,
+  readxl,
+  DT
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)

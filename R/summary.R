@@ -167,7 +167,7 @@ summary.hbmc <- function(object, ...) {
   }
   
   # Output LOO
-  if (!is.null(object$loo1_values)) {
+  if (!is.null(object$loo1)) {
     cat("\n========== Leave-One-Out (LOO) Cross-Validation ==========\n")
     print(object$loo1)
   } else {
@@ -175,7 +175,7 @@ summary.hbmc <- function(object, ...) {
   }
   
   # Output WAIC
-  if (!is.null(object$waic1_values)) {
+  if (!is.null(object$waic1)) {
     cat("\n===== Widely Applicable Information Criterion (WAIC) =====\n")
     print(object$waic1)
   } else {
@@ -203,7 +203,7 @@ summary.hbmc <- function(object, ...) {
   if (!is.null(object$model2)) {
     cat("\n=================== Model Comparison ====================\n")
     
-    if (!is.null(object$loo2_values)) {
+    if (!is.null(object$loo2)) {
       cat("\n--- LOO Comparison ---\n")
       cat("Model 1 LOO:", object$loo1$elpd_loo, "\n")
       cat("Model 2 LOO:", object$loo2$elpd_loo, "\n")
@@ -212,7 +212,7 @@ summary.hbmc <- function(object, ...) {
       cat("\n !!! LOO for Model 2 not available.\n")
     }
     
-    if (!is.null(object$waic2_values)) {
+    if (!is.null(object$waic2)) {
       cat("\n--- WAIC Comparison ---\n")
       cat("Model 1 WAIC:", object$waic1$waic, "\n")
       cat("Model 2 WAIC:", object$waic2$waic, "\n")

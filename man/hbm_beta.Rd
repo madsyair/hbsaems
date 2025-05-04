@@ -8,7 +8,6 @@ hbm_beta(response,
                 predictors, 
                 n = NULL, 
                 deff = NULL, 
-                link_phi = "log",
                 data, 
                 prior = NULL)
 }

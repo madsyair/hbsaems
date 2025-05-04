@@ -1,8 +1,8 @@
-#' @title Small Area Estimation using Hierarchical Bayesian under Logit-Normal Distribution
+#' @title Small Area Estimation using Hierarchical Bayesian under Logit-Normal Model
 #'
 #' @description
-#' This function implements a **Hierarchical Bayesian Small Area Estimation (HBSAE)** model
-#' under a **logit-normal distribution** using **Bayesian inference** with the `brms` package.
+#' This function implements a **Hierarchical Bayesian Small Area Estimation (HBSAE)**
+#' under a **Logit-Normal Model** using **Bayesian inference** with the `brms` package.
 #'
 #' The model accounts for **fixed effects**, **random effects**, **spatial random effects (CAR/SAR models)**,
 #' and **measurement error correction**, allowing for robust small area estimation.

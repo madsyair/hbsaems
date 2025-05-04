@@ -98,8 +98,8 @@ hbcc <- function(model,
     }, error = function(e) NULL)
   }
   
-  draw_samples <- as_draws_matrix(model)
-  mcmc_samples <- as.mcmc(draw_samples)
+  draw_samples <- brms::as_draws_matrix(model)
+  mcmc_samples <- coda::as.mcmc(draw_samples)
   
   if ("geweke" %in% diag_tests) {
     results$geweke <- tryCatch(geweke.diag(mcmc_samples), error = function(e) NULL)
