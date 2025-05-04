@@ -201,7 +201,7 @@ This package was developed by [Your Name] and contributors.
 
 ## License
 
-MIT
+License: GPL-3
 
 ## Citation
 

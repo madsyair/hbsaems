@@ -2,7 +2,7 @@ Package: hbsaems
 Type: Package
 Title: Hierarchical Bayes Small Area Estimation Model using Stan
 Version: 0.1.0
-Authors@R:
+Authors@R: 
     c(person("Achmad Syahrul", "Choir", email = "madsyair@stis.ac.id",
              comment = c(ORCID = "0000-0001-7088-0646"), role = c("aut", "cre")),
       person("Saniyyah Sri", "Nurhayati", role = c("aut")),
@@ -12,9 +12,23 @@ Authors@R:
 Maintainer: Achmad Syahrul Choir <madsyair@stis.ac.id>
 Description: Provides functions for conducting small area estimation using hierarchical Bayesian models with the brms package. 
       This package allows for flexible model specification and estimation of various small area parameters.
-Depends: R (>= 3.6.0),brms,coda
-Suggests: kableExtra,knitr, testthat
+Depends: R (>= 3.6.0),brms, rstan, coda, shiny
+Suggests: 
+    kableExtra,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
 License: GPL-3
 Encoding: UTF-8
-LazyData: true
 RoxygenNote: 7.3.2
+NeedsCompilation: no
+Packaged: 2025-02-06 03:56:46 UTC; madsyair
+Author: Achmad Syahrul Choir [aut, cre]
+    (<https://orcid.org/0000-0001-7088-0646>),
+  Saniyyah Sri Nurhayati [aut],
+  Sofi Zamzanah [aut],
+  Arsyka Laila Oktalia Siregar [aut]
+Imports: 
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+Roxygen: list(markdown = TRUE)

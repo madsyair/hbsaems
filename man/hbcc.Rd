@@ -2,22 +2,66 @@
 % Please edit documentation in R/hbcc.R
 \name{hbcc}
 \alias{hbcc}
-\title{Hierarchical Bayesian Convergence Checks}
+\title{hbcc : Hierarchical Bayesian Convergence Checks}
 \usage{
-hbcc(model, params = NULL, type = "trace", ...)
+hbcc(
+  model,
+  diag_tests = c("rhat", "geweke", "heidel", "raftery"),
+  plot_types = c("trace", "dens", "acf", "nuts_energy", "rhat", "neff")
+)
 }
 \arguments{
-\item{model}{A `brmsfit` object}
+\item{model}{A \code{brmsfit} or \code{hbmfit} object.}
 
-\item{params}{Character vector of parameters to check (default: all)}
+\item{diag_tests}{Character vector of diagnostic tests (default:"rhat", "geweke", "raftery", "heidel")}
 
-\item{type}{Type of diagnostic plot to display (default: "trace")}
-
-\item{...}{Additional arguments passed to `mcmc_plot`}
+\item{plot_types}{Character vector of plot types (default: trace","dens","acf", "nuts_energy", "rhat", "neff")}
 }
 \value{
-Convergence diagnostics including Rhat, effective sample sizes, and diagnostic plots
+A list containing:
+\item{rhat_ess}{Matrix of \code{Rhat}, \code{Bulk_ESS}, and \code{Tail_ESS} values for fixed and random effects.}
+\item{geweke}{Geweke diagnostic results (if selected).}
+\item{raftery}{Raftery-Lewis diagnostic results (if selected).}
+\item{heidel}{Heidelberger-Welch diagnostic results (if selected).}
+\item{plots}{A list of generated MCMC diagnostic plots, which may include:}
+\itemize{
+\item \code{"trace"} - Trace plot of the MCMC chains.
+\item \code{"dens"} - Density plot of the posterior distributions.
+\item \code{"acf"} - Autocorrelation function plot.
+\item \code{"nuts_energy"} - NUTS energy diagnostic plot.
+\item \code{"rhat"} - Rhat plot (if available).
+\item \code{"neff"} - Effective sample size plot.
+}
 }
 \description{
-Check convergence diagnostics for a brmsfit object
+This function is designed to evaluate the convergence and quality of a Bayesian hierarchical model.
+It performs several diagnostic tests and generates various plots to assess Markov Chain Monte Carlo (MCMC) performance.
+}
+\details{
+Hierarchical Bayesian Convergence Checks
+}
+\examples{
+\donttest{
+
+# Prepare dataset
+data("BostonHousing")
+data <- BostonHousing
+
+# Fit the Basic Model
+model <- hbm(
+formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
+hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+hb_link = "identity",          # Identity link function (no transformation)
+data = data,                   # Dataset
+chains = 4,                    # Number of MCMC chains
+iter = 4000,                   # Total MCMC iterations
+warmup = 2000,                 # Number of warmup iterations
+cores = 2                      # Paralelisasi
+)
+summary(model)
+
+# Convergence Checks
+hbcc(model)
+
+}
 }

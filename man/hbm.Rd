@@ -2,41 +2,65 @@
 % Please edit documentation in R/hbm.R
 \name{hbm}
 \alias{hbm}
-\title{Hierarchical Bayesian Small Area Models}
+\title{hbm : Hierarchical Bayesian Small Area Models}
 \usage{
 hbm(
   formula,
-  sae_sampling = "gaussian",
-  sae_link = "identity",
+  hb_sampling = "gaussian",
+  hb_link = "identity",
+  link_phi = "log",
   re = NULL,
   sre = NULL,
+  sre_type = NULL,
+  car_type = NULL,
+  sar_type = NULL,
+  M = NULL,
   data,
   prior = NULL,
+  handle_missing = NULL,
+  m = 5,
   control = list(),
   chains = 4,
-  iter = 2000,
+  iter = 4000,
   warmup = floor(iter/2),
   cores = 1,
-  seed = NULL,
+  sample_prior = "no",
   ...
 )
 }
 \arguments{
-\item{formula}{Formula specifying the model structure}
+\item{formula}{Formula specifying the model structure of auxiliary variables and direct estimates
+The formula must be provided as a \code{brmsformula} or \code{formula} object. For multivariate models with multiple
+auxiliary variables, use the \code{+} operator to combine multiple \code{bf()} formulas.
+Example: \code{formula(y ~ x1 + x2 + x3)}, \code{bf(y ~ x1 + x2 + x3)}, or \code{bf(y | mi() ~ mi(x1)) + bf(x1 | mi() ~ x2)}}
 
-\item{sae_sampling}{The family distribution for the response}
+\item{hb_sampling}{The distribution for the response variable (e.g., "gaussian", "bernoulli", "poisson")}
 
-\item{sae_link}{Link function for HBSAE}
+\item{hb_link}{Link function for HBSAE}
 
-\item{re}{Random effects formula}
+\item{link_phi}{Link function for the second parameter (phi), typically representing precision, shape, or dispersion depending on the family used (e.g., "log", "identity")}
 
-\item{sre}{Spatial random effect formula with options for CAR or SAR}
+\item{re}{Random effects formula, example: re = ~(1|area)}
+
+\item{sre}{An optional grouping factor mapping observations to spatial locations. If not specified, each observation is treated as a separate location. It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.}
+
+\item{sre_type}{Determines the type of spatial random effect used in the model. The function currently supports "sar" and "car"}
+
+\item{car_type}{Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR), "icar" (intrinsic CAR), and "bym2".}
+
+\item{sar_type}{Type of the SAR structure. Either "lag" (for SAR of the response values) or "error" (for SAR of the residuals).}
+
+\item{M}{The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations. SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships. If sre is specified, the row names of M have to match the levels of the grouping factor}
 
 \item{data}{Dataset used for model fitting}
 
-\item{prior}{Priors for the model parameters (default: `NULL`)}
+\item{prior}{Priors for the model parameters (default: \code{NULL})}
 
-\item{control}{A list of control parameters for the sampler (default: `list()`)}
+\item{handle_missing}{Mechanism to handle missing data (NA values) to ensure model stability and prevent errors during estimation.}
+
+\item{m}{Number of multiple imputation (default: 5)}
+
+\item{control}{A list of control parameters for the sampler (default: \code{list()})}
 
 \item{chains}{Number of Markov chains (default: 4)}
 
@@ -46,19 +70,125 @@ hbm(
 
 \item{cores}{Number of CPU cores to use (default: 1)}
 
-\item{seed}{Random seed for reproducibility (default: `NULL`)}
+\item{sample_prior}{Character. Indicates whether draws from priors should be sampled in addition to posterior draws. The options are:
+\code{"no"} (default): Do not draw from priors (only posterior draws are obtained). \code{"yes"}: Draw both from the prior and posterior.
+\code{"only"}: Draw solely from the prior, ignoring the likelihood. which allows among others to generate draws from the prior predictive distribution.}
 
-\item{...}{Additional arguments passed to `brm`}
+\item{...}{Additional arguments passed to \code{brm}}
 }
 \value{
-A `brmsfit` object
-
-A `brmsfit` object
-#' @export
+A \code{hbmfit} object containing :
+\item{model}{Summary of \code{brms} object.}
+\item{handle_missing}{Handle missing option used in the model.}
+\item{data}{Data passed to the \code{hbm} function. }
 }
 \description{
-Hierarchical Bayesian Small Area Models
+This function provide flexible modeling approaches to estimate area-level statistics
+while incorporating auxiliary information and spatial structures. This function allows users to fit Bayesian models
+using the \code{brms} package and supports Gaussian, Bernoulli, Poisson, and other distributions. It also accommodates
+spatial random effects (CAR and SAR), multilevel structures, and missing data handling (deletion, model-based imputation,
+and multiple imputation).
 }
 \details{
 Hierarchical Bayesian Small Area Models
+}
+\examples{
+\donttest{
+
+# Prepare dataset
+data("BostonHousing")
+data <- BostonHousing
+
+# Fit the Basic Model
+model <- hbm(
+formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
+hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+hb_link = "identity",          # Identity link function (no transformation)
+data = data,                   # Dataset
+chains = 4,                    # Number of MCMC chains
+iter = 4000,                   # Total MCMC iterations
+warmup = 2000,                 # Number of warmup iterations
+cores = 2                      # Paralelisasi
+)
+summary(model)
+
+# Fit the Basic Model With Defined Random Effect
+model_with_defined_re <- hbm(
+formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
+hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+hb_link = "identity",          # Identity link function (no transformation)
+re = ~(1|rad),                 # Defined random effect
+data = data,                   # Dataset
+chains = 4,                    # Number of MCMC chains
+iter = 4000,                   # Total MCMC iterations
+warmup = 2000,                 # Number of warmup iterations
+cores = 2                      # Paralelisasi
+)
+summary(model_with_defined_re)
+
+# Fit the Model with Missing Data
+a. Handling missing by deleted
+data$medv[3:5] <- NA 
+
+model_deleted <- hbm(
+formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
+hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+hb_link = "identity",          # Identity link function (no transformation)
+re = ~(1|rad),                 # Defined random effect
+data = data,                   # Dataset
+handle_missing = "deleted",    # Handle missing method
+chains = 4,                    # Number of MCMC chains
+iter = 4000,                   # Total MCMC iterations
+warmup = 2000,                 # Number of warmup iterations
+cores = 2                      # Paralelisasi
+)
+summary(model_deleted)
+
+b. Handling missing use multiple imputation
+model_multiple <- hbm(
+formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
+hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+hb_link = "identity",          # Identity link function (no transformation)
+re = ~(1|rad),                 # Defined random effect
+data = data,                   # Dataset
+handle_missing = "multiple",    # Handle missing method
+chains = 4,                    # Number of MCMC chains
+iter = 4000,                   # Total MCMC iterations
+warmup = 2000,                 # Number of warmup iterations
+cores = 2                      # Paralelisasi
+)
+summary(model_multiple)
+
+c. Handling missing during modeling
+data$medv[3:5] <- NA 
+data$crim[6:7] <- NA
+
+model_model <- hbm(
+formula = bf(medv | mi() ~ mi(crim) + indus + rm + dis + rad + tax) 
++ bf(crim | mi () ~ indus + rm + dis + rad + tax),  # Formula model
+hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+hb_link = "identity",          # Identity link function (no transformation)
+re = ~(1|rad),                 # Defined random effect
+data = data,                   # Dataset
+handle_missing = "model",    # Handle missing method
+chains = 4,                    # Number of MCMC chains
+iter = 4000,                   # Total MCMC iterations
+warmup = 2000,                 # Number of warmup iterations
+cores = 2                      # Paralelisasi
+)
+summary(model_during_model)
+
+# Fit the Model with Spatial Effect
+# Create a spatial grouping factor based on "dis"
+data$spatial <- cut(data$dis, breaks = 10, labels = FALSE)
+
+library(Matrix)
+data$spatial <- factor(data$spatial)
+n <- length(levels(data$spatial))
+M <- bandSparse(n = n, k = c(-1, 0, 1), 
+                diag = list(rep(1, n - 1), rep(0, n), rep(1, n - 1)))
+rownames(M) <- colnames(M) <- levels(data$spatial)
+
+} 
+
 }

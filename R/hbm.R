@@ -1,74 +1,434 @@
 #' Hierarchical Bayesian Small Area Models
-#' @title Hierarchical Bayesian Small Area Models
-#' @description Hierarchical Bayesian Small Area Models
+#' @title hbm : Hierarchical Bayesian Small Area Models
+#' @description This function provide flexible modeling approaches to estimate area-level statistics
+#' while incorporating auxiliary information and spatial structures. This function allows users to fit Bayesian models 
+#' using the `brms` package and supports Gaussian, Bernoulli, Poisson, and other distributions. It also accommodates 
+#' spatial random effects (CAR and SAR), multilevel structures, and missing data handling (deletion, model-based imputation, 
+#' and multiple imputation).
 #' @name hbm
-#' @param formula Formula specifying the model structure
-#' @param sae_sampling The family distribution for the response
-#' @param sae_link Link function for HBSAE
-#' @param re Random effects formula
-#' @param sre Spatial random effect formula with options for CAR or SAR
+#'
+#' @param formula Formula specifying the model structure of auxiliary variables and direct estimates
+#'   The formula must be provided as a `brmsformula` or `formula` object. For multivariate models with multiple 
+#'   auxiliary variables, use the `+` operator to combine multiple `bf()` formulas.
+#'   Example: `formula(y ~ x1 + x2 + x3)`, `bf(y ~ x1 + x2 + x3)`, or `bf(y | mi() ~ mi(x1)) + bf(x1 | mi() ~ x2)`
+#' @param hb_sampling The distribution for the response variable (e.g., "gaussian", "bernoulli", "poisson")
+#' @param hb_link Link function for HBSAE
+#' @param link_phi Link function for the second parameter (phi), typically representing precision, shape, or dispersion depending on the family used (e.g., "log", "identity")
+#' @param re Random effects formula, example: re = ~(1|area)
+#' @param sre An optional grouping factor mapping observations to spatial locations. If not specified, each observation is treated as a separate location. It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.
+#' @param sre_type Determines the type of spatial random effect used in the model. The function currently supports "sar" and "car"
+#' @param car_type Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR), "icar" (intrinsic CAR), and "bym2". 
+#' @param sar_type Type of the SAR structure. Either "lag" (for SAR of the response values) or "error" (for SAR of the residuals). 
+#' @param M The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations. SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships. If sre is specified, the row names of M have to match the levels of the grouping factor
 #' @param data Dataset used for model fitting
 #' @param prior Priors for the model parameters (default: `NULL`)
+#' @param handle_missing Mechanism to handle missing data (NA values) to ensure model stability and prevent errors during estimation.
+#' @param m Number of multiple imputation (default: 5)
 #' @param control A list of control parameters for the sampler (default: `list()`)
 #' @param chains Number of Markov chains (default: 4)
 #' @param iter Total number of iterations per chain (default: 2000)
 #' @param warmup Number of warm-up iterations per chain (default: floor(iter/2))
 #' @param cores Number of CPU cores to use (default: 1)
-#' @param seed Random seed for reproducibility (default: `NULL`)
+#' @param sample_prior Character. Indicates whether draws from priors should be sampled in addition to posterior draws. The options are:
+#' \code{"no"} (default): Do not draw from priors (only posterior draws are obtained). \code{"yes"}: Draw both from the prior and posterior.
+#' \code{"only"}: Draw solely from the prior, ignoring the likelihood. which allows among others to generate draws from the prior predictive distribution.
 #' @param ... Additional arguments passed to `brm`
-#' @return A `brmsfit` object
-#' @importFrom brms brm
-#' @importFrom brms brmsfamily
-#' @importFrom brms bf
-#' @param formula Formula specifying the model structure
-#' @param sae_sampling The family distribution for the response
-#' @param sae_link Link function for HBSAE
-#' @param re Random effects formula
-#' @param sre Spatial random effect formula with options for CAR or SAR
-#' @param data Dataset used for model fitting
-#' @return A `brmsfit` object
-#' #' @export
+#' 
+#' @return A `hbmfit` object containing : 
+#'   \item{model}{Summary of `brms` object.}
+#'   \item{handle_missing}{Handle missing option used in the model.}
+#'   \item{data}{Data passed to the \code{hbm} function. }
+#'   
+#' @importFrom brms brm brm_multiple brmsfamily bf
+#' @importFrom stats terms update.formula update
+#' @import mice
+#' 
+#' @export
+#' 
+#' @examples
+#' \donttest{
+#' 
+#' # Prepare dataset
+#' data("BostonHousing")
+#' data <- BostonHousing
+#' 
+#' # Fit the Basic Model
+#' model <- hbm(
+#' formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
+#' hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+#' hb_link = "identity",          # Identity link function (no transformation)
+#' data = data,                   # Dataset
+#' chains = 4,                    # Number of MCMC chains
+#' iter = 4000,                   # Total MCMC iterations
+#' warmup = 2000,                 # Number of warmup iterations
+#' cores = 2                      # Paralelisasi
+#' )
+#' summary(model)
+#'
+#' # Fit the Basic Model With Defined Random Effect
+#' model_with_defined_re <- hbm(
+#' formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
+#' hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+#' hb_link = "identity",          # Identity link function (no transformation)
+#' re = ~(1|rad),                 # Defined random effect
+#' data = data,                   # Dataset
+#' chains = 4,                    # Number of MCMC chains
+#' iter = 4000,                   # Total MCMC iterations
+#' warmup = 2000,                 # Number of warmup iterations
+#' cores = 2                      # Paralelisasi
+#' )
+#' summary(model_with_defined_re)
+#' 
+#' # Fit the Model with Missing Data
+#' a. Handling missing by deleted
+#' data$medv[3:5] <- NA 
+#' 
+#' model_deleted <- hbm(
+#' formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
+#' hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+#' hb_link = "identity",          # Identity link function (no transformation)
+#' re = ~(1|rad),                 # Defined random effect
+#' data = data,                   # Dataset
+#' handle_missing = "deleted",    # Handle missing method
+#' chains = 4,                    # Number of MCMC chains
+#' iter = 4000,                   # Total MCMC iterations
+#' warmup = 2000,                 # Number of warmup iterations
+#' cores = 2                      # Paralelisasi
+#' )
+#' summary(model_deleted)
+#' 
+#' b. Handling missing use multiple imputation
+#' model_multiple <- hbm(
+#' formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
+#' hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+#' hb_link = "identity",          # Identity link function (no transformation)
+#' re = ~(1|rad),                 # Defined random effect
+#' data = data,                   # Dataset
+#' handle_missing = "multiple",    # Handle missing method
+#' chains = 4,                    # Number of MCMC chains
+#' iter = 4000,                   # Total MCMC iterations
+#' warmup = 2000,                 # Number of warmup iterations
+#' cores = 2                      # Paralelisasi
+#' )
+#' summary(model_multiple)
+#' 
+#' c. Handling missing during modeling
+#' data$medv[3:5] <- NA 
+#' data$crim[6:7] <- NA
+#' 
+#' model_model <- hbm(
+#' formula = bf(medv | mi() ~ mi(crim) + indus + rm + dis + rad + tax) 
+#' + bf(crim | mi () ~ indus + rm + dis + rad + tax),  # Formula model
+#' hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
+#' hb_link = "identity",          # Identity link function (no transformation)
+#' re = ~(1|rad),                 # Defined random effect
+#' data = data,                   # Dataset
+#' handle_missing = "model",    # Handle missing method
+#' chains = 4,                    # Number of MCMC chains
+#' iter = 4000,                   # Total MCMC iterations
+#' warmup = 2000,                 # Number of warmup iterations
+#' cores = 2                      # Paralelisasi
+#' )
+#' summary(model_during_model)
+#' 
+#' # Fit the Model with Spatial Effect
+#' # Create a spatial grouping factor based on "dis"
+#' data$spatial <- cut(data$dis, breaks = 10, labels = FALSE)
+#' 
+#' library(Matrix)
+#' data$spatial <- factor(data$spatial)
+#' n <- length(levels(data$spatial))
+#' M <- bandSparse(n = n, k = c(-1, 0, 1), 
+#'                 diag = list(rep(1, n - 1), rep(0, n), rep(1, n - 1)))
+#' rownames(M) <- colnames(M) <- levels(data$spatial)
+#' 
+#' } 
+#' 
+
 hbm <- function(formula,
-                sae_sampling = "gaussian",
-                sae_link = "identity",
+                hb_sampling = "gaussian",
+                hb_link = "identity",
+                link_phi = "log",
                 re = NULL,
                 sre = NULL,
+                sre_type = NULL,
+                car_type = NULL,
+                sar_type = NULL,
+                M = NULL,
                 data,
                 prior = NULL,
+                handle_missing= NULL,
+                m=5,
                 control = list(),
                 chains = 4,
-                iter = 2000,
+                iter = 4000,
                 warmup = floor(iter / 2),
                 cores = 1,
-                seed = NULL,
-                ...)  {
-data<-data.frame(data)
-  n<-nrow(data)
-    if (!is.null(re)) {
-    formula <- bf(formula + re)
-  }else{
-    data$re <- rep(1,n)
-    formula <- bf(formula + re)
-  }
-  if (!is.null(sre)) {
-    if (grepl("car|sar", sre)) {
-      warning("CAR and SAR spatial effects require advanced setup.")
+                sample_prior = "no",
+                ...) {
+  
+  # Convert data to data frame
+  data <- data.frame(data)
+  n <- nrow(data)
+  data2 <- NULL
+  
+  if(!is.null(sre)){
+    if (!(sre %in% names(data))) {
+      stop(sprintf("Variable '%s' not found in the data.", sre))
     }
-    formula <- bf(formula + sre)
   }
-
-  brms_model <-brm(formula = formula,
-                    family = brmsfamily(sae_sampling, link = sae_link),
-                    data = data,
-                    prior = prior,
-                    control = control,
-                    chains = chains,
-                    iter = iter,
-                    warmup = warmup,
-                    cores = cores,
-                    seed = seed,
-                    ...)
-
-  return(brms_model)
-
+  
+  # Extract all_formulas and main formula 
+  if (length(class(formula))>1 && class(formula)[2] == "bform"){
+    if (!is.null(formula$forms)) {
+      main_formula <- as.formula(formula$forms[[1]])
+      all_formulas <- formula
+    } else {
+      main_formula <- as.formula(formula$formula)
+      all_formulas <- formula
+    }
+  } else if (class(formula) == "formula") {
+    main_formula <- formula
+    all_formulas <- brms::bf(formula)
+  } else {
+    stop("Formula must be specified as fomula() or bf()/brmsformula()")
+  }
+  
+  # Extract variable from main formula
+  response_var <- all.vars(main_formula[[2]])  # LHS: Response variable
+  auxiliary_vars <- all.vars(main_formula[[3]]) # RHS: Predictors
+  
+  # Check missing data
+  missing_y <- as.list(response_var[sapply(response_var, function(x) any(is.na(data[[x]])))])
+  missing_y <- if (length(missing_y) == 0) NULL else missing_y
+  missing_x <- as.list(auxiliary_vars[sapply(auxiliary_vars, function(x) any(is.na(data[[x]])))])
+  missing_x <- if (length(missing_x) == 0) NULL else missing_x
+  
+  # Check if discrete distribution
+  discrete_families <- c("binomial", "bernoulli", "beta-binomial", "poisson", 
+                         "negbinomial", "geometric", "categorical", "multinomial", 
+                         "cumulative", "cratio", "sratio", "acat", 
+                         "zero_inflated_binomial", "zero_inflated_beta_binomial", 
+                         "zero_inflated_poisson", "zero_inflated_negbinomial")
+  
+  # Check if hb_sampling is included in the discrete distributions
+  is_discrete <- hb_sampling %in% discrete_families
+  
+  # Check handle missing
+  if (is.null(handle_missing)) {
+    if (!is.null(missing_y) || !is.null(missing_x)) {
+      stop("Error: `handle_missing` must be specified when there are missing values. ",
+           "Please set it to 'deleted', 'model', or 'multiple'.")
+    }
+  } else {
+    # If handle_missing is specified, check compatibility
+    if (is_discrete && handle_missing == "model") {
+      stop("Error: Discrete distributions do not support `handle_missing = 'model'`. ",
+           "Please use `'multiple'` instead.")
+    }
+  }
+  
+  # Initial condition
+  data_complete <- data
+  multiple <- FALSE
+  
+  # Missing data handling
+  if (!is.null(missing_y) || !is.null(missing_x)){
+    if (handle_missing == "deleted") {
+      if (is.null(missing_x)) {
+        # If response_var contains more than one variable (e.g., y and n in logistic models),
+        # ensure that both are not NA in the retained rows.
+        if (length(response_var) > 1) {
+          data <- data[complete.cases(data[response_var]), , drop = FALSE]
+        } else {
+          # If response_var has only one variable, remove rows where it is NA.
+          data <- data[!is.na(data[[response_var]]), , drop = FALSE]
+          n <- nrow(data)
+        }
+        message("Rows with missing response variable were removed due to handle_missing = 'deleted'.")
+      } else {
+        stop("Option 'deleted' is only applicable when x is complete and y has missing values.")  
+      }
+    } else if (handle_missing == "multiple") {
+      multiple <- TRUE
+      message(paste("Missing data detected. Using brms_multiple imputation with m =", m))
+    } else if (handle_missing == "model") {
+      # Check if the user provided a formula
+      if (!is.null(formula)) {
+        missing_vars <- c(missing_y, missing_x)
+        
+        # Convert formulas to strings for validation
+        if (!is.null(formula$forms)) {
+          formula_strs <- sapply(all_formulas$forms, function(v) paste(deparse(v$formula), collapse = " "))
+        } else {
+          formula_strs <- paste(deparse(all_formulas$formula), collapse = " ")
+        }
+        
+        # Check if missing variables have '| mi()'
+        incomplete_responses <- missing_vars[!sapply(missing_vars, function(var) {
+          any(grepl(paste0("\\b", var, " \\| mi\\("), formula_strs))
+        })]
+        
+        incomplete_predictors <- missing_x[!sapply(missing_x, function(var) {
+          any(grepl(paste0("mi\\(", var, "\\)"), formula_strs))
+        })]
+        
+        if (length(incomplete_responses) > 0 || length(incomplete_predictors) > 0) {
+          stop(paste("Error: The formula is incomplete. Missing '| mi()' for response:", 
+                     paste(incomplete_responses, collapse = ", "), 
+                     "or missing 'mi()' for predictors:",
+                     paste(incomplete_predictors, collapse = ", ")))
+        } 
+        message("Missing data detected. Using mi() specification.")
+      } else {
+        # If no formula is provided, continue without modeling missing data
+        stop(paste("No formula provided for modeling missing data during modelling."))
+      }
+    } 
+  }
+  
+  # Add random effects to the formula
+  if (!is.null(re)) {
+    re_str <- as.character(re)
+    valid_pattern <- "^\\(\\s*1\\s*\\|\\s*\\w+(\\s*\\+\\s*\\w+)*\\s*\\)(\\s*\\+\\s*\\(\\s*1\\s*\\|\\s*\\w+(\\s*\\+\\s*\\w+)*\\s*\\))*\\s*$"
+    
+    if (!grepl(valid_pattern, re_str[2])) {
+      stop("Invalid re formula. Structure must follow:\n",
+           "~ (1|group1) + (1|group2)")
+    }
+    
+    if (!is.null(formula$forms)) {
+      # Update all formulas and store them back
+      all_formulas$forms <- lapply(all_formulas$forms, function(f) {
+        f$formula <- update(f$formula, paste(". ~ . +", re_str[2]))
+        return(f)  
+      })
+    } else {
+      all_formulas$formula <- update(all_formulas$formula, paste(". ~ . +", re_str[2]))
+    }
+  } else {
+    data$group <- as.factor(seq(nrow(data))) 
+    
+    if (!is.null(formula$forms)) {
+      # Update all formulas and store them back
+      all_formulas$forms <- lapply(all_formulas$forms, function(f) {
+        f$formula <- update(f$formula, ". ~ . + (1 | group)")
+        return(f)  
+      })
+    } else {
+      all_formulas$formula <- update(all_formulas$formula, ". ~ . + (1 | group)")
+    }
+  }
+ 
+  # Add spatial effects
+  if (!is.null(sre_type)){
+    if (is.null(M)){
+      stop("Spatial effect specified, but matrix M is NULL. Please provide a spatial correlation matrix.")
+    } 
+    
+    #Add M to data2
+    data2 <- list(M = M)
+    
+    if (sre_type == "car"){
+      if(!is.null(car_type)){
+        if(car_type %in% c("escar", "esicar", "icar", "bym2")){
+          if (!is.null(sre)){
+              sre_str <- paste0("car(M, gr =", sre, ", type = '", car_type, "')")
+          } else{
+              sre_str <- paste0("car(M, type = '", car_type, "')")
+          }
+        } else{
+          stop("'car_type' should be one of 'escar', 'esicar', 'icar', 'bym2'")
+        }
+      } else {
+        if(!is.null(sre)){
+          sre_str <- paste0("car(M, gr =", sre, ", type = 'escar')")
+        } else{
+          sre_str <- paste("car(M, type = 'escar')")
+        }
+      }
+    } else if (sre_type == "sar"){
+      if(hb_sampling %in% c("gaussian", "student")){
+        if(!is.null(sar_type)){
+          if(sar_type %in% c("lag", "error")){
+            sre_str <- paste0("sar(M, type = '", sar_type, "')")
+          } else{
+            stop("'sar_type' should be one of 'lag', 'error'")
+          }
+        } else{
+          sre_str <- paste("sar(M, type = 'lag')")
+        }
+      } else{
+        stop("Currently, only families gaussian and student support SAR structures.")
+      }
+    } else {
+      stop("Invalid spatial effect type. Use 'car' or 'sar'.")
+    }
+    
+    if (!is.null(formula$forms)) {
+      # Update all formulas and store them back
+      all_formulas$forms <- lapply(all_formulas$forms, function(f) {
+        f$formula <- update(f$formula, paste(". ~ . +", sre_str))
+        return(f)  
+      })
+    } else {
+      all_formulas$formula <- update(all_formulas$formula, paste(". ~ . +", sre_str))
+    }
+  }
+  
+  # Add family
+  if (!is.null(formula$forms)) {
+    all_formulas$forms[[1]]$family <- brmsfamily(hb_sampling, hb_link, link_phi = link_phi)
+  } else {
+    all_formulas$family <- brmsfamily(hb_sampling, hb_link, link_phi = link_phi)
+  }
+  
+  # Check data availability
+  all_vars <- c(response_var, auxiliary_vars)
+  all_vars <- setdiff(all_vars, "M")
+  missing_vars <- setdiff(all_vars, names(data))
+  if (length(missing_vars) > 0) {
+    stop(paste("Missing variables in data: ", paste(missing_vars, collapse = ", ")))
+  }
+  
+  # Modelling
+  if (multiple) {
+    data_multiple <- mice(data, m = m)
+    model <- brm_multiple(
+      formula = all_formulas,
+      data = data_multiple,
+      data2 = data2,
+      prior = prior,
+      chains = chains,
+      iter = iter,
+      warmup = warmup,
+      cores = cores,
+      control = control,
+      sample_prior = sample_prior,
+      save_pars = save_pars(all = TRUE),
+      ...
+    )
+  } else {
+    model <- brm(
+      formula = all_formulas,
+      data = data,
+      data2 = data2,
+      prior = prior,
+      chains = chains,
+      iter = iter,
+      warmup = warmup,
+      cores = cores,
+      control = control,
+      sample_prior = sample_prior,
+      save_pars = save_pars(all = TRUE),
+      ...
+    )
+  }
+  
+  return(structure(
+    list(model = model, handle_missing = handle_missing, data = data_complete),
+    class = "hbmfit"
+  ))
 }
+
+
