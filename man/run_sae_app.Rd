@@ -14,3 +14,9 @@ This function launches an interactive \strong{Shiny application} for performing
 \strong{Hierarchical Bayesian Small Area Estimation (HBSAE)} using the \code{brms} package
 with \code{Stan} as the backend for Bayesian inference.
 }
+\references{
+Rao, J. N. K., & Molina, I. (2015). \emph{Small Area Estimation}. John Wiley & Sons.
+}
+\author{
+Achmad Syahrul Choir and Arsyka Laila Oktalia Siregar
+}

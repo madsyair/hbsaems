@@ -10,12 +10,9 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  eval = FALSE
 )
-```
-
-```{r setup}
-library(hbsaems)
 ```
 
 # Introduction
@@ -28,68 +25,76 @@ This vignette aims to show how this package can be used to add spatial effects i
 
 The `hbsaems` package can handle spatial dependence effects (Spatial Autocorrelation) by using the :
 
-1.  CAR (Conditional Autoregressive)
-2.  SAR (Simultaneous Autoregressive)
+1.  **CAR (Conditional Autoregressive)**
+2.  **SAR (Simultaneous Autoregressive)**
 
-## 1. CAR (Conditional Autoregressive)
+
+## 1. **CAR (Conditional Autoregressive)**
 
 Conditional Autoregressive (CAR) model is a spatial model that describes the relationship between adjacent areas through a local condition approach. In this model, the value of a variable in a location is directly influenced by the value of the same variable in the surrounding areas. CAR uses adjacency matrix to determine the relationship between locations.
 
 ### Simulated Data Example
 
 ```{r}
-library(mlbench)
+library(hbsaems)
 
-data("BostonHousing")
-data_car <- BostonHousing
+# Load data
+data("data_fhnorm")
+data <- data_fhnorm
+head(data)
 
-print(data_car)
+# Load adjacency matrix
+data("adjacency_matrix_car")
+adjacency_matrix_car
 ```
 
-To apply spatial effects to the data, we will cluster into 10 groups based on the variable `dis`. The variable `dis` in the `BostonHousing` dataset is the weighted distance to five job centers in Boston. This is a measure of accessibility to job centers. Clustering based on distance to the city center can reflect spatial patterns in the data so the variable `dis` can be a good proxy for creating spatial clustering.
-
-```{r}
-# Create a spatial grouping factor based on "dis"
-data_car$spatial <- cut(data_car$dis, breaks = 10, labels = FALSE)  
-
-library(Matrix)
-
-data_car$spatial <- factor(data_car$spatial)
-n <- length(levels(data_car$spatial))
-M <- bandSparse(n = n, k = c(-1, 0, 1), 
-                diag = list(rep(1, n - 1), rep(0, n), rep(1, n - 1)))
-rownames(M) <- colnames(M) <- levels(data_car$spatial)
-print(M)
-```
-In the spatial adjacency matrix, a value of 1 indicates that two spatial groups are neighbors based on their proximity to the city center, while a value of 0 indicates no adjacency relationship.
+The data used is synthetic data in the `hbsaems` package which can be used to help understand the use of the package
 
 ### Fitting the Model
 
-We will try to model housing prices in each housing block using the Boston Housing dataset, where the target variable is the median owner-occupied home value (medv).
-
+#### `hbm` Function
 ```{r}
 model_car <- hbm(
-  formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
-  hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
-  hb_link = "identity",          # Identity link function (no transformation)
-  data = data_car,                   # Dataset
-  sre = "spatial",                # Spatial random effect variable
+  formula = bf(y ~ x1 + x2 + x3),  # Formula model
+  hb_sampling = "gaussian",        # Gaussian family for continuous outcomes
+  hb_link = "identity",            # Identity link function (no transformation)
+  re = ~(1|group),
+  sre = "sre",                    # Spatial random effect variable
   sre_type = "car",
   car_type = "icar",
-  M = M,
-  chains = 4,                    # Number of MCMC chains
-  iter = 4000,                   # Total MCMC iterations
-  warmup = 2000,                 # Number of warmup iterations
-  cores = 2                      # Paralelisasi
-)
+  M = adjacency_matrix_car,
+  data = data)                    # Dataset
 
 summary(model_car)
 ```
-When the `car_type` value is not specifically defined, its defaults to `escar`.
 
-If `sre` is not specified, each observation is treated as a separate location. Therefore, in this case the dimension of the adjacency matrix of locations should be equal to the number of observations. It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.
+To apply spatial effects to the data, we need a variable that maps observations to spatial locations (`sre`). If not specified, each observation is treated as a separate location. Therefore, in this case the dimension of the adjacency matrix of locations should be equal to the number of observations. It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.
 
-## 2. SAR (Simultaneous Autoregressive)
+Users must specify the type of spatial random effects used in the model (`sre_type`), if they choose `car` type, users must also specify the CAR structure type (`car_type`). Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR), "icar" (intrinsic CAR), and "bym2". When the `car_type` value is not specifically defined, its defaults to `escar`.
+
+We also need information about the adjacency matrix (`M`). In the spatial adjacency matrix, a value of 1 indicates that two spatial groups are neighbors based on their proximity to the city center, while a value of 0 indicates no adjacency relationship. The row names of the adjacency matrix must be the same as the grouping names in the variable `sre`. In the data that will be used this time, the spatial grouping names are given the numbers 1, 2, 3, 4, and 5.
+
+#### `hbm_distribution` Function
+
+In addition to the `hbm` function, spatial effects can be applied by calling the `hbm_distribution` function as in `hbm_betalogitnorm`, `hbm_binlogitnorm`, and `hbm_lnln`.
+
+```{r}
+# Load data
+data("data_betalogitnorm")
+head(data_betalogitnorm)
+
+model_car_beta <- hbm_betalogitnorm(response = "y",
+                                    predictors = c("x1", "x2", "x3"),
+                                    sre = "sre",
+                                    sre_type = "car",
+                                    car_type = "icar",
+                                    M = adjacency_matrix_car,
+                                    data = data_betalogitnorm)
+summary(model_car_beta)
+```
+
+
+## 2. **SAR (Simultaneous Autoregressive)**
 
 The Simultaneous Autoregressive Model (SAR) handles spatial effects by defining dependence simultaneously across the study area. SAR uses a spatial weight matrix to describe the relationship between regions and can be applied in various forms, such as Spatial Lag Model (SLM) or Spatial Error Model (SEM), depending on how spatial effects affect the dependent variable or error in the model. `M` can be either the spatial weight matrix itself or an object of class listw or nb, from which the spatial weighting matrix can be computed.
 
@@ -103,36 +108,27 @@ $$y = \eta + u, \quad u = \rho W u + e$$
 
 In the above equations, $$\eta$$ is the predictor term and $$e$$ are independent normally or t-distributed residuals. Currently, only families **gaussian** and **student** support SAR structures.
 
-### Simulated Data Example
-
-```{r}
-library(spdep)
-
-data("oldcol")
-data_sar <- COL.OLD
-
-print(data_sar)
-```
-
-
 ### Fitting the Model
 
 ```{r}
 model_sar <- hbm(
-  formula = bf(CRIME ~ INC + HOVAL),  
-  hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
-  hb_link = "identity",          # Identity link function (no transformation)
-  data = data_sar,                   # Dataset
+  formula = bf(y ~ x1 + x2 + x3),  # Formula model
+  hb_sampling = "gaussian",        # Gaussian family for continuous outcomes
+  hb_link = "identity",            # Identity link function (no transformation)
+  re = ~(1|group),
   sre_type = "sar",
-  car_type = "lag",
-  M = COL.nb,
-  chains = 2,                    # Number of MCMC chains
-  iter = 4000,                   # Total MCMC iterations
-  warmup = 2000,                 # Number of warmup iterations
-  cores = 2                      # Paralelisasi
-)
+  sar_type = "lag",
+  M = spatial_weight_sar,    
+  data = data)                    # Dataset
 
 summary(model_sar)
 ```
 
-When the `sar_type` value is not specifically defined, its defaults to `lag`.
+In SAR there is no need for `sre` information, SAR only requires information related to `sre_type`, `sar_type`, and `M`.`sar_type` is type of the SAR structure. Either `lag` (for SAR of the response values) or `error` (for SAR of the residuals). When the `sar_type` value is not specifically defined, its defaults to `lag`.
+
+The `M` matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain weights.
+
+# Conclusion
+
+The **hbsaems** package supports spatially-informed small-area estimation through both Conditional Autoregressive (CAR) and Simultaneous Autoregressive (SAR) models, enabling improved precision by capturing spatial dependence among areas. CAR emphasizes local adjacency via binary neighborhood structure, while SAR allows varying spatial influence through a weighted matrix. By leveraging spatial correlation, CAR and SAR enhance the reliability of estimates, particularly in data-sparse regions, making them powerful tools for small-area estimation.
+

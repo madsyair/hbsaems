@@ -1,14 +1,17 @@
 #' Hierarchical Bayesian Convergence Checks
+#' 
 #' @title hbcc : Hierarchical Bayesian Convergence Checks
+#' 
 #' @description This function is designed to evaluate the convergence and quality of a Bayesian hierarchical model. 
 #' It performs several diagnostic tests and generates various plots to assess Markov Chain Monte Carlo (MCMC) performance.
+#' 
 #' @name hbcc
 #'
 #' @param model A `brmsfit` or `hbmfit` object.
 #' @param diag_tests Character vector of diagnostic tests (default:"rhat", "geweke", "raftery", "heidel")
 #' @param plot_types Character vector of plot types (default: trace","dens","acf", "nuts_energy", "rhat", "neff")
 #'
-#' @return A list containing:
+#' @return An object of class `hbcc_results`, which is a list containing:
 #'   \item{rhat_ess}{Matrix of \code{Rhat}, \code{Bulk_ESS}, and \code{Tail_ESS} values for fixed and random effects.}
 #'   \item{geweke}{Geweke diagnostic results (if selected).}
 #'   \item{raftery}{Raftery-Lewis diagnostic results (if selected).}
@@ -28,33 +31,39 @@
 #' @importFrom posterior ess_bulk ess_tail
 #' @importFrom ggplot2 ggtitle theme_minimal
 #' 
-#' @export
+#' @author Achmad Syahrul Choir and Saniyyah Sri Nurhayati
+#'
+#' @references 
+#' Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. *Journal of Statistical Software*, 80(1), 1-28.
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' 
-#' # Prepare dataset
-#' data("BostonHousing")
-#' data <- BostonHousing
+#' library(hbsaems)
+#' data("data_fhnorm")
+#'
+#' # Prepare the dataset
+#' data <- data_fhnorm
 #' 
 #' # Fit the Basic Model
 #' model <- hbm(
-#' formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
-#' hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
-#' hb_link = "identity",          # Identity link function (no transformation)
-#' data = data,                   # Dataset
-#' chains = 4,                    # Number of MCMC chains
-#' iter = 4000,                   # Total MCMC iterations
-#' warmup = 2000,                 # Number of warmup iterations
-#' cores = 2                      # Paralelisasi
+#'   formula = bf(y ~ x1 + x2 + x3),  # Formula model
+#'   hb_sampling = "gaussian",       # Gaussian family for continuous outcomes
+#'   hb_link = "identity",           # Identity link function (no transformation)
+#'   data = data,                    # Dataset
+#'   chains = 4,                     # Number of MCMC chains
+#'   iter = 4000,                    # Total MCMC iterations
+#'   warmup = 2000,                  # Number of warmup iterations
+#'   cores = 2                       # Parallel processing
 #' )
 #' summary(model)
 #' 
 #' # Convergence Checks
 #' hbcc(model)
-#' 
 #' }
-
+#' 
+#' @export
+#' 
 hbcc <- function(model, 
                  diag_tests = c("rhat", "geweke", "heidel","raftery" ), 
                  plot_types = c("trace","dens","acf", "nuts_energy", "rhat", "neff")
@@ -124,6 +133,6 @@ hbcc <- function(model,
   
   return(structure(
     list(rhat_ess = results$rhat_ess, geweke = results$geweke, raftery = results$raftery, heidel = results$heidel, plots = results$plots),
-    class = "hbcc"
+    class = "hbcc_results"
   ))
 }

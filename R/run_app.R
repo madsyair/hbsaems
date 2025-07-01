@@ -5,7 +5,7 @@
 #' **Hierarchical Bayesian Small Area Estimation (HBSAE)** using the `brms` package 
 #' with `Stan` as the backend for Bayesian inference.
 #' 
-#' @import shinyWidgets shinydashboard readxl DT
+#' @import shinyWidgets shinydashboard readxl DT energy minerva XICOR
 #' @importFrom shinyWidgets pickerInput
 #' @importFrom shinydashboard dashboardPage dashboardHeader dashboardSidebar sidebarMenu menuItem tabItems tabItem
 #' @importFrom readxl read_excel
@@ -15,7 +15,11 @@
 #' Opens a Shiny app in the web browser. The function does not return a value.
 #' 
 #' @export
-
+#' @author Achmad Syahrul Choir and Arsyka Laila Oktalia Siregar
+#'
+#' @references 
+#' Rao, J. N. K., & Molina, I. (2015). *Small Area Estimation*. John Wiley & Sons. 
+#'
 run_sae_app <- function() {
   # Find the directory for the Shiny app inside the 'hbsaems' package
   app_dir <- system.file("shiny/sae_app", package = "hbsaems")

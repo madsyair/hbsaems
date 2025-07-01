@@ -32,25 +32,58 @@ Internally, the model applies a log transformation to fit a normal model.}
 
 \item{predictors}{A list of independent (explanatory) variables used in the model. These variables form the fixed effects in the regression equation.}
 
-\item{re}{Specifies the grouping variable for hierarchical (random effects) models. Used when modeling data with grouped structures (e.g., individuals within clusters).}
+\item{re}{Random effects formula specifying the grouping structure in the data.
+For example, re = ~(1|area), where "area" is the grouping variable or cluster ID indicating
+that observations within the same area share a common random effect. If not specified,
+each row will be treated as its own group, meaning a separate random effect is estimated for each observation.}
 
-\item{sre}{An optional grouping factor mapping observations to spatial locations. If not specified, each observation is treated as a separate location. It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.}
+\item{sre}{An optional grouping factor mapping observations to spatial locations.
+If not specified, each observation is treated as a separate location.
+It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.}
 
 \item{sre_type}{Determines the type of spatial random effect used in the model. The function currently supports "sar" and "car"}
 
-\item{car_type}{Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR), "icar" (intrinsic CAR), and "bym2".}
+\item{car_type}{Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR),
+"icar" (intrinsic CAR), and "bym2".}
 
-\item{sar_type}{Type of the SAR structure. Either "lag" (for SAR of the response values) or "error" (for SAR of the residuals).}
+\item{sar_type}{Type of the SAR structure. Either "lag" (for SAR of the response values) or
+"error" (for SAR of the residuals).}
 
-\item{M}{The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations. SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships. If sre is specified, the row names of M have to match the levels of the grouping factor}
+\item{M}{The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain
+weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations.
+SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships.
+If sre is specified, the row names of M have to match the levels of the grouping factor}
 
 \item{data}{Dataset used for model fitting}
 
-\item{handle_missing}{Mechanism to handle missing data (NA values) to ensure model stability and prevent errors during estimation.}
+\item{handle_missing}{Mechanism to handle missing data (NA values) to ensure model stability and avoid estimation errors.
+Three approaches are supported.
+The \code{"deleted"} approach performs complete case analysis by removing all rows with any missing values before model fitting.
+This is done using a simple filter such as \code{complete.cases(data)}.
+It is recommended when the missingness mechanism is Missing Completely At Random (MCAR).
+The \code{"multiple"} approach applies multiple imputation before model fitting.
+Several imputed datasets are created (e.g., using the \code{mice} package or the \code{brm_multiple()} function in \code{brms}),
+the model is fitted separately to each dataset, and the results are combined.
+This method is suitable when data are Missing At Random (MAR).
+The \code{"model"} approach uses model-based imputation within the Bayesian model itself.
+Missing values are incorporated using the \code{mi()} function in the model formula (e.g., \code{y ~ mi(x1) + mi(x2)}),
+allowing the missing values to be jointly estimated with the model parameters.
+This method also assumes a MAR mechanism and is applicable only for continuous variables.
+If data are suspected to be Missing Not At Random (MNAR), none of the above approaches directly apply.
+Further exploration, such as explicitly modeling the missingness process or conducting sensitivity analyses, is recommended.}
 
-\item{m}{Number of multiple imputations}
+\item{m}{Number of imputations to perform when using the \code{"multiple"} approach for handling missing data (default: 5).
+This parameter is only used if \code{handle_missing = "multiple"}.
+It determines how many imputed datasets will be generated.
+Each imputed dataset is analyzed separately, and the posterior draws are then combined to account for both within-imputation and between-imputation variability,
+following Rubin’s rules. A typical choice is between 5 and 10 imputations, but more may be needed for higher missingness rates.}
 
-\item{prior}{Priors for the model parameters (default: \code{NULL})}
+\item{prior}{Priors for the model parameters (default: \code{NULL}).
+Should be specified using the \code{brms::prior()} function or a list of such objects.
+For example, \code{prior = prior(normal(0, 1), class = "b")} sets a Normal(0,1) prior on the regression coefficients.
+Multiple priors can be combined using \code{c()}, e.g.,
+\code{prior = c(prior(normal(0, 1), class = "b"), prior(exponential(1), class = "sd"))}.
+If \code{NULL}, default priors from \code{brms} will be used.}
 
 \item{control}{A list of control parameters for the sampler (default: \code{list()})}
 
@@ -64,7 +97,7 @@ Internally, the model applies a log transformation to fit a normal model.}
 
 \item{sample_prior}{(default: "no")}
 
-\item{...}{}
+\item{...}{Additional arguments}
 }
 \value{
 A \code{hbmfit} object
@@ -78,7 +111,7 @@ The response variable \eqn{y} is assumed to follow a lognormal distribution, mea
 
 \deqn{\log(y) \sim N(\mu, \sigma^2)}
 
-where \eqn{\mu} represents the mean structure and \eqn{\sigma} the standard deviation in log-space.
+where \eqn{\mu} represents the mean structure and \eqn{\sigma} the standard deviation.
 
 The function utilizes the \strong{Bayesian regression modeling framework} provided by \code{brms},
 which interfaces with \strong{Stan} for efficient Markov Chain Monte Carlo (MCMC) sampling.
@@ -86,86 +119,182 @@ The \code{brm()} function from \code{brms} is used to estimate posterior distrib
 hierarchical and spatial structures.
 }
 \examples{
-\donttest{
+\dontrun{
+# Load necessary libraries
 library(ggplot2)
 library(hbsaems)
+library(Matrix) # For spatial matrix creation
 
-# Prepare dataset
-data("midwest")
-data_midwest <- midwest[order(midwest$poptotal), ][2:31, ]
-data_midwest$popbelowpoverty <- round(data_midwest$percbelowpoverty/100 * data_midwest$poptotal, 0)
+# Load the States dataset
+data("diamonds")
+data.full <- diamonds[sample(nrow(diamonds), 100), ]
+head(data.full)
 
-# 1. Basic Lognormal Model 
+# Inspect the dataset
+summary(data.full)
+
+# --- Initial Model Setup and Prior Predictive Check ---
+# We define a lognormal hierarchical Bayesian model for 'price'.
+# To check prior assumptions, we first run with 'sample_prior = "only"'.
+model.check_prior <- hbm_lognormal(
+  response = "price",
+  predictors = c( "x", "y", "z"),
+  re = "cut",
+  data = data.full,
+  prior = c(
+    prior(student_t(3, 0, 1), class = "b"),
+    prior(normal(8, 2), class = "Intercept")
+  ),
+  sample_prior = "only",
+  iter = 4000,
+  warmup = 2000,
+  chains = 1,
+  seed = 123
+)
+
+# Perform prior predictive check
+hbpc(model.check_prior, response_var="price")
+summary(model.check_prior)
+
+# --- Prior Predictive Check ---
+result.hbpc <- hbpc(model.check_prior, response_var="price")
+summary(result.hbpc)
+result.hbpc$prior_predictive_plot
+
+# --- Fitting the Model with Data ---
+
+# 1. Basic Model (implicitly includes an individual-level random effect)
 model <- hbm_lognormal(
-  response = "popbelowpoverty",
-  predictors = c("popdensity", "perchsd"),
-  data = data_midwest
+  response = "price",
+  predictors = c( "x", "y", "z"),
+  data = data.full,
+  prior = c(
+    prior(student_t(3, 0, 1), class = "b"),
+    prior(normal(8, 2), class = "Intercept")
+  ),
+  sample_prior = "no", # default, can be skipped
+  iter = 10000,
+  warmup = 5000,
+  chains = 1,
+  seed = 123
 )
-summary(model1)
+summary(model)
 
-# 2. Model With Missing Data
-data_midwest_missing <- data_midwest
-data_midwest_missing$popbelowpoverty[sample(1:30, 3)] <- NA  # 3 missing values in response
-
-# (a) Handling missing data by deleted (Only if missing in response)
-model_deleted <- hbm_lognormal(
-  response = "popbelowpoverty",
-  predictors = c("popdensity", "perchsd"),
-  data = data_midwest_missing,
-  handle_missing = "deleted"
+# Model with explicit random effect for 'cut'
+model.re <- hbm_lognormal(
+  response = "price",
+  predictors = c( "x", "y", "z"),
+  re = "cut", # Categorical variable defining random effect groups
+  data = data.full,
+  prior = c(
+    prior(student_t(3, 0, 1), class = "b"),
+    prior(normal(8, 2), class = "Intercept")
+  ),
+  sample_prior = "no", # default, can be skipped
+  iter = 10000,
+  warmup = 5000,
+  chains = 1,
+  seed = 123
 )
-summary(model_deleted)
+summary(model.re)
 
-# (b) Handling missing data using model-based approach
-model_model <- hbm_lognormal(
-  response = "popbelowpoverty",
-  predictors = c("popdensity", "perchsd"),
-  data = data_midwest_missing,
-  handle_missing = "model"
+# --- 2. Model With Missing Data ---
+# Prepare data with missing values in 'price'
+data.missing <- data.full
+data.missing$price[sample(1:30, 3)] <- NA  # 3 missing values in response
+
+# a. Handling missing data by deletion (Only if missing in response)
+model.deleted <- hbm_lognormal(
+  response = "price",
+  predictors = c( "x", "y", "z"),
+  re = "cut",
+  data = data.missing,
+  handle_missing = "deleted",
+  prior = c(
+    prior(student_t(3, 0, 1), class = "b"),
+    prior(normal(8, 2), class = "Intercept")
+  ),
+  sample_prior = "no",
+  iter = 10000,
+  warmup = 5000,
+  chains = 1,
+  seed = 123
 )
-summary(model_model)
+summary(model.deleted)
 
-# (c) Handling missing data using multiple imputation (m=5)
-model_multiple <- hbm_lognormal(
-  response = "popbelowpoverty",
-  predictors = c("popdensity", "perchsd"),
-  data = data_midwest_missing,
+# b. Handling missing data before model fitting using multiple imputation
+model.multiple <- hbm_lognormal(
+  response = "price",
+  predictors = c( "x", "y", "z"),
+  re = "cut",
+  data = data.full, # Use data.full here as imputation is done internally
   handle_missing = "multiple",
-  m = 5
+  m = 5, # Number of imputations
+  prior = c(
+    prior(student_t(3, 0, 1), class = "b"),
+    prior(normal(8, 2), class = "Intercept")
+  ),
+  sample_prior = "no",
+  iter = 10000,
+  warmup = 5000,
+  chains = 1,
+  seed = 123
 )
-summary(model_multiple)
+summary(model.multiple)
 
-# 3. Model With Random Effect
-model_re <- hbm_lognormal(
-  response = "popbelowpoverty",
-  predictors = c("popdensity", "perchsd"),
-  re = "category",
-  data = data_midwest
+# c. Handling missing data during model fitting (using mi())
+# Introduce missingness in predictors for this example
+data.missing$pop[3:5] <- NA
+data.missing$SATM[14:17] <- NA
+
+model.during_model <- hbm_lognormal(
+  response = "price",
+  predictors = c( "x", "y", "z"),
+  re = "cut",
+  data = data.full, # Use data.full as 'mi()' handles missingness directly
+  handle_missing = "model",
+  prior = c(
+    prior(student_t(3, 0, 1), class = "b"),
+    prior(normal(8, 2), class = "Intercept")
+  ),
+  sample_prior = "no",
+  iter = 10000,
+  warmup = 5000,
+  chains = 1,
+  seed = 123
 )
-summary(model_re)
+summary(model.during_model)
 
-# 4. Model With Spatial Effect
-# Dummy spatial weight matrix
-M <- matrix(0, 4, 4)
-for (i in 1:(4 - 1)) {
-   M[i, i + 1] <- 1
-   M[i + 1, i] <- 1
+# --- 3. Model With Spatial Effect ---
+# Create a spatial grouping factor based on "depth"
+data.full$spatial <- cut(data.full$depth, breaks = 10, labels = FALSE)
+
+# Create an adjacency matrix for demonstration.
+data.full$spatial <- factor(data.full$spatial)
+n <- length(levels(data.full$spatial))
+M <- bandSparse(n = n, k = c(-1, 0, 1),
+                diag = list(rep(1, n - 1), rep(0, n), rep(1, n - 1)))
+rownames(M) <- colnames(M) <- levels(data.full$spatial)
+
+model.spatial <- hbm_lognormal(
+  response = "price",
+  predictors = c( "x", "y", "z"),
+  re = "cut",
+  sre = "spatial",                # Variable defining spatial groups
+  sre_type = "car",              # Conditional Autoregressive model
+  car_type = "icar",            # Intrinsic CAR (common choice)
+  M = M,                        # Adjacency matrix
+  data = data.full,
+  prior = c(
+    prior(student_t(3, 0, 1), class = "b"),
+    prior(normal(8, 2), class = "Intercept")
+  ),
+  sample_prior = "no",
+  iter = 10000,
+  warmup = 5000,
+  chains = 1,
+  seed = 123
+)
+summary(model.spatial)
 }
-# Set row and column names to match the group levels
-rownames(M) <- unique(data_midwest$state)
-colnames(M) <- unique(data_midwest$state)
-
-model_spatial <- hbm_lognormal(
-  response = "popbelowpoverty",
-  predictors = c("popdensity", "perchsd"),
-  sre = "state",
-  sre_type = "car",
-  car_type = "icar",
-  M = M,
-  data = data_midwest
-)
-summary(model_spatial)
-
-} 
-
 }

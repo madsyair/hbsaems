@@ -34,11 +34,11 @@ transformed parameters {
   vector[N_1] r_1_1;  // actual group-level effects
   real lprior = 0;  // prior contributions to the log posterior
   r_1_1 = (sd_1[1] * (z_1[1]));
-  lprior += student_t_lpdf(Intercept | 3, 47, 6.7);
-  lprior += student_t_lpdf(sigma | 3, 0, 6.7)
-    - 1 * student_t_lccdf(0 | 3, 0, 6.7);
-  lprior += student_t_lpdf(sd_1 | 3, 0, 6.7)
-    - 1 * student_t_lccdf(0 | 3, 0, 6.7);
+  lprior += student_t_lpdf(Intercept | 3, 433163, 95825.9);
+  lprior += student_t_lpdf(sigma | 3, 0, 95825.9)
+    - 1 * student_t_lccdf(0 | 3, 0, 95825.9);
+  lprior += student_t_lpdf(sd_1 | 3, 0, 95825.9)
+    - 1 * student_t_lccdf(0 | 3, 0, 95825.9);
 }
 model {
   // likelihood including constants

@@ -4,10 +4,10 @@
 \alias{print.hbmfit}
 \title{Print a summary for a fitted model represented by a hbmfit object}
 \usage{
-\method{print}{hbmfit}(object, ...)
+\method{print}{hbmfit}(x, ...)
 }
 \arguments{
-\item{object}{A \code{hbmfit} object}
+\item{x}{A \code{hbmfit} object (changed from object to x for consistency with generic)}
 
 \item{...}{Other potential arguments}
 }

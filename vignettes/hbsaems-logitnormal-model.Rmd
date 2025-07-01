@@ -10,7 +10,8 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  eval = FALSE
 )
 ```
 
@@ -38,7 +39,12 @@ To ensure proper model specification, the following conditions must be met. The 
 
 ## Simulated Data Example
 
-Let's start by simulating data to fit a logit-normal model.
+```{r}
+library(hbsaems)
+library(mlbench)
+```
+
+The dataset comprises grouped binomial observations, where `ncases` denotes the number of observed events out of a total number of trials `n` within each combination of categorical predictors `agegp` (age group) and `tobgp` (tobacco consumption group). This structure is commonly encountered in epidemiological or public health contexts, where data is aggregated over small demographic or behavioral strata. Each combination of `agegp` and `tobgp` can be viewed as a "small area" for which we aim to estimate the underlying event probability. Applying a logit-normal model within a hierarchical Bayesian framework enables borrowing strength across areas, improving the reliability of estimates, especially for groups with sparse data. This makes the dataset a suitable candidate for small area estimation (SAE), where robust inference is required despite the presence of limited sample sizes in some strata.
 
 ```{r}
 data("esoph")
@@ -47,7 +53,71 @@ data$n <- data$ncases + data$ncontrols
 head(data)
 ```
 
+## Initial Model
+
+We begin by specifying the model with informative priors on the coefficients and the intercept. The `sample_prior = "only"` argument ensures that the model ignores the data and simulates predictions based on the priors alone. This is particularly useful for performing a **prior predictive check**, which involves generating data purely from the prior distributions to evaluate whether the priors lead to plausible values of the outcome variable (`medv` in this case).
+
+```{r}
+model_prior_pred <- hbm_logitnormal(
+   response = "ncases",
+   trials = "n",
+   predictors = c("agegp", "tobgp"),
+   data = data,
+   sample_prior = "no",
+   prior = c(
+     prior(normal(0, 2.5), class = "Intercept"),
+     prior(normal(0, 2.5), class = "b"),
+     prior(exponential(1), class = "sd")
+   )
+)
+```
+
+```{r}
+summary(model_prior_pred)
+```
+
+## Prior Predictive Check
+
+Before fitting a Bayesian model to the data, it is important to evaluate whether the chosen priors lead to sensible predictions. This process is called a **prior predictive check**.
+
+Prior predictive checks help to:
+
+-   Identify whether the priors are overly vague or unrealistically informative.
+-   Ensure that the prior assumptions do not produce unreasonable predictions before any actual data are used.
+-   Avoid unintentionally strong or misleading prior beliefs that could affect posterior inference.
+
+This step is especially important in Bayesian modeling to build confidence that the model structure and prior choices are coherent before observing any data.
+
+```{r}
+result_hbpc <- hbpc(model_prior_pred)
+summary(result_hbpc)
+```
+
+```{r}
+result_hbpc$prior_predictive_plot
+```
+
+The prior predictive plot indicates that the priors used in the model are reasonable and appropriate. Here's why:
+
+-   The **prior predictive distributions** (shown in blue) cover a wide but plausible range of values for the response variable (`medv`), which aligns well with the distribution of the **observed data** (shown in black).
+
+-   The shape of the simulated predictions is **consistent with the general pattern** of the observed outcome, without being overly concentrated or too diffuse.
+
+-   There are **no extreme or unrealistic values** produced by the priors, suggesting that the priors are informative enough to guide the model without being too restrictive.
+
 ## Fit a Logit-Normal Model
+
+After prior predictive checks confirm the priors are suitable, we proceed to fit the model using `sample_prior = "no"`. Why `sample_prior = "no"`?
+
+-   We already conducted a prior predictive check (previous explanation), `sample_prior = "no"` tells `brms` to:
+
+```         
+-    Use the **priors** in the estimation.
+
+-    Focus entirely on drawing from the **posterior** given the observed data.
+```
+
+-   This option is standard for final model fitting after priors have been validated.
 
 We will attempt to model the number of esophageal cancer cases in different population groups using a hierarchical Bayesian logit-normal model. The dataset used is the Esoph dataset, where the target variable is the number of cancer cases (`ncases`), and the total number of observations (`n`) is used as the binomial denominator. Predictor variables include age group (`agegp`) and tobacco consumption group (`tobgp`).
 
@@ -58,7 +128,13 @@ model <- hbm_logitnormal(
    response = "ncases",
    trials = "n",
    predictors = c("agegp", "tobgp"),
-   data = data
+   data = data,
+   sample_prior = "no",
+   prior = c(
+     prior(normal(0, 2.5), class = "Intercept"),
+     prior(normal(0, 2.5), class = "b"),
+     prior(exponential(1), class = "sd")
+   )
 )
 ```
 
@@ -78,7 +154,13 @@ model_with_defined_re <- hbm_logitnormal(
    trials = "n",
    predictors = c("agegp", "tobgp"),
    re = "area",
-   data = data
+   data = data,
+   sample_prior = "no",
+   prior = c(
+     prior(normal(0, 2.5), class = "Intercept"),
+     prior(normal(0, 2.5), class = "b"),
+     prior(exponential(1), class = "sd")
+   )
 )
 ```
 
@@ -111,7 +193,13 @@ The `hbm_logitnormal` function supports three strategies for handling missing da
        trials = "n",
        predictors = c("agegp", "tobgp"),
        data = data,
-       handle_missing = "deleted"
+       handle_missing = "deleted",
+       sample_prior = "no",
+       prior = c(
+         prior(normal(0, 2.5), class = "Intercept"),
+         prior(normal(0, 2.5), class = "b"),
+         prior(exponential(1), class = "sd")
+       )
     )
     ```
 
@@ -133,7 +221,13 @@ The `hbm_logitnormal` function supports three strategies for handling missing da
        trials = "n",
        predictors = c("agegp", "tobgp"),
        data = data,
-       handle_missing = "multiple"
+       handle_missing = "multiple",
+       sample_prior = "no",
+       prior = c(
+         prior(normal(0, 2.5), class = "Intercept"),
+         prior(normal(0, 2.5), class = "b"),
+         prior(exponential(1), class = "sd")
+       )
     )
     ```
 
@@ -165,7 +259,13 @@ model_spatial <- hbm_logitnormal(
    sre_type = "car",
    car_type = "icar",
    M = M,
-   data = data
+   data = data,
+   sample_prior = "no",
+   prior = c(
+     prior(normal(0, 2.5), class = "Intercept"),
+     prior(normal(0, 2.5), class = "b"),
+     prior(exponential(1), class = "sd")
+   )
 )
 ```
 
@@ -175,26 +275,81 @@ summary(model_spatial)
 
 ## Model Diagnostics
 
-Model diagnosis is crucial in Bayesian Small Area Estimation (SAE) to ensure the validity and reliability of the results. Convergence diagnostics, such as the **R-hat statistic (\<1.1)**, **effective sample size (n_eff)**, and **trace plots**, help assess whether the Markov Chain Monte Carlo (MCMC) algorithm has properly converged.
+The `hbcc` function is designed to evaluate the convergence and quality of a Bayesian hierarchical model. It performs several diagnostic tests and generates various plots to assess Markov Chain Monte Carlo (MCMC) performance.
 
 ```{r}
-hbcc(model)
+result_hbcc <- hbcc(model)
+summary(result_hbcc)
+```
+
+The **trace plot** (`result_hbcc$plots$trace`) shows the sampled values of each parameter across MCMC iterations for all chains. A well-mixed and stationary trace (with overlapping chains) indicates good convergence and suggests that the sampler has thoroughly explored the posterior distribution.
+
+`{result_hbcc$plots$trace}`
+
+The **density plot** (`result_hbcc$plots$dens`) displays the estimated posterior distributions of the model parameters. When the distributions from multiple chains align closely, it supports the conclusion that the chains have converged to the same target distribution.
+
+`{result_hbcc$plots$dens}`
+
+The **autocorrelation plot (ACF)** (`result_hbcc$plots$acf`) visualizes the correlation between samples at different lags. High autocorrelation can indicate inefficient sampling, while rapid decay in autocorrelation across lags suggests that the chains are generating nearly independent samples.
+
+```{r}
+result_hbcc$plots$acf
+```
+
+The **NUTS energy plot** (`result_hbcc$plots$nuts_energy`) is specific to models fitted using the No-U-Turn Sampler (NUTS). This plot examines the distribution of the Hamiltonian energy and its changes between iterations. A well-behaved energy plot indicates stable dynamics and efficient exploration of the parameter space.
+
+```{r}
+result_hbcc$plots$nuts_energy
+```
+
+The **Rhat plot** (`result_hbcc$plots$rhat`) presents the potential scale reduction factor (R̂) for each parameter. R̂ values close to 1.00 (typically \< 1.01) are a strong indicator of convergence, showing that the between-chain and within-chain variances are consistent.
+
+```{r}
+result_hbcc$plots$rhat
+```
+
+The **effective sample size (n_eff) plot** (`result_hbcc$plots$neff`) reports how many effectively independent samples have been drawn for each parameter. Higher effective sample sizes are desirable, as they indicate that the posterior estimates are based on a substantial amount of independent information, even if the chains themselves are autocorrelated.
+
+```{r}
+result_hbcc$plots$neff
 ```
 
 ## Model Comparison
 
-Model comparison evaluates whether incorporating spatial effects improves predictive performance. A standard logit-normal SAE model assumes independence across areas, whereas a spatial SAE model includes an adjacency matrix to model dependencies between regions using Conditional Autoregressive (CAR) or Simultaneous Autoregressive (SAR) structures. These models are compared using **Leave-One-Out Cross-Validation (LOO)** and **Widely Applicable Information Criterion (WAIC)**, where a lower value indicates better model fit.
+The `hbmc` function is used to compare Bayesian hierarchical models and assess their posterior predictive performance. It allows for model comparison, posterior predictive checks, and additional diagnostic visualizations.
 
 ```{r}
-hbmc(model, model_spatial)
+result_hbmc <- hbmc(
+      model = list(model, model_spatial),
+      moment_match = TRUE,
+      comparison_metrics = c("loo", "waic", "bf"),
+      run_prior_sensitivity= TRUE, 
+      sensitivity_vars = c("b_Intercept", "b_x1")
+  )
+  
+  
+summary(result_hbmc)
+```
+
+The **posterior predictive check plot** (`result_hbmc$primary_model_diagnostics$pp_check_plot`) compares the observed data to replicated datasets generated from the posterior predictive distribution. This visualization helps evaluate how well the model reproduces the observed data. A good model fit is indicated when the simulated data closely resemble the actual data in distribution and structure.
+
+```{r}
+result_hbmc$primary_model_diagnostics$pp_check_plot
+```
+
+The **marginal posterior distributions plot** (`result_hbmc$primary_model_diagnostics$params_plot`) displays the estimated distributions of the model parameters based on the posterior samples. This plot is useful for interpreting the uncertainty and central tendency of each parameter. Peaks in the distribution indicate likely values, while wider distributions suggest greater uncertainty.
+
+```{r}
+result_hbmc$primary_model_diagnostics$params_plot
 ```
 
 ## Small Area Estimation Predictions
 
-Model prediction in SAE aims to estimate area-level proportions, such as the probability of esophageal cancer cases within different exposure groups. Using the best-performing model, predictions are generated via **posterior predictive distributions**, with uncertainty captured through **credible intervals**.
+The `hbsae()` function implements Hierarchical Bayesian Small Area Estimation (HBSAE**)** using the `brms` package. It generates small area estimates while accounting for uncertainty and hierarchical structure in the data. The function calculates Mean Predictions, Relative Standard Error (RSE), Mean Squared Error (MSE), and Root Mean Squared Error (RMSE) based on the posterior predictive sample from the fitted Bayesian model.
 
 ```{r}
-hbsae(model)
+result_hbsae <- hbsae(model)
+summary(result_hbsae)
 ```
 
 ## Conclusion

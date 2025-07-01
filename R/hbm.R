@@ -1,150 +1,218 @@
 #' Hierarchical Bayesian Small Area Models
 #' @title hbm : Hierarchical Bayesian Small Area Models
+#' 
 #' @description This function provide flexible modeling approaches to estimate area-level statistics
 #' while incorporating auxiliary information and spatial structures. This function allows users to fit Bayesian models 
 #' using the `brms` package and supports Gaussian, Bernoulli, Poisson, and other distributions. It also accommodates 
-#' spatial random effects (CAR and SAR), multilevel structures, and missing data handling (deletion, model-based imputation, 
-#' and multiple imputation).
+#' spatial random effects (CAR and SAR) and missing data handling (deletion, model-based imputation, and multiple imputation).
+#' 
 #' @name hbm
 #'
 #' @param formula Formula specifying the model structure of auxiliary variables and direct estimates
-#'   The formula must be provided as a `brmsformula` or `formula` object. For multivariate models with multiple 
-#'   auxiliary variables, use the `+` operator to combine multiple `bf()` formulas.
-#'   Example: `formula(y ~ x1 + x2 + x3)`, `bf(y ~ x1 + x2 + x3)`, or `bf(y | mi() ~ mi(x1)) + bf(x1 | mi() ~ x2)`
-#' @param hb_sampling The distribution for the response variable (e.g., "gaussian", "bernoulli", "poisson")
-#' @param hb_link Link function for HBSAE
-#' @param link_phi Link function for the second parameter (phi), typically representing precision, shape, or dispersion depending on the family used (e.g., "log", "identity")
-#' @param re Random effects formula, example: re = ~(1|area)
-#' @param sre An optional grouping factor mapping observations to spatial locations. If not specified, each observation is treated as a separate location. It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.
+#'                The formula must be provided as a `brmsformula` or `formula` object. For multivariate models with multiple 
+#'                auxiliary variables, use the `+` operator to combine multiple `bf()` formulas.
+#'                Example: `formula(y ~ x1 + x2 + x3)`, `bf(y ~ x1 + x2 + x3)`, or `bf(y | mi() ~ mi(x1)) + bf(x1 | mi() ~ x2)`
+#' @param hb_sampling  A character string naming the distribution family of the response variable to be 
+#'                     used in the model  (e.g., "gaussian", "bernoulli", "poisson")
+#' @param hb_link  A specification for the model link function. This can be a name/expression or 
+#'                 character string. See the ’Details’ section for more information on link functions supported by each family.
+#' @param link_phi Link function for the second parameter (phi), typically representing precision, shape, or dispersion 
+#'                 depending on the family used (e.g., "log", "identity")
+#' @param re  Random effects formula specifying the grouping structure in the data. 
+#'            For example, re = ~(1|area), where "area" is the grouping variable or cluster ID indicating 
+#'            that observations within the same area share a common random effect. If not specified, 
+#'            each row will be treated as its own group, meaning a separate random effect is estimated for each observation.
+#' @param sre An optional grouping factor mapping observations to spatial locations. 
+#'            If not specified, each observation is treated as a separate location. 
+#'            It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.
 #' @param sre_type Determines the type of spatial random effect used in the model. The function currently supports "sar" and "car"
-#' @param car_type Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR), "icar" (intrinsic CAR), and "bym2". 
-#' @param sar_type Type of the SAR structure. Either "lag" (for SAR of the response values) or "error" (for SAR of the residuals). 
-#' @param M The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations. SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships. If sre is specified, the row names of M have to match the levels of the grouping factor
+#' @param car_type Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR), 
+#'                 "icar" (intrinsic CAR), and "bym2". 
+#' @param sar_type Type of the SAR structure. Either "lag" (for SAR of the response values) or 
+#'                 "error" (for SAR of the residuals). 
+#' @param M The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain 
+#'          weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations. 
+#'          SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships. 
+#'          If sre is specified, the row names of M have to match the levels of the grouping factor
 #' @param data Dataset used for model fitting
-#' @param prior Priors for the model parameters (default: `NULL`)
-#' @param handle_missing Mechanism to handle missing data (NA values) to ensure model stability and prevent errors during estimation.
-#' @param m Number of multiple imputation (default: 5)
+#' @param prior Priors for the model parameters (default: `NULL`).
+#'              Should be specified using the `brms::prior()` function or a list of such objects. 
+#'              For example, `prior = prior(normal(0, 1), class = "b")` sets a Normal(0,1) prior on the regression coefficients. 
+#'              Multiple priors can be combined using `c()`, e.g., 
+#'              `prior = c(prior(normal(0, 1), class = "b"), prior(exponential(1), class = "sd"))`.
+#'              If `NULL`, default priors from `brms` will be used.
+#' @param handle_missing Mechanism to handle missing data (NA values) to ensure model stability and avoid estimation errors. 
+#'                       Three approaches are supported. 
+#'                       The `"deleted"` approach performs complete case analysis by removing all rows with any missing values before model fitting. 
+#'                       This is done using a simple filter such as `complete.cases(data)`. 
+#'                       It is recommended when the missingness mechanism is Missing Completely At Random (MCAR).
+#'                       The `"multiple"` approach applies multiple imputation before model fitting. 
+#'                       Several imputed datasets are created (e.g., using the `mice` package or the `brm_multiple()` function in `brms`), 
+#'                       the model is fitted separately to each dataset, and the results are combined. 
+#'                       This method is suitable when data are Missing At Random (MAR).
+#'                       The `"model"` approach uses model-based imputation within the Bayesian model itself. 
+#'                       Missing values are incorporated using the `mi()` function in the model formula (e.g., `y ~ mi(x1) + mi(x2)`), 
+#'                       allowing the missing values to be jointly estimated with the model parameters. 
+#'                       This method also assumes a MAR mechanism and is applicable only for continuous variables.
+#'                       If data are suspected to be Missing Not At Random (MNAR), none of the above approaches directly apply. 
+#'                       Further exploration, such as explicitly modeling the missingness process or conducting sensitivity analyses, is recommended.
+#' @param m Number of imputations to perform when using the `"multiple"` approach for handling missing data (default: 5). 
+#'          This parameter is only used if `handle_missing = "multiple"`. 
+#'          It determines how many imputed datasets will be generated. 
+#'          Each imputed dataset is analyzed separately, and the posterior draws are then combined to account for both within-imputation and between-imputation variability, 
+#'          following Rubin’s rules. A typical choice is between 5 and 10 imputations, but more may be needed for higher missingness rates.
 #' @param control A list of control parameters for the sampler (default: `list()`)
 #' @param chains Number of Markov chains (default: 4)
-#' @param iter Total number of iterations per chain (default: 2000)
+#' @param iter Total number of iterations per chain (default: 4000)
 #' @param warmup Number of warm-up iterations per chain (default: floor(iter/2))
 #' @param cores Number of CPU cores to use (default: 1)
 #' @param sample_prior Character. Indicates whether draws from priors should be sampled in addition to posterior draws. The options are:
-#' \code{"no"} (default): Do not draw from priors (only posterior draws are obtained). \code{"yes"}: Draw both from the prior and posterior.
-#' \code{"only"}: Draw solely from the prior, ignoring the likelihood. which allows among others to generate draws from the prior predictive distribution.
-#' @param ... Additional arguments passed to `brm`
+#'                    \code{"no"} (default): Do not draw from priors (only posterior draws are obtained). \code{"yes"}: Draw both from the prior and posterior.
+#'                    \code{"only"}: Draw solely from the prior, ignoring the likelihood. which allows among others to generate draws from the prior predictive distribution.
+#' @param ... Additional arguments
 #' 
 #' @return A `hbmfit` object containing : 
 #'   \item{model}{Summary of `brms` object.}
 #'   \item{handle_missing}{Handle missing option used in the model.}
 #'   \item{data}{Data passed to the \code{hbm} function. }
 #'   
-#' @importFrom brms brm brm_multiple brmsfamily bf
-#' @importFrom stats terms update.formula update
+#' @importFrom brms bf brm brm_multiple brmsfamily 
+#' @importFrom stats terms update.formula update as.formula complete.cases
 #' @import mice
 #' 
 #' @export
 #' 
-#' @examples
-#' \donttest{
+#' @author Achmad Syahrul Choir, Saniyyah Sri Nurhayati, and Sofi Zamzanah
 #' 
-#' # Prepare dataset
-#' data("BostonHousing")
-#' data <- BostonHousing
+#' @references 
+#' Rao, J. N. K., & Molina, I. (2015). *Small Area Estimation*. John Wiley & Sons.
+#' Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. *Journal of Statistical Software*, 80(1), 1-28.
+#'
+#' @examples
+#' \dontrun{
+#' 
+#' # Load the example dataset
+#' library(hbsaems)
+#' data("data_fhnorm")
+#'
+#' # Prepare the dataset
+#' data <- data_fhnorm
 #' 
 #' # Fit the Basic Model
 #' model <- hbm(
-#' formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
-#' hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
-#' hb_link = "identity",          # Identity link function (no transformation)
-#' data = data,                   # Dataset
-#' chains = 4,                    # Number of MCMC chains
-#' iter = 4000,                   # Total MCMC iterations
-#' warmup = 2000,                 # Number of warmup iterations
-#' cores = 2                      # Paralelisasi
+#'   formula = bf(y ~ x1 + x2 + x3),  # Formula model
+#'   hb_sampling = "gaussian",       # Gaussian family for continuous outcomes
+#'   hb_link = "identity",           # Identity link function (no transformation)
+#'   data = data,                    # Dataset
+#'   chains = 4,                     # Number of MCMC chains
+#'   iter = 4000,                    # Total MCMC iterations
+#'   warmup = 2000,                  # Number of warmup iterations
+#'   cores = 2                       # Parallel processing
 #' )
 #' summary(model)
 #'
 #' # Fit the Basic Model With Defined Random Effect
 #' model_with_defined_re <- hbm(
-#' formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
-#' hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
-#' hb_link = "identity",          # Identity link function (no transformation)
-#' re = ~(1|rad),                 # Defined random effect
-#' data = data,                   # Dataset
-#' chains = 4,                    # Number of MCMC chains
-#' iter = 4000,                   # Total MCMC iterations
-#' warmup = 2000,                 # Number of warmup iterations
-#' cores = 2                      # Paralelisasi
+#'   formula = bf(y ~ x1 + x2 + x3),  # Formula model
+#'   hb_sampling = "gaussian",                   # Gaussian family
+#'   hb_link = "identity",                       # Identity link
+#'   re = ~(1 | group),                          # Defined random effect
+#'   data = data,
+#'   chains = 4,
+#'   iter = 4000,
+#'   warmup = 2000,
+#'   cores = 2
 #' )
 #' summary(model_with_defined_re)
 #' 
 #' # Fit the Model with Missing Data
-#' a. Handling missing by deleted
-#' data$medv[3:5] <- NA 
-#' 
+#' # a. Handling missing by deletion
+#' data$y[3:5] <- NA 
 #' model_deleted <- hbm(
-#' formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
-#' hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
-#' hb_link = "identity",          # Identity link function (no transformation)
-#' re = ~(1|rad),                 # Defined random effect
-#' data = data,                   # Dataset
-#' handle_missing = "deleted",    # Handle missing method
-#' chains = 4,                    # Number of MCMC chains
-#' iter = 4000,                   # Total MCMC iterations
-#' warmup = 2000,                 # Number of warmup iterations
-#' cores = 2                      # Paralelisasi
+#'   formula = bf(y ~ x1 + x2 + x3),
+#'   hb_sampling = "gaussian",
+#'   hb_link = "identity",
+#'   re = ~(1 | group),
+#'   data = data,
+#'   handle_missing = "deleted",
+#'   chains = 4,
+#'   iter = 4000,
+#'   warmup = 2000,
+#'   cores = 2
 #' )
 #' summary(model_deleted)
-#' 
-#' b. Handling missing use multiple imputation
+#'
+#' # b. Handling missing using multiple imputation
 #' model_multiple <- hbm(
-#' formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
-#' hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
-#' hb_link = "identity",          # Identity link function (no transformation)
-#' re = ~(1|rad),                 # Defined random effect
-#' data = data,                   # Dataset
-#' handle_missing = "multiple",    # Handle missing method
-#' chains = 4,                    # Number of MCMC chains
-#' iter = 4000,                   # Total MCMC iterations
-#' warmup = 2000,                 # Number of warmup iterations
-#' cores = 2                      # Paralelisasi
+#'   formula = bf(y ~ x1 + x2 + x3),
+#'   hb_sampling = "gaussian",
+#'   hb_link = "identity",
+#'   re = ~(1 | group),
+#'   data = data,
+#'   handle_missing = "multiple",
+#'   chains = 4,
+#'   iter = 4000,
+#'   warmup = 2000,
+#'   cores = 2
 #' )
 #' summary(model_multiple)
 #' 
-#' c. Handling missing during modeling
-#' data$medv[3:5] <- NA 
-#' data$crim[6:7] <- NA
-#' 
+#' # c. Handling missing during modeling
+#' data$y[3:5] <- NA 
+#' data$x1[6:7] <- NA
 #' model_model <- hbm(
-#' formula = bf(medv | mi() ~ mi(crim) + indus + rm + dis + rad + tax) 
-#' + bf(crim | mi () ~ indus + rm + dis + rad + tax),  # Formula model
-#' hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
-#' hb_link = "identity",          # Identity link function (no transformation)
-#' re = ~(1|rad),                 # Defined random effect
-#' data = data,                   # Dataset
-#' handle_missing = "model",    # Handle missing method
-#' chains = 4,                    # Number of MCMC chains
-#' iter = 4000,                   # Total MCMC iterations
-#' warmup = 2000,                 # Number of warmup iterations
-#' cores = 2                      # Paralelisasi
+#'   formula = bf(y | mi() ~ mi(x1) + x2 + x3) +
+#'             bf(x1 | mi() ~ x2 + x3),
+#'   hb_sampling = "gaussian",
+#'   hb_link = "identity",
+#'   re = ~(1 | group),
+#'   data = data,
+#'   handle_missing = "model",
+#'   chains = 4,
+#'   iter = 4000,
+#'   warmup = 2000,
+#'   cores = 2
 #' )
-#' summary(model_during_model)
+#' summary(model_model)
 #' 
 #' # Fit the Model with Spatial Effect
-#' # Create a spatial grouping factor based on "dis"
-#' data$spatial <- cut(data$dis, breaks = 10, labels = FALSE)
+#' # a. CAR (Conditional Autoregressive)
+#' data("adjacency_matrix_car")
+#' adjacency_matrix_car
 #' 
-#' library(Matrix)
-#' data$spatial <- factor(data$spatial)
-#' n <- length(levels(data$spatial))
-#' M <- bandSparse(n = n, k = c(-1, 0, 1), 
-#'                 diag = list(rep(1, n - 1), rep(0, n), rep(1, n - 1)))
-#' rownames(M) <- colnames(M) <- levels(data$spatial)
+#' model_spatial_car <- hbm(
+#'   formula = bf(y ~ x1 + x2 + x3 ),  
+#'   hb_sampling = "gaussian",       
+#'   hb_link = "identity",           
+#'   data = data,                    
+#'   sre = "sre",
+#'   sre_type = "car",
+#'   M = adjacency_matrix_car,
+#'   chains = 4,                    
+#'   iter = 4000,                    
+#'   warmup = 2000,                  
+#'   cores = 2                       
+#' )
+#' summary(model_spatial_car)
 #' 
-#' } 
+#' # b. SAR (Simultaneous Autoregressive)
+#' data("spatial_weight_sar")
+#' spatial_weight_sar
 #' 
-
+#' model_spatial_sar <- hbm(
+#'   formula = bf(y ~ x1 + x2 + x3 ),  
+#'   hb_sampling = "gaussian",       
+#'   hb_link = "identity",           
+#'   data = data,                    
+#'   sre_type = "sar",
+#'   M = spatial_weight_sar,
+#'   chains = 4,                    
+#'   iter = 4000,                    
+#'   warmup = 2000,                  
+#'   cores = 2                       
+#' )
+#' 
+#' }
 hbm <- function(formula,
                 hb_sampling = "gaussian",
                 hb_link = "identity",
@@ -172,13 +240,7 @@ hbm <- function(formula,
   n <- nrow(data)
   data2 <- NULL
   
-  if(!is.null(sre)){
-    if (!(sre %in% names(data))) {
-      stop(sprintf("Variable '%s' not found in the data.", sre))
-    }
-  }
-  
-  # Extract all_formulas and main formula 
+  # Extract main formula anda all formulas (if consist of more than one formula) main formula 
   if (length(class(formula))>1 && class(formula)[2] == "bform"){
     if (!is.null(formula$forms)) {
       main_formula <- as.formula(formula$forms[[1]])
@@ -187,7 +249,7 @@ hbm <- function(formula,
       main_formula <- as.formula(formula$formula)
       all_formulas <- formula
     }
-  } else if (class(formula) == "formula") {
+  } else if (inherits(formula, "formula")) {
     main_formula <- formula
     all_formulas <- brms::bf(formula)
   } else {
@@ -204,17 +266,13 @@ hbm <- function(formula,
   missing_x <- as.list(auxiliary_vars[sapply(auxiliary_vars, function(x) any(is.na(data[[x]])))])
   missing_x <- if (length(missing_x) == 0) NULL else missing_x
   
-  # Check if discrete distribution
+  # Check the suitability of missing data handling
   discrete_families <- c("binomial", "bernoulli", "beta-binomial", "poisson", 
                          "negbinomial", "geometric", "categorical", "multinomial", 
                          "cumulative", "cratio", "sratio", "acat", 
                          "zero_inflated_binomial", "zero_inflated_beta_binomial", 
                          "zero_inflated_poisson", "zero_inflated_negbinomial")
-  
-  # Check if hb_sampling is included in the discrete distributions
   is_discrete <- hb_sampling %in% discrete_families
-  
-  # Check handle missing
   if (is.null(handle_missing)) {
     if (!is.null(missing_y) || !is.null(missing_x)) {
       stop("Error: `handle_missing` must be specified when there are missing values. ",
@@ -320,6 +378,13 @@ hbm <- function(formula,
     }
   }
  
+  # Check grouping factor sre
+  if(!is.null(sre)){
+    if (!(sre %in% names(data))) {
+      stop(sprintf("Variable '%s' not found in the data.", sre))
+    }
+  }
+  
   # Add spatial effects
   if (!is.null(sre_type)){
     if (is.null(M)){
@@ -376,7 +441,7 @@ hbm <- function(formula,
     }
   }
   
-  # Add family
+  # Add family to the formula 
   if (!is.null(formula$forms)) {
     all_formulas$forms[[1]]$family <- brms::brmsfamily(hb_sampling, hb_link, link_phi = link_phi)
   } else {
@@ -395,7 +460,6 @@ hbm <- function(formula,
   if (multiple) {
     data_multiple <- mice(data, m = m)
     if(hb_sampling=="binomial"){
-      print("masuk")
       post_process <- function(data) {
         data[[response_var[1]]] <- pmin(data[[response_var[1]]], data[[response_var[2]]])
         return(data)

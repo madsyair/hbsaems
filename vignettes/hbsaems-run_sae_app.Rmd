@@ -9,10 +9,12 @@ vignette: >
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
-    collapse = TRUE,
-    comment = "#>"
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
 )
 ```
+
 
 ## Introduction
 
@@ -22,13 +24,13 @@ The `run_sae_app()` function in the `hbsaems` package provides an interactive **
 
 Ensure that you have installed the `hbsaems` package:
 
-```r
+``` r
 install.packages("hbsaems")
 ```
 
 ## Load Required Packages
 
-```r
+``` r
 library(hbsaems)
 ```
 
@@ -36,7 +38,7 @@ library(hbsaems)
 
 To launch the application, simply call:
 
-```r
+``` r
 run_sae_app()
 ```
 
@@ -110,20 +112,20 @@ If you encounter errors when launching the app:
 
 1.  Ensure all dependencies are installed manually:
 
-    ```r
+    ``` r
     install.packages(c("shiny", "shinyWidgets", "shinydashboard", "readxl", "DT"))
     ```
 
 2.  Reinstall `hbsaems`:
 
-    ```r
+    ``` r
     remove.packages("hbsaems")
     install.packages("hbsaems")
     ```
 
 3.  Check the app directory:
 
-    ```r
+    ``` r
     system.file("shiny/sae_app", package = "hbsaems")
     ```
 

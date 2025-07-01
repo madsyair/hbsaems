@@ -13,40 +13,72 @@
 #' 
 #' @name hbm_beta
 #' 
-#' @usage hbm_beta(response, 
-#'                 predictors, 
-#'                 n = NULL, 
-#'                 deff = NULL, 
-#'                 data, 
-#'                 prior = NULL)
-#' 
 #' @param response The dependent (outcome) variable in the model. This variable represents the main response being predicted or analyzed.
 #' @param predictors A list of independent (explanatory) variables used in the model. These variables form the fixed effects in the regression equation.
 #' @param n The number of sample units for each region used in the survey
 #' @param deff Design Effect
-#' @param re Specifies the grouping variable for hierarchical (random effects) models. Used when modeling data with grouped structures (e.g., individuals within clusters).
-#' @param sre An optional grouping factor mapping observations to spatial locations. If not specified, each observation is treated as a separate location. It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.
+#' @param link_phi Link function for the second parameter (phi), typically representing precision, shape, or dispersion depending on the family used (e.g., "log", "identity")
+#' @param re  Random effects formula specifying the grouping structure in the data. 
+#'            For example, re = ~(1|area), where "area" is the grouping variable or cluster ID indicating 
+#'            that observations within the same area share a common random effect. If not specified, 
+#'            each row will be treated as its own group, meaning a separate random effect is estimated for each observation.
+#' @param sre An optional grouping factor mapping observations to spatial locations. 
+#'            If not specified, each observation is treated as a separate location. 
+#'            It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.
 #' @param sre_type Determines the type of spatial random effect used in the model. The function currently supports "sar" and "car"
-#' @param car_type Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR), "icar" (intrinsic CAR), and "bym2". 
-#' @param sar_type Type of the SAR structure. Either "lag" (for SAR of the response values) or "error" (for SAR of the residuals). 
-#' @param M The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations. SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships. If sre is specified, the row names of M have to match the levels of the grouping factor
+#' @param car_type Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR), 
+#'                 "icar" (intrinsic CAR), and "bym2". 
+#' @param sar_type Type of the SAR structure. Either "lag" (for SAR of the response values) or 
+#'                 "error" (for SAR of the residuals). 
+#' @param M The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain 
+#'          weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations. 
+#'          SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships. 
+#'          If sre is specified, the row names of M have to match the levels of the grouping factor
 #' @param data Dataset used for model fitting
-#' @param handle_missing Mechanism to handle missing data (NA values) to ensure model stability and prevent errors during estimation.
-#' @param m Number of multiple imputations
-#' @param prior Priors for the model parameters (default: `NULL`)
+#' @param prior Priors for the model parameters (default: `NULL`).
+#'              Should be specified using the `brms::prior()` function or a list of such objects. 
+#'              For example, `prior = prior(normal(0, 1), class = "b")` sets a Normal(0,1) prior on the regression coefficients. 
+#'              Multiple priors can be combined using `c()`, e.g., 
+#'              `prior = c(prior(normal(0, 1), class = "b"), prior(exponential(1), class = "sd"))`.
+#'              If `NULL`, default priors from `brms` will be used.
+#' @param handle_missing Mechanism to handle missing data (NA values) to ensure model stability and avoid estimation errors. 
+#'                       Three approaches are supported. 
+#'                       The `"deleted"` approach performs complete case analysis by removing all rows with any missing values before model fitting. 
+#'                       This is done using a simple filter such as `complete.cases(data)`. 
+#'                       It is recommended when the missingness mechanism is Missing Completely At Random (MCAR).
+#'                       The `"multiple"` approach applies multiple imputation before model fitting. 
+#'                       Several imputed datasets are created (e.g., using the `mice` package or the `brm_multiple()` function in `brms`), 
+#'                       the model is fitted separately to each dataset, and the results are combined. 
+#'                       This method is suitable when data are Missing At Random (MAR).
+#'                       The `"model"` approach uses model-based imputation within the Bayesian model itself. 
+#'                       Missing values are incorporated using the `mi()` function in the model formula (e.g., `y ~ mi(x1) + mi(x2)`), 
+#'                       allowing the missing values to be jointly estimated with the model parameters. 
+#'                       This method also assumes a MAR mechanism and is applicable only for continuous variables.
+#'                       If data are suspected to be Missing Not At Random (MNAR), none of the above approaches directly apply. 
+#'                       Further exploration, such as explicitly modeling the missingness process or conducting sensitivity analyses, is recommended.
+#' @param m Number of imputations to perform when using the `"multiple"` approach for handling missing data (default: 5). 
+#'          This parameter is only used if `handle_missing = "multiple"`. 
+#'          It determines how many imputed datasets will be generated. 
+#'          Each imputed dataset is analyzed separately, and the posterior draws are then combined to account for both within-imputation and between-imputation variability, 
+#'          following Rubin’s rules. A typical choice is between 5 and 10 imputations, but more may be needed for higher missingness rates.
 #' @param control A list of control parameters for the sampler (default: `list()`)
 #' @param chains Number of Markov chains (default: 4)
 #' @param iter Total number of iterations per chain (default: 4000)
 #' @param warmup Number of warm-up iterations per chain (default: floor(iter/2))
 #' @param cores Number of CPU cores to use (default: 1)
 #' @param sample_prior (default: "no")
-#' @param ... 
+#' @param stanvars Optional \code{stanvars} object created by \code{brms::stanvar()}.
+#' @param ... Additional arguments
 #' 
 #' @return A `hbmfit` object
+#' 
+#' @importFrom stats as.formula
+#' @importFrom brms stanvar
+#' 
 #' @export
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' 
 #' # Prepare dataset
 #' # Proses pengerjaan ya guys, belum menemukan data yang cocok bgt bisa n deff dan spatial 
@@ -172,6 +204,37 @@ hbm_beta <- function(response,
     formula <- brms::bf(formula)
   }
 
+  # Prior Handling
+  # Function to check whether a general prior is present for a given class
+  has_general_prior <- function(prior_list_internal, prior_class) {
+    if (is.null(prior_list_internal) || !inherits(prior_list_internal, "brmsprior"))
+      return(FALSE)
+    
+    # Return TRUE if any prior matches the specified class and has no specific coefficient
+    any(prior_list_internal$class == prior_class &
+          (is.na(prior_list_internal$coef) | prior_list_internal$coef == ""))
+  }
+  
+  if (is.null(prior)) {
+    adjusted_prior <- c(
+      prior(cauchy(0, 10), class = "intercept"),
+      prior(cauchy(0, 2.5), class = "b")
+    )
+  } else {
+    # Use the provided prior
+    adjusted_prior <- prior
+    
+    # If no general prior for the intercept exists, add a default Cauchy prior
+    if (!has_general_prior(adjusted_prior, "intercept")) {
+      adjusted_prior <- c(adjusted_prior, prior(cauchy(0, 10), class = "intercept"))
+    }
+    
+    # If no general prior for the coefficients exists, add a default Cauchy prior
+    if (!has_general_prior(adjusted_prior, "b")) {
+      adjusted_prior <- c(adjusted_prior, prior(cauchy(0, 2.5), class = "b"))
+    }
+  }
+  
   # Check handle missing for continuous distribution
   if (is.null(handle_missing)) {
     if (anyNA(data[[response]]) || anyNA(data[predictors])) {
@@ -257,7 +320,7 @@ hbm_beta <- function(response,
                handle_missing = handle_missing,
                m = m,
                data = data,
-               prior = prior,
+               prior = adjusted_prior,
                control = control,
                chains = chains,
                iter = iter,

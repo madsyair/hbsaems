@@ -1,0 +1,446 @@
+---
+title: "Hierarchical Bayesian Model Small Area Estimation in hbsaems Package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{hbsaems-hbm-model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Introduction
+
+This vignette demonstrates how to perform **Bayesian modeling for Small Area Estimation (SAE)** using the tools provided in the **`hbsaems`** package. It follows the **Bayesian workflow**, a structured approach that includes prior specification, prior predictive checks, model fitting using MCMC, convergence diagnostics, model evaluation, and prediction.
+
+The modeling process is centered around the `hbsaems` package, which provides the following core functions to support each stage of the workflow:
+
+-   **`hbpc()`** — for **prior predictive checking**, allowing users to evaluate whether the chosen priors generate plausible data before observing the actual data.
+-   **`hbm()`** — for **fitting hierarchical Bayesian models**, including fixed and random effects, spatial structures, and handling of missing data. The **`hbsaems`** package includes two key functions for modeling: **`hbm()`** and **`hbm_model()`**.
+    -   **`hbm()`** offers greater flexibility in writing formulas but requires more familiarity with model specification and structure.
+
+    -   **`hbm_model()`**, on the other hand, is more user-friendly, designed for those who may not be familiar with writing complex formulas, offering a simpler interface for model specification.
+-   **`hbcc()`** — for **convergence diagnostics**, assessing whether the MCMC algorithm has properly converged using R-hat statistics, trace plots, and effective sample sizes.
+-   **`hbmc()`** — for **model evaluation and comparison**, including information criteria such as WAIC and LOO.
+-   **`hbsae()`** — for **generating predictions** at the small area level, incorporating posterior uncertainty.
+
+By integrating these functions, this vignette provides a complete guide to modeling within a Bayesian framework, specifically tailored for SAE problems. The goal is not only to fit a model, but to ensure it is well-calibrated, interpretable, and useful for prediction.
+
+**Small Area Estimation (SAE)** is a statistical approach used to produce reliable estimates for small geographic areas or subpopulations where direct survey estimation is limited by small sample sizes. SAE models combine survey data with auxiliary information to enhance precision and reduce the variability of estimates. This vignette provides an overview of the SAE methodology, including model formulations and implementation using the hbsaems package. The area-level model is one of the common SAE approaches, incorporating auxiliary data at the area level to improve estimation accuracy.
+
+Bayesian SAE methods provide a flexible framework for incorporating prior information and quantifying uncertainty. Bayesian models can be specified using **Markov Chain Monte Carlo (MCMC)** methods. Bayesian methods are often used to estimate the area-level model parameters.
+
+## Model Overview
+
+The `hbm` function fits a hierarchical Bayesian model using the `brms` package. It supports various modeling options, including:
+
+1.  Fixed effects for covariates.
+2.  Random effects for spatial or hierarchical structures.
+3.  Spatial random effects using CAR/SAR structures.
+4.  Handling missing data through deletion, model-based, or multiple imputation.
+5.  Allows user-defined priors for model flexibility.
+6.  Provides model diagnostics, including convergence checks and model comparison.
+7.  Outputs include fitted model objects (`hbmfit`), diagnostic summaries, and predictions for small areas.
+
+The function is designed for Small Area Estimation (SAE) applications, providing flexible modeling capabilities for analyzing complex hierarchical data.
+
+## Simulated Data Example
+
+```{r}
+library(hbsaems)
+```
+
+```{r}
+data <- data_fhnorm
+head(data)
+```
+
+The `data_fhn` dataset provides simulated data suitable for demonstrating the classical Fay-Herriot model under the Gaussian likelihood. It contains information for 70 small areas, including:
+
+-   `y`: the direct estimate for each area, assumed to follow a Normal distribution with known sampling variance
+
+-   `D`: the known sampling variance for each area's direct estimate
+
+-   `x1`, `x2`, `x3`: auxiliary variables that may explain variation in the outcome
+
+-   `theta_true`: the true underlying value of the area-specific parameter (latent mean)
+
+-   `u`: the area-level random effect drawn from a normal distribution
+
+This dataset is useful for testing and illustrating small area estimation techniques, particularly in settings where the direct estimates are continuous and modeled using a Gaussian distribution.
+
+## Initial Model
+
+We begin by specifying the model with informative priors on the coefficients and the intercept. The `sample_prior = "only"` argument ensures that the model ignores the data and simulates predictions based on the priors alone. This is particularly useful for performing a **prior predictive check**, which involves generating data purely from the prior distributions to evaluate whether the priors lead to plausible values of the outcome variable.
+
+```{r}
+model_prior_pred <- hbm(
+  formula = bf(y ~ x1 + x2 + x3),
+  data = data,
+  hb_sampling = "gaussian",
+  hb_link = "log",
+  chains = 4,
+  iter = 4000,
+  warmup = 2000,
+  sample_prior = "only",
+  prior = c(
+    prior(normal(1, 0.2), class = "Intercept"),  
+    prior(normal(0, 0.1), class = "b"),
+    prior(exponential(5), class = "sd")
+  )
+)
+```
+
+```{r}
+summary(model_prior_pred)
+```
+
+The **intercept** uses a prior of `normal(22, 5)`. This reflects a central belief around 22 (near the average home value) with moderate uncertainty, covering the plausible range of housing prices, which typically span from 5 to 50.
+
+The **regression coefficients** are assigned the following priors:
+
+-   **crim**, **indus**, **dis**, and **rad**:\
+    Each has a `normal(0, 2)` prior. These predictors may have moderate effects on home prices, but we maintain a neutral stance (mean = 0) with enough variance (SD = 2) to allow the model to learn from the data. This is a relatively **weakly informative prior**, meaning it assumes little but still avoids extremely implausible values.
+
+-   **rm** (average number of rooms per dwelling):\
+    A more informative prior of `normal(3, 1)` is used. This reflects the expectation that each additional room has a strong positive effect on housing prices, and the smaller SD focuses the prior near that belief.
+
+-   **tax** (property tax rate per \$10,000):\
+    A conservative prior of `normal(0, 0.1)` is used. Since the `tax` variable has a large range, this tight prior implies that small changes in tax are unlikely to have a major effect on home values, effectively shrinking the coefficient toward zero.
+
+## Prior Predictive Check
+
+Before fitting a Bayesian model to the data, it is important to evaluate whether the chosen priors lead to sensible predictions. This process is called a **prior predictive check**.
+
+Prior predictive checks help to:
+
+-   Identify whether the priors are overly vague or unrealistically informative.
+-   Ensure that the prior assumptions do not produce unreasonable predictions before any actual data are used.
+-   Avoid unintentionally strong or misleading prior beliefs that could affect posterior inference.
+
+This step is especially important in Bayesian modeling to build confidence that the model structure and prior choices are coherent before observing any data.
+
+```{r}
+result_hbpc <- hbpc(model_prior_pred)
+summary(result_hbpc)
+```
+
+```{r}
+result_hbpc$prior_predictive_plot
+```
+
+The prior predictive plot indicates that the priors used in the model are reasonable and appropriate. Here's why:
+
+-   The **prior predictive distributions** (shown in blue) cover a wide but plausible range of values for the response variable (`medv`), which aligns well with the distribution of the **observed data** (shown in black).
+
+-   The shape of the simulated predictions is **consistent with the general pattern** of the observed outcome, without being overly concentrated or too diffuse.
+
+-   There are **no extreme or unrealistic values** produced by the priors, suggesting that the priors are informative enough to guide the model without being too restrictive.
+
+## Fitting the Model
+
+After prior predictive checks confirm the priors are suitable, we proceed to fit the model using `sample_prior = "no"`. Why `sample_prior = "no"`?
+
+-   We already conducted a prior predictive check (previous explanation), `sample_prior = "no"` tells `brms` to:
+
+```         
+-    Use the **priors** in the estimation.
+
+-    Focus entirely on drawing from the **posterior** given the observed data.
+```
+
+-   This option is standard for final model fitting after priors have been validated.
+
+### 1. Basic Model
+
+```{r}
+model <- hbm(
+  formula = bf(y ~ x1 + x2 + x3),
+  data = data,
+  hb_sampling = "gaussian",
+  hb_link = "log",
+  chains = 4,
+  iter = 4000,
+  warmup = 2000,
+  sample_prior = "no",
+  prior = c(
+    prior(normal(1, 0.2), class = "Intercept"),  
+    prior(normal(0, 0.1), class = "b"),
+    prior(exponential(5), class = "sd")
+  )
+)
+```
+
+```{r}
+summary(model)
+```
+
+By default, if we do not explicitly define a random effect, the model will still generate one based on the natural random variations between individual records (rows) in the dataset. However, we can also explicitly define a random effect to account for variations at a specific hierarchical level, such as neighborhoods or residential blocks. We can use paramter re.
+
+```{r}
+model_with_defined_re <- hbm(
+  formula = bf(y ~ x1 + x2 + x3),
+  data = data,
+  hb_sampling = "gaussian",
+  hb_link = "log",
+  re = ~(1|group),
+  chains = 4,
+  iter = 4000,
+  warmup = 2000,
+  sample_prior = "no",
+  prior = c(
+    prior(normal(1, 0.2), class = "Intercept"),  
+    prior(normal(0, 0.1), class = "b"),
+    prior(exponential(5), class = "sd")
+  )
+)
+```
+
+```{r}
+summary(model_with_defined_re)
+```
+
+### 2. Model With Missing Data
+
+The hbm function supports three strategies for handling missing data:
+
+1.  "deleted": Removes rows with missing values.
+
+2.  "multiple": Performs multiple imputation using mice.
+
+3.  "model": Uses the mi() function to model missingness directly (not available for discrete outcomes).
+
+    ```{r}
+    data_missing <- data
+    data_missing$y[3:5] <- NA 
+    ```
+
+-   **Handling missing data by deleted (Only if missing in response)**
+
+    ```{r}
+    model_deleted <- hbm(
+      formula = bf(y ~ x1 + x2 + x3),
+      hb_sampling = "gaussian",
+      hb_link = "log",
+      re = ~(1|group),
+      data = data_missing,
+      handle_missing = "deleted",
+      chains = 4,
+      iter = 4000,
+      warmup = 2000,
+      sample_prior = "no",
+      prior = c(
+        prior(normal(1, 0.2), class = "Intercept"),  
+        prior(normal(0, 0.1), class = "b"),
+        prior(exponential(5), class = "sd")
+      )
+    )
+    ```
+
+    ```{r}
+    summary(model_deleted)
+    ```
+
+-   **Handling missing data** **before model fitting using multiple imputation**
+
+    ```{r}
+    model_multiple <- hbm(
+      formula = bf(y ~ x1 + x2 + x3),
+      hb_sampling = "gaussian",
+      hb_link = "log",
+      re = ~(1|group),
+      data = data_missing,
+      handle_missing = "multiple",
+      chains = 4,
+      iter = 4000,
+      warmup = 2000,
+      sample_prior = "no",
+      prior = c(
+        prior(normal(1, 0.2), class = "Intercept"),  
+        prior(normal(0, 0.1), class = "b"),
+        prior(exponential(5), class = "sd")
+      )
+    )
+    ```
+
+    ```{r}
+    summary(model_multiple)
+    ```
+
+-   **Handle missing data during model fitting using mi()**
+
+    If we want to handle missing data in the model, we must define the formula correctly. In this case, we need to specify missing data indicators using the `mi()` function.
+
+    ```{r}
+    data_missing$y[3:5] <- NA 
+    data_missing$x1[6:7] <- NA
+    ```
+
+    ```{r}
+    model_during_model <- hbm(
+      formula = bf(y | mi() ~ mi(x1) + x2 + x3) + bf(x1 | mi() ~ x2 + x3),
+      hb_sampling = "gaussian",
+      hb_link = "log",
+      re = ~(1|group),
+      data = data_missing,
+      handle_missing = "model",
+      chains = 4,
+      iter = 4000,
+      warmup = 2000,
+      sample_prior = "no",
+      prior = c(
+        prior(normal(1, 0.2), class = "Intercept", resp = "y"),  
+        prior(normal(0, 0.1), class = "b", resp = "y"),
+        prior(exponential(5), class = "sd", resp = "y"),
+        
+        prior(normal(1, 0.2), class = "Intercept", resp = "x1"),  
+        prior(normal(0, 0.1), class = "b", resp = "x1"),
+        prior(exponential(5), class = "sd", resp = "x1")
+      )
+    )
+    ```
+
+    ```{r}
+    summary(model_during_model)
+    ```
+
+### 3. Model With Spatial Effect
+
+```{r}
+M <- adjacency_matrix_car
+```
+
+```{r}
+model_spatial <- hbm(
+  formula = bf(y ~ x1 + x2 + x3),
+  data = data,
+  hb_sampling = "gaussian",
+  hb_link = "log",
+  sre = "sre",                
+  sre_type = "car",
+  car_type = "icar",
+  M = M,
+  chains = 4,
+  iter = 4000,
+  warmup = 2000,
+  sample_prior = "no",
+  prior = c(
+    prior(normal(1, 0.2), class = "Intercept"),  
+    prior(normal(0, 0.1), class = "b"),
+    prior(exponential(5), class = "sd")
+  )
+)
+```
+
+```{r}
+summary(model_spatial)
+```
+
+## Model Diagnostics
+
+The `hbcc` function is designed to evaluate the convergence and quality of a Bayesian hierarchical model. It performs several diagnostic tests and generates various plots to assess Markov Chain Monte Carlo (MCMC) performance.
+
+```{r}
+result_hbcc <- hbcc(model)
+summary(result_hbcc)
+```
+
+The `update_hbm()` function allows you to continue sampling from an existing fitted model by increasing the number of iterations. This is particularly useful when initial model fitting did not achieve convergence, for example due to insufficient iterations or complex posterior geometry.
+
+When `update_hbm()` is called with additional iterations, the sampler resumes from the previous fit, effectively increasing the total number of posterior samples. This helps improve convergence diagnostics such as Rhat, effective sample size, and chain mixing.
+
+```{r}
+model <- update_hbm(model, iter = 8000)
+```
+
+```{r}
+summary(model)
+```
+
+```{r}
+result_hbcc <- hbcc(model)
+summary(result_hbcc)
+```
+
+The **trace plot** (`result_hbcc$plots$trace`) shows the sampled values of each parameter across MCMC iterations for all chains. A well-mixed and stationary trace (with overlapping chains) indicates good convergence and suggests that the sampler has thoroughly explored the posterior distribution.
+
+```{r}
+result_hbcc$plots$trace
+```
+
+The **density plot** (`result_hbcc$plots$dens`) displays the estimated posterior distributions of the model parameters. When the distributions from multiple chains align closely, it supports the conclusion that the chains have converged to the same target distribution.
+
+```{r}
+result_hbcc$plots$dens
+```
+
+The **autocorrelation plot (ACF)** (`result_hbcc$plots$acf`) visualizes the correlation between samples at different lags. High autocorrelation can indicate inefficient sampling, while rapid decay in autocorrelation across lags suggests that the chains are generating nearly independent samples.
+
+```{r}
+result_hbcc$plots$acf
+```
+
+The **NUTS energy plot** (`result_hbcc$plots$nuts_energy`) is specific to models fitted using the No-U-Turn Sampler (NUTS). This plot examines the distribution of the Hamiltonian energy and its changes between iterations. A well-behaved energy plot indicates stable dynamics and efficient exploration of the parameter space.
+
+```{r}
+result_hbcc$plots$nuts_energy
+```
+
+The **Rhat plot** (`result_hbcc$plots$rhat`) presents the potential scale reduction factor (R̂) for each parameter. R̂ values close to 1.00 (typically \< 1.01) are a strong indicator of convergence, showing that the between-chain and within-chain variances are consistent.
+
+```{r}
+result_hbcc$plots$rhat
+```
+
+The **effective sample size (n_eff) plot** (`result_hbcc$plots$neff`) reports how many effectively independent samples have been drawn for each parameter. Higher effective sample sizes are desirable, as they indicate that the posterior estimates are based on a substantial amount of independent information, even if the chains themselves are autocorrelated.
+
+```{r}
+result_hbcc$plots$neff
+```
+
+## Model Comparison
+
+The `hbmc` function is used to compare Bayesian hierarchical models and assess their posterior predictive performance. It allows for model comparison, posterior predictive checks, and additional diagnostic visualizations.
+
+```{r}
+result_hbmc <- hbmc(
+      model = list(model, model_spatial),
+      comparison_metrics = c("loo", "waic", "bf"),
+      run_prior_sensitivity= TRUE, 
+      sensitivity_vars = c("b_Intercept", "b_x1")
+  )
+  
+  
+summary(result_hbmc)
+```
+
+The **posterior predictive check plot** (`result_hbmc$primary_model_diagnostics$pp_check_plot`) compares the observed data to replicated datasets generated from the posterior predictive distribution. This visualization helps evaluate how well the model reproduces the observed data. A good model fit is indicated when the simulated data closely resemble the actual data in distribution and structure.
+
+```{r}
+result_hbmc$primary_model_diagnostics$pp_check_plot
+```
+
+The **marginal posterior distributions plot** (`result_hbmc$primary_model_diagnostics$params_plot`) displays the estimated distributions of the model parameters based on the posterior samples. This plot is useful for interpreting the uncertainty and central tendency of each parameter. Peaks in the distribution indicate likely values, while wider distributions suggest greater uncertainty.
+
+```{r}
+result_hbmc$primary_model_diagnostics$params_plot
+```
+
+## Small Area Estimation Predictions
+
+The `hbsae()` function implements Hierarchical Bayesian Small Area Estimation (HBSAE**)** using the `brms` package. It generates small area estimates while accounting for uncertainty and hierarchical structure in the data. The function calculates Mean Predictions, Relative Standard Error (RSE), Mean Squared Error (MSE), and Root Mean Squared Error (RMSE) based on the posterior predictive sample from the fitted Bayesian model.
+
+```{r}
+result_hbsae <- hbsae(model)
+summary(result_hbsae)
+```
+
+## Conclusion
+
+The hbm function in the hbsaems package offers a comprehensive framework for Small Area Estimation hierarchical Bayesian modeling. It supports flexible model specifications, advanced handling of missing data, and integrates well with diagnostic and comparison tools such as hbcc, hbmc, and hbsae.

@@ -6,18 +6,18 @@
 
 ### Key features:
 
-- Fit hierarchical Bayesian models with various distribution families
-- Support for spatial random effects using CAR and SAR models
-- Handle missing data through multiple imputation or model-based approaches
-- Diagnostic tools for model convergence and goodness of fit
-- Prediction functionality with uncertainty quantification
-- Interactive Shiny app for model building and visualization
+-   Fit hierarchical Bayesian models with various distribution families
+-   Support for spatial random effects using CAR and SAR models
+-   Handle missing data through multiple imputation or model-based approaches
+-   Diagnostic tools for model convergence and goodness of fit
+-   Prediction functionality with uncertainty quantification
+-   Interactive Shiny app for model building and visualization
 
 ## Installation
 
 You can install the development version from GitHub:
 
-```r
+``` r
 # install.packages("devtools")
 devtools::install_github("madsyair/hbsaems")
 ```
@@ -26,16 +26,16 @@ devtools::install_github("madsyair/hbsaems")
 
 The package requires:
 
-- `brms` (for Bayesian regression modeling)
-- `coda`, `posterior` (for MCMC diagnostics)
-- `ggplot2` (for plotting)
-- `shiny`, `shinydashboard`, `shinyWidgets`, `readxl`, `DT` (for the interactive app)
+-   `brms` (for Bayesian regression modeling)
+-   `coda`, `posterior` (for MCMC diagnostics)
+-   `ggplot2` (for plotting)
+-   `shiny`, `shinydashboard`, `shinyWidgets`, `readxl`, `DT` (for the interactive app)
 
 ## Basic Usage
 
 Here's a simple example of fitting a basic Hierarchical Bayesian model:
 
-```r
+``` r
 library(hbsaems)
 
 # Prepare dataset
@@ -75,7 +75,7 @@ print(predictions)
 
 #### `hbm()`: General Hierarchical Bayesian Model
 
-```r
+``` r
 model <- hbm(
   formula = bf(y ~ x1 + x2 + x3),    # Formula using brms::bf()
   hb_sampling = "gaussian",          # Distribution family
@@ -90,15 +90,15 @@ model <- hbm(
 
 #### Distribution-Specific Models
 
-- `hbm_beta()`: For proportion data (0 < y < 1)
-- `hbm_logitnormal()`: For binary/binomial data with logit transformation
-- `hbm_lognormal()`: For positive continuous data with log transformation
+-   `hbm_beta()`: For proportion data (0 \< y \< 1)
+-   `hbm_logitnormal()`: For binary/binomial data with logit transformation
+-   `hbm_lognormal()`: For positive continuous data with log transformation
 
 ### Diagnostic Functions
 
 #### `hbcc()`: Hierarchical Bayesian Convergence Checks
 
-```r
+``` r
 convergence <- hbcc(
   model,                                     # A brmsfit or hbmfit object
   diag_tests = c("rhat", "geweke", "heidel", "raftery"), # Diagnostic tests
@@ -108,7 +108,7 @@ convergence <- hbcc(
 
 #### `hbmc()`: Model Goodness of Fit Checks
 
-```r
+``` r
 fit <- hbmc(
   model,           # A brmsfit or hbmfit object
   model2 = model2, # Optional second model for comparison
@@ -120,7 +120,7 @@ fit <- hbmc(
 
 #### `hbsae()`: Hierarchical Bayesian Small Area Estimation
 
-```r
+``` r
 predictions <- hbsae(
   model,          # A brmsfit or hbmfit object
   newdata = NULL  # Optional new data for predictions
@@ -131,7 +131,7 @@ predictions <- hbsae(
 
 #### `run_sae_app()`: Launch the Interactive Shiny App
 
-```r
+``` r
 run_sae_app()
 ```
 
@@ -139,13 +139,13 @@ run_sae_app()
 
 The package provides three approaches for handling missing data:
 
-1. **"deleted"** - Remove observations with missing values
-2. **"model"** - Use model-based imputation with `mi()` notation
-3. **"multiple"** - Use multiple imputation
+1.  **"deleted"** - Remove observations with missing values
+2.  **"model"** - Use model-based imputation with `mi()` notation
+3.  **"multiple"** - Use multiple imputation
 
 Example with model-based imputation:
 
-```r
+``` r
 # Create data with missing values
 data_missing <- mtcars
 data_missing$mpg[c(5,10)] <- NA
@@ -168,7 +168,7 @@ model_missing <- hbm(
 
 The package supports spatial models with Conditional Autoregressive (CAR) and Simultaneous Autoregressive (SAR) structures:
 
-```r
+``` r
 # Create an adjacency matrix
 library(Matrix)
 data_spatial <- mtcars
@@ -207,12 +207,12 @@ MIT
 
 If you use this package, please cite:
 
-```
+```         
 Choir, A.S, Nurhayati, S.S, Zamzanah, S.& Siregar, A.L.O, (2025). hbsaems: Hierarchical Bayesian Small Area Estimation Models. R package version 0.1.0.
 ```
 
 ## References
 
-- Gelman, A., & Hill, J. (2006). Data analysis using regression and multilevel/hierarchical models. Cambridge University Press.
-- Rao, J. N. K., & Molina, I. (2015). Small area estimation. John Wiley & Sons.
-- Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. Journal of Statistical Software, 80(1), 1-28.
+-   Gelman, A., & Hill, J. (2006). Data analysis using regression and multilevel/hierarchical models. Cambridge University Press.
+-   Rao, J. N. K., & Molina, I. (2015). Small area estimation. John Wiley & Sons.
+-   Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. Journal of Statistical Software, 80(1), 1-28.

@@ -18,7 +18,7 @@ hbcc(
 \item{plot_types}{Character vector of plot types (default: trace","dens","acf", "nuts_energy", "rhat", "neff")}
 }
 \value{
-A list containing:
+An object of class \code{hbcc_results}, which is a list containing:
 \item{rhat_ess}{Matrix of \code{Rhat}, \code{Bulk_ESS}, and \code{Tail_ESS} values for fixed and random effects.}
 \item{geweke}{Geweke diagnostic results (if selected).}
 \item{raftery}{Raftery-Lewis diagnostic results (if selected).}
@@ -41,27 +41,35 @@ It performs several diagnostic tests and generates various plots to assess Marko
 Hierarchical Bayesian Convergence Checks
 }
 \examples{
-\donttest{
+\dontrun{
 
-# Prepare dataset
-data("BostonHousing")
-data <- BostonHousing
+library(hbsaems)
+data("data_fhnorm")
+
+# Prepare the dataset
+data <- data_fhnorm
 
 # Fit the Basic Model
 model <- hbm(
-formula = bf(medv ~ crim + indus + rm + dis + rad + tax),  # Formula model
-hb_sampling = "gaussian",      # Gaussian family for continuous outcomes
-hb_link = "identity",          # Identity link function (no transformation)
-data = data,                   # Dataset
-chains = 4,                    # Number of MCMC chains
-iter = 4000,                   # Total MCMC iterations
-warmup = 2000,                 # Number of warmup iterations
-cores = 2                      # Paralelisasi
+  formula = bf(y ~ x1 + x2 + x3),  # Formula model
+  hb_sampling = "gaussian",       # Gaussian family for continuous outcomes
+  hb_link = "identity",           # Identity link function (no transformation)
+  data = data,                    # Dataset
+  chains = 4,                     # Number of MCMC chains
+  iter = 4000,                    # Total MCMC iterations
+  warmup = 2000,                  # Number of warmup iterations
+  cores = 2                       # Parallel processing
 )
 summary(model)
 
 # Convergence Checks
 hbcc(model)
+}
 
 }
+\references{
+Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. \emph{Journal of Statistical Software}, 80(1), 1-28.
+}
+\author{
+Achmad Syahrul Choir and Saniyyah Sri Nurhayati
 }

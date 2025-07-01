@@ -10,11 +10,12 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  eval = FALSE
 )
 ```
 
-```{r setup}
+```{r}
 library(hbsaems)
 ```
 
@@ -28,7 +29,7 @@ This vignette explains the function's usage including the handling of missing va
 
 # Data Simulation
 
-```{r setup}
+```{r}
 library(hbsaems)
 library(brms)
 library(ggplot2)

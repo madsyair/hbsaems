@@ -4,12 +4,31 @@
 \alias{hbm_beta}
 \title{Small Area Estimation using Hierarchical Bayesian under Beta Distribution}
 \usage{
-hbm_beta(response, 
-                predictors, 
-                n = NULL, 
-                deff = NULL, 
-                data, 
-                prior = NULL)
+hbm_beta(
+  response,
+  predictors,
+  n = NULL,
+  deff = NULL,
+  link_phi = "identity",
+  re = NULL,
+  sre = NULL,
+  sre_type = NULL,
+  car_type = NULL,
+  sar_type = NULL,
+  M = NULL,
+  data,
+  handle_missing = NULL,
+  m = 5,
+  prior = NULL,
+  control = list(),
+  chains = 4,
+  iter = 4000,
+  warmup = floor(iter/2),
+  cores = 1,
+  sample_prior = "no",
+  stanvars = NULL,
+  ...
+)
 }
 \arguments{
 \item{response}{The dependent (outcome) variable in the model. This variable represents the main response being predicted or analyzed.}
@@ -20,25 +39,60 @@ hbm_beta(response,
 
 \item{deff}{Design Effect}
 
-\item{re}{Specifies the grouping variable for hierarchical (random effects) models. Used when modeling data with grouped structures (e.g., individuals within clusters).}
+\item{link_phi}{Link function for the second parameter (phi), typically representing precision, shape, or dispersion depending on the family used (e.g., "log", "identity")}
 
-\item{sre}{An optional grouping factor mapping observations to spatial locations. If not specified, each observation is treated as a separate location. It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.}
+\item{re}{Random effects formula specifying the grouping structure in the data.
+For example, re = ~(1|area), where "area" is the grouping variable or cluster ID indicating
+that observations within the same area share a common random effect. If not specified,
+each row will be treated as its own group, meaning a separate random effect is estimated for each observation.}
+
+\item{sre}{An optional grouping factor mapping observations to spatial locations.
+If not specified, each observation is treated as a separate location.
+It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.}
 
 \item{sre_type}{Determines the type of spatial random effect used in the model. The function currently supports "sar" and "car"}
 
-\item{car_type}{Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR), "icar" (intrinsic CAR), and "bym2".}
+\item{car_type}{Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR),
+"icar" (intrinsic CAR), and "bym2".}
 
-\item{sar_type}{Type of the SAR structure. Either "lag" (for SAR of the response values) or "error" (for SAR of the residuals).}
+\item{sar_type}{Type of the SAR structure. Either "lag" (for SAR of the response values) or
+"error" (for SAR of the residuals).}
 
-\item{M}{The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations. SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships. If sre is specified, the row names of M have to match the levels of the grouping factor}
+\item{M}{The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain
+weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations.
+SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships.
+If sre is specified, the row names of M have to match the levels of the grouping factor}
 
 \item{data}{Dataset used for model fitting}
 
-\item{handle_missing}{Mechanism to handle missing data (NA values) to ensure model stability and prevent errors during estimation.}
+\item{handle_missing}{Mechanism to handle missing data (NA values) to ensure model stability and avoid estimation errors.
+Three approaches are supported.
+The \code{"deleted"} approach performs complete case analysis by removing all rows with any missing values before model fitting.
+This is done using a simple filter such as \code{complete.cases(data)}.
+It is recommended when the missingness mechanism is Missing Completely At Random (MCAR).
+The \code{"multiple"} approach applies multiple imputation before model fitting.
+Several imputed datasets are created (e.g., using the \code{mice} package or the \code{brm_multiple()} function in \code{brms}),
+the model is fitted separately to each dataset, and the results are combined.
+This method is suitable when data are Missing At Random (MAR).
+The \code{"model"} approach uses model-based imputation within the Bayesian model itself.
+Missing values are incorporated using the \code{mi()} function in the model formula (e.g., \code{y ~ mi(x1) + mi(x2)}),
+allowing the missing values to be jointly estimated with the model parameters.
+This method also assumes a MAR mechanism and is applicable only for continuous variables.
+If data are suspected to be Missing Not At Random (MNAR), none of the above approaches directly apply.
+Further exploration, such as explicitly modeling the missingness process or conducting sensitivity analyses, is recommended.}
 
-\item{m}{Number of multiple imputations}
+\item{m}{Number of imputations to perform when using the \code{"multiple"} approach for handling missing data (default: 5).
+This parameter is only used if \code{handle_missing = "multiple"}.
+It determines how many imputed datasets will be generated.
+Each imputed dataset is analyzed separately, and the posterior draws are then combined to account for both within-imputation and between-imputation variability,
+following Rubin’s rules. A typical choice is between 5 and 10 imputations, but more may be needed for higher missingness rates.}
 
-\item{prior}{Priors for the model parameters (default: \code{NULL})}
+\item{prior}{Priors for the model parameters (default: \code{NULL}).
+Should be specified using the \code{brms::prior()} function or a list of such objects.
+For example, \code{prior = prior(normal(0, 1), class = "b")} sets a Normal(0,1) prior on the regression coefficients.
+Multiple priors can be combined using \code{c()}, e.g.,
+\code{prior = c(prior(normal(0, 1), class = "b"), prior(exponential(1), class = "sd"))}.
+If \code{NULL}, default priors from \code{brms} will be used.}
 
 \item{control}{A list of control parameters for the sampler (default: \code{list()})}
 
@@ -52,7 +106,9 @@ hbm_beta(response,
 
 \item{sample_prior}{(default: "no")}
 
-\item{...}{}
+\item{stanvars}{Optional \code{stanvars} object created by \code{brms::stanvar()}.}
+
+\item{...}{Additional arguments}
 }
 \value{
 A \code{hbmfit} object
@@ -70,7 +126,7 @@ The \code{brm()} function from \code{brms} is used to estimate posterior distrib
 hierarchical and spatial structures.
 }
 \examples{
-\donttest{
+\dontrun{
 
 # Prepare dataset
 # Proses pengerjaan ya guys, belum menemukan data yang cocok bgt bisa n deff dan spatial 

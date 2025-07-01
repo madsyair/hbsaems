@@ -1,7 +1,7 @@
 Package: hbsaems
 Type: Package
 Title: Hierarchical Bayes Small Area Estimation Model using Stan
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: 
     c(person("Achmad Syahrul", "Choir", email = "madsyair@stis.ac.id",
              comment = c(ORCID = "0000-0001-7088-0646"), role = c("aut", "cre")),
@@ -10,13 +10,20 @@ Authors@R:
       person("Arsyka Laila Oktalia", "Siregar", role = c("aut"))
       )
 Maintainer: Achmad Syahrul Choir <madsyair@stis.ac.id>
-Description: Provides functions for conducting small area estimation using hierarchical Bayesian models with the brms package. 
-      This package allows for flexible model specification and estimation of various small area parameters.
-Depends: R (>= 3.6.0),brms, rstan, coda, shiny
+Description: Provides functions for implementing Hierarchical Bayesian Small Area Estimation (HBSAE) 
+          models using the 'brms'           package as the computational backend. The modeling framework 
+          follows the methodological foundations described in Rao and Molina (2015) with a focus on  area-level models. 
+          This package is designed to facilitate a principled Bayesian workflow, enabling users to conduct 
+          prior predictive checks, model fitting, posterior predictive checks, model comparison,  and sensitivity 
+          analysis in a coherent and reproducible manner. It supports flexible model specifications via 'brms' and
+          promotes transparency   in model development, aligned with the recommendations of modern Bayesian 
+          data analysis practices.
+Depends: R (>= 3.6.0), brms
 Suggests: 
     kableExtra,
     knitr,
     rmarkdown,
+    Matrix,
     testthat (>= 3.0.0)
 License: GPL-3
 Encoding: UTF-8
@@ -29,10 +36,25 @@ Author: Achmad Syahrul Choir [aut, cre]
   Sofi Zamzanah [aut],
   Arsyka Laila Oktalia Siregar [aut]
 Imports: 
+  bayesplot,
+  bridgesampling,
+  coda,
+  DT,
+  energy,
+  ggplot2,
+  grDevices,
+  mice,
+  minerva,
+  priorsense,
+  posterior,
+  readxl,
+  shiny,
   shinyWidgets,
   shinydashboard,
-  readxl,
-  DT
+  stats,
+  tools,
+  XICOR
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
+LazyData: true
