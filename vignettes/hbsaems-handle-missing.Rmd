@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-Missing data is a common challenge in data analysis, often introducing bias and reducing statistical power. In **Small Area Estimation (SAE)**, missing values can significantly impact the reliability of estimates, especially when the missingness is not completely random (**Missing Not at Random - MNAR**).
+Missing data is a common challenge in data analysis, often introducing bias and reducing statistical power. In **Small Area Estimation (SAE)**, missing values can significantly impact the reliability of estimates.
 
 The **`hbsaems`** package provides several approaches to handle missing data before Bayesian modeling. This vignette explores three main methods:
 
@@ -25,7 +25,7 @@ The **`hbsaems`** package provides several approaches to handle missing data bef
 2.  **Model-Based Imputation (`mi()`)** – Using Bayesian modeling to estimate missing values as part of the inference process.\
 3.  **Multiple Imputation** – Performing multiple imputations before model estimation to account for uncertainty in missing values.
 
-In this vignette, we demonstrate how to apply these methods, with the **`airquality`** dataset as a case study.
+In this vignette, we demonstrate how to apply these methods, with the dataset provided in this package.
 
 ## Simulated Data Example
 
@@ -96,7 +96,7 @@ model_during_model <- hbm(
 )
 ```
 
-his model jointly estimates the outcome `y` and the predictor `x1` that has missing values, using a model-based imputation approach. By specifying two sub-models—one for `y` as a function of `x1`, `x2`, and `x3`, and another for `x1` itself as a function of `x2` and `x3`—we ensure that the imputations of `x1` are informed by its observed relationships with other variables, while also allowing the model for `y` to incorporate the uncertainty from imputation directly into the final inference. This joint modeling approach is preferable to ad-hoc imputation or complete case analysis because it maintains the internal consistency of the data and aligns with the Missing at Random (MAR) assumption, thereby producing more reliable estimates.
+this model jointly estimates the outcome `y` and the predictor `x1` that has missing values, using a model-based imputation approach. By specifying two sub-models—one for `y` as a function of `x1`, `x2`, and `x3`, and another for `x1` itself as a function of `x2` and `x3`—we ensure that the imputations of `x1` are informed by its observed relationships with other variables, while also allowing the model for `y` to incorporate the uncertainty from imputation directly into the final inference. This joint modeling approach is preferable to ad-hoc imputation or complete case analysis because it maintains the internal consistency of the data and aligns with the Missing at Random (MAR) assumption, thereby producing more reliable estimates.
 
 The priors used in this model are intentionally restrictive to avoid extreme or implausible predictions, especially under the log link function that ensures positive outcomes. For both the outcome and the predictor models, the intercepts have normal(1, 0.2) priors, implying a baseline mean around exp(1)=2.7 with modest uncertainty, while the coefficients have normal(0, 0.1) priors to constrain effect sizes, preventing overly strong influence from any single predictor. The group-level standard deviation priors are set as exponential(5), which favors smaller variation between groups while still allowing flexibility. Together, these priors produce stable prior predictive distributions that align with realistic expectations of the data and prevent convergence issues caused by overly wide or vague priors.
 
