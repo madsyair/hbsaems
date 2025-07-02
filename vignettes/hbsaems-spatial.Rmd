@@ -108,6 +108,21 @@ $$y = \eta + u, \quad u = \rho W u + e$$
 
 In the above equations, $$\eta$$ is the predictor term and $$e$$ are independent normally or t-distributed residuals. Currently, only families **gaussian** and **student** support SAR structures.
 
+### Simulated Data Example
+
+```{r}
+library(hbsaems)
+
+# Load data
+data("data_fhnorm")
+data <- data_fhnorm
+head(data)
+
+# Load adjacency matrix
+data("spatial_weight_sar")
+spatial_weight_sar
+```
+
 ### Fitting the Model
 
 ```{r}

@@ -1,5 +1,5 @@
 ---
-title: "Model Logit-Normal Small Area Estimation in hbsaems Package"
+title: "Model (Binomial) Logit-Normal Small Area Estimation in hbsaems Package"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{hbsaems-binlogitnorm-model}
@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-The `hbm_binlogitnorm` function in the `hbsaems` package fits a Hierarchical Bayesian Small Area Estimation model using the **logit-normal distribution** for binomial data. This vignette explains the function's usage, including model formulation, handling missing data, and incorporating random and spatial effects.
+The `hbm_binlogitnorm` function in the `hbsaems` package fits a Hierarchical Bayesian Small Area Estimation using the **logit-normal model** for binomial data. This vignette explains the function's usage, including model formulation, handling missing data, and incorporating random and spatial effects.
 
 The logit-normal model is an extension of the binomial model, where the probability of success follows a logit-normal distribution.
 
@@ -43,7 +43,7 @@ To ensure proper model specification, the following conditions must be met. The 
 library(hbsaems)
 ```
 
-The dataset **data_bln** is a simulated dataset designed to demonstrate the application of Hierarchical Bayesian Small Area Estimation (HBSAE) under a logit-normal model using the **hbsaems package**. It mimics real-world conditions where the response is binomially distributed and is appropriate for modeling proportions or prevalence rates across small areas (domains).
+The dataset **data_binlogitnorm** is a simulated dataset designed to demonstrate the application of Hierarchical Bayesian Small Area Estimation (HBSAE) under a logit-normal model using the **hbsaems package**. It mimics real-world conditions where the response is binomially distributed and is appropriate for modeling proportions or prevalence rates across small areas (domains).
 
 Each area includes several key variables. The `area` variable is a unique identifier ranging from 1 to 50. The variables `x1`, `x2`, and `x3` are auxiliary covariates at the area level, typically used as fixed effects in regression modeling.
 
@@ -361,4 +361,4 @@ summary(result_hbsae)
 
 ## Conclusion
 
-The `hbm_binlogitnorm` function in the `hbsaems` package provides a flexible framework for fitting logit-normal models, offering options for handling missing data, incorporating random effects, and modeling spatial dependencies. This approach is particularly useful for small-area estimation, where overdispersion is accounted for by assuming a logit-normal distribution. The function supports missing data handling through deletion and multiple imputation and allows for the inclusion of both **random and spatial effects** to improve estimation accuracy. Model diagnostics, such as convergence checks and posterior predictive assessments, ensure reliability, while model comparison evaluates the impact of spatial effects or to compare with other model. Finally, predictions are generated using posterior distributions. This vignette has demonstrated the use of `hbm_binlogitnorm` along with supporting functions (`hbcc`, `hbmc`, `hbsae`) for **fitting, diagnosing, comparing, and predicting** with a logit-normal model in small-area estimation.
+The `hbm_binlogitnorm` function in the `hbsaems` package provides a flexible framework for fitting (Binomial) logit-normal models, offering options for handling missing data, incorporating random effects, and modeling spatial dependencies. This approach is particularly useful for small-area estimation, where overdispersion is accounted for by assuming a logit-normal distribution. The function supports missing data handling through deletion and multiple imputation and allows for the inclusion of both **random and spatial effects** to improve estimation accuracy. Model diagnostics, such as convergence checks and posterior predictive assessments, ensure reliability, while model comparison evaluates the impact of spatial effects or to compare with other model. Finally, predictions are generated using posterior distributions. This vignette has demonstrated the use of `hbm_binlogitnorm` along with supporting functions (`hbcc`, `hbmc`, `hbsae`) for **fitting, diagnosing, comparing, and predicting** with a logit-normal model in small-area estimation.
