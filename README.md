@@ -312,9 +312,12 @@ provide:
 
 ## Authors and Contributors
 
-This package was developed by: - Achmad Syahrul Choir - Saniyyah Sri
-Nurhayati\
-- Sofi Zamzanah - Arsyka Laila Oktalia Siregar
+This package was developed by: 
+
+- Achmad Syahrul Choir
+- Saniyyah SriNurhayati
+- Sofi Zamzanah
+- Arsyka Laila Oktalia Siregar
 
 ## License
 
@@ -327,7 +330,7 @@ If you use this package in your research, please cite:
 ```         
 Choir, A.S, Nurhayati, S.S, Zamzanah, S. & Siregar, A.L.O, (2025). 
 hbsaems: Hierarchical Bayesian Small Area Estimation Models. 
-R package version 0.1.0.
+R package version 0.1.1.
 ```
 
 ## References
