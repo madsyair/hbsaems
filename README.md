@@ -70,7 +70,7 @@ model <- hbm(
   hb_link = "identity",         # Identity link function
   data = data_fhnorm,           # Dataset
   chains = 2,                   # Number of MCMC chains
-  iter = 4000,                  # Total MCMC iterations
+  iter = 10000,                  # Total MCMC iterations
   warmup = 2000,                # Number of warmup iterations
   cores = 2                     # Number of cores for parallel processing
 )
