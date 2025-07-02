@@ -38,7 +38,10 @@ You can install the development version from GitHub:
 ``` r
 # install.packages("devtools")
 devtools::install_github("madsyair/hbsaems")
+```
 or
+``` r
+# install.packages("devtools")
 devtools::install_github("madsyair/hbsaems",build_vignettes = TRUE)
 ```
 
