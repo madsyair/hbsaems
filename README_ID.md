@@ -37,7 +37,7 @@ atau
 devtools::install_github("madsyair/hbsaems", build_vignettes = TRUE)
 ```
 
-## Ketergantungan
+## Ketergantungan Pustaka R
 
 pustaka ini membutuhkan:
 
@@ -49,7 +49,7 @@ pustaka ini membutuhkan:
 * **priorsense** (untuk analisis sensitivitas prior)
 * **energy**, **XICOR**, dan **minerva** (untuk menghitung korelasi)
 
-## Memulai Cepat
+## Contoh Sederhana
 
 Contoh sederhana menggunakan data bawaan:
 
