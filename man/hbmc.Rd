@@ -128,11 +128,11 @@ if (!inherits(fit_hbm1, "try-error")) {
 }
 }
 \references{
-Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. \emph{Journal of Statistical Software}, 80(1), 1-28.
-Kallioinen, N., Paananen, T., Bürkner, PC. et al. Detecting and diagnosing prior and likelihood sensitivity with power-scaling. Stat
+Buerkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. \emph{Journal of Statistical Software}, 80(1), 1-28.
+Kallioinen, N., Paananen, T., Buerkner, PC. et al. Detecting and diagnosing prior and likelihood sensitivity with power-scaling. Stat
 Comput 34, 57 (2024).
 Gabry,J., Simpson,D.,  Vehtari, A., Betancourt, M., Gelman, A., Visualization in Bayesian Workflow, Journal of the
-Royal Statistical Society Series A: Statistics in Society, Volume 182, Issue 2, February 2019, Pages 389–402
+Royal Statistical Society Series A: Statistics in Society, Volume 182, Issue 2, February 2019, Pages 389-402
 }
 \author{
 Achmad Syahrul Choir, Saniyyah Sri Nurhayati, and Arsyka Laila Oktalia Siregar

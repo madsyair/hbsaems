@@ -10,8 +10,7 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>",
-  eval = FALSE
+  comment = "#>"
 )
 ```
 
@@ -86,13 +85,13 @@ model_prior_pred <- hbm(
   hb_sampling = "gaussian",
   hb_link = "log",
   chains = 4,
-  iter = 4000,
-  warmup = 2000,
+  iter = 500,
+  warmup = 250,
   sample_prior = "only",
   prior = c(
-    prior(normal(1, 0.2), class = "Intercept"),  
-    prior(normal(0, 0.1), class = "b"),
-    prior(exponential(5), class = "sd")
+    prior("normal(1, 0.2)", class = "Intercept"),  
+    prior("normal(0, 0.1)", class = "b"),
+    prior("exponential(5)", class = "sd")
   )
 )
 ```
@@ -100,19 +99,6 @@ model_prior_pred <- hbm(
 ```{r}
 summary(model_prior_pred)
 ```
-
-The **intercept** uses a prior of `normal(22, 5)`. This reflects a central belief around 22 (near the average home value) with moderate uncertainty, covering the plausible range of housing prices, which typically span from 5 to 50.
-
-The **regression coefficients** are assigned the following priors:
-
--   **crim**, **indus**, **dis**, and **rad**:\
-    Each has a `normal(0, 2)` prior. These predictors may have moderate effects on home prices, but we maintain a neutral stance (mean = 0) with enough variance (SD = 2) to allow the model to learn from the data. This is a relatively **weakly informative prior**, meaning it assumes little but still avoids extremely implausible values.
-
--   **rm** (average number of rooms per dwelling):\
-    A more informative prior of `normal(3, 1)` is used. This reflects the expectation that each additional room has a strong positive effect on housing prices, and the smaller SD focuses the prior near that belief.
-
--   **tax** (property tax rate per \$10,000):\
-    A conservative prior of `normal(0, 0.1)` is used. Since the `tax` variable has a large range, this tight prior implies that small changes in tax are unlikely to have a major effect on home values, effectively shrinking the coefficient toward zero.
 
 ## Prior Predictive Check
 
@@ -149,11 +135,9 @@ After prior predictive checks confirm the priors are suitable, we proceed to fit
 
 -   We already conducted a prior predictive check (previous explanation), `sample_prior = "no"` tells `brms` to:
 
-```         
--    Use the **priors** in the estimation.
+    -   Use the **priors** in the estimation.
 
--    Focus entirely on drawing from the **posterior** given the observed data.
-```
+    -   Focus entirely on drawing from the **posterior** given the observed data.
 
 -   This option is standard for final model fitting after priors have been validated.
 
@@ -166,13 +150,13 @@ model <- hbm(
   hb_sampling = "gaussian",
   hb_link = "log",
   chains = 4,
-  iter = 4000,
-  warmup = 2000,
+  iter = 500,
+  warmup = 250,
   sample_prior = "no",
   prior = c(
-    prior(normal(1, 0.2), class = "Intercept"),  
-    prior(normal(0, 0.1), class = "b"),
-    prior(exponential(5), class = "sd")
+    prior("normal(1, 0.2)", class = "Intercept"),  
+    prior("normal(0, 0.1)", class = "b"),
+    prior("exponential(5)", class = "sd")
   )
 )
 ```
@@ -183,7 +167,9 @@ summary(model)
 
 By default, if we do not explicitly define a random effect, the model will still generate one based on the natural random variations between individual records (rows) in the dataset. However, we can also explicitly define a random effect to account for variations at a specific hierarchical level, such as neighborhoods or residential blocks. We can use paramter re.
 
-```{r}
+Note: Some chunk is not executed in this vignette. It is provided as an example and will produce output similar to the model results.
+
+``` r
 model_with_defined_re <- hbm(
   formula = bf(y ~ x1 + x2 + x3),
   data = data,
@@ -195,14 +181,14 @@ model_with_defined_re <- hbm(
   warmup = 2000,
   sample_prior = "no",
   prior = c(
-    prior(normal(1, 0.2), class = "Intercept"),  
-    prior(normal(0, 0.1), class = "b"),
-    prior(exponential(5), class = "sd")
+    prior("normal(1, 0.2)", class = "Intercept"),  
+    prior("normal(0, 0.1)", class = "b"),
+    prior("exponential(5)", class = "sd")
   )
 )
 ```
 
-```{r}
+``` r
 summary(model_with_defined_re)
 ```
 
@@ -216,14 +202,14 @@ The hbm function supports three strategies for handling missing data:
 
 3.  "model": Uses the mi() function to model missingness directly (not available for discrete outcomes).
 
-    ```{r}
+    ``` r
     data_missing <- data
     data_missing$y[3:5] <- NA 
     ```
 
 -   **Handling missing data by deleted (Only if missing in response)**
 
-    ```{r}
+    ``` r
     model_deleted <- hbm(
       formula = bf(y ~ x1 + x2 + x3),
       hb_sampling = "gaussian",
@@ -236,20 +222,20 @@ The hbm function supports three strategies for handling missing data:
       warmup = 2000,
       sample_prior = "no",
       prior = c(
-        prior(normal(1, 0.2), class = "Intercept"),  
-        prior(normal(0, 0.1), class = "b"),
-        prior(exponential(5), class = "sd")
+        prior("normal(1, 0.2)", class = "Intercept"),  
+        prior("normal(0, 0.1)", class = "b"),
+        prior("exponential(5)", class = "sd")
       )
     )
     ```
 
-    ```{r}
+    ``` r
     summary(model_deleted)
     ```
 
 -   **Handling missing data** **before model fitting using multiple imputation**
 
-    ```{r}
+    ``` r
     model_multiple <- hbm(
       formula = bf(y ~ x1 + x2 + x3),
       hb_sampling = "gaussian",
@@ -262,14 +248,14 @@ The hbm function supports three strategies for handling missing data:
       warmup = 2000,
       sample_prior = "no",
       prior = c(
-        prior(normal(1, 0.2), class = "Intercept"),  
-        prior(normal(0, 0.1), class = "b"),
-        prior(exponential(5), class = "sd")
+        prior("normal(1, 0.2)", class = "Intercept"),  
+        prior("normal(0, 0.1)", class = "b"),
+        prior("exponential(5)", class = "sd")
       )
     )
     ```
 
-    ```{r}
+    ``` r
     summary(model_multiple)
     ```
 
@@ -277,12 +263,12 @@ The hbm function supports three strategies for handling missing data:
 
     If we want to handle missing data in the model, we must define the formula correctly. In this case, we need to specify missing data indicators using the `mi()` function.
 
-    ```{r}
+    ``` r
     data_missing$y[3:5] <- NA 
     data_missing$x1[6:7] <- NA
     ```
 
-    ```{r}
+    ``` r
     model_during_model <- hbm(
       formula = bf(y | mi() ~ mi(x1) + x2 + x3) + bf(x1 | mi() ~ x2 + x3),
       hb_sampling = "gaussian",
@@ -295,28 +281,28 @@ The hbm function supports three strategies for handling missing data:
       warmup = 2000,
       sample_prior = "no",
       prior = c(
-        prior(normal(1, 0.2), class = "Intercept", resp = "y"),  
-        prior(normal(0, 0.1), class = "b", resp = "y"),
-        prior(exponential(5), class = "sd", resp = "y"),
-        
-        prior(normal(1, 0.2), class = "Intercept", resp = "x1"),  
-        prior(normal(0, 0.1), class = "b", resp = "x1"),
-        prior(exponential(5), class = "sd", resp = "x1")
+        prior("normal(1, 0.2)", class = "Intercept", resp = "y"),  
+        prior("normal(0, 0.1)", class = "b", resp = "y"),
+        prior("exponential(5)", class = "sd", resp = "y"),
+
+        prior("normal(1, 0.2)", class = "Intercept", resp = "x1"),  
+        prior("normal(0, 0.1)", class = "b", resp = "x1"),
+        prior("exponential(5)", class = "sd", resp = "x1")
       )
     )
     ```
 
-    ```{r}
+    ``` r
     summary(model_during_model)
     ```
 
 ### 3. Model With Spatial Effect
 
-```{r}
+``` r
 M <- adjacency_matrix_car
 ```
 
-```{r}
+``` r
 model_spatial <- hbm(
   formula = bf(y ~ x1 + x2 + x3),
   data = data,
@@ -331,14 +317,14 @@ model_spatial <- hbm(
   warmup = 2000,
   sample_prior = "no",
   prior = c(
-    prior(normal(1, 0.2), class = "Intercept"),  
-    prior(normal(0, 0.1), class = "b"),
-    prior(exponential(5), class = "sd")
+    prior("normal(1, 0.2)", class = "Intercept"),  
+    prior("normal(0, 0.1)", class = "b"),
+    prior("exponential(5)", class = "sd")
   )
 )
 ```
 
-```{r}
+``` r
 summary(model_spatial)
 ```
 
@@ -355,11 +341,11 @@ The `update_hbm()` function allows you to continue sampling from an existing fit
 
 When `update_hbm()` is called with additional iterations, the sampler resumes from the previous fit, effectively increasing the total number of posterior samples. This helps improve convergence diagnostics such as Rhat, effective sample size, and chain mixing.
 
-```{r}
+``` r
 model <- update_hbm(model, iter = 8000)
 ```
 
-```{r}
+``` r
 summary(model)
 ```
 
@@ -410,7 +396,7 @@ The `hbmc` function is used to compare Bayesian hierarchical models and assess t
 
 ```{r}
 result_hbmc <- hbmc(
-      model = list(model, model_spatial),
+      model = list(model),
       comparison_metrics = c("loo", "waic", "bf"),
       run_prior_sensitivity= TRUE, 
       sensitivity_vars = c("b_Intercept", "b_x1")

@@ -88,8 +88,8 @@ test_that("hbpc stops when automatically determined response variable not found 
       data = sample_data,
       sample_prior = "only",
       prior = c(
-        brms::prior(normal(0, 5), class = "b"),
-        brms::prior(normal(0, 5), class = "Intercept")
+        brms::prior("normal(0, 5)", class = "b"),
+        brms::prior("normal(0, 5)", class = "Intercept")
       ),
       iter = 500,
       chains = 2
@@ -126,9 +126,9 @@ test_that("hbpc handles all-NA y values for prior predictive check", {
       family = gaussian(),
       sample_prior = "only",
       prior = c(
-        brms::prior(normal(0, 1), class = "b"),
-        brms::prior(normal(0, 1), class = "Intercept"),
-        brms::prior(exponential(1), class = "sigma")
+        brms::prior("normal(0, 1)", class = "b"),
+        brms::prior("normal(0, 1)", class = "Intercept"),
+        brms::prior("exponential(1)", class = "sigma")
       ),
       iter = 500,
       chains = 2,

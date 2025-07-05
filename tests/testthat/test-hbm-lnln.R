@@ -76,8 +76,8 @@ test_that("Function accepts valid priors", {
       predictors = c("x1", "x2", "x3"),
       data = data,
       prior = c(
-        prior(normal(0.1,0.1), class = "b"),
-        prior(normal(1,1), class = "Intercept")
+        prior("normal(0.1,0.1)", class = "b"),
+        prior("normal(1,1)", class = "Intercept")
       )
     )
   })

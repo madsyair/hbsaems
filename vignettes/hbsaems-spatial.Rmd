@@ -28,7 +28,6 @@ The `hbsaems` package can handle spatial dependence effects (Spatial Autocorrela
 1.  **CAR (Conditional Autoregressive)**
 2.  **SAR (Simultaneous Autoregressive)**
 
-
 ## 1. **CAR (Conditional Autoregressive)**
 
 Conditional Autoregressive (CAR) model is a spatial model that describes the relationship between adjacent areas through a local condition approach. In this model, the value of a variable in a location is directly influenced by the value of the same variable in the surrounding areas. CAR uses adjacency matrix to determine the relationship between locations.
@@ -53,6 +52,7 @@ The data used is synthetic data in the `hbsaems` package which can be used to he
 ### Fitting the Model
 
 #### `hbm` Function
+
 ```{r}
 model_car <- hbm(
   formula = bf(y ~ x1 + x2 + x3),  # Formula model
@@ -93,7 +93,6 @@ model_car_beta <- hbm_betalogitnorm(response = "y",
 summary(model_car_beta)
 ```
 
-
 ## 2. **SAR (Simultaneous Autoregressive)**
 
 The Simultaneous Autoregressive Model (SAR) handles spatial effects by defining dependence simultaneously across the study area. SAR uses a spatial weight matrix to describe the relationship between regions and can be applied in various forms, such as Spatial Lag Model (SLM) or Spatial Error Model (SEM), depending on how spatial effects affect the dependent variable or error in the model. `M` can be either the spatial weight matrix itself or an object of class listw or nb, from which the spatial weighting matrix can be computed.
@@ -106,7 +105,7 @@ The **errorsar** structure implements SAR of the residuals:
 
 $$y = \eta + u, \quad u = \rho W u + e$$
 
-In the above equations, $$\eta$$ is the predictor term and $$e$$ are independent normally or t-distributed residuals. Currently, only families **gaussian** and **student** support SAR structures.
+In the above equations, $\eta$ is the predictor term and $e$ are independent normally or t-distributed residuals. Currently, only families **gaussian** and **student** support SAR structures.
 
 ### Simulated Data Example
 
@@ -146,4 +145,3 @@ The `M` matrix in SAR is a spatial weighting matrix that shows the spatial relat
 # Conclusion
 
 The **hbsaems** package supports spatially-informed small-area estimation through both Conditional Autoregressive (CAR) and Simultaneous Autoregressive (SAR) models, enabling improved precision by capturing spatial dependence among areas. CAR emphasizes local adjacency via binary neighborhood structure, while SAR allows varying spatial influence through a weighted matrix. By leveraging spatial correlation, CAR and SAR enhance the reliability of estimates, particularly in data-sparse regions, making them powerful tools for small-area estimation.
-

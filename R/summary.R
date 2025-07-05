@@ -40,7 +40,7 @@ summary.hbmfit <- function(object, ...) {
       cat(paste0(
         "The table below (in the next console output) contains group-level estimates\n",
         "for the factor '", group_name, "', with dimensions ", 
-        nrow(group_df), " rows × ", ncol(group_df), " columns.\n\n",
+        nrow(group_df), " rows x ", ncol(group_df), " columns.\n\n",
         "Columns: ", paste(colnames(group_df), collapse = ", "), "."
       ))
       print(group_df)
@@ -110,7 +110,7 @@ summary.hbsae_results <- function(object, ...) {
   if (!is.null(object$result_table) && nrow(object$result_table) > 0) {
     cat(paste0(
       "The table below (in the next console output) shows the model results summary.\n",
-      "Dimensions: ", nrow(object$result_table), " rows × ", ncol(object$result_table), " columns.\n",
+      "Dimensions: ", nrow(object$result_table), " rows x ", ncol(object$result_table), " columns.\n",
       "Columns: ", paste(colnames(object$result_table), collapse = ", "), ".\n"
     ))
     print(object$result_table)
@@ -157,7 +157,7 @@ summary.hbcc_results <- function(object, ...) {
       paste0(
         "The following table (shown in the next console output) summarizes convergence diagnostics",
         "including R-hat, Bulk ESS, and Tail ESS for each parameter.\n",
-        "Table dimensions: ", nrow(ess_df), " rows × ", ncol(ess_df), " columns.\n",
+        "Table dimensions: ", nrow(ess_df), " rows x ", ncol(ess_df), " columns.\n",
         "Columns: ", paste(colnames(ess_df), collapse = ", "), ".\n\n"
       )
     )
@@ -338,7 +338,7 @@ summary.hbmc_results <- function(object, ...) {
         print(sens_result$result)
         cat("\n  > Plot:\n")
         print(sens_result$plot)
-        cat("  🖼 Plot may appear in a separate graphics window.\n")
+        cat("  Plot may appear in a separate graphics window.\n")
       }
     } else if (is.character(object$prior_sensitivity_results)) {
       cat(object$prior_sensitivity_results, "\n")

@@ -1,9 +1,14 @@
-library(mockery)
+
 
 test_that("run_sae_app throws an error when app directory is not found", {
   skip_on_cran()
+  
   # Mock system.file to return an empty string to simulate the missing app directory
-  stub(run_sae_app, "system.file", "")
+  skip_if_not_installed("mockery")
+  library(mockery)
+  mockery::stub(run_sae_app, "system.file", "")
+
+
   
   # Expect an error when the app directory is not found
   expect_error(

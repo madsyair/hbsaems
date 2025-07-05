@@ -49,7 +49,7 @@ test_that("Function throws an error when prior is invalid", {
   )
   
   # 2. Error when prior references non-existent parameters
-  invalid_prior <- brms::prior(normal(0, 1), class = "b", coef = "x4")  # 'x4' tidak ada
+  invalid_prior <- brms::prior("normal(0, 1)", class = "b", coef = "x4")  # 'x4' tidak ada
   expect_error(
     hbm(brms::bf(y ~ x1 + x2 + x3),
         data = data,

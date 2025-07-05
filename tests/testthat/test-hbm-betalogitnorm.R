@@ -35,9 +35,9 @@ test_that("Function to check prior implementation", {
   model <- suppressWarnings(hbm_betalogitnorm(response = "y",
                                               predictors = c("x1", "x2", "x3"),
                                               prior = c(
-                                                prior(normal(0, 10), class = "Intercept"),
-                                                prior(normal(0, 5), class = "b"),
-                                                prior(gamma(1,1), class = "phi")
+                                                set_prior("normal(0, 10)", class = "Intercept"),
+                                                set_prior("normal(0, 5)", class = "b"),
+                                                set_prior("gamma(1,1)", class = "phi")
                                               ),
                                               data = data))
   expect_s3_class(model, "hbmfit")
@@ -45,8 +45,8 @@ test_that("Function to check prior implementation", {
   model1 <- suppressWarnings(hbm_betalogitnorm(response = "y",
                                               predictors = c("x1", "x2", "x3"),
                                               prior = c(
-                                                prior(normal(0, 10), class = "Intercept"),
-                                                prior(normal(0, 5), class = "b")
+                                                prior("normal(0, 10)", class = "Intercept"),
+                                                prior("normal(0, 5)", class = "b")
                                               ),
                                               data = data))
   expect_s3_class(model1, "hbmfit")
@@ -54,8 +54,8 @@ test_that("Function to check prior implementation", {
   model2 <- suppressWarnings(hbm_betalogitnorm(response = "y",
                                               predictors = c("x1", "x2", "x3"),
                                               prior = c(
-                                                prior(normal(0, 10), class = "Intercept"),
-                                                prior(gamma(1,1), class = "phi")
+                                                prior("normal(0, 10)", class = "Intercept"),
+                                                prior("gamma(1,1)", class = "phi")
                                               ),
                                               data = data))
   expect_s3_class(model2, "hbmfit")
@@ -63,8 +63,8 @@ test_that("Function to check prior implementation", {
   model3 <- suppressWarnings(hbm_betalogitnorm(response = "y",
                                               predictors = c("x1", "x2", "x3"),
                                               prior = c(
-                                                prior(normal(0, 5), class = "b"),
-                                                prior(gamma(1,1), class = "phi")
+                                                prior("normal(0, 5)", class = "b"),
+                                                prior("gamma(1,1)", class = "phi")
                                               ),
                                               data = data))
   expect_s3_class(model3, "hbmfit")
@@ -81,8 +81,8 @@ test_that("Function to check prior implementation", {
                                                n = "n",
                                                deff = "deff",
                                                prior = c(
-                                                 prior(normal(0, 10), class = "Intercept"),
-                                                 prior(normal(0, 5), class = "b")
+                                                 prior("normal(0, 10)", class = "Intercept"),
+                                                 prior("normal(0, 5)", class = "b")
                                                ),
                                                data = data))
   expect_s3_class(model4, "hbmfit")
@@ -92,7 +92,7 @@ test_that("Function to check prior implementation", {
                                                n = "n",
                                                deff = "deff",
                                                prior = c(
-                                                 prior(normal(0, 10), class = "Intercept")
+                                                 prior("normal(0, 10)", class = "Intercept")
                                                ),
                                                data = data))
   expect_s3_class(model5, "hbmfit")
@@ -102,7 +102,7 @@ test_that("Function to check prior implementation", {
                                                n = "n",
                                                deff = "deff",
                                                prior = c(
-                                                 prior(normal(0, 5), class = "b")
+                                                 prior("normal(0, 5)", class = "b")
                                                ),
                                                data = data))
   expect_s3_class(model6, "hbmfit")
@@ -112,7 +112,7 @@ test_that("Function to check prior implementation", {
                                  n = "n",
                                  deff = "deff",
                                  prior = c(
-                                   prior(normal(0, 5), class = "invalid")
+                                   prior("normal(0, 5)", class = "invalid")
                                  ),
                                  data = data))
   expect_error(hbm_betalogitnorm(response = "y",
@@ -120,9 +120,9 @@ test_that("Function to check prior implementation", {
                                  n = "n",
                                  deff = "deff",
                                  prior = c(
-                                   prior(normal(0, 10), class = "Intercept"),
-                                   prior(normal(0, 5), class = "b"),
-                                   prior(gamma(1,1), class = "phi")
+                                   prior("normal(0, 10)", class = "Intercept"),
+                                   prior("normal(0, 5)", class = "b"),
+                                   prior("gamma(1,1)", class = "phi")
                                  ),
                                  data = data),
                "Remove priors for 'phi' if phi is fixed using n and deff."

@@ -71,6 +71,7 @@
 #' @return A `hbmfit` object
 #' 
 #' @importFrom stats as.formula
+#' @importFrom brms set_prior 
 #' 
 #' @export
 #' 
@@ -230,21 +231,21 @@ hbm_binlogitnorm <- function(response,
   
   if (is.null(prior)) {
     adjusted_prior <- c(
-      prior(cauchy(0, 10), class = "Intercept"),
-      prior(cauchy(0, 2.5), class = "b")
+      brms::set_prior("student_t(4,0,10)", class = "Intercept"),
+      brms::set_prior("student_t(4,0,2.5)", class = "b")
     )
   } else {
     # Use the provided prior
     adjusted_prior <- prior
     
-    # If no general prior for the intercept exists, add a default Cauchy prior
+    # If no general prior for the intercept exists, add a default student t prior
     if (!has_general_prior(adjusted_prior, "Intercept")) {
-      adjusted_prior <- c(adjusted_prior, prior(cauchy(0, 10), class = "Intercept"))
+      adjusted_prior <- c(adjusted_prior, brms::set_prior("student_t(4,0,10)", class = "Intercept"))
     }
     
-    # If no general prior for the coefficients exists, add a default Cauchy prior
+    # If no general prior for the coefficients exists, add a default student t prior
     if (!has_general_prior(adjusted_prior, "b")) {
-      adjusted_prior <- c(adjusted_prior, prior(cauchy(0, 2.5), class = "b"))
+      adjusted_prior <- c(adjusted_prior, brms::set_prior("student_t(4,0,2.5)", class = "b"))
     }
   }
   

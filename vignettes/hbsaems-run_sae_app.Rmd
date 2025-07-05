@@ -15,7 +15,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-
 ## Introduction
 
 The `run_sae_app()` function in the `hbsaems` package provides an interactive **Shiny Dashboard** for **Hierarchical Bayesian Small Area Estimation (HBSAE)** using `brms` for Bayesian inference with `Stan`. This application offers a user-friendly interface to upload data, define models, and obtain estimation results without requiring extensive R coding.
@@ -46,65 +45,101 @@ This will start a Shiny application that runs in your web browser.
 
 ## App Structure
 
-The Shiny app consists of three main sections:
-
 ### 1. **Data Upload**
 
--   Upload CSV or Excel File: Import the dataset for analysis.
+Users can either upload a `.csv` file or select a data frame available in the current R environment.
 
--   Data Preview: View the uploaded dataset.
+-   **Upload File**: Choose and upload a `.csv` file from your computer.
+-   **Select from Environment**: Choose an existing R data object.
+-   **Data Preview**: The loaded data will be shown in a table preview for inspection.
 
-### 2. **Modeling**
+### 2. **Data Exploration**
 
-In this section, users define the model structure, including:
+This tab provides four types of data exploration tools to help users understand the characteristics of the dataset:
 
--   Select modeling variables:
-    -   **Direct Estimation Variable**
-    -   **Linear & Nonlinear Auxiliary Variables**
-    -   **Random Effects**
-    -   **Spatial Modeling**: Options for **SAR**/**CAR** spatial effects and type, including spatial weight matrix upload.
--   Choose the distribution type:
-    -   Choose from predefined distributions (**Lognormal, Logitnormal, Beta**) or specify a **Custom** distribution.
-    -   Choose **Distribution and Link Functions** when using a **Custom** distribution.
--   **Missing Data Handling:**
-    -   Choose from **deletion**, **modeling**, or **multiple** imputation.
--   **Input Priors:**
-    -   Set priors for model parameters using `brms` syntax.
-    -   Perform **Prior Predictive Checking** to validate prior assumptions before fitting the model.
--   **Set MCMC parameters:**
-    -   Configure parameters such as **chains, iterations, warm-up, and adapt_delta** for efficient Stan sampling.
+-   **Summary Statistics**: Displays mean, median, min, max, and quartiles for selected numeric variables.
+-   **Histogram**: Shows frequency distribution and density curve for selected variables.
+-   **Boxplot**: Visualizes data spread, median, quartiles, and outliers.
+-   **Scatter Plot & Correlation**: Visualizes relationships between two variables, with support for five correlation coefficients:
+    -   Pearson
+    -   Spearman's Rho
+    -   Chatterjee's Xi
+    -   Distance Correlation
+    -   MIC (Maximal Information Coefficient)
 
-### 3. **Results**
+### 3. **Modeling**
 
-After model fitting, results are displayed across multiple tabs:
+#### a. Modeling Configuration
 
--   **Prior Predictive Checking**: Comparison of prior and observed distributions before modelling.
--   **Model Summary**: Display model output and priors.
+Users can define key model components:
+
+-   **Basic Settings**:
+    -   **Response Variable**
+    -   **Auxiliary Variables** (linear and nonlinear covariates)
+    -   **Group Variables** (for hierarchical modeling)
+    -   **Distribution Type** (e.g., Lognormal, Logitnormal, Beta, or Custom)
+    -   **HB Family & Link Function** (for Custom models)
+-   **Spatial Modeling**:
+    -   Choose spatial type (**SAR** or **CAR**)
+    -   Specify neighborhood structure
+    -   Upload spatial weight matrix (`.csv`)
+-   **Missing Data Handling**:
+    -   Choose between **deletion**, **imputation**, or **model-based handling**
+
+#### b. Prior Checking
+
+Before fitting the model, users can configure prior distributions and perform prior predictive checks:
+
+-   Summarize prior settings
+-   Simulate from prior distributions
+-   Visualize prior predictive plots
+
+#### c. MCMC Settings
+
+Configure sampling parameters for Bayesian estimation:
+
+-   **Seed**
+-   **Chains**
+-   **Cores**
+-   **Thinning Rate**
+-   **Iterations**
+-   **Warm-up**
+-   **Adapt Delta**
+
+Click "Fit Model" to begin model fitting using `brms`.
+
+### 4. **Results**
+
+After fitting, results are available through multiple tabs:
+
+-   **Model Summary**: Shows model output, including estimates and diagnostics.
 -   **Convergence Diagnostics**:
-    -   Diagnostics test: R-hat, Geweke, Raftery-Lewis, Heidelberger-Welch
-    -   Diagnotics plot: Trace, Density, Autocorrelation Function (acf), NUTS Energy, R-hat, Effective Sample Size (ESS)
+    -   R-hat, Geweke, Raftery-Lewis, Heidelberger-Welch tests
+    -   Trace, density, ACF, NUTS energy, and ESS plots
 -   **Model Checking**:
-    -   Numerical Model Checks : LOO, WAIC
-    -   Graphical Model Checks : Posterior Predictive Check, Parameter Distributions
--   **Predictions**:
-    -   View model-based estimates and uncertainty measures.
-    -   Upload new data for predictions.
--   **Save Outputs**:
-    -   Save fitted model (RDS), Stan code, CODA samples, and plots.
+    -   **Numerical**: LOO, WAIC
+    -   **Graphical**: Posterior predictive checks
+-   **Prior Sensitivity Analysis**
+-   **Prediction**:
+    -   Display model-based small area estimates with uncertainty.
+    -   Upload new data for out-of-sample predictions.
+-   **Update Model**:
+    -   Modify and refit the model with updated settings.
+-   **Save Output**:
+    -   **Model Fit (RDS)**: Save fitted model object.
+    -   **Stan Code (TXT)**: Export Stan model code.
+    -   **MCMC Samples (CODA Format)**: Save posterior samples.
+    -   **Diagnostic Plots (PDF)**: Export diagnostic visualizations.
 
 ## Example Workflow
 
-1.  **Upload a Dataset** – Import data in CSV or Excel format.
-
-2.  **Define the Model Structure** – Specify the response variable, predictor variable, random effect, Spatial Modeling, distribution, and missing data handling options.
-
-3.  **Set MCMC Parameters** – Configure chains, iterations, warm-up, and `adapt_delta` for model sampling.
-
-4.  **Define Priors & Perform Prior Predictive Checks** – Specify priors and validate them before fitting the model (optional).
-
-5.  **Fit the Model** – Run Bayesian inference using `brms`.
-
-6.  **Generate Predictions & Save Results** – Obtain small area estimates and export results as needed.
+1.  **Upload Dataset**: Use `.csv` or select data from environment.
+2.  **Explore Data**: Summarize and visualize key variables.
+3.  **Define Model**: Set model structure, priors, and MCMC settings.
+4.  **Prior Checking**: Validate prior assumptions before sampling.
+5.  **Fit Model**: Run HBSAE using `brms`.
+6.  **Review Results**: Interpret summary and diagnostics.
+7.  **Predict & Save**: Generate estimates and export outputs.
 
 ## Troubleshooting
 

@@ -5,11 +5,17 @@
 #' **Hierarchical Bayesian Small Area Estimation (HBSAE)** using the `brms` package 
 #' with `Stan` as the backend for Bayesian inference.
 #' 
-#' @import shinyWidgets shinydashboard readxl DT energy minerva XICOR
+#' @import shinyWidgets shinydashboard readxl DT
 #' @importFrom shinyWidgets pickerInput
 #' @importFrom shinydashboard dashboardPage dashboardHeader dashboardSidebar sidebarMenu menuItem tabItems tabItem
 #' @importFrom readxl read_excel
 #' @importFrom DT datatable renderDT DTOutput dataTableOutput renderDataTable
+#' @importFrom minerva mine
+#' @importFrom XICOR xicor
+#' @importFrom energy dcor.test
+#' @importFrom grDevices dev.off pdf 
+#' @importFrom tools file_ext
+
 #' 
 #' @return
 #' Opens a Shiny app in the web browser. The function does not return a value.

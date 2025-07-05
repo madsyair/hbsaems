@@ -24,6 +24,7 @@ Suggests:
     knitr,
     rmarkdown,
     Matrix,
+    mockery,
     testthat (>= 3.0.0)
 License: GPL-3
 Encoding: UTF-8

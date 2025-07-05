@@ -67,12 +67,16 @@
 #' @param warmup Number of warm-up iterations per chain (default: floor(iter/2))
 #' @param cores Number of CPU cores to use (default: 1)
 #' @param sample_prior (default: "no")
-#' @param ... Additional arguments
+#' @param stanvars defines hyperprior of hyperparameter of phi (phi~gamma(alpha,beta) if phi is not fixed using n and deff (default=NULL). use "+" if combining stanvar of alpha and beta. The example of stanvars is:              
+#'                  stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +  
+#'                  stanvar(scode = "beta ~ gamma(1, 1);", block = "model")
+#'                  If you want to use the default hypeprior for phi, you can set this parameter to NULL.             
+#' @param ... Additional arguments passed to the `brm()` function.
 #' 
 #' @return A `hbmfit` object
 #' 
 #' @importFrom stats as.formula
-#' @importFrom brms stanvar
+#' @importFrom brms stanvar set_prior 
 #' 
 #' @export
 #' 
@@ -184,9 +188,32 @@
 #' )
 #' summary(model6)
 #' 
-#' }
-#' 
 
+#' 
+#' have input of argument stanvars
+#' 
+#' model7 <- hbm_betalogitnorm(
+#' response = "y",
+#' predictors = c("x1", "x2", "x3"),
+#' data = data,
+#' stanvars = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
+#'   stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of alpha and beta
+#)
+#' 
+#' summary(model7)
+#' 
+#' have input of argument stanvars
+#' 
+#' model8 <- hbm_betalogitnorm(
+#' response = "y",
+#' predictors = c("x1", "x2", "x3"),
+#' data = data,
+#' stanvars = stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of beta
+#)
+#' 
+#' summary(model8)
+#' 
+#' }
 hbm_betalogitnorm <- function(response,
                      predictors,
                      n = NULL,
@@ -209,7 +236,7 @@ hbm_betalogitnorm <- function(response,
                      cores = 1,
                      sample_prior = "no",
                      stanvars = NULL,
-                     ...){
+                      ...){
   
   # Ensure response and predictors exist in the data
   if (!(response %in% names(data))) {
@@ -270,6 +297,71 @@ hbm_betalogitnorm <- function(response,
           (is.na(prior_list_internal$coef) | prior_list_internal$coef == ""))
   }
   
+  ###### Defines stanvars of alpha and beta if not provided###
+ 
+  
+  #  Extract a list of stanvar elements from the input
+  extract_stanvar_list <- function(stanvars) {
+    if (is.null(stanvars)) {
+      return(list())
+    } else if (inherits(stanvars, "stanvar")) {
+      # Single prior → wrap it in a list
+      return(list(stanvars))
+    } else if (inherits(stanvars, "stanvars")) {
+      # Multiple priors combined via + → unclass to get the underlying list
+      return(unclass(stanvars))
+    }
+    stop("Input must be the result of stanvar(...) or NULL")
+  }
+  
+  # Get all variable names already defined in block = "model"
+  get_model_vars <- function(stanvars) {
+    sv_list <- extract_stanvar_list(stanvars)
+    vars <- character()
+    for (sv in sv_list) {
+      if (!is.null(sv$block) && sv$block == "model") {
+        # Capture the name on the left side of '~'
+        m <- regexec("^\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*~", sv$scode)
+        mm <- regmatches(sv$scode, m)[[1]]
+        if (length(mm) >= 2) vars <- c(vars, mm[2])
+      }
+    }
+    unique(vars)
+  }
+  
+  #  Main function: add default priors for alpha and beta only if they're missing
+  add_default_stanvars <- function(stanvars) {
+    existing <- get_model_vars(stanvars)
+    
+    to_add <- list()
+    if (!("alpha" %in% existing)) {
+      to_add[[length(to_add) + 1]] <- stanvar(
+        scode = "alpha ~ gamma(1, 1);",
+        block = "model"
+      )
+    }
+    if (!("beta" %in% existing)) {
+      to_add[[length(to_add) + 1]] <- stanvar(
+        scode = "beta ~ gamma(1, 1);",
+        block = "model"
+      )
+    }
+    
+    # If nothing to add, return the input as-is
+    if (length(to_add) == 0) return(stanvars)
+    
+    # Combine all new defaults into one stanvars object
+    new_sv <- Reduce(`+`, to_add)
+    
+    # If input is NULL, just return the defaults; otherwise combine with input
+    if (is.null(stanvars)) {
+      return(new_sv)
+    } else {
+      return(stanvars + new_sv)
+    }
+  }
+  
+  #####
   # Define phi
   if (!is.null(n) && !is.null(deff)) {
     # Check for missing values in n or deff
@@ -292,8 +384,8 @@ hbm_betalogitnorm <- function(response,
     
     if (is.null(prior)) {
       adjusted_prior <- c(
-        brms::prior(cauchy(0, 10), class = "Intercept"),
-        brms::prior(cauchy(0, 2.5), class = "b")
+        brms::set_prior("student_t(4,0,10)" , class = "Intercept"),
+        brms::set_prior("student_t(4,0,2.5)", class = "b")
       )
     } else {
       adjusted_prior <- prior
@@ -303,11 +395,11 @@ hbm_betalogitnorm <- function(response,
       }
       
       if (!has_general_prior(adjusted_prior, "Intercept")) {
-        adjusted_prior <- c(adjusted_prior, brms::prior(cauchy(0, 10), class = "Intercept"))
+        adjusted_prior <- c(adjusted_prior, brms::set_prior("student_t(4,0,10)", class = "Intercept"))
       }
       
       if (!has_general_prior(adjusted_prior, "b")) {
-        adjusted_prior <- c(adjusted_prior, brms::prior(cauchy(0, 2.5), class = "b"))
+        adjusted_prior <- c(adjusted_prior, brms::set_prior("student_t(4,0,2.5)", class = "b"))
       }
       
     }
@@ -315,48 +407,43 @@ hbm_betalogitnorm <- function(response,
     formula <- brms::bf(formula, phi ~ 0 + offset(phi_fixed))
   } else {
     # Define default prior
-    if (is.null(prior)) {
-      stanvars <- 
-        stanvar(scode = "
-          real<lower=0> alpha;
+    stanvar_par <- 
+      stanvar(scode = "
+          real<lower=1> alpha;
           real<lower=0> beta;
-        ", block = "parameters") +
-        stanvar(scode = "
-          alpha ~ gamma(1, 1);
-          beta ~ gamma(1, 1);
-        ", block = "model")
+        ", block = "parameters") 
       
+    if (is.null(prior)) {
+  
+      stanvars <- stanvar_par + add_default_stanvars(stanvars)
       adjusted_prior <- c(
-        brms::prior(cauchy(0, 10), class = "Intercept"),
-        brms::prior(cauchy(0, 2.5), class = "b"),
-        brms::prior("gamma(alpha, beta)", class = "phi")
+        brms::set_prior("student_t(4,0,10)", class = "Intercept"),
+        brms::set_prior("student_t(4,0,2.5)", class = "b"),
+        brms::set_prior("gamma(alpha, beta)", class = "phi")
       )
     } else {
         # Use the provided prior
         adjusted_prior <- prior
         
-        # If no general prior for the intercept exists, add a default Cauchy prior
+        # If no general prior for the intercept exists, add a default Student t  prior
         if (!has_general_prior(adjusted_prior, "Intercept")) {
-          adjusted_prior <- c(adjusted_prior, brms::prior(cauchy(0, 10), class = "Intercept"))
+          adjusted_prior <- c(adjusted_prior, brms::set_prior("student_t(4,0,10)", class = "Intercept"))
         }
         
-        # If no general prior for the coefficients exists, add a default Cauchy prior
+        # If no general prior for the coefficients exists, add a default Student t prior
         if (!has_general_prior(adjusted_prior, "b")) {
-          adjusted_prior <- c(adjusted_prior, brms::prior(cauchy(0, 2.5), class = "b"))
+          adjusted_prior <- c(adjusted_prior, brms::set_prior("student_t(4,0,2.5)", class = "b"))
         }
         
         # If no prior for phi is provided, add gamma(alpha, beta)
         if (!has_general_prior(adjusted_prior, "phi")) {
-          stanvars <- 
+          stanvar_par<- 
             stanvar(scode = "
-              real<lower=0> alpha;
+              real<lower=1> alpha;
               real<lower=0> beta;
-            ", block = "parameters") +
-            stanvar(scode = "
-              alpha ~ gamma(1, 1);
-              beta ~ gamma(1, 1);
-            ", block = "model")
-          adjusted_prior <- c(adjusted_prior, brms::prior("gamma(alpha, beta)", class = "phi"))
+            ", block = "parameters")
+          stanvars <- stanvar_par + add_default_stanvars(stanvars)
+          adjusted_prior <- c(adjusted_prior, brms::set_prior("gamma(alpha, beta)", class = "phi"))
         }
     }
     

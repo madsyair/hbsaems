@@ -106,7 +106,12 @@ If \code{NULL}, default priors from \code{brms} will be used.}
 
 \item{sample_prior}{(default: "no")}
 
-\item{...}{Additional arguments}
+\item{stanvars}{defines hyperprior of hyperparameter of phi (phi~gamma(alpha,beta) if phi is not fixed using n and deff (default=NULL). use "+" if combining stanvar of alpha and beta. The example of stanvars is:
+stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
+stanvar(scode = "beta ~ gamma(1, 1);", block = "model")
+If you want to use the default hypeprior for phi, you can set this parameter to NULL.}
+
+\item{...}{Additional arguments passed to the \code{brm()} function.}
 }
 \value{
 A \code{hbmfit} object
@@ -223,8 +228,29 @@ model6 <- hbm_betalogitnorm(
 )
 summary(model6)
 
-}
 
+have input of argument stanvars
+
+model7 <- hbm_betalogitnorm(
+response = "y",
+predictors = c("x1", "x2", "x3"),
+data = data,
+stanvars = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
+  stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of alpha and beta
+
+summary(model7)
+
+have input of argument stanvars
+
+model8 <- hbm_betalogitnorm(
+response = "y",
+predictors = c("x1", "x2", "x3"),
+data = data,
+stanvars = stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of beta
+
+summary(model8)
+
+}
 }
 \references{
 Liu, B. (2009). \emph{Hierarchical Bayes Estimation and Empirical Best Prediction of Small-Area Proportions}. College Park, University of Maryland.

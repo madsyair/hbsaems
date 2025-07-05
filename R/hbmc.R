@@ -70,11 +70,11 @@
 #' @author Achmad Syahrul Choir, Saniyyah Sri Nurhayati, and Arsyka Laila Oktalia Siregar
 #'
 #' @references 
-#' Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. *Journal of Statistical Software*, 80(1), 1-28.
-#' Kallioinen, N., Paananen, T., Bürkner, PC. et al. Detecting and diagnosing prior and likelihood sensitivity with power-scaling. Stat
+#' Buerkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. *Journal of Statistical Software*, 80(1), 1-28.
+#' Kallioinen, N., Paananen, T., Buerkner, PC. et al. Detecting and diagnosing prior and likelihood sensitivity with power-scaling. Stat
 #'               Comput 34, 57 (2024).
 #' Gabry,J., Simpson,D.,  Vehtari, A., Betancourt, M., Gelman, A., Visualization in Bayesian Workflow, Journal of the 
-#'            Royal Statistical Society Series A: Statistics in Society, Volume 182, Issue 2, February 2019, Pages 389–402
+#'            Royal Statistical Society Series A: Statistics in Society, Volume 182, Issue 2, February 2019, Pages 389-402
 #'
 #' @examples
 #' \donttest{
@@ -166,7 +166,7 @@ hbmc <- function(model,
               msg <- paste0("Model '", model_name, "': ", result$high_k_count,
                             " high Pareto k values (> 0.7). Consider setting moment_match = TRUE.")
               result$warnings <- c(result$warnings, msg)
-              message("⚠️ ", msg)
+              message("Warning", msg)
             }
           }
           
@@ -209,7 +209,7 @@ hbmc <- function(model,
                 msg <- paste0("Model '", model_name, "': ", result$high_k_count,
                               " high Pareto k values remain after moment_match = TRUE. Re-running with reloo = TRUE.")
                 result$warnings <- c(result$warnings, msg)
-                message("⚠️ ", msg)
+                message("Warning ", msg)
                 
                 result$reloo_attempted <- TRUE
                 
@@ -231,9 +231,9 @@ hbmc <- function(model,
                     msg2 <- paste0("Model '", model_name, "': ", result$high_k_count,
                                    " high Pareto k values remain even after reloo = TRUE.")
                     result$warnings <- c(result$warnings, msg2)
-                    message("⚠️ ", msg2)
+                    message("Warning ", msg2)
                   } else {
-                    message("✅ All high Pareto k values resolved with reloo.")
+                    message("All high Pareto k values resolved with reloo.")
                   }
                 }
               }
@@ -246,7 +246,7 @@ hbmc <- function(model,
         invokeRestart("muffleWarning")
       })
     }, error = function(e) {
-      err_msg <- paste0("❌ LOO failed for model '", model_name, "': ", e$message)
+      err_msg <- paste0("LOO failed for model '", model_name, "': ", e$message)
       result$error <- err_msg
       result$warnings <- c(result$warnings, err_msg)
       message(err_msg)
