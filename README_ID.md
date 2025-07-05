@@ -1,38 +1,53 @@
-
-# hbsaems: Model Hierarkis Bayesian untuk Estimasi Wilayah Kecil
+<!-- README.md is generated from README.Rmd. Please edit that file -->
 
 **🌏 [Read in English](README.md)**
 
-
 [![R](https://img.shields.io/badge/R-4.0%2B-blue.svg)](https://www.r-project.org/)
-[![Lisensi: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Lisensi: GPL
+v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ## Ringkasan
 
-**hbsaems** adalah pustaka R yang mengimplementasikan model Estimasi Wilayah Kecil Hierarkis Bayesian (HBSAE). pustaka ini menyediakan kerangka kerja yang komprehensif untuk mengestimasi parameter dalam kondisi ukuran sampel terbatas dengan memanfaatkan informasi dari wilayah terkait melalui pemodelan hierarkis. pustaka ini menggunakan **brms** sebagai backend inferensi Bayesian berbasis Stan, memastikan kinerja komputasi yang kuat dan efisien serta mendukung prinsip *Bayesian Workflow* modern.
+**hbsaems** adalah pustaka R yang mengimplementasikan model Estimasi
+Wilayah Kecil Hierarkis Bayesian (HBSAE). pustaka ini menyediakan
+kerangka kerja yang komprehensif untuk mengestimasi parameter dalam
+kondisi ukuran sampel terbatas dengan memanfaatkan informasi dari
+wilayah terkait melalui pemodelan hierarkis. pustaka ini menggunakan
+**brms** sebagai backend inferensi Bayesian berbasis Stan, memastikan
+kinerja komputasi yang kuat dan efisien serta mendukung prinsip
+*Bayesian Workflow* modern.
 
 ## Fitur Utama
 
-* **Beragam Distribusi**: Mendukung distribusi Gaussian, Beta, Binomial/Logit-Normal, dan Lognormal, serta distribusi lain yang didukung oleh `brms`.
-* **Pemodelan Spasial**: Mendukung efek acak spasial Conditional Autoregressive (CAR) dan Simultaneous Autoregressive (SAR).
-* **Penanganan Data Hilang**: Tersedia tiga pendekatan - penghapusan (deletion), imputasi berbasis model, dan imputasi berganda (multiple imputation).
-* **Diagnostik Komprehensif**: Evaluasi konvergensi dan kecocokan model bawaan.
-* **Kuantifikasi Ketidakpastian**: Kuantifikasi ketidakpastian yang tepat untuk prediksi.
-* **Antarmuka Interaktif**: Aplikasi Shiny untuk membangun dan memvisualisasikan model secara interaktif.
-* **Bayesian Workflow**: Dukungan penuh untuk spesifikasi prior, pemeriksaan dan validasi model.
+-   **Beragam Distribusi**: Mendukung distribusi Gaussian, Beta,
+    Binomial/Logit-Normal, dan Lognormal, serta distribusi lain yang
+    didukung oleh `brms`.
+-   **Pemodelan Spasial**: Mendukung efek acak spasial Conditional
+    Autoregressive (CAR) dan Simultaneous Autoregressive (SAR).
+-   **Penanganan Data Hilang**: Tersedia tiga pendekatan - penghapusan
+    (deletion), imputasi berbasis model, dan imputasi berganda (multiple
+    imputation).
+-   **Diagnostik Komprehensif**: Evaluasi konvergensi dan kecocokan
+    model bawaan.
+-   **Kuantifikasi Ketidakpastian**: Kuantifikasi ketidakpastian yang
+    tepat untuk prediksi.
+-   **Antarmuka Interaktif**: Aplikasi Shiny untuk membangun dan
+    memvisualisasikan model secara interaktif.
+-   **Bayesian Workflow**: Dukungan penuh untuk spesifikasi prior,
+    pemeriksaan dan validasi model.
 
 ## Instalasi
 
 Instalasi versi pengembangan dari GitHub:
 
-```r
+``` r
 # install.packages("devtools")
 devtools::install_github("madsyair/hbsaems")
 ```
 
 atau
 
-```r
+``` r
 # install.packages("devtools")
 devtools::install_github("madsyair/hbsaems", build_vignettes = TRUE)
 ```
@@ -41,19 +56,20 @@ devtools::install_github("madsyair/hbsaems", build_vignettes = TRUE)
 
 pustaka ini membutuhkan:
 
-* **brms** (untuk pemodelan regresi Bayesian)
-* **coda**, **posterior** (untuk diagnostik MCMC)
-* **ggplot2** (untuk visualisasi)
-* **mice** (untuk imputasi berganda)
-* **shiny**, **shinydashboard**, **shinyWidgets**, **readxl**, **DT** (untuk aplikasi interaktif)
-* **priorsense** (untuk analisis sensitivitas prior)
-* **energy**, **XICOR**, dan **minerva** (untuk menghitung korelasi)
+-   **brms** (untuk pemodelan regresi Bayesian)
+-   **coda**, **posterior** (untuk diagnostik MCMC)
+-   **ggplot2** (untuk visualisasi)
+-   **mice** (untuk imputasi berganda)
+-   **shiny**, **shinydashboard**, **shinyWidgets**, **readxl**, **DT**
+    (untuk aplikasi interaktif)
+-   **priorsense** (untuk analisis sensitivitas prior)
+-   **energy**, **XICOR**, dan **minerva** (untuk menghitung korelasi)
 
 ## Contoh Sederhana
 
 Contoh sederhana menggunakan data bawaan:
 
-```r
+``` r
 library(hbsaems)
 
 # Memuat data contoh
@@ -84,7 +100,7 @@ summary(model)
 
 Fungsi utama untuk memodelkan HBSAE:
 
-```r
+``` r
 model <- hbm(
   formula = bf(y ~ x1 + x2 + x3),
   hb_sampling = "gaussian",
@@ -99,9 +115,10 @@ model <- hbm(
 
 #### Fungsi Spesifik Distribusi
 
-* `hbm_betalogitnorm()` : untuk distribusi Beta dengan struktur logit-normal
-* `hbm_binlogitnorm()` : untuk data binomial dengan model logit-normal
-* `hbm_lnln()` : untuk model lognormal-lognormal
+-   `hbm_betalogitnorm()` : untuk distribusi Beta dengan struktur
+    logit-normal
+-   `hbm_binlogitnorm()` : untuk data binomial dengan model logit-normal
+-   `hbm_lnln()` : untuk model lognormal-lognormal
 
 ### Fungsi Diagnostik
 
@@ -109,7 +126,7 @@ model <- hbm(
 
 Evaluasi konvergensi model dengan berbagai pengujian:
 
-```r
+``` r
 convergence <- hbcc(
   model,
   diag_tests = c("rhat", "geweke", "heidel", "raftery"),
@@ -122,7 +139,7 @@ print(convergence)
 
 Evaluasi dan bandingkan model:
 
-```r
+``` r
 fit <- hbmc(
   model,
   comparison_metrics = c("loo", "waic", "bf"),
@@ -136,7 +153,7 @@ print(fit)
 
 Validasi asumsi prior sebelum fitting model:
 
-```r
+``` r
 prior_check <- hbpc(
   model,
   data = data,
@@ -152,7 +169,7 @@ print(prior_check)
 
 Prediksi dengan kuantifikasi ketidakpastian:
 
-```r
+``` r
 predictions <- hbsae(model)
 print(predictions)
 ```
@@ -163,7 +180,7 @@ print(predictions)
 
 Jalankan aplikasi Shiny untuk pemodelan dan visualisasi:
 
-```r
+``` r
 run_sae_app()
 ```
 
@@ -173,7 +190,7 @@ run_sae_app()
 
 Tiga pendekatan penanganan data hilang:
 
-```r
+``` r
 data_with_missing <- data_fhnorm
 data_with_missing$y[3:5] <- NA 
 
@@ -191,7 +208,7 @@ model_mi <- hbm(..., handle_missing = "model")
 
 Model spasial dengan struktur CAR dan SAR:
 
-```r
+``` r
 # Model CAR
 data("adjacency_matrix_car")
 model_car <- hbm(..., sre = "spatial_area", sre_type = "car", car_type = "icar", M = adjacency_matrix_car)
@@ -203,7 +220,7 @@ model_sar <- hbm(..., sre_type = "sar", sar_type = "lag", M = spatial_weight_sar
 
 ## Contoh Workflow Lengkap
 
-```r
+``` r
 library(hbsaems)
 
 # 1. Memuat data
@@ -232,30 +249,33 @@ summary(predictions)
 
 ## Dataset yang Tersedia
 
-* `data_fhnorm` – data model Fay-Herriot Normal
-* `data_binlogitnorm` – data Binomial Logit-Normal
-* `data_betalogitnorm` – data Beta Logit-Normal
-* `data_lnln` – data Lognormal-Lognormal
-* `adjacency_matrix_car` – matriks ketetanggaan untuk model CAR
-* `spatial_weight_sar` – matriks bobot spasial untuk model SAR
+-   `data_fhnorm` – data model Fay-Herriot Normal
+-   `data_binlogitnorm` – data Binomial Logit-Normal
+-   `data_betalogitnorm` – data Beta Logit-Normal
+-   `data_lnln` – data Lognormal-Lognormal
+-   `adjacency_matrix_car` – matriks ketetanggaan untuk model CAR
+-   `spatial_weight_sar` – matriks bobot spasial untuk model SAR
 
 ## Metodologi
 
-pustaka ini mengimplementasikan pendekatan Bayesian hierarkis berdasarkan kerangka teoritis dari Rao & Molina (2015), dengan fitur:
+pustaka ini mengimplementasikan pendekatan Bayesian hierarkis
+berdasarkan kerangka teoritis dari Rao & Molina (2015), dengan fitur:
 
-* **Memanfaatkan Informasi**: Menggabungkan informasi dari wilayah-wilayah kecil lainnya
-* **Kuantifikasi Ketidakpastian**: Interval kredibel yang tepat
-* **Pemodelan Fleksibel**: Mengakomodasi beragam informasi bantu
-* **Estimasi yang Kokoh**: Dapat menangani area dengan ukuran sampel kecil bahkan nol
+-   **Memanfaatkan Informasi**: Menggabungkan informasi dari
+    wilayah-wilayah kecil lainnya
+-   **Kuantifikasi Ketidakpastian**: Interval kredibel yang tepat
+-   **Pemodelan Fleksibel**: Mengakomodasi beragam informasi bantu
+-   **Estimasi yang Kokoh**: Dapat menangani area dengan ukuran sampel
+    kecil bahkan nol
 
 ## Penulis dan Kontributor
 
 pustaka ini dikembangkan oleh:
 
-* Achmad Syahrul Choir
-* Saniyyah SriNurhayati
-* Sofi Zamzanah
-* Arsyka Laila Oktalia Siregar
+-   Achmad Syahrul Choir
+-   Saniyyah SriNurhayati
+-   Sofi Zamzanah
+-   Arsyka Laila Oktalia Siregar
 
 ## Lisensi
 
@@ -263,9 +283,10 @@ GPL-3
 
 ## Sitasi
 
-Jika Anda menggunakan pustaka ini dalam riset, mohon cantumkan sitasi berikut:
+Jika Anda menggunakan pustaka ini dalam riset, mohon cantumkan sitasi
+berikut:
 
-```plaintext
+``` plaintext
 Choir, A.S, Nurhayati, S.S, Zamzanah, S. & Siregar, A.L.O, (2025). 
 hbsaems: Hierarchical Bayesian Small Area Estimation Models. 
 R package version 0.1.1.
@@ -273,19 +294,25 @@ R package version 0.1.1.
 
 ## Referensi
 
-* Rao, J. N. K., & Molina, I. (2015). *Small Area Estimation*. John Wiley & Sons.
-* Liu, B. (2009). *Hierarchical Bayes Estimation and Empirical Best Prediction of Small-Area Proportions*.
-* Fabrizi et al. (2018). *Bayesian Small Area Estimation for Skewed Business Survey Variables*. JRSS C.
-* Bürkner, P. C. (2017). *brms: An R package for Bayesian multilevel models using Stan*. JSS.
-* Gelman, A., & Hill, J. (2006). *Data Analysis Using Regression and Multilevel/Hierarchical Models*.
-* Gelman, A. (2006). *Prior Distributions for Variance Parameters in Hierarchical Models*. Bayesian Analysis.
-* Gelman et al. (2008). *A Weakly Informative Default Prior Distribution for Logistic and Other Regression Models*.
+-   Rao, J. N. K., & Molina, I. (2015). *Small Area Estimation*. John
+    Wiley & Sons.
+-   Liu, B. (2009). *Hierarchical Bayes Estimation and Empirical Best
+    Prediction of Small-Area Proportions*.
+-   Fabrizi et al. (2018). *Bayesian Small Area Estimation for Skewed
+    Business Survey Variables*. JRSS C.
+-   Bürkner, P. C. (2017). *brms: An R package for Bayesian multilevel
+    models using Stan*. JSS.
+-   Gelman, A., & Hill, J. (2006). *Data Analysis Using Regression and
+    Multilevel/Hierarchical Models*.
+-   Gelman, A. (2006). *Prior Distributions for Variance Parameters in
+    Hierarchical Models*. Bayesian Analysis.
+-   Gelman et al. (2008). *A Weakly Informative Default Prior
+    Distribution for Logistic and Other Regression Models*.
 
 ## Bantuan
 
 Untuk pertanyaan dan dukungan:
 
-* Periksa [GitHub Issues](https://github.com/madsyair/hbsaems/issues)
-* Lihat dokumentasi dan vignette pustaka
-* Gunakan aplikasi Shiny interaktif dengan `run_sae_app()`
-
+-   Periksa [GitHub Issues](https://github.com/madsyair/hbsaems/issues)
+-   Lihat dokumentasi dan vignette pustaka
+-   Gunakan aplikasi Shiny interaktif dengan `run_sae_app()`

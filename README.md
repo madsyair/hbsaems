@@ -1,6 +1,6 @@
-# hbsaems: Hierarchical Bayesian Small Area Estimation Models
+<!-- README.md is generated from README.Rmd. Please edit that file -->
 
-**🌏 [Baca dalam Bahasa Indonesia](README_ID.md)**
+# hbsaems: Hierarchical Bayesian Small Area Estimation Models
 
 [![R](https://img.shields.io/badge/R-4.0%2B-blue.svg)](https://www.r-project.org/)
 [![License: GPL
@@ -19,9 +19,10 @@ modern Bayesian workflow principles.
 ## Key Features
 
 -   **Multiple Distribution Families**: Support for Gaussian, Beta,
-    Binomial/Logit-Normal, and Lognormal distributions, along with other distributions supported by brms.
+    Binomial/Logit-Normal, and Lognormal distributions, along with other
+    distributions supported by brms.
 -   **Spatial Modeling**: Conditional Autoregressive (CAR) and
-    Simultaneous Autoregressive (SAR) spatial random effects\
+    Simultaneous Autoregressive (SAR) spatial random effects  
 -   **Missing Data Handling**: Three approaches - deletion, model-based
     imputation, and multiple imputation
 -   **Comprehensive Diagnostics**: Built-in convergence assessment and
@@ -41,7 +42,9 @@ You can install the development version from GitHub:
 # install.packages("devtools")
 devtools::install_github("madsyair/hbsaems")
 ```
+
 or
+
 ``` r
 # install.packages("devtools")
 devtools::install_github("madsyair/hbsaems",build_vignettes = TRUE)
@@ -49,20 +52,21 @@ devtools::install_github("madsyair/hbsaems",build_vignettes = TRUE)
 
 ## Dependencies
 
-The package requires: 
+The package requires:
 
-- **brms** (for Bayesian regression modeling) 
-- **coda**, **posterior** (for MCMC diagnostics) 
-- **ggplot2** (for plotting) 
-- **mice** (for multiple imputation) 
-- **shiny**, **shinydashboard**, **shinyWidgets**, **readxl**, **DT** (for the
-interactive app), 
-- **priorsense** (for prior sensitivity analysis)
-- **energy**,  **XICOR***,  and **minerva,** (for computing correlation).
+-   **brms** (for Bayesian regression modeling)
+-   **coda**, **posterior** (for MCMC diagnostics)
+-   **ggplot2** (for plotting)
+-   **mice** (for multiple imputation)
+-   **shiny**, **shinydashboard**, **shinyWidgets**, **readxl**, **DT**
+    (for the interactive app),
+-   **priorsense** (for prior sensitivity analysis)
+-   **energy**, **XICOR**\*, and **minerva,** (for computing
+    correlation).
 
 ## Quick Start
 
-Here's a simple example using the built-in data:
+Here’s a simple example using the built-in data:
 
 ``` r
 library(hbsaems)
@@ -319,12 +323,12 @@ provide:
 
 ## Authors and Contributors
 
-This package was developed by: 
+This package was developed by:
 
-- Achmad Syahrul Choir
-- Saniyyah SriNurhayati
-- Sofi Zamzanah
-- Arsyka Laila Oktalia Siregar
+-   Achmad Syahrul Choir
+-   Saniyyah SriNurhayati
+-   Sofi Zamzanah
+-   Arsyka Laila Oktalia Siregar
 
 ## License
 
@@ -334,11 +338,9 @@ GPL-3
 
 If you use this package in your research, please cite:
 
-```         
-Choir, A.S, Nurhayati, S.S, Zamzanah, S. & Siregar, A.L.O, (2025). 
-hbsaems: Hierarchical Bayesian Small Area Estimation Models. 
-R package version 0.1.1.
-```
+    Choir, A.S, Nurhayati, S.S, Zamzanah, S. & Siregar, A.L.O, (2025). 
+    hbsaems: Hierarchical Bayesian Small Area Estimation Models. 
+    R package version 0.1.1.
 
 ## References
 
