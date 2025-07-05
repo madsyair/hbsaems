@@ -1,7 +1,10 @@
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
+# hbsaems: Model Hierarkis Bayesian untuk Estimasi Wilayah Kecil
+
 **🌏 [Read in English](README.md)**
 
+<img src="man/figures/hbsaems.png" align="right" height="139" />
 [![R](https://img.shields.io/badge/R-4.0%2B-blue.svg)](https://www.r-project.org/)
 [![Lisensi: GPL
 v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
