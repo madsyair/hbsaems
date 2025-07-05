@@ -30,7 +30,7 @@ kinerja komputasi yang kuat dan efisien serta mendukung prinsip
   Binomial/Logit-Normal, dan Lognormal, serta distribusi lain yang
   didukung oleh `brms`.
 - **Pemodelan Spasial**: Mendukung efek acak spasial Conditional
-  Autoregressive (CAR) dan Simultaneous Autoregressive (SAR).
+  Autoregressive (CAR) dan Spatial Autoregressive (SAR).
 - **Penanganan Data Hilang**: Tersedia tiga pendekatan - penghapusan
   (deletion), imputasi berbasis model, dan imputasi berganda (multiple
   imputation).

@@ -28,8 +28,8 @@ modern Bayesian workflow principles.
 - **Multiple Distribution Families**: Support for Gaussian, Beta,
   Binomial/Logit-Normal, and Lognormal distributions, along with other
   distributions supported by brms.
-- **Spatial Modeling**: Conditional Autoregressive (CAR) and
-  Simultaneous Autoregressive (SAR) spatial random effects
+- **Spatial Modeling**: Conditional Autoregressive (CAR) and Spatial
+  Autoregressive (SAR) random effects
 - **Missing Data Handling**: Three approaches - deletion, model-based
   imputation, and multiple imputation
 - **Comprehensive Diagnostics**: Built-in convergence assessment and
@@ -241,7 +241,7 @@ model_car <- hbm(
   M = adjacency_matrix_car     # Adjacency matrix
 )
 
-# SAR (Simultaneous Autoregressive) model
+# SAR (Spatial Autoregressive) model
 data("spatial_weight_sar")
 model_sar <- hbm(
   formula = bf(y ~ x1 + x2 + x3),
