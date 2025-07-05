@@ -1,13 +1,17 @@
+
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# hbsaems: Hierarchical Bayesian Small Area Estimation Models
+# hbsaems: Hierarchical Bayesian Small Area Estimation Models <img src="man/figures/hbsaems.png" align="right" height="139" alt="hbsaems logo" />
 
 **🌏 [Baca dalam Bahasa Indonesia](README_ID.md)**
 
-<img src="man/figures/hbsaems.png" align="right" height="139" />
+<!-- badges: start -->
+
 [![R](https://img.shields.io/badge/R-4.0%2B-blue.svg)](https://www.r-project.org/)
 [![License: GPL
 v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![GitHub](https://img.shields.io/badge/GitHub-madsyair/hbsaems-blue.svg)](https://github.com/madsyair/hbsaems)
+<!-- badges: end -->
 
 ## Overview
 
@@ -21,21 +25,21 @@ modern Bayesian workflow principles.
 
 ## Key Features
 
--   **Multiple Distribution Families**: Support for Gaussian, Beta,
-    Binomial/Logit-Normal, and Lognormal distributions, along with other
-    distributions supported by brms.
--   **Spatial Modeling**: Conditional Autoregressive (CAR) and
-    Simultaneous Autoregressive (SAR) spatial random effects  
--   **Missing Data Handling**: Three approaches - deletion, model-based
-    imputation, and multiple imputation
--   **Comprehensive Diagnostics**: Built-in convergence assessment and
-    goodness of fit evaluation
--   **Uncertainty Quantification**: Proper uncertainty quantification
-    for predictions
--   **Interactive Interface**: Shiny app for interactive model building
-    and visualization
--   **Bayesian Workflow**: Full support for prior specification, model
-    checking, and validation
+- **Multiple Distribution Families**: Support for Gaussian, Beta,
+  Binomial/Logit-Normal, and Lognormal distributions, along with other
+  distributions supported by brms.
+- **Spatial Modeling**: Conditional Autoregressive (CAR) and
+  Simultaneous Autoregressive (SAR) spatial random effects
+- **Missing Data Handling**: Three approaches - deletion, model-based
+  imputation, and multiple imputation
+- **Comprehensive Diagnostics**: Built-in convergence assessment and
+  goodness of fit evaluation
+- **Uncertainty Quantification**: Proper uncertainty quantification for
+  predictions
+- **Interactive Interface**: Shiny app for interactive model building
+  and visualization
+- **Bayesian Workflow**: Full support for prior specification, model
+  checking, and validation
 
 ## Installation
 
@@ -46,26 +50,25 @@ You can install the development version from GitHub:
 devtools::install_github("madsyair/hbsaems")
 ```
 
-or
+Or with vignettes:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("madsyair/hbsaems",build_vignettes = TRUE)
+devtools::install_github("madsyair/hbsaems", build_vignettes = TRUE)
 ```
 
 ## Dependencies
 
 The package requires:
 
--   **brms** (for Bayesian regression modeling)
--   **coda**, **posterior** (for MCMC diagnostics)
--   **ggplot2** (for plotting)
--   **mice** (for multiple imputation)
--   **shiny**, **shinydashboard**, **shinyWidgets**, **readxl**, **DT**
-    (for the interactive app),
--   **priorsense** (for prior sensitivity analysis)
--   **energy**, **XICOR**\*, and **minerva,** (for computing
-    correlation).
+- **brms** (for Bayesian regression modeling)
+- **coda**, **posterior** (for MCMC diagnostics)
+- **ggplot2** (for plotting)
+- **mice** (for multiple imputation)
+- **shiny**, **shinydashboard**, **shinyWidgets**, **readxl**, **DT**
+  (for the interactive app)
+- **priorsense** (for prior sensitivity analysis)
+- **energy**, **XICOR**, and **minerva** (for computing correlation)
 
 ## Quick Start
 
@@ -76,7 +79,8 @@ library(hbsaems)
 
 # Load example data
 data("data_fhnorm")
-data<-data_fhnorm
+data <- data_fhnorm
+
 # Fit a basic Gaussian Model
 model <- hbm(
   formula = bf(y ~ x1 + x2 + x3),
@@ -84,7 +88,7 @@ model <- hbm(
   hb_link = "identity",         # Identity link function
   data = data_fhnorm,           # Dataset
   chains = 2,                   # Number of MCMC chains
-  iter = 10000,                  # Total MCMC iterations
+  iter = 10000,                 # Total MCMC iterations
   warmup = 2000,                # Number of warmup iterations
   cores = 2                     # Number of cores for parallel processing
 )
@@ -110,16 +114,16 @@ model <- hbm(
   sre = "region",                    # Spatial random effect variable
   sre_type = "car",                  # Type of spatial model: "car" or "sar"
   M = adjacency_matrix,              # Spatial matrix
-  data = data_fhnorm                     # Dataset for model fitting
+  data = data_fhnorm                 # Dataset for model fitting
 )
 ```
 
 #### Distribution-Specific Functions
 
--   `hbm_betalogitnorm()`: For Beta distribution with logit-normal
-    structure
--   `hbm_binlogitnorm()`: For binomial data with logit-normal model
--   `hbm_lnln()`: For lognormal-lognormal models
+- `hbm_betalogitnorm()`: For Beta distribution with logit-normal
+  structure
+- `hbm_binlogitnorm()`: For binomial data with logit-normal model
+- `hbm_lnln()`: For lognormal-lognormal models
 
 ### Diagnostic Functions
 
@@ -303,12 +307,12 @@ summary(predictions)
 
 The package includes several simulated datasets for demonstration:
 
--   `data_fhnorm`: Fay-Herriot Normal model data
--   `data_binlogitnorm`: Binomial Logit-Normal data
--   `data_betalogitnorm`: Beta Logit-Normal data
--   `data_lnln`: Lognormal-Lognormal data
--   `adjacency_matrix_car`: Adjacency matrix for CAR models
--   `spatial_weight_sar`: Spatial weight matrix for SAR models
+- `data_fhnorm`: Fay-Herriot Normal model data
+- `data_binlogitnorm`: Binomial Logit-Normal data
+- `data_betalogitnorm`: Beta Logit-Normal data
+- `data_lnln`: Lognormal-Lognormal data
+- `adjacency_matrix_car`: Adjacency matrix for CAR models
+- `spatial_weight_sar`: Spatial weight matrix for SAR models
 
 ## Methodology
 
@@ -316,22 +320,22 @@ The package implements hierarchical Bayesian approaches following the
 theoretical framework described in Rao & Molina (2015). The models
 provide:
 
--   **Borrowing Strength**: Leverage information across related small
-    areas
--   **Uncertainty Quantification**: Proper credible intervals for
-    estimates
--   **Flexible Modeling**: Accommodate various auxiliary information
-    structures
--   **Robust Estimation**: Handle areas with small or zero sample sizes
+- **Borrowing Strength**: Leverage information across related small
+  areas
+- **Uncertainty Quantification**: Proper credible intervals for
+  estimates
+- **Flexible Modeling**: Accommodate various auxiliary information
+  structures
+- **Robust Estimation**: Handle areas with small or zero sample sizes
 
 ## Authors and Contributors
 
 This package was developed by:
 
--   Achmad Syahrul Choir
--   Saniyyah SriNurhayati
--   Sofi Zamzanah
--   Arsyka Laila Oktalia Siregar
+- Achmad Syahrul Choir
+- Saniyyah SriNurhayati
+- Sofi Zamzanah
+- Arsyka Laila Oktalia Siregar
 
 ## License
 
@@ -341,35 +345,41 @@ GPL-3
 
 If you use this package in your research, please cite:
 
+``` r
+citation("hbsaems")
+```
+
     Choir, A.S, Nurhayati, S.S, Zamzanah, S. & Siregar, A.L.O, (2025). 
     hbsaems: Hierarchical Bayesian Small Area Estimation Models. 
     R package version 0.1.1.
 
 ## References
 
--   Rao, J. N. K., & Molina, I. (2015). *Small area estimation*. John
-    Wiley & Sons.
--   Liu, B. (2009). Hierarchical Bayes Estimation and Empirical Best
-    Prediction of Small-Area Proportions. College Park, University of
-    Maryland.
--   Fabrizi, E., Ferrante, M. R., & Trivisano, C. (2018). Bayesian Small
-    Area Estimation for Skewed Business Survey Variables. Journal of the
-    Royal Statistical Society Series C: Applied Statistics, 67(4),
-    861–879.
--   Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel
-    models using Stan. *Journal of Statistical Software*, 80(1), 1-28.
--   Gelman, A., & Hill, J. (2006). *Data analysis using regression and
-    multilevel/hierarchical models*. Cambridge University Press.
--   Gelman, A. (2006). Prior Distributions for Variance Parameters in
-    Hierarchical Models (Comment on Article by Browne and Draper).
-    Bayesian Analysis, 1(3), 527–528.
--   Gelman, A., Jakulin, A., Pittau, M. G., & Su, Y. S. (2008). A Weakly
-    Informative Default Prior Distribution for Logistic and Other
-    Regression Models.
+- Rao, J. N. K., & Molina, I. (2015). *Small area estimation*. John
+  Wiley & Sons.
+- Liu, B. (2009). Hierarchical Bayes Estimation and Empirical Best
+  Prediction of Small-Area Proportions. College Park, University of
+  Maryland.
+- Fabrizi, E., Ferrante, M. R., & Trivisano, C. (2018). Bayesian Small
+  Area Estimation for Skewed Business Survey Variables. Journal of the
+  Royal Statistical Society Series C: Applied Statistics, 67(4),
+  861–879.
+- Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel
+  models using Stan. *Journal of Statistical Software*, 80(1), 1-28.
+- Gelman, A., & Hill, J. (2006). *Data analysis using regression and
+  multilevel/hierarchical models*. Cambridge University Press.
+- Gelman, A. (2006). Prior Distributions for Variance Parameters in
+  Hierarchical Models (Comment on Article by Browne and Draper).
+  Bayesian Analysis, 1(3), 527–528.
+- Gelman, A., Jakulin, A., Pittau, M. G., & Su, Y. S. (2008). A Weakly
+  Informative Default Prior Distribution for Logistic and Other
+  Regression Models.
 
 ## Getting Help
 
-For questions and support: - Check the [GitHub
-Issues](https://github.com/madsyair/hbsaems/issues) - Review the package
-documentation and vignettes - Use the interactive Shiny app
-(`run_sae_app()`) for guided model building
+For questions and support:
+
+- Check the [GitHub Issues](https://github.com/madsyair/hbsaems/issues)
+- Review the package documentation and vignettes
+- Use the interactive Shiny app (`run_sae_app()`) for guided model
+  building
