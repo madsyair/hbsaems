@@ -42,6 +42,3 @@ It allows updating the formula, data, and other arguments, following the behavio
 \details{
 Update a Hierarchical Bayesian Model (hbm) object
 }
-\author{
-Saniyyah Sri Nurhayati
-}
