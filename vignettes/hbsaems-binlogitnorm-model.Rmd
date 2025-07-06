@@ -70,7 +70,7 @@ v_i \overset{iid}{\sim} N(0, \sigma_v^2),
 $$
 
 $$
-\sigma_v \sim \text{Student-t}(3, 0, 2.5).
+\sigma_v \sim \text{Half-Student-t}(3, 0, 2.5).
 $$
 
 To ensure proper model specification, the following conditions must be met. The `trials` variable (denoting the total number of trials in a binomial setting) **must be a positive integer**. If any value is non-positive or non-integer, the function will return an error. The `response` variable (denoting the number of successes) **must be a non-negative integer**. The number of successes (`response`) **cannot exceed the total number of trials**. These conditions ensure that the model is correctly specified for binomial data and prevent computational errors during estimation.

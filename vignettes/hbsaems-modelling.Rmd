@@ -1,8 +1,8 @@
 ---
-title: "Hierarchical Bayesian Model Small Area Estimation in hbsaems Package"
+title: "Hierarchical bayesian model small area estimation in hbsaems package"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{hbsaems-hbm-model}
+  %\VignetteIndexEntry{Hierarchical bayesian model small area estimation in hbsaems package}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

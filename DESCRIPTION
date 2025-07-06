@@ -55,6 +55,14 @@ Imports:
   stats,
   tools,
   XICOR
+Vignettes:
+    hbsaems-betalogitnorm-model,
+    hbsaems-binlogitnorm-model,
+    hbsaems-lnln-model,
+    hbsaems-handle-missing,
+    hbsaems-modelling,
+    hbsaems-run_sae_app,
+    hbsaems-spatial
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)

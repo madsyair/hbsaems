@@ -67,10 +67,17 @@
 #' @param warmup Number of warm-up iterations per chain (default: floor(iter/2))
 #' @param cores Number of CPU cores to use (default: 1)
 #' @param sample_prior (default: "no")
-#' @param stanvars defines hyperprior of hyperparameter of phi (phi~gamma(alpha,beta) if phi is not fixed using n and deff (default=NULL). use "+" if combining stanvar of alpha and beta. The example of stanvars is:              
-#'                  stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +  
-#'                  stanvar(scode = "beta ~ gamma(1, 1);", block = "model")
-#'                  If you want to use the default hypeprior for phi, you can set this parameter to NULL.             
+#' @param stanvars An optional `stanvar` or combination of `stanvar` objects used to define the hyperpriors for the hyperparameter \code{phi}. 
+#' By default, if \code{phi} is not fixed, a gamma prior is used: \code{phi ~ gamma(alpha, beta)}, where \code{alpha} and \code{beta} can be defined via \code{stanvars}.
+#' Use \code{"+"} to combine multiple \code{stanvar} definitions.
+#' 
+#' For example:
+#' \code{
+#'   stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
+#'   stanvar(scode = "beta ~ gamma(1, 1);", block = "model")
+#' }
+#'
+#' To use the default hyperprior for \code{phi}, set \code{stanvars = NULL}.
 #' @param ... Additional arguments passed to the `brm()` function.
 #' 
 #' @return A `hbmfit` object

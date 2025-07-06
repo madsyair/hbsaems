@@ -38,14 +38,14 @@ $$
 a_i = P_i \left( \frac{n_i}{\text{deff}_{iw}} - 1 \right) \\
 b_i = \left( 1- P_i \right) \left( \frac{n_i}{\text{deff}_{iw}} - 1 \right)
 $$
-<<<<<<< HEAD
+
 Where $p_{iw}$ is the proportion estimate for a small area of the survey (direct observation) and $P_i$ is the unknown value of the proportion parameter for a small area. $a_i$ and $b_i$ are the shape parameter of the Beta distribution. $n_i$ is the sample size for the area, while $\text{deff}$ is the Design Effect which corrects for the fact that the survey design is not simply random.
-=======
+
 
 Where $p_{iw}$ is the proportion estimate for a small area of the survey (direct observation) and $P_i$ is the unknown value of the proportion parameter for a small area.
 $a_i$ and $b_i$ are the shape parameter of the Beta distribution.
 $n_i$ is the sample size for the area, while $\text{deff}$ is the Design Effect which corrects for the fact that the survey design is not simply random.
->>>>>>> f97475e9fba6af00b5627f60fafb938a094de256
+
 
 ## Linking Model
 

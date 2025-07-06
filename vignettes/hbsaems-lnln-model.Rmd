@@ -69,7 +69,7 @@ with:
 
 -   $\boldsymbol{\beta} \sim \text{Student-t}(4, 0, 2.5)$,
 
--   $\sigma_v^{2} \sim \text{Student-}t(3, 0, 0.25)$
+-   $\sigma_v^{2} \sim \text{Half-Student-}t(3, 0, 0.25)$
 
 The model is implemented using **Hamiltonian Monte Carlo (HMC)** via Stan, through the `brms` package backend. This allows efficient sampling for hierarchical models with complex structures and skewed outcomes.
 
