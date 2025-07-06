@@ -3,13 +3,15 @@ Encoding: UTF-8
 Type: Package
 Title: Hierarchical Bayes Small Area Estimation Model using Stan
 Version: 0.1.1
-Authors@R: 
-    c(person("Achmad Syahrul", "Choir", email = "madsyair@stis.ac.id",
-             comment = c(ORCID = "0000-0001-7088-0646"), role = c("aut", "cre")),
-      person("Saniyyah Sri", "Nurhayati", role = c("aut")),
-      person("Sofi", "Zamzanah", role = c("aut")),
-      person("Arsyka Laila Oktalia", "Siregar", role = c("aut"))
-      )
+Authors@R: c(
+    person("Achmad Syahrul", "Choir", 
+           role = c("aut", "cre"),
+           email = "madsyair@stis.ac.id",
+           comment = c(ORCID = "0000-0001-7088-0646")),
+    person("Saniyyah Sri", "Nurhayati", role = "aut"),
+    person("Sofi", "Zamzanah", role = "aut"), 
+    person("Arsyka Laila Oktalia", "Siregar", role = "aut")
+    )
 Maintainer: Achmad Syahrul Choir <madsyair@stis.ac.id>
 Description: Provides functions for implementing Hierarchical Bayesian Small Area Estimation  
           models using the 'brms' package as the computational backend. The modeling framework 
