@@ -106,10 +106,17 @@ If \code{NULL}, default priors from \code{brms} will be used.}
 
 \item{sample_prior}{(default: "no")}
 
-\item{stanvars}{defines hyperprior of hyperparameter of phi (phi~gamma(alpha,beta) if phi is not fixed using n and deff (default=NULL). use "+" if combining stanvar of alpha and beta. The example of stanvars is:
-stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-stanvar(scode = "beta ~ gamma(1, 1);", block = "model")
-If you want to use the default hypeprior for phi, you can set this parameter to NULL.}
+\item{stanvars}{An optional \code{stanvar} or combination of \code{stanvar} objects used to define the hyperpriors for the hyperparameter \code{phi}.
+By default, if \code{phi} is not fixed, a gamma prior is used: \code{phi ~ gamma(alpha, beta)}, where \code{alpha} and \code{beta} can be defined via \code{stanvars}.
+Use \code{"+"} to combine multiple \code{stanvar} definitions.
+
+For example:
+\code{
+  stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
+  stanvar(scode = "beta ~ gamma(1, 1);", block = "model")
+}
+
+To use the default hyperprior for \code{phi}, set \code{stanvars = NULL}.}
 
 \item{...}{Additional arguments passed to the \code{brm()} function.}
 }
