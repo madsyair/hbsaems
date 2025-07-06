@@ -1,14 +1,14 @@
 #' @title Small Area Estimation using Hierarchical Bayesian under Beta Distribution
-#'  
-#' @description This function is implemented a **Hierarchical Bayesian Small Area Estimation (HBSAE)** model  
+#' 
+#' @description This function is implemented a **Hierarchical Bayesian Small Area Estimation (HBSAE)** model 
 #' under a **beta distribution** using **Bayesian inference** with the `brms` package. 
 #' 
 #' The range of the variable data \eqn{(y)} that is intended as a beta distribution must be \eqn{0<y<1}.
 #' The data proportion is supposed to be implemented with this function.
 #' 
-#' The function utilizes the **Bayesian regression modeling framework** provided by `brms`,  
-#' which interfaces with **Stan** for efficient Markov Chain Monte Carlo (MCMC) sampling.  
-#' The `brm()` function from `brms` is used to estimate posterior distributions based on user-defined  
+#' The function utilizes the **Bayesian regression modeling framework** provided by `brms`, 
+#' which interfaces with **Stan** for efficient Markov Chain Monte Carlo (MCMC) sampling. 
+#' The `brm()` function from `brms` is used to estimate posterior distributions based on user-defined 
 #' hierarchical and spatial structures.
 #' 
 #' @name hbm_betalogitnorm
@@ -19,48 +19,48 @@
 #' @param deff Design Effect
 #' @param link_phi Link function for the second parameter (phi), typically representing precision, shape, or dispersion depending on the family used (e.g., "log", "identity")
 #' @param group The name of the grouping variable (e.g., area, cluster, region)
-#'              used to define the hierarchical structure for random effects. This variable should
-#'              correspond to a column in the input data and is typically used to model area-level
-#'              variation through random intercepts
+#' used to define the hierarchical structure for random effects. This variable should
+#' correspond to a column in the input data and is typically used to model area-level
+#' variation through random intercepts
 #' @param sre An optional grouping factor mapping observations to spatial locations. 
-#'            If not specified, each observation is treated as a separate location. 
-#'            It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.
+#' If not specified, each observation is treated as a separate location. 
+#' It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.
 #' @param sre_type Determines the type of spatial random effect used in the model. The function currently supports "sar" and "car"
 #' @param car_type Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR), 
-#'                 "icar" (intrinsic CAR), and "bym2". 
+#' "icar" (intrinsic CAR), and "bym2". 
 #' @param sar_type Type of the SAR structure. Either "lag" (for SAR of the response values) or 
-#'                 "error" (for SAR of the residuals). 
+#' "error" (for SAR of the residuals). 
 #' @param M The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain 
-#'          weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations. 
-#'          SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships. 
-#'          If sre is specified, the row names of M have to match the levels of the grouping factor
+#' weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations. 
+#' SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships. 
+#' If sre is specified, the row names of M have to match the levels of the grouping factor
 #' @param data Dataset used for model fitting
 #' @param prior Priors for the model parameters (default: `NULL`).
-#'              Should be specified using the `brms::prior()` function or a list of such objects. 
-#'              For example, `prior = prior(normal(0, 1), class = "b")` sets a Normal(0,1) prior on the regression coefficients. 
-#'              Multiple priors can be combined using `c()`, e.g., 
-#'              `prior = c(prior(normal(0, 1), class = "b"), prior(exponential(1), class = "sd"))`.
-#'              If `NULL`, default priors from `brms` will be used.
+#' Should be specified using the `brms::prior()` function or a list of such objects. 
+#' For example, `prior = prior(normal(0, 1), class = "b")` sets a Normal(0,1) prior on the regression coefficients. 
+#' Multiple priors can be combined using `c()`, e.g., 
+#' `prior = c(prior(normal(0, 1), class = "b"), prior(exponential(1), class = "sd"))`.
+#' If `NULL`, default priors from `brms` will be used.
 #' @param handle_missing Mechanism to handle missing data (NA values) to ensure model stability and avoid estimation errors. 
-#'                       Three approaches are supported. 
-#'                       The `"deleted"` approach performs complete case analysis by removing all rows with any missing values before model fitting. 
-#'                       This is done using a simple filter such as `complete.cases(data)`. 
-#'                       It is recommended when the missingness mechanism is Missing Completely At Random (MCAR).
-#'                       The `"multiple"` approach applies multiple imputation before model fitting. 
-#'                       Several imputed datasets are created (e.g., using the `mice` package or the `brm_multiple()` function in `brms`), 
-#'                       the model is fitted separately to each dataset, and the results are combined. 
-#'                       This method is suitable when data are Missing At Random (MAR).
-#'                       The `"model"` approach uses model-based imputation within the Bayesian model itself. 
-#'                       Missing values are incorporated using the `mi()` function in the model formula (e.g., `y ~ mi(x1) + mi(x2)`), 
-#'                       allowing the missing values to be jointly estimated with the model parameters. 
-#'                       This method also assumes a MAR mechanism and is applicable only for continuous variables.
-#'                       If data are suspected to be Missing Not At Random (MNAR), none of the above approaches directly apply. 
-#'                       Further exploration, such as explicitly modeling the missingness process or conducting sensitivity analyses, is recommended.
+#' Three approaches are supported. 
+#' The `"deleted"` approach performs complete case analysis by removing all rows with any missing values before model fitting. 
+#' This is done using a simple filter such as `complete.cases(data)`. 
+#' It is recommended when the missingness mechanism is Missing Completely At Random (MCAR).
+#' The `"multiple"` approach applies multiple imputation before model fitting. 
+#' Several imputed datasets are created (e.g., using the `mice` package or the `brm_multiple()` function in `brms`), 
+#' the model is fitted separately to each dataset, and the results are combined. 
+#' This method is suitable when data are Missing At Random (MAR).
+#' The `"model"` approach uses model-based imputation within the Bayesian model itself. 
+#' Missing values are incorporated using the `mi()` function in the model formula (e.g., `y ~ mi(x1) + mi(x2)`), 
+#' allowing the missing values to be jointly estimated with the model parameters. 
+#' This method also assumes a MAR mechanism and is applicable only for continuous variables.
+#' If data are suspected to be Missing Not At Random (MNAR), none of the above approaches directly apply. 
+#' Further exploration, such as explicitly modeling the missingness process or conducting sensitivity analyses, is recommended.
 #' @param m Number of imputations to perform when using the `"multiple"` approach for handling missing data (default: 5). 
-#'          This parameter is only used if `handle_missing = "multiple"`. 
-#'          It determines how many imputed datasets will be generated. 
-#'          Each imputed dataset is analyzed separately, and the posterior draws are then combined to account for both within-imputation and between-imputation variability, 
-#'          following Rubin’s rules. A typical choice is between 5 and 10 imputations, but more may be needed for higher missingness rates.
+#' This parameter is only used if `handle_missing = "multiple"`. 
+#' It determines how many imputed datasets will be generated. 
+#' Each imputed dataset is analyzed separately, and the posterior draws are then combined to account for both within-imputation and between-imputation variability, 
+#' following Rubin’s rules. A typical choice is between 5 and 10 imputations, but more may be needed for higher missingness rates.
 #' @param control A list of control parameters for the sampler (default: `list()`)
 #' @param chains Number of Markov chains (default: 4)
 #' @param iter Total number of iterations per chain (default: 4000)
@@ -73,8 +73,8 @@
 #' 
 #' For example:
 #' \code{
-#'   stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-#'   stanvar(scode = "beta ~ gamma(1, 1);", block = "model")
+#' stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
+#' stanvar(scode = "beta ~ gamma(1, 1);", block = "model")
 #' }
 #'
 #' To use the default hyperprior for \code{phi}, set \code{stanvars = NULL}.
@@ -107,19 +107,19 @@
 #'
 #' # Fit Beta Model
 #' model1 <- hbm_betalogitnorm(
-#'   response = "y",
-#'   predictors = c("x1", "x2", "x3"),
-#'   data = data
+#' response = "y",
+#' predictors = c("x1", "x2", "x3"),
+#' data = data
 #' )
 #' summary(model1)
 #' 
 #' if you have the information of n and deff values you can use the following model
 #' model1 <- hbm_betalogitnorm(
-#'   response = "y",
-#'   predictors = c("x1", "x2", "x3"),
-#'   n = "n",
-#'   deff = "deff",
-#'   data = data
+#' response = "y",
+#' predictors = c("x1", "x2", "x3"),
+#' n = "n",
+#' deff = "deff",
+#' data = data
 #' )
 #' summary(model1)
 #' 
@@ -130,12 +130,12 @@
 #' 
 #' # Fit Beta Model with Grouping Variable as Random Effect
 #' model2 <- hbm_betalogitnorm(
-#'   response = "y",
-#'   predictors = c("x1", "x2", "x3"),
-#'   n = "n",
-#'   deff = "deff",
-#'   group = "group",
-#'   data = data
+#' response = "y",
+#' predictors = c("x1", "x2", "x3"),
+#' n = "n",
+#' deff = "deff",
+#' group = "group",
+#' data = data
 #' )
 #' summary(model2)
 #'
@@ -145,23 +145,23 @@
 #'
 #' # a. Handling missing data by deleted (Only if missing in response)
 #' model3 <- hbm_betalogitnorm(
-#'   response = "y",
-#'   predictors = c("x1", "x2", "x3"),
-#'   n = "n",
-#'   deff = "deff",
-#'   data = data_miss,
-#'   handle_missing = "deleted"
+#' response = "y",
+#' predictors = c("x1", "x2", "x3"),
+#' n = "n",
+#' deff = "deff",
+#' data = data_miss,
+#' handle_missing = "deleted"
 #' )
 #' summary(model3)
 #'
 #' # b. Handling missing data using multiple imputation (m=5)
 #' model4 <- hbm_betalogitnorm(
-#'   response = "y",
-#'   predictors = c("x1", "x2", "x3"),
-#'   n = "n",
-#'   deff = "deff",
-#'   data = data_miss,
-#'   handle_missing = "multiple"
+#' response = "y",
+#' predictors = c("x1", "x2", "x3"),
+#' n = "n",
+#' deff = "deff",
+#' data = data_miss,
+#' handle_missing = "multiple"
 #' )
 #' summary(model4)
 #' 
@@ -170,13 +170,13 @@
 #' data_miss$x1[3:5] <- NA 
 #' data_miss$x2[14:17] <- NA 
 #' model5 <- hbm_betalogitnorm(
-#'   response = "y",
-#'   predictors = c("x1", "x2", "x3"),
-#'   n = "n",
-#'   deff = "deff",
-#'   group = "group",
-#'   data = data_miss,
-#'   handle_missing = "model"
+#' response = "y",
+#' predictors = c("x1", "x2", "x3"),
+#' n = "n",
+#' deff = "deff",
+#' group = "group",
+#' data = data_miss,
+#' handle_missing = "model"
 #' )
 #'
 #' # Fit Logit-Normal Model With Spatial Effect
@@ -184,14 +184,14 @@
 #' M <- adjacency_matrix_car
 #'
 #' model6 <- hbm_betalogitnorm(
-#'   response = "y",
-#'   predictors = c("x1", "x2", "x3"),
-#'   n = "n",
-#'   deff = "deff",
-#'   sre = "sre",
-#'   sre_type = "car",
-#'   M = M,
-#'   data = data
+#' response = "y",
+#' predictors = c("x1", "x2", "x3"),
+#' n = "n",
+#' deff = "deff",
+#' sre = "sre",
+#' sre_type = "car",
+#' M = M,
+#' data = data
 #' )
 #' summary(model6)
 #' 
@@ -204,7 +204,7 @@
 #' predictors = c("x1", "x2", "x3"),
 #' data = data,
 #' stanvars = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-#'   stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of alpha and beta
+#' stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of alpha and beta
 #)
 #' 
 #' summary(model7)

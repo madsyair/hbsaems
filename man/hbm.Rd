@@ -35,7 +35,7 @@ auxiliary variables, use the \code{+} operator to combine multiple \code{bf()} f
 Example: \code{formula(y ~ x1 + x2 + x3)}, \code{bf(y ~ x1 + x2 + x3)}, or \code{bf(y | mi() ~ mi(x1)) + bf(x1 | mi() ~ x2)}}
 
 \item{hb_sampling}{A character string naming the distribution family of the response variable to be
-used in the model  (e.g., "gaussian", "bernoulli", "poisson")}
+used in the model (e.g., "gaussian", "bernoulli", "poisson")}
 
 \item{hb_link}{A specification for the model link function. This can be a name/expression or
 character string. See the ’Details’ section for more information on link functions supported by each family.}
@@ -139,28 +139,28 @@ data <- data_fhnorm
 
 # Fit the Basic Model
 model <- hbm(
-  formula = bf(y ~ x1 + x2 + x3),  # Formula model
-  hb_sampling = "gaussian",       # Gaussian family for continuous outcomes
-  hb_link = "identity",           # Identity link function (no transformation)
-  data = data,                    # Dataset
-  chains = 4,                     # Number of MCMC chains
-  iter = 4000,                    # Total MCMC iterations
-  warmup = 2000,                  # Number of warmup iterations
-  cores = 2                       # Parallel processing
+formula = bf(y ~ x1 + x2 + x3), # Formula model
+hb_sampling = "gaussian", # Gaussian family for continuous outcomes
+hb_link = "identity", # Identity link function (no transformation)
+data = data, # Dataset
+chains = 4, # Number of MCMC chains
+iter = 4000, # Total MCMC iterations
+warmup = 2000, # Number of warmup iterations
+cores = 2 # Parallel processing
 )
 summary(model)
 
 # Fit the Basic Model With Defined Random Effect
 model_with_defined_re <- hbm(
-  formula = bf(y ~ x1 + x2 + x3),  # Formula model
-  hb_sampling = "gaussian",                   # Gaussian family
-  hb_link = "identity",                       # Identity link
-  re = ~(1 | group),                          # Defined random effect
-  data = data,
-  chains = 4,
-  iter = 4000,
-  warmup = 2000,
-  cores = 2
+formula = bf(y ~ x1 + x2 + x3), # Formula model
+hb_sampling = "gaussian", # Gaussian family
+hb_link = "identity", # Identity link
+re = ~(1 | group), # Defined random effect
+data = data,
+chains = 4,
+iter = 4000,
+warmup = 2000,
+cores = 2
 )
 summary(model_with_defined_re)
 
@@ -168,31 +168,31 @@ summary(model_with_defined_re)
 # a. Handling missing by deletion
 data$y[3:5] <- NA 
 model_deleted <- hbm(
-  formula = bf(y ~ x1 + x2 + x3),
-  hb_sampling = "gaussian",
-  hb_link = "identity",
-  re = ~(1 | group),
-  data = data,
-  handle_missing = "deleted",
-  chains = 4,
-  iter = 4000,
-  warmup = 2000,
-  cores = 2
+formula = bf(y ~ x1 + x2 + x3),
+hb_sampling = "gaussian",
+hb_link = "identity",
+re = ~(1 | group),
+data = data,
+handle_missing = "deleted",
+chains = 4,
+iter = 4000,
+warmup = 2000,
+cores = 2
 )
 summary(model_deleted)
 
 # b. Handling missing using multiple imputation
 model_multiple <- hbm(
-  formula = bf(y ~ x1 + x2 + x3),
-  hb_sampling = "gaussian",
-  hb_link = "identity",
-  re = ~(1 | group),
-  data = data,
-  handle_missing = "multiple",
-  chains = 4,
-  iter = 4000,
-  warmup = 2000,
-  cores = 2
+formula = bf(y ~ x1 + x2 + x3),
+hb_sampling = "gaussian",
+hb_link = "identity",
+re = ~(1 | group),
+data = data,
+handle_missing = "multiple",
+chains = 4,
+iter = 4000,
+warmup = 2000,
+cores = 2
 )
 summary(model_multiple)
 
@@ -200,17 +200,17 @@ summary(model_multiple)
 data$y[3:5] <- NA 
 data$x1[6:7] <- NA
 model_model <- hbm(
-  formula = bf(y | mi() ~ mi(x1) + x2 + x3) +
-            bf(x1 | mi() ~ x2 + x3),
-  hb_sampling = "gaussian",
-  hb_link = "identity",
-  re = ~(1 | group),
-  data = data,
-  handle_missing = "model",
-  chains = 4,
-  iter = 4000,
-  warmup = 2000,
-  cores = 2
+formula = bf(y | mi() ~ mi(x1) + x2 + x3) +
+bf(x1 | mi() ~ x2 + x3),
+hb_sampling = "gaussian",
+hb_link = "identity",
+re = ~(1 | group),
+data = data,
+handle_missing = "model",
+chains = 4,
+iter = 4000,
+warmup = 2000,
+cores = 2
 )
 summary(model_model)
 
@@ -220,17 +220,17 @@ data("adjacency_matrix_car")
 adjacency_matrix_car
 
 model_spatial_car <- hbm(
-  formula = bf(y ~ x1 + x2 + x3 ),  
-  hb_sampling = "gaussian",       
-  hb_link = "identity",           
-  data = data,                    
-  sre = "sre",
-  sre_type = "car",
-  M = adjacency_matrix_car,
-  chains = 4,                    
-  iter = 4000,                    
-  warmup = 2000,                  
-  cores = 2                       
+formula = bf(y ~ x1 + x2 + x3 ), 
+hb_sampling = "gaussian", 
+hb_link = "identity", 
+data = data, 
+sre = "sre",
+sre_type = "car",
+M = adjacency_matrix_car,
+chains = 4, 
+iter = 4000, 
+warmup = 2000, 
+cores = 2 
 )
 summary(model_spatial_car)
 
@@ -239,16 +239,16 @@ data("spatial_weight_sar")
 spatial_weight_sar
 
 model_spatial_sar <- hbm(
-  formula = bf(y ~ x1 + x2 + x3 ),  
-  hb_sampling = "gaussian",       
-  hb_link = "identity",           
-  data = data,                    
-  sre_type = "sar",
-  M = spatial_weight_sar,
-  chains = 4,                    
-  iter = 4000,                    
-  warmup = 2000,                  
-  cores = 2                       
+formula = bf(y ~ x1 + x2 + x3 ), 
+hb_sampling = "gaussian", 
+hb_link = "identity", 
+data = data, 
+sre_type = "sar",
+M = spatial_weight_sar,
+chains = 4, 
+iter = 4000, 
+warmup = 2000, 
+cores = 2 
 )
 
 }

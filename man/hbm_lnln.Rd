@@ -38,7 +38,7 @@ hbm_lnln(
 
 \item{group}{The name of the grouping variable (e.g., area, cluster, region)
 used to define the hierarchical structure for random effects. This variable should
-correspond to a column in the input ⁠ data ⁠ and is typically used to model area-level
+correspond to a column in the input data and is typically used to model area-level
 variation through random intercepts.}
 
 \item{sre}{An optional grouping factor mapping observations to spatial locations.
@@ -134,36 +134,36 @@ head(data)
 
 # --- 1. Prior Predictive Check ---
 model.check_prior <- hbm_lnln(
-  response = "y_obs",
-  predictors = c("x1", "x2", "x3"),
-  group = "group",
-  data = data,
-  prior = c(
-    prior(normal(0.1, 0.1), class = "b"),
-    prior(normal(1, 1), class = "Intercept")
-  ),
-  sample_prior = "only",
-  iter = 4000,
-  warmup = 2000,
-  chains = 2,
-  seed = 123
+response = "y_obs",
+predictors = c("x1", "x2", "x3"),
+group = "group",
+data = data,
+prior = c(
+prior(normal(0.1, 0.1), class = "b"),
+prior(normal(1, 1), class = "Intercept")
+),
+sample_prior = "only",
+iter = 4000,
+warmup = 2000,
+chains = 2,
+seed = 123
 )
 hbpc(model.check_prior, response_var = "y_obs")
 
 # --- 2. Fit the Model with Data ---
 model <- hbm_lnln(
-  response = "y_obs",
-  predictors = c("x1", "x2", "x3"),
-  group = "group",
-  data = data,
-  prior = c(
-    prior(normal(0.1, 0.1), class = "b"),
-    prior(normal(1, 1), class = "Intercept")
-  ),
-  iter = 10000,
-  warmup = 5000,
-  chains = 1,
-  seed = 123
+response = "y_obs",
+predictors = c("x1", "x2", "x3"),
+group = "group",
+data = data,
+prior = c(
+prior(normal(0.1, 0.1), class = "b"),
+prior(normal(1, 1), class = "Intercept")
+),
+iter = 10000,
+warmup = 5000,
+chains = 1,
+seed = 123
 )
 summary(model)
 
@@ -171,22 +171,22 @@ summary(model)
 M <- adjacency_matrix_car
 
 model.spatial <- hbm_lnln(
-  response = "y_obs",
-  predictors = c("x1", "x2", "x3"),
-  group = "group",
-  sre = "sre",           # Spatial grouping variable (must match rows/cols of M)
-  sre_type = "car",       # Spatial random effect type
-  car_type = "icar",      # CAR model type
-  M = M,                  # Adjacency matrix (must be symmetric)
-  data = data,
-  prior = c(
-    prior(normal(0.1, 0.1), class = "b"),
-    prior(normal(1, 1), class = "Intercept")
-  ),
-  iter = 10000,
-  warmup = 5000,
-  chains = 1,
-  seed = 123
+response = "y_obs",
+predictors = c("x1", "x2", "x3"),
+group = "group",
+sre = "sre", # Spatial grouping variable (must match rows/cols of M)
+sre_type = "car", # Spatial random effect type
+car_type = "icar", # CAR model type
+M = M, # Adjacency matrix (must be symmetric)
+data = data,
+prior = c(
+prior(normal(0.1, 0.1), class = "b"),
+prior(normal(1, 1), class = "Intercept")
+),
+iter = 10000,
+warmup = 5000,
+chains = 1,
+seed = 123
 )
 summary(model.spatial)
 }

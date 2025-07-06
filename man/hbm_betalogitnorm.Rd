@@ -112,8 +112,8 @@ Use \code{"+"} to combine multiple \code{stanvar} definitions.
 
 For example:
 \code{
-  stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-  stanvar(scode = "beta ~ gamma(1, 1);", block = "model")
+stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
+stanvar(scode = "beta ~ gamma(1, 1);", block = "model")
 }
 
 To use the default hyperprior for \code{phi}, set \code{stanvars = NULL}.}
@@ -147,19 +147,19 @@ data <- data_betalogitnorm
 
 # Fit Beta Model
 model1 <- hbm_betalogitnorm(
-  response = "y",
-  predictors = c("x1", "x2", "x3"),
-  data = data
+response = "y",
+predictors = c("x1", "x2", "x3"),
+data = data
 )
 summary(model1)
 
 if you have the information of n and deff values you can use the following model
 model1 <- hbm_betalogitnorm(
-  response = "y",
-  predictors = c("x1", "x2", "x3"),
-  n = "n",
-  deff = "deff",
-  data = data
+response = "y",
+predictors = c("x1", "x2", "x3"),
+n = "n",
+deff = "deff",
+data = data
 )
 summary(model1)
 
@@ -170,12 +170,12 @@ then simply delete the parameters n and deff in your model.
 
 # Fit Beta Model with Grouping Variable as Random Effect
 model2 <- hbm_betalogitnorm(
-  response = "y",
-  predictors = c("x1", "x2", "x3"),
-  n = "n",
-  deff = "deff",
-  group = "group",
-  data = data
+response = "y",
+predictors = c("x1", "x2", "x3"),
+n = "n",
+deff = "deff",
+group = "group",
+data = data
 )
 summary(model2)
 
@@ -185,23 +185,23 @@ data_miss[5:7, "y"] <- NA
 
 # a. Handling missing data by deleted (Only if missing in response)
 model3 <- hbm_betalogitnorm(
-  response = "y",
-  predictors = c("x1", "x2", "x3"),
-  n = "n",
-  deff = "deff",
-  data = data_miss,
-  handle_missing = "deleted"
+response = "y",
+predictors = c("x1", "x2", "x3"),
+n = "n",
+deff = "deff",
+data = data_miss,
+handle_missing = "deleted"
 )
 summary(model3)
 
 # b. Handling missing data using multiple imputation (m=5)
 model4 <- hbm_betalogitnorm(
-  response = "y",
-  predictors = c("x1", "x2", "x3"),
-  n = "n",
-  deff = "deff",
-  data = data_miss,
-  handle_missing = "multiple"
+response = "y",
+predictors = c("x1", "x2", "x3"),
+n = "n",
+deff = "deff",
+data = data_miss,
+handle_missing = "multiple"
 )
 summary(model4)
 
@@ -210,13 +210,13 @@ data_miss <- data
 data_miss$x1[3:5] <- NA 
 data_miss$x2[14:17] <- NA 
 model5 <- hbm_betalogitnorm(
-  response = "y",
-  predictors = c("x1", "x2", "x3"),
-  n = "n",
-  deff = "deff",
-  group = "group",
-  data = data_miss,
-  handle_missing = "model"
+response = "y",
+predictors = c("x1", "x2", "x3"),
+n = "n",
+deff = "deff",
+group = "group",
+data = data_miss,
+handle_missing = "model"
 )
 
 # Fit Logit-Normal Model With Spatial Effect
@@ -224,14 +224,14 @@ data("adjacency_matrix_car")
 M <- adjacency_matrix_car
 
 model6 <- hbm_betalogitnorm(
-  response = "y",
-  predictors = c("x1", "x2", "x3"),
-  n = "n",
-  deff = "deff",
-  sre = "sre",
-  sre_type = "car",
-  M = M,
-  data = data
+response = "y",
+predictors = c("x1", "x2", "x3"),
+n = "n",
+deff = "deff",
+sre = "sre",
+sre_type = "car",
+M = M,
+data = data
 )
 summary(model6)
 
@@ -243,7 +243,7 @@ response = "y",
 predictors = c("x1", "x2", "x3"),
 data = data,
 stanvars = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-  stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of alpha and beta
+stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of alpha and beta
 
 summary(model7)
 

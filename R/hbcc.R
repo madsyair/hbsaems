@@ -12,19 +12,19 @@
 #' @param plot_types Character vector of plot types (default: trace","dens","acf", "nuts_energy", "rhat", "neff")
 #'
 #' @return An object of class `hbcc_results`, which is a list containing:
-#'   \item{rhat_ess}{Matrix of \code{Rhat}, \code{Bulk_ESS}, and \code{Tail_ESS} values for fixed and random effects.}
-#'   \item{geweke}{Geweke diagnostic results (if selected).}
-#'   \item{raftery}{Raftery-Lewis diagnostic results (if selected).}
-#'   \item{heidel}{Heidelberger-Welch diagnostic results (if selected).}
-#'   \item{plots}{A list of generated MCMC diagnostic plots, which may include:}
-#'     \itemize{
-#'       \item \code{"trace"} - Trace plot of the MCMC chains.
-#'       \item \code{"dens"} - Density plot of the posterior distributions.
-#'       \item \code{"acf"} - Autocorrelation function plot.
-#'       \item \code{"nuts_energy"} - NUTS energy diagnostic plot.
-#'       \item \code{"rhat"} - Rhat plot (if available).
-#'       \item \code{"neff"} - Effective sample size plot.
-#'     }
+#' \item{rhat_ess}{Matrix of \code{Rhat}, \code{Bulk_ESS}, and \code{Tail_ESS} values for fixed and random effects.}
+#' \item{geweke}{Geweke diagnostic results (if selected).}
+#' \item{raftery}{Raftery-Lewis diagnostic results (if selected).}
+#' \item{heidel}{Heidelberger-Welch diagnostic results (if selected).}
+#' \item{plots}{A list of generated MCMC diagnostic plots, which may include:}
+#' \itemize{
+#' \item \code{"trace"} - Trace plot of the MCMC chains.
+#' \item \code{"dens"} - Density plot of the posterior distributions.
+#' \item \code{"acf"} - Autocorrelation function plot.
+#' \item \code{"nuts_energy"} - NUTS energy diagnostic plot.
+#' \item \code{"rhat"} - Rhat plot (if available).
+#' \item \code{"neff"} - Effective sample size plot.
+#' }
 #'
 #' @importFrom brms mcmc_plot as_draws_matrix as_draws_df as_draws_array
 #' @importFrom coda as.mcmc geweke.diag raftery.diag heidel.diag
@@ -47,14 +47,14 @@
 #' 
 #' # Fit the Basic Model
 #' model <- hbm(
-#'   formula = bf(y ~ x1 + x2 + x3),  # Formula model
-#'   hb_sampling = "gaussian",       # Gaussian family for continuous outcomes
-#'   hb_link = "identity",           # Identity link function (no transformation)
-#'   data = data,                    # Dataset
-#'   chains = 4,                     # Number of MCMC chains
-#'   iter = 4000,                    # Total MCMC iterations
-#'   warmup = 2000,                  # Number of warmup iterations
-#'   cores = 2                       # Parallel processing
+#' formula = bf(y ~ x1 + x2 + x3), # Formula model
+#' hb_sampling = "gaussian", # Gaussian family for continuous outcomes
+#' hb_link = "identity", # Identity link function (no transformation)
+#' data = data, # Dataset
+#' chains = 4, # Number of MCMC chains
+#' iter = 4000, # Total MCMC iterations
+#' warmup = 2000, # Number of warmup iterations
+#' cores = 2 # Parallel processing
 #' )
 #' summary(model)
 #' 

@@ -22,48 +22,48 @@
 #' @param response A non-negative (x>0) dependent (outcome) variable assumed to follow a lognormal distribution.
 #' @param predictors A list of independent (explanatory) variables used in the model. These variables form the fixed effects in the regression equation.
 #' @param group The name of the grouping variable (e.g., area, cluster, region)
-#'              used to define the hierarchical structure for random effects. This variable should
-#'              correspond to a column in the input ⁠ data ⁠ and is typically used to model area-level
-#'              variation through random intercepts.
+#' used to define the hierarchical structure for random effects. This variable should
+#' correspond to a column in the input data and is typically used to model area-level
+#' variation through random intercepts.
 #' @param sre An optional grouping factor mapping observations to spatial locations. 
-#'            If not specified, each observation is treated as a separate location. 
-#'            It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.
+#' If not specified, each observation is treated as a separate location. 
+#' It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.
 #' @param sre_type Determines the type of spatial random effect used in the model. The function currently supports "sar" and "car"
 #' @param car_type Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR), 
-#'                 "icar" (intrinsic CAR), and "bym2". 
+#' "icar" (intrinsic CAR), and "bym2". 
 #' @param sar_type Type of the SAR structure. Either "lag" (for SAR of the response values) or 
-#'                 "error" (for SAR of the residuals). 
+#' "error" (for SAR of the residuals). 
 #' @param M The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain 
-#'          weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations. 
-#'          SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships. 
-#'          If sre is specified, the row names of M have to match the levels of the grouping factor
+#' weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations. 
+#' SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships. 
+#' If sre is specified, the row names of M have to match the levels of the grouping factor
 #' @param data Dataset used for model fitting
 #' @param prior Priors for the model parameters (default: `NULL`).
-#'              Should be specified using the `brms::prior()` function or a list of such objects. 
-#'              For example, `prior = prior(normal(0, 1), class = "b")` sets a Normal(0,1) prior on the regression coefficients. 
-#'              Multiple priors can be combined using `c()`, e.g., 
-#'              `prior = c(prior(normal(0, 1), class = "b"), prior(exponential(1), class = "sd"))`.
-#'              If `NULL`, default priors from `brms` will be used.
+#' Should be specified using the `brms::prior()` function or a list of such objects. 
+#' For example, `prior = prior(normal(0, 1), class = "b")` sets a Normal(0,1) prior on the regression coefficients. 
+#' Multiple priors can be combined using `c()`, e.g., 
+#' `prior = c(prior(normal(0, 1), class = "b"), prior(exponential(1), class = "sd"))`.
+#' If `NULL`, default priors from `brms` will be used.
 #' @param handle_missing Mechanism to handle missing data (NA values) to ensure model stability and avoid estimation errors. 
-#'                       Three approaches are supported. 
-#'                       The `"deleted"` approach performs complete case analysis by removing all rows with any missing values before model fitting. 
-#'                       This is done using a simple filter such as `complete.cases(data)`. 
-#'                       It is recommended when the missingness mechanism is Missing Completely At Random (MCAR).
-#'                       The `"multiple"` approach applies multiple imputation before model fitting. 
-#'                       Several imputed datasets are created (e.g., using the `mice` package or the `brm_multiple()` function in `brms`), 
-#'                       the model is fitted separately to each dataset, and the results are combined. 
-#'                       This method is suitable when data are Missing At Random (MAR).
-#'                       The `"model"` approach uses model-based imputation within the Bayesian model itself. 
-#'                       Missing values are incorporated using the `mi()` function in the model formula (e.g., `y ~ mi(x1) + mi(x2)`), 
-#'                       allowing the missing values to be jointly estimated with the model parameters. 
-#'                       This method also assumes a MAR mechanism and is applicable only for continuous variables.
-#'                       If data are suspected to be Missing Not At Random (MNAR), none of the above approaches directly apply. 
-#'                       Further exploration, such as explicitly modeling the missingness process or conducting sensitivity analyses, is recommended.
+#' Three approaches are supported. 
+#' The `"deleted"` approach performs complete case analysis by removing all rows with any missing values before model fitting. 
+#' This is done using a simple filter such as `complete.cases(data)`. 
+#' It is recommended when the missingness mechanism is Missing Completely At Random (MCAR).
+#' The `"multiple"` approach applies multiple imputation before model fitting. 
+#' Several imputed datasets are created (e.g., using the `mice` package or the `brm_multiple()` function in `brms`), 
+#' the model is fitted separately to each dataset, and the results are combined. 
+#' This method is suitable when data are Missing At Random (MAR).
+#' The `"model"` approach uses model-based imputation within the Bayesian model itself. 
+#' Missing values are incorporated using the `mi()` function in the model formula (e.g., `y ~ mi(x1) + mi(x2)`), 
+#' allowing the missing values to be jointly estimated with the model parameters. 
+#' This method also assumes a MAR mechanism and is applicable only for continuous variables.
+#' If data are suspected to be Missing Not At Random (MNAR), none of the above approaches directly apply. 
+#' Further exploration, such as explicitly modeling the missingness process or conducting sensitivity analyses, is recommended.
 #' @param m Number of imputations to perform when using the `"multiple"` approach for handling missing data (default: 5). 
-#'          This parameter is only used if `handle_missing = "multiple"`. 
-#'          It determines how many imputed datasets will be generated. 
-#'          Each imputed dataset is analyzed separately, and the posterior draws are then combined to account for both within-imputation and between-imputation variability, 
-#'          following Rubin’s rules. A typical choice is between 5 and 10 imputations, but more may be needed for higher missingness rates.
+#' This parameter is only used if `handle_missing = "multiple"`. 
+#' It determines how many imputed datasets will be generated. 
+#' Each imputed dataset is analyzed separately, and the posterior draws are then combined to account for both within-imputation and between-imputation variability, 
+#' following Rubin’s rules. A typical choice is between 5 and 10 imputations, but more may be needed for higher missingness rates.
 #' @param control A list of control parameters for the sampler (default: `list()`)
 #' @param chains Number of Markov chains (default: 4)
 #' @param iter Total number of iterations per chain (default: 2000)
@@ -97,36 +97,36 @@
 #'
 #' # --- 1. Prior Predictive Check ---
 #' model.check_prior <- hbm_lnln(
-#'   response = "y_obs",
-#'   predictors = c("x1", "x2", "x3"),
-#'   group = "group",
-#'   data = data,
-#'   prior = c(
-#'     prior(normal(0.1, 0.1), class = "b"),
-#'     prior(normal(1, 1), class = "Intercept")
-#'   ),
-#'   sample_prior = "only",
-#'   iter = 4000,
-#'   warmup = 2000,
-#'   chains = 2,
-#'   seed = 123
+#' response = "y_obs",
+#' predictors = c("x1", "x2", "x3"),
+#' group = "group",
+#' data = data,
+#' prior = c(
+#' prior(normal(0.1, 0.1), class = "b"),
+#' prior(normal(1, 1), class = "Intercept")
+#' ),
+#' sample_prior = "only",
+#' iter = 4000,
+#' warmup = 2000,
+#' chains = 2,
+#' seed = 123
 #' )
 #' hbpc(model.check_prior, response_var = "y_obs")
 #'
 #' # --- 2. Fit the Model with Data ---
 #' model <- hbm_lnln(
-#'   response = "y_obs",
-#'   predictors = c("x1", "x2", "x3"),
-#'   group = "group",
-#'   data = data,
-#'   prior = c(
-#'     prior(normal(0.1, 0.1), class = "b"),
-#'     prior(normal(1, 1), class = "Intercept")
-#'   ),
-#'   iter = 10000,
-#'   warmup = 5000,
-#'   chains = 1,
-#'   seed = 123
+#' response = "y_obs",
+#' predictors = c("x1", "x2", "x3"),
+#' group = "group",
+#' data = data,
+#' prior = c(
+#' prior(normal(0.1, 0.1), class = "b"),
+#' prior(normal(1, 1), class = "Intercept")
+#' ),
+#' iter = 10000,
+#' warmup = 5000,
+#' chains = 1,
+#' seed = 123
 #' )
 #' summary(model)
 #'
@@ -134,22 +134,22 @@
 #' M <- adjacency_matrix_car
 #'
 #' model.spatial <- hbm_lnln(
-#'   response = "y_obs",
-#'   predictors = c("x1", "x2", "x3"),
-#'   group = "group",
-#'   sre = "sre",           # Spatial grouping variable (must match rows/cols of M)
-#'   sre_type = "car",       # Spatial random effect type
-#'   car_type = "icar",      # CAR model type
-#'   M = M,                  # Adjacency matrix (must be symmetric)
-#'   data = data,
-#'   prior = c(
-#'     prior(normal(0.1, 0.1), class = "b"),
-#'     prior(normal(1, 1), class = "Intercept")
-#'   ),
-#'   iter = 10000,
-#'   warmup = 5000,
-#'   chains = 1,
-#'   seed = 123
+#' response = "y_obs",
+#' predictors = c("x1", "x2", "x3"),
+#' group = "group",
+#' sre = "sre", # Spatial grouping variable (must match rows/cols of M)
+#' sre_type = "car", # Spatial random effect type
+#' car_type = "icar", # CAR model type
+#' M = M, # Adjacency matrix (must be symmetric)
+#' data = data,
+#' prior = c(
+#' prior(normal(0.1, 0.1), class = "b"),
+#' prior(normal(1, 1), class = "Intercept")
+#' ),
+#' iter = 10000,
+#' warmup = 5000,
+#' chains = 1,
+#' seed = 123
 #' )
 #' summary(model.spatial)
 #' }

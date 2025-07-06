@@ -128,20 +128,20 @@ data <- data_binlogitnorm
 
 # Fit Logit-Normal Model
 model1 <- hbm_binlogitnorm(
-  response = "y",
-  trials = "n",
-  predictors = c("x1", "x2", "x3"),
-  data = data
+response = "y",
+trials = "n",
+predictors = c("x1", "x2", "x3"),
+data = data
 )
 summary(model1)
 
 # Fit Logit-Normal Model with Grouping Variable as Random Effect
 model2 <- hbm_binlogitnorm(
-  response = "y",
-  trials = "n",
-  predictors = c("x1", "x2", "x3"),
-  group = "group",
-  data = data
+response = "y",
+trials = "n",
+predictors = c("x1", "x2", "x3"),
+group = "group",
+data = data
 )
 summary(model2)
 
@@ -151,21 +151,21 @@ data_miss[5:7, "y"] <- NA
 
 # a. Handling missing data by deleted (Only if missing in response)
 model3 <- hbm_binlogitnorm(
-  response = "y",
-  trials = "n",
-  predictors = c("x1", "x2", "x3"),
-  data = data_miss,
-  handle_missing = "deleted"
+response = "y",
+trials = "n",
+predictors = c("x1", "x2", "x3"),
+data = data_miss,
+handle_missing = "deleted"
 )
 summary(model3)
 
 # b. Handling missing data using multiple imputation (m=5)
 model4 <- hbm_binlogitnorm(
-  response = "y",
-  trials = "n",
-  predictors = c("x1", "x2", "x3"),
-  data = data_miss,
-  handle_missing = "multiple"
+response = "y",
+trials = "n",
+predictors = c("x1", "x2", "x3"),
+data = data_miss,
+handle_missing = "multiple"
 )
 summary(model4)
 
@@ -174,13 +174,13 @@ data("adjacency_matrix_car")
 M <- spatial_weight
 
 model5 <- hbm_binlogitnorm(
-  response = "y",
-  trials = "n",
-  predictors = c("x1", "x2", "x3"),
-  sre = "sre",
-  sre_type = "car",
-  M = M,
-  data = data
+response = "y",
+trials = "n",
+predictors = c("x1", "x2", "x3"),
+sre = "sre",
+sre_type = "car",
+M = M,
+data = data
 )
 summary(model5)
 

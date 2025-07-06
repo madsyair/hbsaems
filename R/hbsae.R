@@ -11,10 +11,10 @@
 #' @param newdata A dataset for making predictions.
 #' 
 #' @return An object of class `hbsae_results`, which is a list containing:
-#'   \item{rse_model}{A numeric value indicating the overall relative standard error (RSE) of the model.}
-#'   \item{mse_model}{A numeric value indicating the overall mean squared error (MSE) of the model estimates, representing the average estimation error across areas.}
-#'   \item{result_table}{A \code{data.frame} containing predictions and associated statistics for each small area.}
-#'   
+#' \item{rse_model}{A numeric value indicating the overall relative standard error (RSE) of the model.}
+#' \item{mse_model}{A numeric value indicating the overall mean squared error (MSE) of the model estimates, representing the average estimation error across areas.}
+#' \item{result_table}{A \code{data.frame} containing predictions and associated statistics for each small area.}
+#' 
 #' @importFrom brms posterior_predict
 #' 
 #' @export
@@ -35,14 +35,14 @@
 #' 
 #' # Fit the Basic Model
 #' model <- hbm(
-#'   formula = bf(y ~ x1 + x2 + x3),  # Formula model
-#'   hb_sampling = "gaussian",       # Gaussian family for continuous outcomes
-#'   hb_link = "identity",           # Identity link function (no transformation)
-#'   data = data,                    # Dataset
-#'   chains = 4,                     # Number of MCMC chains
-#'   iter = 4000,                    # Total MCMC iterations
-#'   warmup = 2000,                  # Number of warmup iterations
-#'   cores = 2                       # Parallel processing
+#' formula = bf(y ~ x1 + x2 + x3), # Formula model
+#' hb_sampling = "gaussian", # Gaussian family for continuous outcomes
+#' hb_link = "identity", # Identity link function (no transformation)
+#' data = data, # Dataset
+#' chains = 4, # Number of MCMC chains
+#' iter = 4000, # Total MCMC iterations
+#' warmup = 2000, # Number of warmup iterations
+#' cores = 2 # Parallel processing
 #' )
 #' summary(model)
 #' 

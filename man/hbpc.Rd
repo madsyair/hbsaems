@@ -43,13 +43,13 @@ Hierarchical Bayesian Prior Predictive Checking
 # library(brms)
 # # Assume 'data_df' is your data frame with 'response_variable' and 'predictor_variable'
 # data_df <- data.frame(
-#   response_variable = rnorm(100),
-#   predictor_variable = rnorm(100)
+# response_variable = rnorm(100),
+# predictor_variable = rnorm(100)
 # )
 #
 # # Define some priors
 # example_priors <- c(prior(normal(0, 10), class = "b"),
-#                     prior(cauchy(0, 1), class = "sigma"))
+# prior(cauchy(0, 1), class = "sigma"))
 #
 # # Fit a model with sample_prior = "only"
 # # Note: For actual prior predictive checks, you'd use your actual model 
@@ -57,37 +57,37 @@ Hierarchical Bayesian Prior Predictive Checking
 # # The data itself isn't used for fitting parameters when sample_prior = "only",
 # # but its structure (like number of observations) can influence y_rep.
 # fit_prior_only <- try(brm(
-#   bf(response_variable ~ predictor_variable),
-#   data = data_df,
-#   prior = example_priors,
-#   sample_prior = "only", # Crucial for prior predictive checks
-#   chains = 1, iter = 1000, warmup = 200, refresh = 0,
-#   control = list(adapt_delta = 0.8)
+# bf(response_variable ~ predictor_variable),
+# data = data_df,
+# prior = example_priors,
+# sample_prior = "only", # Crucial for prior predictive checks
+# chains = 1, iter = 1000, warmup = 200, refresh = 0,
+# control = list(adapt_delta = 0.8)
 # ))
 #
 # if (!inherits(fit_prior_only, "try-error")) {
-#   # Perform prior predictive checking
-#   prior_check_output <- hbpc(
-#     model = fit_prior_only,
-#     data = data_df,
-#     response_var = "response_variable", # Specify the response variable name
-#     ndraws_ppc = 50
-#   )
+# # Perform prior predictive checking
+# prior_check_output <- hbpc(
+# model = fit_prior_only,
+# data = data_df,
+# response_var = "response_variable", # Specify the response variable name
+# ndraws_ppc = 50
+# )
 #
-#   # Print the summary of priors
-#   print(prior_check_output$prior_summary)
+# # Print the summary of priors
+# print(prior_check_output$prior_summary)
 #
-#   # Display the prior predictive plot
-#   # print(prior_check_output$prior_predictive_plot)
+# # Display the prior predictive plot
+# # print(prior_check_output$prior_predictive_plot)
 #
-#   # Print summary of parameter draws from prior
-#   # print(prior_check_output$prior_draws_summary)
+# # Print summary of parameter draws from prior
+# # print(prior_check_output$prior_draws_summary)
 # }
 }
 }
 \references{
 Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. \emph{Journal of Statistical Software}, 80(1), 1-28.
-Gabry,J., Simpson,D.,  Vehtari, A., Betancourt, M., Gelman, A., Visualization in Bayesian Workflow, Journal of the
+Gabry,J., Simpson,D., Vehtari, A., Betancourt, M., Gelman, A., Visualization in Bayesian Workflow, Journal of the
 Royal Statistical Society Series A: Statistics in Society, Volume 182, Issue 2, February 2019, Pages 389–402
 }
 \author{

@@ -90,15 +90,15 @@ Check Model Goodness of Fit and Prior Sensitivity
 \donttest{
 # Load the hbsaems package if not already loaded (for hbm function)
 # library(hbsaems) # Assuming hbm is part of this package
-# library(brms)    # For bf()
+# library(brms) # For bf()
 
 # Prepare a sample dataset
 set.seed(123)
 sim_data <- data.frame(
-  y = rnorm(100, 50, 10),
-  x1 = rnorm(100, 5, 2),
-  x2 = rnorm(100, 10, 3),
-  grp = factor(sample(1:10, 100, replace = TRUE))
+y = rnorm(100, 50, 10),
+x1 = rnorm(100, 5, 2),
+x2 = rnorm(100, 10, 3),
+grp = factor(sample(1:10, 100, replace = TRUE))
 )
 
 # Define formulas and priors
@@ -107,23 +107,23 @@ common_priors <- c(prior(normal(0,10), class="b"), prior(cauchy(0,1), class="sd"
 
 # Fit models using hbm (minimal iterations for example speed)
 fit_hbm1 <- try(hbm(f1, data=sim_data, prior=common_priors, family=gaussian(),
-                    chains=1, iter=1000, warmup=500, cores=1, refresh=0, save_model=NULL))
+chains=1, iter=1000, warmup=500, cores=1, refresh=0, save_model=NULL))
 
 if (!inherits(fit_hbm1, "try-error")) {
-  # Example: Explicitly request moment_match = TRUE with specific moment_match_args
-  # (e.g., if you want to pass 'k_threshold' to moment_match itself, though usually
-  # k_threshold is for reloo)
-  # For reloo, you might pass other args like 'psis_object' if precomputed.
-  checks_custom_args <- try(hbmc(
-      model = fit_hbm1,
-      moment_match = TRUE,
-      moment_match_args = list(k_threshold = 0.6), # Example arg for moment_match
-      reloo_args = list(check = FALSE), # Example arg for reloo
-      comparison_metrics = "loo"
-  ))
-   # if (!inherits(checks_custom_args, "try-error")) {
-   #   print(summary(checks_custom_args))
-   # }
+# Example: Explicitly request moment_match = TRUE with specific moment_match_args
+# (e.g., if you want to pass 'k_threshold' to moment_match itself, though usually
+# k_threshold is for reloo)
+# For reloo, you might pass other args like 'psis_object' if precomputed.
+checks_custom_args <- try(hbmc(
+model = fit_hbm1,
+moment_match = TRUE,
+moment_match_args = list(k_threshold = 0.6), # Example arg for moment_match
+reloo_args = list(check = FALSE), # Example arg for reloo
+comparison_metrics = "loo"
+))
+# if (!inherits(checks_custom_args, "try-error")) {
+# print(summary(checks_custom_args))
+# }
 }
 }
 }
@@ -131,7 +131,7 @@ if (!inherits(fit_hbm1, "try-error")) {
 Buerkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. \emph{Journal of Statistical Software}, 80(1), 1-28.
 Kallioinen, N., Paananen, T., Buerkner, PC. et al. Detecting and diagnosing prior and likelihood sensitivity with power-scaling. Stat
 Comput 34, 57 (2024).
-Gabry,J., Simpson,D.,  Vehtari, A., Betancourt, M., Gelman, A., Visualization in Bayesian Workflow, Journal of the
+Gabry,J., Simpson,D., Vehtari, A., Betancourt, M., Gelman, A., Visualization in Bayesian Workflow, Journal of the
 Royal Statistical Society Series A: Statistics in Society, Volume 182, Issue 2, February 2019, Pages 389-402
 }
 \author{

@@ -2,25 +2,25 @@
 #' @title hbpc : Hierarchical Bayesian Prior Predictive Checking
 #' 
 #' @description This function facilitates prior predictive checking for Bayesian models.
-#'              It is primarily used to visualize and summarize the implications of
-#'              the chosen priors by examining distributions generated from the priors alone.
+#' It is primarily used to visualize and summarize the implications of
+#' the chosen priors by examining distributions generated from the priors alone.
 #' @name hbpc
 #'
 #' @param model A `brmsfit` object, which is the fitted Bayesian model from `brms`.
-#'              Ideally, for prior predictive checks, this model should be fitted
-#'              with the argument `sample_prior = "only"`.
+#' Ideally, for prior predictive checks, this model should be fitted
+#' with the argument `sample_prior = "only"`.
 #' @param data The data that was used (or would be used) to fit the model.
-#'             Required by `pp_check` for comparing with observed data, though for
-#'             `sample_prior = "only"`, the focus is on `y_rep`.
+#' Required by `pp_check` for comparing with observed data, though for
+#' `sample_prior = "only"`, the focus is on `y_rep`.
 #' @param response_var A character string specifying the name of the response variable in the data.
-#'                     This is needed for `pp_check` to correctly identify the observed data `y`.
+#' This is needed for `pp_check` to correctly identify the observed data `y`.
 #' @param ndraws_ppc An integer specifying the number of draws to use for the
-#'                   posterior predictive check (pp_check) plot. Default is 50.
+#' posterior predictive check (pp_check) plot. Default is 50.
 #'
 #' @return A list of class `hbpc_results` containing:
-#'   \item{prior_summary}{Summary of the priors used in the model (obtained from `brms::prior_summary(model)`).}
-#'   \item{prior_predictive_plot}{A `ggplot` object from `brms::pp_check` comparing the observed data (if available and appropriate) with draws from the prior predictive distribution.}
-#'   \item{prior_draws_summary}{(Optional) A summary of the parameter draws from the prior-only model, which can indicate the range and central tendency implied by the priors.}
+#' \item{prior_summary}{Summary of the priors used in the model (obtained from `brms::prior_summary(model)`).}
+#' \item{prior_predictive_plot}{A `ggplot` object from `brms::pp_check` comparing the observed data (if available and appropriate) with draws from the prior predictive distribution.}
+#' \item{prior_draws_summary}{(Optional) A summary of the parameter draws from the prior-only model, which can indicate the range and central tendency implied by the priors.}
 #'
 #' @import brms
 #' @import ggplot2
@@ -32,8 +32,8 @@
 #'
 #' @references 
 #' Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. *Journal of Statistical Software*, 80(1), 1-28.
-#' Gabry,J., Simpson,D.,  Vehtari, A., Betancourt, M., Gelman, A., Visualization in Bayesian Workflow, Journal of the 
-#'            Royal Statistical Society Series A: Statistics in Society, Volume 182, Issue 2, February 2019, Pages 389–402
+#' Gabry,J., Simpson,D., Vehtari, A., Betancourt, M., Gelman, A., Visualization in Bayesian Workflow, Journal of the 
+#' Royal Statistical Society Series A: Statistics in Society, Volume 182, Issue 2, February 2019, Pages 389–402
 #'
 
 #' @examples
@@ -44,13 +44,13 @@
 #' # library(brms)
 #' # # Assume 'data_df' is your data frame with 'response_variable' and 'predictor_variable'
 #' # data_df <- data.frame(
-#' #   response_variable = rnorm(100),
-#' #   predictor_variable = rnorm(100)
+#' # response_variable = rnorm(100),
+#' # predictor_variable = rnorm(100)
 #' # )
 #' #
 #' # # Define some priors
 #' # example_priors <- c(prior(normal(0, 10), class = "b"),
-#' #                     prior(cauchy(0, 1), class = "sigma"))
+#' # prior(cauchy(0, 1), class = "sigma"))
 #' #
 #' # # Fit a model with sample_prior = "only"
 #' # # Note: For actual prior predictive checks, you'd use your actual model 
@@ -58,31 +58,31 @@
 #' # # The data itself isn't used for fitting parameters when sample_prior = "only",
 #' # # but its structure (like number of observations) can influence y_rep.
 #' # fit_prior_only <- try(brm(
-#' #   bf(response_variable ~ predictor_variable),
-#' #   data = data_df,
-#' #   prior = example_priors,
-#' #   sample_prior = "only", # Crucial for prior predictive checks
-#' #   chains = 1, iter = 1000, warmup = 200, refresh = 0,
-#' #   control = list(adapt_delta = 0.8)
+#' # bf(response_variable ~ predictor_variable),
+#' # data = data_df,
+#' # prior = example_priors,
+#' # sample_prior = "only", # Crucial for prior predictive checks
+#' # chains = 1, iter = 1000, warmup = 200, refresh = 0,
+#' # control = list(adapt_delta = 0.8)
 #' # ))
 #' #
 #' # if (!inherits(fit_prior_only, "try-error")) {
-#' #   # Perform prior predictive checking
-#' #   prior_check_output <- hbpc(
-#' #     model = fit_prior_only,
-#' #     data = data_df,
-#' #     response_var = "response_variable", # Specify the response variable name
-#' #     ndraws_ppc = 50
-#' #   )
+#' # # Perform prior predictive checking
+#' # prior_check_output <- hbpc(
+#' # model = fit_prior_only,
+#' # data = data_df,
+#' # response_var = "response_variable", # Specify the response variable name
+#' # ndraws_ppc = 50
+#' # )
 #' #
-#' #   # Print the summary of priors
-#' #   print(prior_check_output$prior_summary)
+#' # # Print the summary of priors
+#' # print(prior_check_output$prior_summary)
 #' #
-#' #   # Display the prior predictive plot
-#' #   # print(prior_check_output$prior_predictive_plot)
+#' # # Display the prior predictive plot
+#' # # print(prior_check_output$prior_predictive_plot)
 #' #
-#' #   # Print summary of parameter draws from prior
-#' #   # print(prior_check_output$prior_draws_summary)
+#' # # Print summary of parameter draws from prior
+#' # # print(prior_check_output$prior_draws_summary)
 #' # }
 #' }
 hbpc <- function(model, 
