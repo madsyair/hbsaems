@@ -1,5 +1,4 @@
 Package: hbsaems
-Type: Package
 Title: Hierarchical Bayes Small Area Estimation Model using Stan
 Version: 0.1.1
 Authors@R: 
@@ -26,7 +25,7 @@ Suggests:
     Matrix,
     mockery,
     testthat (>= 3.0.0)
-License: GPL-3
+License: GPL (>= 3)
 Encoding: UTF-8
 RoxygenNote: 7.3.2
 NeedsCompilation: no
