@@ -13,14 +13,16 @@ Authors@R: c(
     person("Arsyka Laila Oktalia", "Siregar", role = "aut")
     )
 Maintainer: Achmad Syahrul Choir <madsyair@stis.ac.id>
-Description: Provides functions for implementing Hierarchical Bayesian Small Area Estimation  
-          models using the 'brms' package as the computational backend. The modeling framework 
-          follows the methodological foundations described in Rao and Molina (2015) with a focus on  area-level models. 
-          This package is designed to facilitate a principled Bayesian workflow, enabling users to conduct 
-          prior predictive checks, model fitting, posterior predictive checks, model comparison,  and sensitivity 
-          analysis in a coherent and reproducible manner. It supports flexible model specifications via 'brms' and
-          promotes transparency   in model development, aligned with the recommendations of modern Bayesian 
-          data analysis practices.
+Description: Provides functions for implementing Hierarchical Bayesian Small Area 
+    Estimation models using the 'brms' package as the computational backend. The 
+    modeling framework follows the methodological foundations described in area-level 
+    models. This package is designed to facilitate a principled Bayesian workflow, 
+    enabling users to conduct prior predictive checks, model fitting, posterior 
+    predictive checks, model comparison, and sensitivity analysis in a coherent and 
+    reproducible manner. It supports flexible model specifications via 'brms' and 
+    promotes transparency in model development, aligned with the recommendations of 
+    modern Bayesian data analysis practices, implementing methods described in 
+    Rao and Molina (2015) <doi:10.1002/9781118735855>.
 Depends: R (>= 3.6.0), brms
 Imports: 
   bayesplot,
