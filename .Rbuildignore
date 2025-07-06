@@ -18,10 +18,10 @@
 ^Meta/
 ^doc/
 ^docs/
-
 # Vignettes cache
 ^vignettes.*cache/
-
+^vignettes/.*\.html$ # Juga bisa exclude vignette HTML
+^vignettes/.*\.R$    # Dan vignette R files
 # Test and development files
 ^test_script\.R$
 
