@@ -1,6 +1,6 @@
 citHeader("To cite hbsaems in publications use:")
 
-citEntry(
+bibentry(
   entry = "Manual",
   title = "hbsaems: Hierarchical Bayesian Small Area Estimation Models",
   author = "Achmad Syahrul Choir and Saniyyah SriNurhayati and Sofi Zamzanah and Arsyka Laila Oktalia Siregar",

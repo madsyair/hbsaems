@@ -11,8 +11,8 @@ Authors@R:
       person("Arsyka Laila Oktalia", "Siregar", role = c("aut"))
       )
 Maintainer: Achmad Syahrul Choir <madsyair@stis.ac.id>
-Description: Provides functions for implementing Hierarchical Bayesian Small Area Estimation (HBSAE) 
-          models using the 'brms'           package as the computational backend. The modeling framework 
+Description: Provides functions for implementing Hierarchical Bayesian Small Area Estimation  
+          models using the 'brms' package as the computational backend. The modeling framework 
           follows the methodological foundations described in Rao and Molina (2015) with a focus on  area-level models. 
           This package is designed to facilitate a principled Bayesian workflow, enabling users to conduct 
           prior predictive checks, model fitting, posterior predictive checks, model comparison,  and sensitivity 
