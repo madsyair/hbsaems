@@ -28,3 +28,7 @@
 # System files
 ^\.DS_Store$
 ^\.Rproj\.user$
+# Exclude development test files from CRAN package
+^tests/testthat/test-.*-dev\.R$
+^tests/testthat/dev-tests/
+
