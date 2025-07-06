@@ -1,4 +1,6 @@
 Package: hbsaems
+Encoding: UTF-8
+Type: Package
 Title: Hierarchical Bayes Small Area Estimation Model using Stan
 Version: 0.1.1
 Authors@R: 
@@ -18,23 +20,6 @@ Description: Provides functions for implementing Hierarchical Bayesian Small Are
           promotes transparency   in model development, aligned with the recommendations of modern Bayesian 
           data analysis practices.
 Depends: R (>= 3.6.0), brms
-Suggests: 
-    kableExtra,
-    knitr,
-    rmarkdown,
-    Matrix,
-    mockery,
-    testthat (>= 3.0.0)
-License: GPL (>= 3)
-Encoding: UTF-8
-RoxygenNote: 7.3.2
-NeedsCompilation: no
-Packaged: 2025-02-06 03:56:46 UTC; madsyair
-Author: Achmad Syahrul Choir [aut, cre]
-    (<https://orcid.org/0000-0001-7088-0646>),
-  Saniyyah Sri Nurhayati [aut],
-  Sofi Zamzanah [aut],
-  Arsyka Laila Oktalia Siregar [aut]
 Imports: 
   bayesplot,
   bridgesampling,
@@ -54,7 +39,21 @@ Imports:
   stats,
   tools,
   XICOR
+Suggests: 
+    kableExtra,
+    knitr,
+    rmarkdown,
+    Matrix,
+    mockery,
+    testthat (>= 3.0.0)
+License: GPL (>= 3)
+URL: https://github.com/madsyair/hbsaems
+BugReports: https://github.com/madsyair/hbsaems/issues
+Packaged: 2025-02-06 03:56:46 UTC; madsyair
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
 LazyData: true
+Language: en-US
+RoxygenNote: 7.3.2
+NeedsCompilation: no

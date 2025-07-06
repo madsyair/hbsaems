@@ -1,13 +1,29 @@
-^\\.git$
-^\\.gitignore$
-^\\.Rproj.user$
-^\\.Rproj$
-^\\.DS_Store$
-^vignettes_cache$
-^test_script\\.R$
-^README-dev\\.md$
-^README\\.Rmd$
-^README_ID\\.Rmd$
-^README_ID\\.md$
-^hbsaems\\.Rproj$
+# Git related
+^\.git/
+^\.gitignore$
+^\.github/
 
+# RStudio files
+^.*\.Rproj$
+^\.Rproj\.user/
+
+# Documentation
+^README\.Rmd$
+^README\.md$
+^README_ID\.Rmd$
+^README_ID\.md$
+^LICENSE\.md$
+
+# Package build artifacts
+^Meta/
+^doc/
+^docs/
+
+# Vignettes cache
+^vignettes.*cache/
+
+# Test and development files
+^test_script\.R$
+
+# System files
+^\.DS_Store$

@@ -165,7 +165,7 @@ model <- hbm(
 summary(model)
 ```
 
-By default, if we do not explicitly define a random effect, the model will still generate one based on the natural random variations between individual records (rows) in the dataset. However, we can also explicitly define a random effect to account for variations at a specific hierarchical level, such as neighborhoods or residential blocks. We can use paramter re.
+By default, if we do not explicitly define a random effect, the model will still generate one based on the natural random variations between individual records (rows) in the dataset. However, we can also explicitly define a random effect to account for variations at a specific hierarchical level, such as neighborhoods or residential blocks. We can use parameter re.
 
 Note: Some chunk is not executed in this vignette. It is provided as an example and will produce output similar to the model results.
 
