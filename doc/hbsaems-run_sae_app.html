@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Graphical user interface of hbsaems using shiny</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Graphical user interface of hbsaems using
+shiny</h1>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>The <code>run_sae_app()</code> function in the <code>hbsaems</code>
+package provides an interactive <strong>Shiny Dashboard</strong> for
+<strong>Hierarchical Bayesian Small Area Estimation (HBSAE)</strong>
+using <code>brms</code> for Bayesian inference with <code>Stan</code>.
+This application offers a user-friendly interface to upload data, define
+models, and obtain estimation results without requiring extensive R
+coding.</p>
+</div>
+<div id="install-required-packages" class="section level2">
+<h2>Install Required Packages</h2>
+<p>Ensure that you have installed the <code>hbsaems</code> package:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;hbsaems&quot;</span>)</span></code></pre></div>
+</div>
+<div id="load-required-packages" class="section level2">
+<h2>Load Required Packages</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(hbsaems)</span></code></pre></div>
+</div>
+<div id="running-the-shiny-app" class="section level2">
+<h2>Running the Shiny App</h2>
+<p>To launch the application, simply call:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">run_sae_app</span>()</span></code></pre></div>
+<p>This will start a Shiny application that runs in your web
+browser.</p>
+</div>
+<div id="app-structure" class="section level2">
+<h2>App Structure</h2>
+<div id="data-upload" class="section level3">
+<h3>1. <strong>Data Upload</strong></h3>
+<p>Users can either upload a <code>.csv</code> file or select a data
+frame available in the current R environment.</p>
+<ul>
+<li><strong>Upload File</strong>: Choose and upload a <code>.csv</code>
+file from your computer.</li>
+<li><strong>Select from Environment</strong>: Choose an existing R data
+object.</li>
+<li><strong>Data Preview</strong>: The loaded data will be shown in a
+table preview for inspection.</li>
+</ul>
+</div>
+<div id="data-exploration" class="section level3">
+<h3>2. <strong>Data Exploration</strong></h3>
+<p>This tab provides four types of data exploration tools to help users
+understand the characteristics of the dataset:</p>
+<ul>
+<li><strong>Summary Statistics</strong>: Displays mean, median, min,
+max, and quartiles for selected numeric variables.</li>
+<li><strong>Histogram</strong>: Shows frequency distribution and density
+curve for selected variables.</li>
+<li><strong>Boxplot</strong>: Visualizes data spread, median, quartiles,
+and outliers.</li>
+<li><strong>Scatter Plot &amp; Correlation</strong>: Visualizes
+relationships between two variables, with support for five correlation
+coefficients:
+<ul>
+<li>Pearson</li>
+<li>Spearman’s Rho</li>
+<li>Chatterjee’s Xi</li>
+<li>Distance Correlation</li>
+<li>MIC (Maximal Information Coefficient)</li>
+</ul></li>
+</ul>
+</div>
+<div id="modeling" class="section level3">
+<h3>3. <strong>Modeling</strong></h3>
+<div id="a.-modeling-configuration" class="section level4">
+<h4>a. Modeling Configuration</h4>
+<p>Users can define key model components:</p>
+<ul>
+<li><strong>Basic Settings</strong>:
+<ul>
+<li><strong>Response Variable</strong></li>
+<li><strong>Auxiliary Variables</strong> (linear and nonlinear
+covariates)</li>
+<li><strong>Group Variables</strong> (for hierarchical modeling)</li>
+<li><strong>Distribution Type</strong> (e.g., Lognormal, Logitnormal,
+Beta, or Custom)</li>
+<li><strong>HB Family &amp; Link Function</strong> (for Custom
+models)</li>
+</ul></li>
+<li><strong>Spatial Modeling</strong>:
+<ul>
+<li>Choose spatial type (<strong>SAR</strong> or
+<strong>CAR</strong>)</li>
+<li>Specify neighborhood structure</li>
+<li>Upload spatial weight matrix (<code>.csv</code>)</li>
+</ul></li>
+<li><strong>Missing Data Handling</strong>:
+<ul>
+<li>Choose between <strong>deletion</strong>,
+<strong>imputation</strong>, or <strong>model-based
+handling</strong></li>
+</ul></li>
+</ul>
+</div>
+<div id="b.-prior-checking" class="section level4">
+<h4>b. Prior Checking</h4>
+<p>Before fitting the model, users can configure prior distributions and
+perform prior predictive checks:</p>
+<ul>
+<li>Summarize prior settings</li>
+<li>Simulate from prior distributions</li>
+<li>Visualize prior predictive plots</li>
+</ul>
+</div>
+<div id="c.-mcmc-settings" class="section level4">
+<h4>c. MCMC Settings</h4>
+<p>Configure sampling parameters for Bayesian estimation:</p>
+<ul>
+<li><strong>Seed</strong></li>
+<li><strong>Chains</strong></li>
+<li><strong>Cores</strong></li>
+<li><strong>Thinning Rate</strong></li>
+<li><strong>Iterations</strong></li>
+<li><strong>Warm-up</strong></li>
+<li><strong>Adapt Delta</strong></li>
+</ul>
+<p>Click “Fit Model” to begin model fitting using <code>brms</code>.</p>
+</div>
+</div>
+<div id="results" class="section level3">
+<h3>4. <strong>Results</strong></h3>
+<p>After fitting, results are available through multiple tabs:</p>
+<ul>
+<li><strong>Model Summary</strong>: Shows model output, including
+estimates and diagnostics.</li>
+<li><strong>Convergence Diagnostics</strong>:
+<ul>
+<li>R-hat, Geweke, Raftery-Lewis, Heidelberger-Welch tests</li>
+<li>Trace, density, ACF, NUTS energy, and ESS plots</li>
+</ul></li>
+<li><strong>Model Checking</strong>:
+<ul>
+<li><strong>Numerical</strong>: LOO, WAIC</li>
+<li><strong>Graphical</strong>: Posterior predictive checks</li>
+</ul></li>
+<li><strong>Prior Sensitivity Analysis</strong></li>
+<li><strong>Prediction</strong>:
+<ul>
+<li>Display model-based small area estimates with uncertainty.</li>
+<li>Upload new data for out-of-sample predictions.</li>
+</ul></li>
+<li><strong>Update Model</strong>:
+<ul>
+<li>Modify and refit the model with updated settings.</li>
+</ul></li>
+<li><strong>Save Output</strong>:
+<ul>
+<li><strong>Model Fit (RDS)</strong>: Save fitted model object.</li>
+<li><strong>Stan Code (TXT)</strong>: Export Stan model code.</li>
+<li><strong>MCMC Samples (CODA Format)</strong>: Save posterior
+samples.</li>
+<li><strong>Diagnostic Plots (PDF)</strong>: Export diagnostic
+visualizations.</li>
+</ul></li>
+</ul>
+</div>
+</div>
+<div id="example-workflow" class="section level2">
+<h2>Example Workflow</h2>
+<ol style="list-style-type: decimal">
+<li><strong>Upload Dataset</strong>: Use <code>.csv</code> or select
+data from environment.</li>
+<li><strong>Explore Data</strong>: Summarize and visualize key
+variables.</li>
+<li><strong>Define Model</strong>: Set model structure, priors, and MCMC
+settings.</li>
+<li><strong>Prior Checking</strong>: Validate prior assumptions before
+sampling.</li>
+<li><strong>Fit Model</strong>: Run HBSAE using <code>brms</code>.</li>
+<li><strong>Review Results</strong>: Interpret summary and
+diagnostics.</li>
+<li><strong>Predict &amp; Save</strong>: Generate estimates and export
+outputs.</li>
+</ol>
+</div>
+<div id="troubleshooting" class="section level2">
+<h2>Troubleshooting</h2>
+<p>If you encounter errors when launching the app:</p>
+<ol style="list-style-type: decimal">
+<li><p>Ensure all dependencies are installed manually:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;shiny&quot;</span>, <span class="st">&quot;shinyWidgets&quot;</span>, <span class="st">&quot;shinydashboard&quot;</span>, <span class="st">&quot;readxl&quot;</span>, <span class="st">&quot;DT&quot;</span>))</span></code></pre></div></li>
+<li><p>Reinstall <code>hbsaems</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">remove.packages</span>(<span class="st">&quot;hbsaems&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;hbsaems&quot;</span>)</span></code></pre></div></li>
+<li><p>Check the app directory:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">system.file</span>(<span class="st">&quot;shiny/sae_app&quot;</span>, <span class="at">package =</span> <span class="st">&quot;hbsaems&quot;</span>)</span></code></pre></div></li>
+</ol>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p><code>run_sae_app()</code> provides an intuitive way to perform HBSAE
+modeling using a Shiny interface, making Bayesian small area estimation
+accessible without requiring in-depth coding knowledge. Users can define
+models, inspect results, and generate predictions interactively.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

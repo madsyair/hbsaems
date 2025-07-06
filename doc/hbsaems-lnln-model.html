@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Hbsaems lognormal-lognormal model</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Hbsaems lognormal-lognormal model</h1>
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>This vignette demonstrates the usage of the <code>hbm_lnln()</code>
+function from the <code>hbsaems</code> package for Hierarchical Bayesian
+Small Area Estimation (HBSAE) under a Lognormal-lognormal
+distribution.</p>
+<p>The lognormal distribution is appropriate for modeling strictly
+positive and skewed outcomes, such as income, expenditure, or health
+cost. In the context of SAE, the goal is to obtain reliable area-level
+estimates <span class="math inline">\(\theta_i\)</span> by borrowing
+strength across areas using auxiliary covariates <span class="math inline">\(x_i\)</span>.</p>
+<p>Let <span class="math inline">\(y_i\)</span> denote the observed
+positive response in area <span class="math inline">\(i\)</span>, and
+let <span class="math inline">\(x_i \in \mathbb{R}^p\)</span> be the
+associated vector of auxiliary covariates. The model assumes the
+following three-stage hierarchical structure:</p>
+<div id="sampling-model" class="section level2">
+<h2>1. Sampling Model</h2>
+<p><span class="math display">\[
+y_i \mid \theta_i, \psi_i \sim \text{Lognormal}(\theta_i, \psi_i), \quad
+i = 1, \dots, m
+\]</span></p>
+<p>which is equivalent to:</p>
+<p><span class="math display">\[
+\log(y_i) \sim \mathcal{N}(\theta_i, \psi_i)
+\]</span></p>
+<p>where:</p>
+<ul>
+<li><p><span class="math inline">\(y_i &gt; 0\)</span></p></li>
+<li><p><span class="math inline">\(\theta_i\)</span>: log-mean</p></li>
+<li><p><span class="math inline">\(\psi_i\)</span>:
+log-variance</p></li>
+</ul>
+</div>
+<div id="linking-model" class="section level2">
+<h2>2. Linking Model</h2>
+<p>To relate the log-mean <span class="math inline">\(\theta_i\)</span>
+to covariates <span class="math inline">\(x_i\)</span>, we use a
+log-linear regression model with area-level random effects:</p>
+<p><span class="math display">\[
+\log(\theta_i) \mid \boldsymbol{\beta}, \sigma_v^2 \sim
+\mathcal{N}(x_i^\top \boldsymbol{\beta}, \sigma_v^2)
+\]</span></p>
+<ul>
+<li><p><span class="math inline">\(\boldsymbol{\beta}\)</span>:
+regression coefficients</p></li>
+<li><p><span class="math inline">\(\sigma_v^2\)</span>: variance of
+random effect</p></li>
+<li><p><span class="math inline">\(b_i\)</span>: optional scaling factor
+(default is 1)</p></li>
+</ul>
+</div>
+<div id="prior-distributions" class="section level2">
+<h2>3. Prior Distributions</h2>
+<p>The prior distributions are assumed independent:</p>
+<p><span class="math display">\[
+f(\boldsymbol{\beta}, \sigma_v^2) \propto f(\boldsymbol{\beta}) \cdot
+f(\sigma_v^2)
+\]</span></p>
+<p>with:</p>
+<ul>
+<li><p><span class="math inline">\(\boldsymbol{\beta} \sim
+\text{Student-t}(4, 0, 2.5)\)</span>,</p></li>
+<li><p><span class="math inline">\(\sigma_v^{2} \sim \text{Student-}t(3,
+0, 0.25)\)</span></p></li>
+</ul>
+<p>The model is implemented using <strong>Hamiltonian Monte Carlo
+(HMC)</strong> via Stan, through the <code>brms</code> package backend.
+This allows efficient sampling for hierarchical models with complex
+structures and skewed outcomes.</p>
+</div>
+<div id="simulated-data-example" class="section level2">
+<h2>Simulated Data Example</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(hbsaems)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>data <span class="ot">&lt;-</span> data_lnln</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">head</span>(data)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">summary</span>(data)</span></code></pre></div>
+<p>The dataset <strong>data_lnln</strong> is a simulated dataset
+designed to demonstrate the application of Hierarchical Bayesian Small
+Area Estimation (HBSAE) under a <strong>Lognormal-Lognormal
+model</strong>. It mimics real-world conditions where the response
+variable follows a lognormal distribution, suitable for modeling
+positively skewed continuous outcomes across small areas (domains).</p>
+<p>Each area in the dataset includes several key variables.</p>
+<ul>
+<li><p>The <code>group</code> variable is a unique identifier ranging
+from 1 to 100.</p></li>
+<li><p>The <code>sre</code> variable is a factor or categorical variable
+used to define spatial random effects</p></li>
+<li><p>The variables <code>x1</code>, <code>x2</code>, and
+<code>x3</code> are auxiliary covariates at the area level, typically
+used as fixed effects in regression modeling.</p></li>
+</ul>
+<p>The core underlying parameters for each area are also included:</p>
+<ul>
+<li><p>The <code>u_true</code> variable represents the true area-level
+random effect on the log scale.</p></li>
+<li><p>The linear predictor on the log scale, incorporating both fixed
+effects and random effects, is given by <code>eta_true</code>. This
+<code>eta_true</code> corresponds to the true mean of the
+log-transformed observations (<code>meanlog</code> parameter of the
+lognormal distribution).</p></li>
+</ul>
+<p>Observational details per area are also captured:</p>
+<ul>
+<li><p>The <code>n_i</code> variable records the sample size per
+area.</p></li>
+<li><p>The observed value for each area, <code>y_obs</code>, represents
+the sample mean of <code>n_i</code> individual observations drawn from a
+lognormal distribution specific to that area. This <code>y_obs</code>
+serves as the direct estimator of the area’s true mean on the original
+scale.</p></li>
+<li><p>The <code>lambda_dir</code> variable is identical to
+<code>y_obs</code>, explicitly denoting it as the direct estimator of
+the mean.</p></li>
+<li><p>The <code>y_log_obs</code> variable is the log-transformed direct
+estimator (<code>log(lambda_dir)</code>), prepared for modeling on the
+log scale.</p></li>
+<li><p>The <code>psi_i</code> variable stores the approximate sampling
+variance of the direct estimator (<code>lambda_dir</code>). This
+variance is crucial for weighting observations in small area estimation
+models.</p></li>
+</ul>
+<p>This dataset was simulated based on a <strong>Lognormal-Lognormal
+hierarchical model</strong> (where the observed means are assumed to be
+drawn from underlying lognormal distributions whose parameters are
+themselves modeled hierarchically), making it ideal for demonstrating
+and testing small area estimation methods under a Bayesian framework for
+lognormally distributed data.</p>
+</div>
+<div id="initial-model" class="section level2">
+<h2>Initial Model</h2>
+<p>To assess the impact of our prior assumptions before fitting to
+observed data, we conduct a <strong>prior predictive check</strong> by
+setting <code>sample_prior = &quot;only&quot;</code>. This will generate simulated
+outcomes based purely on the prior distributions, without conditioning
+on the observed response values.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>model.check_prior <span class="ot">&lt;-</span> <span class="fu">hbm_lnln</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="at">response =</span> <span class="st">&quot;y_obs&quot;</span>,</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">predictors =</span> <span class="fu">c</span>( <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">group =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">data =</span> data,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">prior =</span> <span class="fu">c</span>(</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="st">&quot;normal(0.1,0.1)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;b&quot;</span>),</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="st">&quot;normal(1,1)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  ),</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  <span class="at">sample_prior =</span> <span class="st">&quot;only&quot;</span>,</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  <span class="at">iter =</span> <span class="dv">4000</span>,</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  <span class="at">warmup =</span> <span class="dv">2000</span>,</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">2</span>,</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">123</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">summary</span>(model.check_prior)</span></code></pre></div>
+</div>
+<div id="prior-predictive-check" class="section level2">
+<h2>Prior Predictive Check</h2>
+<p>Before fitting a Bayesian model to the data, it is important to
+evaluate whether the chosen priors lead to sensible predictions. This
+process is called a <strong>prior predictive check</strong>.</p>
+<p>Prior predictive checks help to:</p>
+<ul>
+<li>Identify whether the priors are overly vague or unrealistically
+informative.</li>
+<li>Ensure that the prior assumptions do not produce unreasonable
+predictions before any actual data are used.</li>
+<li>Avoid unintentionally strong or misleading prior beliefs that could
+affect posterior inference.</li>
+</ul>
+<p>This step is especially important in Bayesian modeling to build
+confidence that the model structure and prior choices are coherent
+before observing any data.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>result.hbpc <span class="ot">&lt;-</span> <span class="fu">hbpc</span>(model.check_prior, <span class="at">response_var=</span><span class="st">&quot;y_obs&quot;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">summary</span>(result.hbpc)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>result.hbpc<span class="sc">$</span>prior_predictive_plot</span></code></pre></div>
+<p>The prior predictive plot indicates that the priors used in the model
+are reasonable and appropriate. Here’s why:</p>
+<ul>
+<li><p>The <strong>prior predictive distributions</strong> (shown in
+blue) cover a wide but plausible range of values for the response
+variable, which aligns well with the distribution of the
+<strong>observed data</strong> (shown in black).</p></li>
+<li><p>The shape of the simulated predictions is <strong>consistent with
+the general pattern</strong> of the observed outcome, without being
+overly concentrated or too diffuse.</p></li>
+<li><p>There are <strong>no extreme or unrealistic values</strong>
+produced by the priors, suggesting that the priors are informative
+enough to guide the model without being too restrictive.</p></li>
+</ul>
+</div>
+<div id="fitting-the-model" class="section level2">
+<h2>Fitting the Model</h2>
+<p>After prior predictive checks confirm the priors are suitable, we
+proceed to fit the model using <code>sample_prior = &quot;no&quot;</code>. Why
+<code>sample_prior = &quot;no&quot;</code>?</p>
+<ul>
+<li><p>We already conducted a prior predictive check (previous
+explanation), <code>sample_prior = &quot;no&quot;</code> tells <code>brms</code>
+to</p>
+<ul>
+<li><p>Use the <strong>priors</strong> in the estimation.</p></li>
+<li><p>Focus entirely on drawing from the <strong>posterior</strong>
+given the observed data.</p></li>
+</ul></li>
+<li><p>This option is standard for final model fitting after priors have
+been validated.</p></li>
+</ul>
+<div id="basic-model" class="section level3">
+<h3>1. Basic Model</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">hbm_lnln</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="at">response =</span> <span class="st">&quot;y_obs&quot;</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">predictors =</span> <span class="fu">c</span>( <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">data =</span> data,</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">prior =</span> <span class="fu">c</span>(</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="st">&quot;normal(0.1,0.1)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;b&quot;</span>),</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="st">&quot;normal(1,1)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  ),</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  <span class="at">sample_prior =</span> <span class="st">&quot;no&quot;</span>, <span class="co"># the default is &quot;no&quot;, you can skip it</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>  <span class="at">iter =</span> <span class="dv">4000</span>,</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>  <span class="at">warmup =</span> <span class="dv">2000</span>,</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">2</span>,</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">123</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code></pre></div>
+<p>By default, if we do not explicitly define a random effect, the model
+will still generate one based on the natural random variations between
+individual records (rows) in the dataset. However, we can also
+explicitly define a random effect to account for variations at a
+specific hierarchical level, such as neighborhoods or residential
+blocks. We can use parameter re.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>model.re <span class="ot">&lt;-</span> <span class="fu">hbm_lnln</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="at">response =</span> <span class="st">&quot;y_obs&quot;</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">predictors =</span> <span class="fu">c</span>( <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">group =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">data =</span> data,</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="at">prior =</span> <span class="fu">c</span>(</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="st">&quot;normal(0.1,0.1)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;b&quot;</span>),</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="st">&quot;normal(1,1)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  ),</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>  <span class="at">sample_prior =</span> <span class="st">&quot;no&quot;</span>, <span class="co"># the default is &quot;no&quot;, you can skip it</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>  <span class="at">iter =</span> <span class="dv">4000</span>,</span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>  <span class="at">warmup =</span> <span class="dv">2000</span>,</span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">2</span>,</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">123</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">summary</span>(model.re)</span></code></pre></div>
+</div>
+<div id="model-with-missing-data" class="section level3">
+<h3>2. Model With Missing Data</h3>
+<p>The hbm function supports three strategies for handling missing
+data:</p>
+<ol style="list-style-type: decimal">
+<li><p>“deleted”: Removes rows with missing values.</p></li>
+<li><p>“multiple”: Performs multiple imputation using mice.</p></li>
+<li><p>“model”: Uses the mi() function to model missingness directly
+(not available for discrete outcomes).</p></li>
+</ol>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Prepare Missing Data</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>data.missing1 <span class="ot">&lt;-</span> data</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>data.missing1<span class="sc">$</span>y_obs[<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>, <span class="dv">3</span>)] <span class="ot">&lt;-</span> <span class="cn">NA</span>  <span class="co"># 3 missing values in response</span></span></code></pre></div>
+<ul>
+<li><p><strong>Handling missing data by deleted (Only if missing in
+response)</strong></p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>model.deleted <span class="ot">&lt;-</span> <span class="fu">hbm_lnln</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  <span class="at">response =</span> <span class="st">&quot;y_obs&quot;</span>,</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">predictors =</span> <span class="fu">c</span>( <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">group =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">data =</span> data.missing1,</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="at">handle_missing =</span> <span class="st">&quot;deleted&quot;</span>,</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  <span class="at">prior =</span> <span class="fu">c</span>(</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="st">&quot;normal(0.1,0.1)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;b&quot;</span>),</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="st">&quot;normal(1,1)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>)</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>  ),</span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>  <span class="at">sample_prior =</span> <span class="st">&quot;no&quot;</span>, <span class="co"># the default is &quot;no&quot;, you can skip it</span></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>  <span class="at">iter =</span> <span class="dv">4000</span>,</span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>  <span class="at">warmup =</span> <span class="dv">2000</span>,</span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">2</span>,</span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">123</span></span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">summary</span>(model.deleted)</span></code></pre></div></li>
+<li><p><strong>Handling missing data</strong> <strong>before model
+fitting using multiple imputation</strong></p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>model.multiple <span class="ot">&lt;-</span> <span class="fu">hbm_lnln</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>  <span class="at">response =</span> <span class="st">&quot;y_obs&quot;</span>,</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>  <span class="at">predictors =</span> <span class="fu">c</span>( <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>  <span class="at">group =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>  <span class="at">data =</span> data.missing1,</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>  <span class="at">handle_missing =</span> <span class="st">&quot;multiple&quot;</span>,</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>  <span class="at">m =</span> <span class="dv">5</span>, </span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>  <span class="at">prior =</span> <span class="fu">c</span>(</span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="st">&quot;normal(0.1,0.1)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;b&quot;</span>),</span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="st">&quot;normal(1,1)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>)</span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a>  ),</span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a>  <span class="at">sample_prior =</span> <span class="st">&quot;no&quot;</span>, <span class="co"># the default is &quot;no&quot;, you can skip it</span></span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>  <span class="at">iter =</span> <span class="dv">4000</span>,</span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>  <span class="at">warmup =</span> <span class="dv">2000</span>,</span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">2</span>,</span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">123</span></span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">summary</span>(model.multiple)</span></code></pre></div></li>
+<li><p><strong>Handle missing data during model fitting using
+mi()</strong></p>
+<p>If we want to handle missing data in the model, we must define the
+formula correctly. In this case, we need to specify missing data
+indicators using the <code>mi()</code> function.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>data.missing2 <span class="ot">&lt;-</span> data</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>data.missing1<span class="sc">$</span>y_obs[<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>, <span class="dv">3</span>)] <span class="ot">&lt;-</span> <span class="cn">NA</span>  <span class="co"># 3 missing values in response</span></span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>data.missing2<span class="sc">$</span>x1[<span class="dv">3</span><span class="sc">:</span><span class="dv">5</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span> <span class="co"># missing values in predictor</span></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>data.missing2<span class="sc">$</span>x2[<span class="dv">14</span><span class="sc">:</span><span class="dv">17</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span> </span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>model.during_model <span class="ot">&lt;-</span> <span class="fu">hbm_lnln</span>(</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>  <span class="at">response =</span> <span class="st">&quot;y_obs&quot;</span>,</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>  <span class="at">predictors =</span> <span class="fu">c</span>( <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>  <span class="at">group =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>  <span class="at">data =</span> data.missing2,</span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>  <span class="at">handle_missing =</span> <span class="st">&quot;model&quot;</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>  <span class="at">prior =</span> <span class="fu">c</span>(</span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="st">&quot;normal(0.1,0.1)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;b&quot;</span>),</span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="st">&quot;normal(1,1)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>)</span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a>  ),</span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a>  <span class="at">sample_prior =</span> <span class="st">&quot;no&quot;</span>, <span class="co"># the default is &quot;no&quot;, you can skip it</span></span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a>  <span class="at">iter =</span> <span class="dv">4000</span>,</span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a>  <span class="at">warmup =</span> <span class="dv">2000</span>,</span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">2</span>,</span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">123</span></span>
+<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">summary</span>(model.during_model)</span></code></pre></div></li>
+</ul>
+</div>
+<div id="model-with-spatial-effect" class="section level3">
+<h3>3. Model With Spatial Effect</h3>
+<p>For the Lognormal distribution, this package supports only the
+Conditional Autoregressive (CAR) spatial structure. The Spatial
+Autoregressive (SAR) model is currently available only for Gaussian and
+Student’s t families. A more detailed explanation of the use of spatial
+effects can be seen in the spatial vignette in this package.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>M <span class="ot">&lt;-</span> adjacency_matrix_car</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>M</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>model.spatial <span class="ot">&lt;-</span> <span class="fu">hbm_lnln</span>(</span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>  <span class="at">response =</span> <span class="st">&quot;y_obs&quot;</span>,</span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>  <span class="at">predictors =</span> <span class="fu">c</span>( <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a>  <span class="at">group =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a>  <span class="at">data =</span> data,</span>
+<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a>  <span class="at">sre =</span> <span class="st">&quot;sre&quot;</span>,                <span class="co"># Spatial random effect variable</span></span>
+<span id="cb21-7"><a href="#cb21-7" tabindex="-1"></a>  <span class="at">sre_type =</span> <span class="st">&quot;car&quot;</span>,</span>
+<span id="cb21-8"><a href="#cb21-8" tabindex="-1"></a>  <span class="at">car_type =</span> <span class="st">&quot;icar&quot;</span>,</span>
+<span id="cb21-9"><a href="#cb21-9" tabindex="-1"></a>  <span class="at">M =</span> M,</span>
+<span id="cb21-10"><a href="#cb21-10" tabindex="-1"></a>  <span class="at">prior =</span> <span class="fu">c</span>(</span>
+<span id="cb21-11"><a href="#cb21-11" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="st">&quot;normal(0.1,0.1)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;b&quot;</span>),</span>
+<span id="cb21-12"><a href="#cb21-12" tabindex="-1"></a>    <span class="fu">prior</span>(<span class="st">&quot;normal(1,1)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>)</span>
+<span id="cb21-13"><a href="#cb21-13" tabindex="-1"></a>  ),</span>
+<span id="cb21-14"><a href="#cb21-14" tabindex="-1"></a>  <span class="at">sample_prior =</span> <span class="st">&quot;no&quot;</span>, <span class="co"># the default is &quot;no&quot;, you can skip it</span></span>
+<span id="cb21-15"><a href="#cb21-15" tabindex="-1"></a>  <span class="at">iter =</span> <span class="dv">4000</span>,</span>
+<span id="cb21-16"><a href="#cb21-16" tabindex="-1"></a>  <span class="at">warmup =</span> <span class="dv">2000</span>,</span>
+<span id="cb21-17"><a href="#cb21-17" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">2</span>,</span>
+<span id="cb21-18"><a href="#cb21-18" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">123</span></span>
+<span id="cb21-19"><a href="#cb21-19" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="fu">summary</span>(model.spatial)</span></code></pre></div>
+</div>
+</div>
+<div id="model-diagnostics" class="section level2">
+<h2>Model Diagnostics</h2>
+<p>The <code>hbcc</code> function is designed to evaluate the
+convergence and quality of a Bayesian hierarchical model. It performs
+several diagnostic tests and generates various plots to assess Markov
+Chain Monte Carlo (MCMC) performance.</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a>result.hbcc <span class="ot">&lt;-</span> <span class="fu">hbcc</span>(model)</span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a><span class="fu">summary</span>(result.hbcc)</span></code></pre></div>
+<p>The <strong>trace plot</strong>
+(<code>result.hbcc$plots$trace</code>) shows the sampled values of each
+parameter across MCMC iterations for all chains. A well-mixed and
+stationary trace (with overlapping chains) indicates good convergence
+and suggests that the sampler has thoroughly explored the posterior
+distribution.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a>result.hbcc<span class="sc">$</span>plots<span class="sc">$</span>trace</span></code></pre></div>
+<p>The <strong>density plot</strong>
+(<code>result.hbcc$plots$dens</code>) displays the estimated posterior
+distributions of the model parameters. When the distributions from
+multiple chains align closely, it supports the conclusion that the
+chains have converged to the same target distribution.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a>result.hbcc<span class="sc">$</span>plots<span class="sc">$</span>dens</span></code></pre></div>
+<p>The <strong>autocorrelation plot (ACF)</strong>
+(<code>result.hbcc$plots$acf</code>) visualizes the correlation between
+samples at different lags. High autocorrelation can indicate inefficient
+sampling, while rapid decay in autocorrelation across lags suggests that
+the chains are generating nearly independent samples.</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a>result.hbcc<span class="sc">$</span>plots<span class="sc">$</span>acf</span></code></pre></div>
+<p>The <strong>NUTS energy plot</strong>
+(<code>result.hbcc$plots$nuts_energy</code>) is specific to models
+fitted using the No-U-Turn Sampler (NUTS). This plot examines the
+distribution of the Hamiltonian energy and its changes between
+iterations. A well-behaved energy plot indicates stable dynamics and
+efficient exploration of the parameter space.</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a>result.hbcc<span class="sc">$</span>plots<span class="sc">$</span>nuts_energy</span></code></pre></div>
+<p>The <strong>Rhat plot</strong> (<code>result.hbcc$plots$rhat</code>)
+presents the potential scale reduction factor (R̂) for each parameter. R̂
+values close to 1.00 (typically &lt; 1.01) are a strong indicator of
+convergence, showing that the between-chain and within-chain variances
+are consistent.</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a>result.hbcc<span class="sc">$</span>plots<span class="sc">$</span>rhat</span></code></pre></div>
+<p>The <strong>effective sample size (n_eff) plot</strong>
+(<code>result.hbcc$plots$neff</code>) reports how many effectively
+independent samples have been drawn for each parameter. Higher effective
+sample sizes are desirable, as they indicate that the posterior
+estimates are based on a substantial amount of independent information,
+even if the chains themselves are autocorrelated.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" tabindex="-1"></a>result.hbcc<span class="sc">$</span>plots<span class="sc">$</span>neff</span></code></pre></div>
+</div>
+<div id="model-update" class="section level2">
+<h2>Model Update</h2>
+<p>The initial model diagnostic indicated convergence issues, such as
+divergent transitions after warmup and low effective sample size (ESS).
+These warnings suggest that the posterior distribution was not well
+explored, and the resulting inference may be unreliable. Therefore, an
+update to the model configuration was necessary to improve sampling
+behavior.</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a>model.update <span class="ot">&lt;-</span> <span class="fu">update_hbm</span>(</span>
+<span id="cb30-2"><a href="#cb30-2" tabindex="-1"></a>  <span class="at">model =</span> model,</span>
+<span id="cb30-3"><a href="#cb30-3" tabindex="-1"></a>  <span class="at">iter =</span> <span class="dv">12000</span>,</span>
+<span id="cb30-4"><a href="#cb30-4" tabindex="-1"></a>  <span class="at">warmup =</span> <span class="dv">6000</span>,</span>
+<span id="cb30-5"><a href="#cb30-5" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">2</span>,</span>
+<span id="cb30-6"><a href="#cb30-6" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.95</span>)</span>
+<span id="cb30-7"><a href="#cb30-7" tabindex="-1"></a>)</span></code></pre></div>
+<p>After fitting the updated model, the summary is examined:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" tabindex="-1"></a><span class="fu">summary</span>(model.update)</span></code></pre></div>
+</div>
+<div id="model-comparison" class="section level2">
+<h2>Model Comparison</h2>
+<p>The <code>hbmc</code> function is used to compare Bayesian
+hierarchical models and assess their posterior predictive performance.
+It allows for model comparison, posterior predictive checks, and
+additional diagnostic visualizations.</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a>result.hbmc <span class="ot">&lt;-</span> <span class="fu">hbmc</span>(</span>
+<span id="cb32-2"><a href="#cb32-2" tabindex="-1"></a>      <span class="at">model =</span> <span class="fu">list</span>(model, model.spatial),</span>
+<span id="cb32-3"><a href="#cb32-3" tabindex="-1"></a>      <span class="at">comparison_metrics =</span> <span class="fu">c</span>(<span class="st">&quot;loo&quot;</span>, <span class="st">&quot;waic&quot;</span>, <span class="st">&quot;bf&quot;</span>),</span>
+<span id="cb32-4"><a href="#cb32-4" tabindex="-1"></a>      <span class="at">run_prior_sensitivity=</span> <span class="cn">TRUE</span>, </span>
+<span id="cb32-5"><a href="#cb32-5" tabindex="-1"></a>      <span class="at">sensitivity_vars =</span> <span class="fu">c</span>(<span class="st">&quot;b_Intercept&quot;</span>, <span class="st">&quot;b_x&quot;</span>)</span>
+<span id="cb32-6"><a href="#cb32-6" tabindex="-1"></a>)</span>
+<span id="cb32-7"><a href="#cb32-7" tabindex="-1"></a>  </span>
+<span id="cb32-8"><a href="#cb32-8" tabindex="-1"></a><span class="fu">summary</span>(result.hbmc)</span></code></pre></div>
+<p>The <strong>posterior predictive check plot</strong>
+(<code>result.hbmc$primary_model_diagnostics$pp_check_plot</code>)
+compares the observed data to replicated datasets generated from the
+posterior predictive distribution. This visualization helps evaluate how
+well the model reproduces the observed data. A good model fit is
+indicated when the simulated data closely resemble the actual data in
+distribution and structure.</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" tabindex="-1"></a>result.hbmc<span class="sc">$</span>primary_model_diagnostics<span class="sc">$</span>pp_check_plot</span></code></pre></div>
+<p>The <strong>marginal posterior distributions plot</strong>
+(<code>result.hbmc$primary_model_diagnostics$params_plot</code>)
+displays the estimated distributions of the model parameters based on
+the posterior samples. This plot is useful for interpreting the
+uncertainty and central tendency of each parameter. Peaks in the
+distribution indicate likely values, while wider distributions suggest
+greater uncertainty.</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" tabindex="-1"></a>result.hbmc<span class="sc">$</span>primary_model_diagnostics<span class="sc">$</span>params_plot</span></code></pre></div>
+</div>
+<div id="small-area-estimation-predictions" class="section level2">
+<h2>Small Area Estimation Predictions</h2>
+<p>The <code>hbsae()</code> function implements Hierarchical Bayesian
+Small Area Estimation (HBSAE<strong>)</strong> using the
+<code>brms</code> package. It generates small area estimates while
+accounting for uncertainty and hierarchical structure in the data. The
+function calculates Mean Predictions, Relative Standard Error (RSE),
+Mean Squared Error (MSE), and Root Mean Squared Error (RMSE) based on
+the posterior predictive sample from the fitted Bayesian model.</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" tabindex="-1"></a>result.hbsae <span class="ot">&lt;-</span> <span class="fu">hbsae</span>(model)</span>
+<span id="cb35-2"><a href="#cb35-2" tabindex="-1"></a><span class="fu">summary</span>(result.hbsae)</span></code></pre></div>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>The <code>hbm_lnln()</code> function in <strong>hbsaems</strong>
+package provides a flexible way to fit a lognormal distribution. It
+incorporates random effect, spatial modeling, and handles missing
+data.This vignette has demonstrated the use of the hbm_lnln function
+along with supporting functions (hbcc, hbmc, hbsae) for fitting,
+diagnosing, comparing, and predicting using a lognormal model for small
+area estimation.</p>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

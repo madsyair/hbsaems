@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Small area estimation using spatial modeling in hbsaems</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Small area estimation using spatial
+modeling in hbsaems</h1>
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>In spatial data analysis, spatial effects play an important role in
+understanding patterns and relationships between locations. Spatial
+effects arise when the value of a variable in one location is affected
+by the value of the same variable in another location. This can happen
+due to natural processes (e.g. the spread of air pollution) or
+socio-economic phenomena (e.g. house prices in one area affect prices in
+surrounding areas).</p>
+<p>This vignette aims to show how this package can be used to add
+spatial effects in Small Area Estimation Hierarchical Bayesian (SAEHB)
+modeling.</p>
+</div>
+<div id="model-overview" class="section level1">
+<h1>Model Overview</h1>
+<p>The <code>hbsaems</code> package can handle spatial dependence
+effects (Spatial Autocorrelation) by using the :</p>
+<ol style="list-style-type: decimal">
+<li><strong>CAR (Conditional Autoregressive)</strong></li>
+<li><strong>SAR (Simultaneous Autoregressive)</strong></li>
+</ol>
+<div id="car-conditional-autoregressive" class="section level2">
+<h2>1. <strong>CAR (Conditional Autoregressive)</strong></h2>
+<p>Conditional Autoregressive (CAR) model is a spatial model that
+describes the relationship between adjacent areas through a local
+condition approach. In this model, the value of a variable in a location
+is directly influenced by the value of the same variable in the
+surrounding areas. CAR uses adjacency matrix to determine the
+relationship between locations.</p>
+<div id="simulated-data-example" class="section level3">
+<h3>Simulated Data Example</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(hbsaems)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co"># Load data</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;data_fhnorm&quot;</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>data <span class="ot">&lt;-</span> data_fhnorm</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="fu">head</span>(data)</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co"># Load adjacency matrix</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;adjacency_matrix_car&quot;</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>adjacency_matrix_car</span></code></pre></div>
+<p>The data used is synthetic data in the <code>hbsaems</code> package
+which can be used to help understand the use of the package</p>
+</div>
+<div id="fitting-the-model" class="section level3">
+<h3>Fitting the Model</h3>
+<div id="hbm-function" class="section level4">
+<h4><code>hbm</code> Function</h4>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>model_car <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="at">formula =</span> <span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),  <span class="co"># Formula model</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">hb_sampling =</span> <span class="st">&quot;gaussian&quot;</span>,        <span class="co"># Gaussian family for continuous outcomes</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">hb_link =</span> <span class="st">&quot;identity&quot;</span>,            <span class="co"># Identity link function (no transformation)</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">re =</span> <span class="sc">~</span>(<span class="dv">1</span><span class="sc">|</span>group),</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">sre =</span> <span class="st">&quot;sre&quot;</span>,                    <span class="co"># Spatial random effect variable</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="at">sre_type =</span> <span class="st">&quot;car&quot;</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="at">car_type =</span> <span class="st">&quot;icar&quot;</span>,</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  <span class="at">M =</span> adjacency_matrix_car,</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>  <span class="at">data =</span> data)                    <span class="co"># Dataset</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="fu">summary</span>(model_car)</span></code></pre></div>
+<p>To apply spatial effects to the data, we need a variable that maps
+observations to spatial locations (<code>sre</code>). If not specified,
+each observation is treated as a separate location. Therefore, in this
+case the dimension of the adjacency matrix of locations should be equal
+to the number of observations. It is recommended to always specify a
+grouping factor to allow for handling of new data in postprocessing
+methods.</p>
+<p>Users must specify the type of spatial random effects used in the
+model (<code>sre_type</code>), if they choose <code>car</code> type,
+users must also specify the CAR structure type (<code>car_type</code>).
+Currently implemented are “escar” (exact sparse CAR), “esicar” (exact
+sparse intrinsic CAR), “icar” (intrinsic CAR), and “bym2”. When the
+<code>car_type</code> value is not specifically defined, its defaults to
+<code>escar</code>.</p>
+<p>We also need information about the adjacency matrix (<code>M</code>).
+In the spatial adjacency matrix, a value of 1 indicates that two spatial
+groups are neighbors based on their proximity to the city center, while
+a value of 0 indicates no adjacency relationship. The row names of the
+adjacency matrix must be the same as the grouping names in the variable
+<code>sre</code>. In the data that will be used this time, the spatial
+grouping names are given the numbers 1, 2, 3, 4, and 5.</p>
+</div>
+<div id="hbm_distribution-function" class="section level4">
+<h4><code>hbm_distribution</code> Function</h4>
+<p>In addition to the <code>hbm</code> function, spatial effects can be
+applied by calling the <code>hbm_distribution</code> function as in
+<code>hbm_betalogitnorm</code>, <code>hbm_binlogitnorm</code>, and
+<code>hbm_lnln</code>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Load data</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;data_betalogitnorm&quot;</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">head</span>(data_betalogitnorm)</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>model_car_beta <span class="ot">&lt;-</span> <span class="fu">hbm_betalogitnorm</span>(<span class="at">response =</span> <span class="st">&quot;y&quot;</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>                                    <span class="at">predictors =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>                                    <span class="at">sre =</span> <span class="st">&quot;sre&quot;</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>                                    <span class="at">sre_type =</span> <span class="st">&quot;car&quot;</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>                                    <span class="at">car_type =</span> <span class="st">&quot;icar&quot;</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>                                    <span class="at">M =</span> adjacency_matrix_car,</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>                                    <span class="at">data =</span> data_betalogitnorm)</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="fu">summary</span>(model_car_beta)</span></code></pre></div>
+</div>
+</div>
+</div>
+<div id="sar-simultaneous-autoregressive" class="section level2">
+<h2>2. <strong>SAR (Simultaneous Autoregressive)</strong></h2>
+<p>The Simultaneous Autoregressive Model (SAR) handles spatial effects
+by defining dependence simultaneously across the study area. SAR uses a
+spatial weight matrix to describe the relationship between regions and
+can be applied in various forms, such as Spatial Lag Model (SLM) or
+Spatial Error Model (SEM), depending on how spatial effects affect the
+dependent variable or error in the model. <code>M</code> can be either
+the spatial weight matrix itself or an object of class listw or nb, from
+which the spatial weighting matrix can be computed.</p>
+<p>The <strong>lagsar</strong> structure implements SAR of the response
+values:</p>
+<p><span class="math display">\[y = \rho W y + \eta + e\]</span></p>
+<p>The <strong>errorsar</strong> structure implements SAR of the
+residuals:</p>
+<p><span class="math display">\[y = \eta + u, \quad u = \rho W u +
+e\]</span></p>
+<p>In the above equations, <span class="math inline">\(\eta\)</span> is
+the predictor term and <span class="math inline">\(e\)</span> are
+independent normally or t-distributed residuals. Currently, only
+families <strong>gaussian</strong> and <strong>student</strong> support
+SAR structures.</p>
+<div id="simulated-data-example-1" class="section level3">
+<h3>Simulated Data Example</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">library</span>(hbsaems)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co"># Load data</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;data_fhnorm&quot;</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>data <span class="ot">&lt;-</span> data_fhnorm</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="fu">head</span>(data)</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co"># Load adjacency matrix</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;spatial_weight_sar&quot;</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>spatial_weight_sar</span></code></pre></div>
+</div>
+<div id="fitting-the-model-1" class="section level3">
+<h3>Fitting the Model</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>model_sar <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="at">formula =</span> <span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),  <span class="co"># Formula model</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">hb_sampling =</span> <span class="st">&quot;gaussian&quot;</span>,        <span class="co"># Gaussian family for continuous outcomes</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">hb_link =</span> <span class="st">&quot;identity&quot;</span>,            <span class="co"># Identity link function (no transformation)</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">re =</span> <span class="sc">~</span>(<span class="dv">1</span><span class="sc">|</span>group),</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">sre_type =</span> <span class="st">&quot;sar&quot;</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">sar_type =</span> <span class="st">&quot;lag&quot;</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  <span class="at">M =</span> spatial_weight_sar,    </span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>  <span class="at">data =</span> data)                    <span class="co"># Dataset</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="fu">summary</span>(model_sar)</span></code></pre></div>
+<p>In SAR there is no need for <code>sre</code> information, SAR only
+requires information related to <code>sre_type</code>,
+<code>sar_type</code>, and <code>M</code>.<code>sar_type</code> is type
+of the SAR structure. Either <code>lag</code> (for SAR of the response
+values) or <code>error</code> (for SAR of the residuals). When the
+<code>sar_type</code> value is not specifically defined, its defaults to
+<code>lag</code>.</p>
+<p>The <code>M</code> matrix in SAR is a spatial weighting matrix that
+shows the spatial relationship between locations with certain
+weights.</p>
+</div>
+</div>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>The <strong>hbsaems</strong> package supports spatially-informed
+small-area estimation through both Conditional Autoregressive (CAR) and
+Simultaneous Autoregressive (SAR) models, enabling improved precision by
+capturing spatial dependence among areas. CAR emphasizes local adjacency
+via binary neighborhood structure, while SAR allows varying spatial
+influence through a weighted matrix. By leveraging spatial correlation,
+CAR and SAR enhance the reliability of estimates, particularly in
+data-sparse regions, making them powerful tools for small-area
+estimation.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

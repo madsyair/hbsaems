@@ -1,0 +1,489 @@
+---
+title: "Beta-logit-normal model for small area estimation in hbsaems package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Beta-logit-normal model for small area estimation in hbsaems package}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+# Introduction
+
+The `hbm_betalogitnorm` function in the `hbsaems` package is used for **Hierarchical Bayesian Small Area Estimation (HBSAE)** under the **Beta distribution**.
+
+This method is particularly useful for modeling **small area estimates** when the response variable follows a beta distribution, allowing for efficient estimation of proportions or rates bounded between 0 and 1 while accounting for the inherent heteroskedasticity and properly modeling mean-dependent variance structures.
+
+This vignette explains the function's usage including the handling of missing values and incorporating random effects (including spatial effects).
+
+## Sample Model
+
+$$
+p_{iw} | P_i \sim \text{Beta}(a_i, b_i)
+$$
+
+with parameters :
+
+$$
+a_i = P_i \left( \frac{n_i}{\text{deff}_{iw}} - 1 \right) \\
+b_i = \left( 1- P_i \right) \left( \frac{n_i}{\text{deff}_{iw}} - 1 \right)
+$$
+<<<<<<< HEAD
+Where $p_{iw}$ is the proportion estimate for a small area of the survey (direct observation) and $P_i$ is the unknown value of the proportion parameter for a small area. $a_i$ and $b_i$ are the shape parameter of the Beta distribution. $n_i$ is the sample size for the area, while $\text{deff}$ is the Design Effect which corrects for the fact that the survey design is not simply random.
+=======
+
+Where $p_{iw}$ is the proportion estimate for a small area of the survey (direct observation) and $P_i$ is the unknown value of the proportion parameter for a small area.
+$a_i$ and $b_i$ are the shape parameter of the Beta distribution.
+$n_i$ is the sample size for the area, while $\text{deff}$ is the Design Effect which corrects for the fact that the survey design is not simply random.
+
+
+## Linking Model
+
+The logit transformation is applied:
+
+$$
+\text{logit}(P_i) \mid \boldsymbol{\beta}, \sigma_\nu^2 \overset{\text{ind}}{\sim} \mathcal{N}(\mathbf{z}_i^T \boldsymbol{\beta}, \sigma_\nu^2)
+$$
+
+$\text{logit}(P_i)$ is logit transformation of proportion parameters, that is $\log \left( \frac{P_i}{1 - P_i} \right)$
+
+# Simulated Data Example
+
+We will use `data_betalogitnorm` to simulate the `hbm_betalogitnorm` function.
+The `data_betalogitnorm` is a simulation data created specifically to demonstrate the implementation of *Hierarchical Bayesian Small Area Estimation* (HB SAE) with Beta distribution.
+This data is suitable for testing Beta regression models with a hierarchical structure between areas.
+This data is also equipped with variables that apply spatial effects.
+
+This data consisting of 100 rows and 9 variables.
+
+-   The `y` variable is the response variable in the form of the proportion of simulation results that have a value between 0 and 1 and follow the Beta distribution.
+
+-   The `theta` variable is a latent parameter related to the mean of the Beta distribution.
+
+-   Three predictor variables, namely `x1`, `x2`, and `x3`, are used to model variations in `y`.
+
+-   The `n` variable indicates the number of sample units in each area or region used in the survey - `deff` states the design effect of the survey.
+
+-   The `group` variable is the area ID (1–100) used in random effects modeling to capture heterogeneity between regions.
+
+-   In addition, there is a `sre` variable which is an optional grouping factor to map observations to a specific spatial location.
+
+-   To apply spatial effects, we will also use the `adjacency_matrix_car` data available in this package.
+
+```{r}
+library(hbsaems)
+data("data_betalogitnorm")
+data <- data_betalogitnorm
+
+data("adjacency_matrix_car")
+M <- adjacency_matrix_car
+```
+
+# Initial Model
+
+We begin by specifying the model with informative priors on the coefficients and the intercept.
+The `sample_prior = "only"` argument ensures that the model ignores the data and simulates predictions based on the priors alone.
+This is particularly useful for performing a **prior predictive check**, which involves generating data purely from the prior distributions to evaluate whether the priors lead to plausible values of the outcome variable.
+
+```{r}
+model_prior_pred <- hbm_betalogitnorm(
+   response = "y",
+   predictors = c("x1", "x2", "x3"),
+   data = data,
+   sample_prior = "only",
+   prior = c(
+    set_prior("normal(-1, 0.7)", class = "Intercept"),
+    set_prior("normal(0, 0.5)", class = "b"),
+    set_prior("gamma(2, 0.1)", class = "phi")
+  )
+)
+```
+
+```{r}
+summary(model_prior_pred)
+```
+
+If you have information about the values of `n` and `deff` then you do not need to provide prior information for phi because the value of phi is obtained from the calculation $\phi = \left( \frac{n_i}{\text{deff}_{iw}} - 1 \right)$.
+
+```{r}
+model_prior_pred_phi <- hbm_betalogitnorm(
+   response = "y",
+   predictors = c("x1", "x2", "x3"),
+   n = "n",
+   deff = "deff",
+   data = data,
+   sample_prior = "only",
+   prior = c(
+    set_prior("normal(-1, 0.7)", class = "Intercept"),
+    set_prior("normal(0, 0.5)", class = "b")
+  )
+)
+```
+
+```{r}
+summary(model_prior_pred_phi)
+```
+
+-   The intercept prior, **normal(-1, 0.7)**, reflects our belief that on the logit scale, the baseline probability (when all predictors are zero) is centered at **approximately 27%** (since $logit^{-1}(-1) ≈ 0.27$).
+    This prior places most of its mass roughly between **10% and 53%** (±1 standard deviation: $logit^{-1}(-1.7) ≈ 0.15$, $logit^{-1}(-0.3) ≈ 0.43$).
+    Such a prior avoids extreme baseline probabilities near 0 or 1, helping ensure that prior predictive distributions remain within a realistic and interpretable range.
+
+-   The coefficient prior for the predictors, **normal(0, 0.5)**, constrains the effect sizes to be modest.
+    On the odds ratio scale, this implies that for each unit change in a predictor, the odds are expected to change by a factor between **\~0.61 and \~1.65** ($exp(-0.5) ≈ 0.61$, $exp(0.5) ≈ 1.65$ ) with 68% probability.
+    This prevents the model from assigning overly large predictor effects that could push predicted probabilities too close to the boundaries (0 or 1).
+
+# Prior Predictive Check
+
+Before fitting a Bayesian model to the data, it is important to evaluate whether the chosen priors lead to sensible predictions.
+This process is called a **prior predictive check**.
+
+Prior predictive checks help to:
+
+-   Identify whether the priors are overly vague or unrealistically informative.
+-   Ensure that the prior assumptions do not produce unreasonable predictions before any actual data are used.
+-   Avoid unintentionally strong or misleading prior beliefs that could affect posterior inference.
+
+This step is especially important in Bayesian modeling to build confidence that the model structure and prior choices are coherent before observing any data.
+
+```{r}
+result_hbpc <- hbpc(model_prior_pred, response_var="y")
+summary(result_hbpc)
+```
+
+```{r}
+result_hbpc$prior_predictive_plot
+```
+
+The prior predictive plot indicates that the priors used in the model are reasonable and appropriate.
+Here's why:
+
+-   The **prior predictive distributions** (shown in blue) cover a wide but plausible range of values for the response variable, which aligns well with the distribution of the **observed data** (shown in black).
+
+-   The shape of the simulated predictions is **consistent with the general pattern** of the observed outcome, without being overly concentrated or too diffuse.
+
+-   There are **no extreme or unrealistic values** produced by the priors, suggesting that the priors are informative enough to guide the model without being too restrictive.
+
+# Fit a Beta Model
+
+After prior predictive checks confirm the priors are suitable, we proceed to fit the model using `sample_prior = "no"`.
+Why `sample_prior = "no"`?
+
+-   We already conducted a prior predictive check (previous explanation), `sample_prior = "no"` tells `brms` to:
+
+    -   Use the **priors** in the estimation.
+
+    -   Focus entirely on drawing from the **posterior** given the observed data.
+
+-   This option is standard for final model fitting after priors have been validated.
+
+**From this stage to the next will be explained the construction of the model with the condition that the user has information on the value of n and deff. If you do not have information related to the value of n and deff then simply delete the parameters n and deff in your model.**
+
+## 1. Basic Model
+
+```{r}
+model <- hbm_betalogitnorm(
+   response = "y",
+   predictors = c("x1", "x2", "x3"),
+   n = "n",
+   deff = "deff",
+   data = data,
+   sample_prior = "no",
+   prior = c(
+     set_prior("normal(-1, 0.7)", class = "Intercept"),   
+     set_prior("normal(0, 0.5)", class = "b")
+  )
+)
+```
+
+```{r}
+summary(model)
+```
+
+By default, if we do not explicitly define a random effect, the model will still generate one based on the natural random variations between individual records (rows) in the dataset.
+However, we can also explicitly define a random effect to account for variations at a specific hierarchical level, such as neighborhoods or residential blocks.
+We can use parameter group.
+
+```{r}
+model_with_defined_re <- hbm_betalogitnorm(
+   response = "y",
+   predictors = c("x1", "x2", "x3"),
+   n = "n",
+   deff = "deff",
+   group = "group",
+   data = data,
+   sample_prior = "no",
+   prior = c(
+     set_prior("normal(-1, 0.7)", class = "Intercept"),   
+     set_prior("normal(0, 0.5)", class = "b")
+  )
+)
+```
+
+```{r}
+summary(model_with_defined_re)
+```
+
+## 2. Model With Missing Data
+
+The hbm function supports three strategies for handling missing data:
+
+1.  "deleted": Removes rows with missing values.
+
+2.  "multiple": Performs multiple imputation using mice.
+
+3.  "model": Uses the mi() function to model missingness directly (not available for discrete outcomes).
+
+-   **Handling missing data by deleted (Only if missing in response)**
+
+    ```{r}
+    # Prepare Missing Data
+    data_missing <- data
+    data_missing$y[sample(1:30, 3)] <- NA  # 3 missing values in response
+    ```
+
+    ```{r}
+    model_deleted <- hbm_betalogitnorm(
+       response = "y",
+       predictors = c("x1", "x2", "x3"),
+       n = "n",
+       deff = "deff",
+       group = "group",
+       data = data_missing,
+       handle_missing = "deleted",
+       sample_prior = "no",
+       prior = c(
+         set_prior("normal(-1, 0.7)", class = "Intercept"),   
+         set_prior("normal(0, 0.5)", class = "b")
+      )
+    )
+    ```
+
+    ```{r}
+    summary(model_deleted)
+    ```
+
+-   **Handling missing data** **before model fitting using multiple imputation**
+
+    ```{r}
+    # Prepare missing data
+    data_missing <- data
+    data_missing$y[3:5] <- NA 
+    data_missing$x1[6:7] <- NA
+    ```
+
+    ```{r}
+    model_multiple <- hbm_betalogitnorm(
+       response = "y",
+       predictors = c("x1", "x2", "x3"),
+       n = "n",
+       deff = "deff",
+       group = "group",
+       data = data_missing,
+       handle_missing = "multiple",
+       sample_prior = "no",
+       prior = c(
+         set_prior("normal(-1, 0.7)", class = "Intercept"),   
+         set_prior("normal(0, 0.5)", class = "b")
+      )
+    )
+    ```
+
+    ```{r}
+    summary(model_multiple)
+    ```
+
+-   **Handle missing data during model fitting using mi()**
+
+    If we want to handle missing data in the model, we must define the formula correctly.
+    In this case, we need to specify missing data indicators using the `mi()` function.
+
+    ```{r}
+    data_missing <- data
+    data_missing$x1[3:5] <- NA 
+    data_missing$x2[14:17] <- NA 
+    ```
+
+    ```{r}
+    model_during_model <- hbm_betalogitnorm(
+       response = "y",
+       predictors = c("x1", "x2", "x3"),
+       n = "n",
+       deff = "deff",
+       group = "group",
+       data = data_missing,
+       handle_missing = "model",
+       sample_prior = "no",
+       prior = c(
+         set_prior("normal(-1, 0.7)", class = "Intercept"),   
+         set_prior("normal(0, 0.5)", class = "b")
+      )
+    )
+    ```
+
+    ```{r}
+    summary(model_during_model)
+    ```
+
+## 3. Model With Spatial Effect
+
+For the Beta distribution, this package supports only the Conditional Autoregressive (CAR) spatial structure.
+The Spatial Autoregressive (SAR) model is currently available only for Gaussian and Student's t families.
+A more detailed explanation of the use of spatial effects can be seen in the spatial vignette in this package.
+
+```{r}
+model_spatial <- hbm_betalogitnorm(
+   response = "y",
+   predictors = c("x1", "x2", "x3"),
+   n = "n",
+   deff = "deff",
+   group = "group",
+   sre = "sre",
+   sre_type = "car",
+   car_type = "icar",
+   M = M,
+   data = data,
+   sample_prior = "no",
+   prior = c(
+     set_prior("normal(-1, 0.7)", class = "Intercept"),   
+     set_prior("normal(0, 0.5)", class = "b")
+  )
+)
+```
+
+```{r}
+summary(model_spatial)
+```
+
+# Model Diagnostics
+
+The `hbcc` function is designed to evaluate the convergence and quality of a Bayesian hierarchical model.
+It performs several diagnostic tests and generates various plots to assess Markov Chain Monte Carlo (MCMC) performance.
+
+```{r}
+result_hbcc <- hbcc(model)
+summary(result_hbcc)
+```
+
+The `update_hbm()` function allows you to continue sampling from an existing fitted model by increasing the number of iterations.
+This is particularly useful when initial model fitting did not achieve convergence, for example due to insufficient iterations or complex posterior geometry.
+
+When `update_hbm()` is called with additional iterations, the sampler resumes from the previous fit, effectively increasing the total number of posterior samples.
+This helps improve convergence diagnostics such as Rhat, effective sample size, and chain mixing.
+
+```{r}
+model <- update_hbm(model, iter = 8000)
+```
+
+```{r}
+summary(model)
+```
+
+```{r}
+result_hbcc <- hbcc(model)
+summary(result_hbcc)
+```
+
+The **trace plot** (`result_hbcc$plots$trace`) shows the sampled values of each parameter across MCMC iterations for all chains.
+A well-mixed and stationary trace (with overlapping chains) indicates good convergence and suggests that the sampler has thoroughly explored the posterior distribution.
+
+```{r}
+result_hbcc$plots$trace
+```
+
+The **density plot** (`result_hbcc$plots$dens`) displays the estimated posterior distributions of the model parameters.
+When the distributions from multiple chains align closely, it supports the conclusion that the chains have converged to the same target distribution.
+
+```{r}
+result_hbcc$plots$dens
+```
+
+The **autocorrelation plot (ACF)** (`result_hbcc$plots$acf`) visualizes the correlation between samples at different lags.
+High autocorrelation can indicate inefficient sampling, while rapid decay in autocorrelation across lags suggests that the chains are generating nearly independent samples.
+
+```{r}
+result_hbcc$plots$acf
+```
+
+The **NUTS energy plot** (`result_hbcc$plots$nuts_energy`) is specific to models fitted using the No-U-Turn Sampler (NUTS).
+This plot examines the distribution of the Hamiltonian energy and its changes between iterations.
+A well-behaved energy plot indicates stable dynamics and efficient exploration of the parameter space.
+
+```{r}
+result_hbcc$plots$nuts_energy
+```
+
+The **Rhat plot** (`result_hbcc$plots$rhat`) presents the potential scale reduction factor (R̂) for each parameter.
+R̂ values close to 1.00 (typically \< 1.01) are a strong indicator of convergence, showing that the between-chain and within-chain variances are consistent.
+
+```{r}
+result_hbcc$plots$rhat
+```
+
+The **effective sample size (n_eff) plot** (`result_hbcc$plots$neff`) reports how many effectively independent samples have been drawn for each parameter.
+Higher effective sample sizes are desirable, as they indicate that the posterior estimates are based on a substantial amount of independent information, even if the chains themselves are autocorrelated.
+
+```{r}
+result_hbcc$plots$neff
+```
+
+# Model Comparison
+
+The `hbmc` function is used to compare Bayesian hierarchical models and assess their posterior predictive performance.
+It allows for model comparison, posterior predictive checks, and additional diagnostic visualizations.
+
+```{r}
+result_hbmc <- hbmc(
+      model = list(model, model_spatial),
+      comparison_metrics = c("loo", "waic", "bf"),
+      run_prior_sensitivity= TRUE, 
+      sensitivity_vars = c ("b_x1")
+  )
+  
+summary(result_hbmc)
+```
+
+The **posterior predictive check plot** (`result_hbmc$primary_model_diagnostics$pp_check_plot`) compares the observed data to replicated datasets generated from the posterior predictive distribution.
+This visualization helps evaluate how well the model reproduces the observed data.
+A good model fit is indicated when the simulated data closely resemble the actual data in distribution and structure.
+
+```{r}
+result_hbmc$primary_model_diagnostics$pp_check_plot
+```
+
+The **marginal posterior distributions plot** (`result_hbmc$primary_model_diagnostics$params_plot`) displays the estimated distributions of the model parameters based on the posterior samples.
+This plot is useful for interpreting the uncertainty and central tendency of each parameter.
+Peaks in the distribution indicate likely values, while wider distributions suggest greater uncertainty.
+
+```{r}
+result_hbmc$primary_model_diagnostics$params_plot
+```
+
+# Small Area Estimation Predictions
+
+The `hbsae()` function implements Hierarchical Bayesian Small Area Estimation (**HBSAE**) using the `brms` package.
+It generates small area estimates while accounting for uncertainty and hierarchical structure in the data.
+The function calculates Mean Predictions, Relative Standard Error (RSE), Mean Squared Error (MSE), and Root Mean Squared Error (RMSE) based on the posterior predictive sample from the fitted Bayesian model.
+
+```{r}
+result_hbsae <- hbsae(model)
+summary(result_hbsae)
+```
+
+# Conclusion
+
+The `hbm_betalogitnorm` function in the hbsaems package provides a flexible framework for modeling proportions or rates using the Beta distribution, particularly suited for small-area estimation where the response lies within the (0, 1) interval.
+This function supports random effects and spatial modeling through CAR structures, enhancing estimation in the presence of spatial autocorrelation.
+It also accommodates missing data through deletion or multiple imputation approaches.
+Diagnostic tools such as convergence assessment and posterior predictive checks ensure model adequacy, while model comparison features allow users to assess the role of spatial effects or alternative specifications.
+Predictions are derived from the posterior distributions, offering robust uncertainty quantification.
+This vignette has demonstrated the use of `hbm_betalogitnorm` along with supporting functions (`hbcc`, `hbmc`, `hbsae`) for fitting, diagnosing, comparing, and predicting with a Beta model in small-area estimation.

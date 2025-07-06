@@ -1,0 +1,474 @@
+---
+title: "Hbsaems lognormal-lognormal model"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Hbsaems lognormal-lognormal model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+# Introduction
+
+This vignette demonstrates the usage of the `hbm_lnln()` function from the `hbsaems` package for Hierarchical Bayesian Small Area Estimation (HBSAE) under a Lognormal-lognormal distribution.
+
+The lognormal distribution is appropriate for modeling strictly positive and skewed outcomes, such as income, expenditure, or health cost. In the context of SAE, the goal is to obtain reliable area-level estimates $\theta_i$ by borrowing strength across areas using auxiliary covariates $x_i$.
+
+Let $y_i$ denote the observed positive response in area $i$, and let $x_i \in \mathbb{R}^p$ be the associated vector of auxiliary covariates. The model assumes the following three-stage hierarchical structure:
+
+## 1. Sampling Model
+
+$$
+y_i \mid \theta_i, \psi_i \sim \text{Lognormal}(\theta_i, \psi_i), \quad i = 1, \dots, m
+$$
+
+which is equivalent to:
+
+$$
+\log(y_i) \sim \mathcal{N}(\theta_i, \psi_i)
+$$
+
+where:
+
+-   $y_i > 0$
+
+-   $\theta_i$: log-mean
+
+-   $\psi_i$: log-variance
+
+## 2. Linking Model
+
+To relate the log-mean $\theta_i$ to covariates $x_i$, we use a log-linear regression model with area-level random effects:
+
+$$
+\log(\theta_i) \mid \boldsymbol{\beta}, \sigma_v^2 \sim \mathcal{N}(x_i^\top \boldsymbol{\beta}, \sigma_v^2)
+$$
+
+-   $\boldsymbol{\beta}$: regression coefficients
+
+-   $\sigma_v^2$: variance of random effect
+
+-   $b_i$: optional scaling factor (default is 1)
+
+## 3. Prior Distributions
+
+The prior distributions are assumed independent:
+
+$$
+f(\boldsymbol{\beta}, \sigma_v^2) \propto f(\boldsymbol{\beta}) \cdot f(\sigma_v^2)
+$$
+
+with:
+
+-   $\boldsymbol{\beta} \sim \text{Student-t}(4, 0, 2.5)$,
+
+-   $\sigma_v^{2} \sim \text{Student-}t(3, 0, 0.25)$
+
+The model is implemented using **Hamiltonian Monte Carlo (HMC)** via Stan, through the `brms` package backend. This allows efficient sampling for hierarchical models with complex structures and skewed outcomes.
+
+## Simulated Data Example
+
+```{r}
+library(hbsaems)
+```
+
+```{r}
+data <- data_lnln
+head(data)
+```
+
+```{r}
+summary(data)
+```
+
+The dataset **data_lnln** is a simulated dataset designed to demonstrate the application of Hierarchical Bayesian Small Area Estimation (HBSAE) under a **Lognormal-Lognormal model**. It mimics real-world conditions where the response variable follows a lognormal distribution, suitable for modeling positively skewed continuous outcomes across small areas (domains).
+
+Each area in the dataset includes several key variables.
+
+-   The `group` variable is a unique identifier ranging from 1 to 100.
+
+-   The `sre` variable is a factor or categorical variable used to define spatial random effects
+
+-   The variables `x1`, `x2`, and `x3` are auxiliary covariates at the area level, typically used as fixed effects in regression modeling.
+
+The core underlying parameters for each area are also included:
+
+-   The `u_true` variable represents the true area-level random effect on the log scale.
+
+-   The linear predictor on the log scale, incorporating both fixed effects and random effects, is given by `eta_true`. This `eta_true` corresponds to the true mean of the log-transformed observations (`meanlog` parameter of the lognormal distribution).
+
+Observational details per area are also captured:
+
+-   The `n_i` variable records the sample size per area.
+
+-   The observed value for each area, `y_obs`, represents the sample mean of `n_i` individual observations drawn from a lognormal distribution specific to that area. This `y_obs` serves as the direct estimator of the area's true mean on the original scale.
+
+-   The `lambda_dir` variable is identical to `y_obs`, explicitly denoting it as the direct estimator of the mean.
+
+-   The `y_log_obs` variable is the log-transformed direct estimator (`log(lambda_dir)`), prepared for modeling on the log scale.
+
+-   The `psi_i` variable stores the approximate sampling variance of the direct estimator (`lambda_dir`). This variance is crucial for weighting observations in small area estimation models.
+
+This dataset was simulated based on a **Lognormal-Lognormal hierarchical model** (where the observed means are assumed to be drawn from underlying lognormal distributions whose parameters are themselves modeled hierarchically), making it ideal for demonstrating and testing small area estimation methods under a Bayesian framework for lognormally distributed data.
+
+## Initial Model
+
+To assess the impact of our prior assumptions before fitting to observed data, we conduct a **prior predictive check** by setting `sample_prior = "only"`. This will generate simulated outcomes based purely on the prior distributions, without conditioning on the observed response values.
+
+```{r}
+model.check_prior <- hbm_lnln(
+  response = "y_obs",
+  predictors = c( "x1", "x2", "x3"),
+  group = "group",
+  data = data,
+  prior = c(
+    prior("normal(0.1,0.1)", class = "b"),
+    prior("normal(1,1)", class = "Intercept")
+  ),
+  sample_prior = "only",
+  iter = 4000,
+  warmup = 2000,
+  chains = 2,
+  seed = 123
+)
+```
+
+```{r}
+summary(model.check_prior)
+```
+
+## Prior Predictive Check
+
+Before fitting a Bayesian model to the data, it is important to evaluate whether the chosen priors lead to sensible predictions. This process is called a **prior predictive check**.
+
+Prior predictive checks help to:
+
+-   Identify whether the priors are overly vague or unrealistically informative.
+-   Ensure that the prior assumptions do not produce unreasonable predictions before any actual data are used.
+-   Avoid unintentionally strong or misleading prior beliefs that could affect posterior inference.
+
+This step is especially important in Bayesian modeling to build confidence that the model structure and prior choices are coherent before observing any data.
+
+```{r}
+result.hbpc <- hbpc(model.check_prior, response_var="y_obs")
+summary(result.hbpc)
+```
+
+```{r}
+result.hbpc$prior_predictive_plot
+```
+
+The prior predictive plot indicates that the priors used in the model are reasonable and appropriate. Here's why:
+
+-   The **prior predictive distributions** (shown in blue) cover a wide but plausible range of values for the response variable, which aligns well with the distribution of the **observed data** (shown in black).
+
+-   The shape of the simulated predictions is **consistent with the general pattern** of the observed outcome, without being overly concentrated or too diffuse.
+
+-   There are **no extreme or unrealistic values** produced by the priors, suggesting that the priors are informative enough to guide the model without being too restrictive.
+
+## Fitting the Model
+
+After prior predictive checks confirm the priors are suitable, we proceed to fit the model using `sample_prior = "no"`. Why `sample_prior = "no"`?
+
+-   We already conducted a prior predictive check (previous explanation), `sample_prior = "no"` tells `brms` to
+
+    -   Use the **priors** in the estimation.
+
+    -   Focus entirely on drawing from the **posterior** given the observed data.
+
+-   This option is standard for final model fitting after priors have been validated.
+
+### 1. Basic Model
+
+```{r}
+model <- hbm_lnln(
+  response = "y_obs",
+  predictors = c( "x1", "x2", "x3"),
+  data = data,
+  prior = c(
+    prior("normal(0.1,0.1)", class = "b"),
+    prior("normal(1,1)", class = "Intercept")
+  ),
+  sample_prior = "no", # the default is "no", you can skip it
+  iter = 4000,
+  warmup = 2000,
+  chains = 2,
+  seed = 123
+)
+```
+
+```{r}
+summary(model)
+```
+
+By default, if we do not explicitly define a random effect, the model will still generate one based on the natural random variations between individual records (rows) in the dataset. However, we can also explicitly define a random effect to account for variations at a specific hierarchical level, such as neighborhoods or residential blocks. We can use parameter re.
+
+```{r}
+model.re <- hbm_lnln(
+  response = "y_obs",
+  predictors = c( "x1", "x2", "x3"),
+  group = "group",
+  data = data,
+  prior = c(
+    prior("normal(0.1,0.1)", class = "b"),
+    prior("normal(1,1)", class = "Intercept")
+  ),
+  sample_prior = "no", # the default is "no", you can skip it
+  iter = 4000,
+  warmup = 2000,
+  chains = 2,
+  seed = 123
+)
+```
+
+```{r}
+summary(model.re)
+```
+
+### 2. Model With Missing Data
+
+The hbm function supports three strategies for handling missing data:
+
+1.  "deleted": Removes rows with missing values.
+
+2.  "multiple": Performs multiple imputation using mice.
+
+3.  "model": Uses the mi() function to model missingness directly (not available for discrete outcomes).
+
+```{r}
+# Prepare Missing Data
+data.missing1 <- data
+data.missing1$y_obs[sample(1:30, 3)] <- NA  # 3 missing values in response
+```
+
+-   **Handling missing data by deleted (Only if missing in response)**
+
+    ```{r}
+    model.deleted <- hbm_lnln(
+      response = "y_obs",
+      predictors = c( "x1", "x2", "x3"),
+      group = "group",
+      data = data.missing1,
+      handle_missing = "deleted",
+      prior = c(
+        prior("normal(0.1,0.1)", class = "b"),
+        prior("normal(1,1)", class = "Intercept")
+      ),
+      sample_prior = "no", # the default is "no", you can skip it
+      iter = 4000,
+      warmup = 2000,
+      chains = 2,
+      seed = 123
+    )
+    ```
+
+    ```{r}
+    summary(model.deleted)
+    ```
+
+-   **Handling missing data** **before model fitting using multiple imputation**
+
+    ```{r}
+    model.multiple <- hbm_lnln(
+      response = "y_obs",
+      predictors = c( "x1", "x2", "x3"),
+      group = "group",
+      data = data.missing1,
+      handle_missing = "multiple",
+      m = 5, 
+      prior = c(
+        prior("normal(0.1,0.1)", class = "b"),
+        prior("normal(1,1)", class = "Intercept")
+      ),
+      sample_prior = "no", # the default is "no", you can skip it
+      iter = 4000,
+      warmup = 2000,
+      chains = 2,
+      seed = 123
+    )
+    ```
+
+    ```{r}
+    summary(model.multiple)
+    ```
+
+-   **Handle missing data during model fitting using mi()**
+
+    If we want to handle missing data in the model, we must define the formula correctly. In this case, we need to specify missing data indicators using the `mi()` function.
+
+    ```{r}
+    data.missing2 <- data
+    data.missing1$y_obs[sample(1:30, 3)] <- NA  # 3 missing values in response
+    data.missing2$x1[3:5] <- NA # missing values in predictor
+    data.missing2$x2[14:17] <- NA 
+    ```
+
+    ```{r}
+    model.during_model <- hbm_lnln(
+      response = "y_obs",
+      predictors = c( "x1", "x2", "x3"),
+      group = "group",
+      data = data.missing2,
+      handle_missing = "model",
+      prior = c(
+        prior("normal(0.1,0.1)", class = "b"),
+        prior("normal(1,1)", class = "Intercept")
+      ),
+      sample_prior = "no", # the default is "no", you can skip it
+      iter = 4000,
+      warmup = 2000,
+      chains = 2,
+      seed = 123
+    )
+    ```
+
+    ```{r}
+    summary(model.during_model)
+    ```
+
+### 3. Model With Spatial Effect
+
+For the Lognormal distribution, this package supports only the Conditional Autoregressive (CAR) spatial structure. The Spatial Autoregressive (SAR) model is currently available only for Gaussian and Student's t families. A more detailed explanation of the use of spatial effects can be seen in the spatial vignette in this package.
+
+```{r}
+M <- adjacency_matrix_car
+M
+```
+
+```{r}
+model.spatial <- hbm_lnln(
+  response = "y_obs",
+  predictors = c( "x1", "x2", "x3"),
+  group = "group",
+  data = data,
+  sre = "sre",                # Spatial random effect variable
+  sre_type = "car",
+  car_type = "icar",
+  M = M,
+  prior = c(
+    prior("normal(0.1,0.1)", class = "b"),
+    prior("normal(1,1)", class = "Intercept")
+  ),
+  sample_prior = "no", # the default is "no", you can skip it
+  iter = 4000,
+  warmup = 2000,
+  chains = 2,
+  seed = 123
+)
+```
+
+```{r}
+summary(model.spatial)
+```
+
+## Model Diagnostics
+
+The `hbcc` function is designed to evaluate the convergence and quality of a Bayesian hierarchical model. It performs several diagnostic tests and generates various plots to assess Markov Chain Monte Carlo (MCMC) performance.
+
+```{r}
+result.hbcc <- hbcc(model)
+summary(result.hbcc)
+```
+
+The **trace plot** (`result.hbcc$plots$trace`) shows the sampled values of each parameter across MCMC iterations for all chains. A well-mixed and stationary trace (with overlapping chains) indicates good convergence and suggests that the sampler has thoroughly explored the posterior distribution.
+
+```{r}
+result.hbcc$plots$trace
+```
+
+The **density plot** (`result.hbcc$plots$dens`) displays the estimated posterior distributions of the model parameters. When the distributions from multiple chains align closely, it supports the conclusion that the chains have converged to the same target distribution.
+
+```{r}
+result.hbcc$plots$dens
+```
+
+The **autocorrelation plot (ACF)** (`result.hbcc$plots$acf`) visualizes the correlation between samples at different lags. High autocorrelation can indicate inefficient sampling, while rapid decay in autocorrelation across lags suggests that the chains are generating nearly independent samples.
+
+```{r}
+result.hbcc$plots$acf
+```
+
+The **NUTS energy plot** (`result.hbcc$plots$nuts_energy`) is specific to models fitted using the No-U-Turn Sampler (NUTS). This plot examines the distribution of the Hamiltonian energy and its changes between iterations. A well-behaved energy plot indicates stable dynamics and efficient exploration of the parameter space.
+
+```{r}
+result.hbcc$plots$nuts_energy
+```
+
+The **Rhat plot** (`result.hbcc$plots$rhat`) presents the potential scale reduction factor (R̂) for each parameter. R̂ values close to 1.00 (typically \< 1.01) are a strong indicator of convergence, showing that the between-chain and within-chain variances are consistent.
+
+```{r}
+result.hbcc$plots$rhat
+```
+
+The **effective sample size (n_eff) plot** (`result.hbcc$plots$neff`) reports how many effectively independent samples have been drawn for each parameter. Higher effective sample sizes are desirable, as they indicate that the posterior estimates are based on a substantial amount of independent information, even if the chains themselves are autocorrelated.
+
+```{r}
+result.hbcc$plots$neff
+```
+
+## Model Update
+
+The initial model diagnostic indicated convergence issues, such as divergent transitions after warmup and low effective sample size (ESS). These warnings suggest that the posterior distribution was not well explored, and the resulting inference may be unreliable. Therefore, an update to the model configuration was necessary to improve sampling behavior.
+
+```{r}
+model.update <- update_hbm(
+  model = model,
+  iter = 12000,
+  warmup = 6000,
+  chains = 2,
+  control = list(adapt_delta = 0.95)
+)
+```
+
+After fitting the updated model, the summary is examined:
+
+```{r}
+summary(model.update)
+```
+
+## Model Comparison
+
+The `hbmc` function is used to compare Bayesian hierarchical models and assess their posterior predictive performance. It allows for model comparison, posterior predictive checks, and additional diagnostic visualizations.
+
+```{r}
+result.hbmc <- hbmc(
+      model = list(model, model.spatial),
+      comparison_metrics = c("loo", "waic", "bf"),
+      run_prior_sensitivity= TRUE, 
+      sensitivity_vars = c("b_Intercept", "b_x")
+)
+  
+summary(result.hbmc)
+```
+
+The **posterior predictive check plot** (`result.hbmc$primary_model_diagnostics$pp_check_plot`) compares the observed data to replicated datasets generated from the posterior predictive distribution. This visualization helps evaluate how well the model reproduces the observed data. A good model fit is indicated when the simulated data closely resemble the actual data in distribution and structure.
+
+```{r}
+result.hbmc$primary_model_diagnostics$pp_check_plot
+```
+
+The **marginal posterior distributions plot** (`result.hbmc$primary_model_diagnostics$params_plot`) displays the estimated distributions of the model parameters based on the posterior samples. This plot is useful for interpreting the uncertainty and central tendency of each parameter. Peaks in the distribution indicate likely values, while wider distributions suggest greater uncertainty.
+
+```{r}
+result.hbmc$primary_model_diagnostics$params_plot
+```
+
+## Small Area Estimation Predictions
+
+The `hbsae()` function implements Hierarchical Bayesian Small Area Estimation (HBSAE**)** using the `brms` package. It generates small area estimates while accounting for uncertainty and hierarchical structure in the data. The function calculates Mean Predictions, Relative Standard Error (RSE), Mean Squared Error (MSE), and Root Mean Squared Error (RMSE) based on the posterior predictive sample from the fitted Bayesian model.
+
+```{r}
+result.hbsae <- hbsae(model)
+summary(result.hbsae)
+```
+
+## Conclusion
+
+The `hbm_lnln()` function in **hbsaems** package provides a flexible way to fit a lognormal distribution. It incorporates random effect, spatial modeling, and handles missing data.This vignette has demonstrated the use of the hbm_lnln function along with supporting functions (hbcc, hbmc, hbsae) for fitting, diagnosing, comparing, and predicting using a lognormal model for small area estimation.

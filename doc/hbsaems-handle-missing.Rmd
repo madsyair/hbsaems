@@ -1,0 +1,155 @@
+---
+title: "Handling missing data in small area estimation in hbsaems package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Handling missing data in small area estimation in hbsaems package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Introduction
+
+Missing data is a common challenge in data analysis, often introducing bias and reducing statistical power. In **Small Area Estimation (SAE)**, missing values can significantly impact the reliability of estimates.
+
+The **`hbsaems`** package provides several approaches to handle missing data before Bayesian modeling. This vignette explores three main methods:
+
+1.  **Deletion (Complete Case Analysis)** – Removing observations with missing values.
+2.  **Model-Based Imputation (`mi()`)** – Using Bayesian modeling to estimate missing values as part of the inference process.
+3.  **Multiple Imputation** – Performing multiple imputations before model estimation to account for uncertainty in missing values.
+
+In this vignette, we demonstrate how to apply these methods, with the dataset provided in this package.
+
+## Simulated Data Example
+
+```{r}
+library(hbsaems)
+data("data_fhnorm")
+data <- data_fhnorm
+head(data)
+```
+
+## 1. Deletion (Complete Case Analysis)
+
+In the deletion approach, **rows with missing values are removed before fitting the model**. This is the default strategy and is useful when the amount of missing data is small and assumed to be missing completely at random (MCAR).
+
+When using the **deletion** approach with **`handle_missing = "deleted"`**, only observations where the response variable (**y**) is missing will be excluded during model fitting, assuming all predictor variables (**x**) are complete. However, if the response variable is missing, these rows will still be included during the prediction stage, allowing estimates for missing outcomes to be generated.
+
+```{r}
+data_missing <- data
+data_missing$y[3:5] <- NA 
+```
+
+```{r}
+model_deleted <- hbm(
+          formula = bf(y ~ x1 + x2 + x3),
+          hb_sampling = "gaussian",
+          hb_link = "log",
+          re = ~(1|group),
+          data = data_missing,
+          handle_missing = "deleted",
+)
+```
+
+```{r}
+summary(model_deleted)
+```
+
+## 2. Model-Based Imputation using mi()
+
+When **`handle_missing = "model"`** is specified, missing values in covariates are modeled directly using the **`mi()`** function from the **`brms`** package. This method allows for better uncertainty estimation by incorporating missing data directly into the model. It is important to note that this approach is **only applicable to continuous covariates and cannot be used for discrete outcomes**.
+
+Imputation during model fitting is generally considered more complex than imputation before model fitting because it involves handling everything within a single step. For example, consider a multivariate modeling scenario where multiple variables are predicted simultaneously, some of which may have missing values.
+
+The model specification in **`hbm()`** allows for a **multivariate model** where multiple outcome variables are predicted simultaneously, with missing values modeled directly. Here's a breakdown of how the formula for the model works:
+
+```{r}
+data_missing <- data
+data_missing$y[3:5] <- NA 
+data_missing$x1[6:7] <- NA
+```
+
+```{r}
+model_during_model <- hbm(
+  formula = bf(y | mi() ~ mi(x1) + x2 + x3) + bf(x1 | mi() ~ x2 + x3),
+  hb_sampling = "gaussian",
+  hb_link = "log",
+  re = ~(1|group),
+  data = data_missing,
+  handle_missing = "model",
+  prior = c(
+    prior("normal(1, 0.2)", class = "Intercept", resp = "y"),  
+    prior("normal(0, 0.1)", class = "b", resp = "y"),
+    prior("exponential(5)", class = "sd", resp = "y"),
+    
+    prior("normal(1, 0.2)", class = "Intercept", resp = "x1"),  
+    prior("normal(0, 0.1)", class = "b", resp = "x1"),
+    prior("exponential(5)", class = "sd", resp = "x1")
+  )
+)
+```
+
+this model jointly estimates the outcome `y` and the predictor `x1` that has missing values, using a model-based imputation approach. By specifying two sub-models—one for `y` as a function of `x1`, `x2`, and `x3`, and another for `x1` itself as a function of `x2` and `x3`—we ensure that the imputations of `x1` are informed by its observed relationships with other variables, while also allowing the model for `y` to incorporate the uncertainty from imputation directly into the final inference. This joint modeling approach is preferable to ad-hoc imputation or complete case analysis because it maintains the internal consistency of the data and aligns with the Missing at Random (MAR) assumption, thereby producing more reliable estimates.
+
+The priors used in this model are intentionally restrictive to avoid extreme or implausible predictions, especially under the log link function that ensures positive outcomes. For both the outcome and the predictor models, the intercepts have normal(1, 0.2) priors, implying a baseline mean around $exp(1)=2.7$ with modest uncertainty, while the coefficients have normal(0, 0.1) priors to constrain effect sizes, preventing overly strong influence from any single predictor. The group-level standard deviation priors are set as exponential(5), which favors smaller variation between groups while still allowing flexibility. Together, these priors produce stable prior predictive distributions that align with realistic expectations of the data and prevent convergence issues caused by overly wide or vague priors.
+
+```{r}
+summary(model_during_model)
+```
+
+If you prefer a more user-friendly approach and do not want to manually specify the **`mi()`** function for imputing missing values, you can use the **`hbm_model()`** function. In this case, the **`mi()`** formula will be generated automatically based on the data, eliminating the need for the user to manually define how missing values should be handled in the model.
+
+This feature is particularly useful for users who may not be familiar with writing complex formulas, as **`hbm_model()`** automatically generates the appropriate structure for imputing missing values, thus simplifying the modeling process.
+
+```{r}
+model_during_model <- hbm_lnln(
+      response = "y",
+      predictors = c("x1", "x2", "x3"),
+      data = data_missing,
+      handle_missing = "model"
+)
+```
+
+```{r}
+summary(model_during_model)
+```
+
+## 3. Multiple Imputation with brm_multiple()
+
+When dealing with missing data, another powerful approach offered by the **`hbsaems`** package is **multiple imputation**. This method is available by setting **`handle_missing = "multiple"`** in the model specification. Multiple imputation is performed using the **`mice`** package, which generates multiple complete datasets by filling in the missing values through an imputation procedure.
+
+Multiple imputation is a statistical technique used to handle missing data by generating **m** imputed datasets, each containing different plausible values for the missing data. The model is then fit separately to each imputed dataset, and the results are pooled to provide more accurate estimates.
+
+Multiple imputation is particularly beneficial when the missing data is **Missing at Random (MAR)**, meaning that the missingness can be explained by observed data, but not by the unobserved values. By generating several imputed datasets, multiple imputation accounts for the uncertainty introduced by missing data and provides more robust estimates.
+
+```{r}
+model_multiple <- hbm(
+  formula = bf(y ~ x1 + x2 + x3),
+  hb_sampling = "gaussian",
+  hb_link = "log",
+  re = ~(1|group),
+  data = data_missing,
+  handle_missing = "multiple"
+)
+```
+
+```{r}
+summary(model_multiple)
+```
+
+## Choosing the Right Strategy
+
+-   **Use "deleted"** when the proportion of missing data is small and the data can be assumed to be **Missing Completely at Random (MCAR)**. This method is computationally efficient and provides simple interpretation, as it excludes missing observations during model fitting.
+-   **Use "model"** when covariates with missing values are continuous and you wish to directly model the missingness. This method allows for better uncertainty estimation by incorporating missing data into the model fitting process.
+-   **Use "multiple"** when the missing data is substantial, and you need to account for the uncertainty caused by the missingness. This approach creates multiple imputed datasets and pools the results to reflect the variability in the imputation process.
+
+## Conclusion
+
+The **hbsaems** package offers flexible methods for handling missing data in small area estimation. By selecting the most appropriate strategy based on the data characteristics and modeling needs, users can ensure more accurate and reliable estimates despite the presence of missing values.

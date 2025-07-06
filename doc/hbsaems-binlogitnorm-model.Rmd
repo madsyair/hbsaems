@@ -1,0 +1,400 @@
+---
+title: "Logit-normal model for small area estimation in hbsaems package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Logit-normal model for small area estimation in hbsaems package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Introduction
+
+The `hbm_binlogitnorm` function in the `hbsaems` package fits a Hierarchical Bayesian Small Area Estimation using the **logit-normal model** for binomial data. This vignette explains the function's usage, including model formulation, handling missing data, and incorporating random and spatial effects.
+
+TThe logit-normal hierarchical model is specified as follows:
+
+-   **Sampling model:**
+
+$$
+y_i \mid p_i \overset{ind}{\sim} \text{Binomial}(n_i, p_i)
+$$
+
+where:
+
+-   $y_i$ is the observed count of successes in area $i$,
+
+-   $n_i$ is the total number of trials or observations in area $i$,
+
+-   $p_i$ is the true underlying success probability in area $i$.
+
+-   **Linking model:**
+
+$$
+\text{logit}(p_i)
+=
+z_i^T \boldsymbol{\eta}
++
+v_i
+$$
+
+where:
+
+-   $\boldsymbol{\eta}$ is the vector of fixed effects coefficients (weakly informative prior).
+-   $v_i$ are area-specific random effects with standard deviation $\sigma_v$.
+-   **Prior distributions:**
+
+The prior distributions are assumed independent:
+
+$$
+f(\boldsymbol{\eta}, \sigma_v)
+\propto
+f(\boldsymbol{\eta}) \cdot f(\sigma_v)
+$$
+
+with:
+
+$$
+\boldsymbol{\eta} \sim \text{Student-t}(4, 0, 2.5),
+$$
+
+$$
+v_i \overset{iid}{\sim} N(0, \sigma_v^2),
+$$
+
+$$
+\sigma_v \sim \text{Student-t}(3, 0, 2.5).
+$$
+
+To ensure proper model specification, the following conditions must be met. The `trials` variable (denoting the total number of trials in a binomial setting) **must be a positive integer**. If any value is non-positive or non-integer, the function will return an error. The `response` variable (denoting the number of successes) **must be a non-negative integer**. The number of successes (`response`) **cannot exceed the total number of trials**. These conditions ensure that the model is correctly specified for binomial data and prevent computational errors during estimation.
+
+## Simulated Data Example
+
+```{r}
+library(hbsaems)
+```
+
+The dataset **data_binlogitnorm** is a simulated dataset designed to demonstrate the application of Hierarchical Bayesian Small Area Estimation (HBSAE) under a logit-normal model using the **hbsaems package**. It mimics real-world conditions where the response is binomially distributed and is appropriate for modeling proportions or prevalence rates across small areas (domains).
+
+Each area includes several key variables. The `area` variable is a unique identifier ranging from 1 to 50. The variables `x1`, `x2`, and `x3` are auxiliary covariates at the area level, typically used as fixed effects in regression modeling.
+
+The variable `u_true` represents the true area-level random effect on the logit scale. The linear predictor on the logit scale, incorporating both fixed and random effects, is given by `eta_true`. The corresponding true probability of success in each area is denoted by `p_true`.
+
+The sample size per area is recorded in `n`. Based on this, the observed number of successes is provided in `y`, and the direct estimator of the proportion is given by `p`. The sampling variance of the logit-transformed direct estimator is stored in `psi_i`.
+
+To mimic realistic observational error, `y_obs` is included as a noisy version of the true linear predictor `eta_true`, and the associated estimated proportion based on the inverse-logit transformation of `y_obs` is represented by `p_obs`.
+
+This dataset was simulated based on a **Binomial–Logit-Normal model**, and is ideal for demonstrating and testing small area estimation methods under a Bayesian framework.
+
+```{r}
+library(hbsaems)
+data("data_binlogitnorm")
+data <- data_binlogitnorm
+head(data)
+```
+
+## Initial Model
+
+We begin by specifying the model with informative priors on the coefficients and the intercept. The `sample_prior = "only"` argument ensures that the model ignores the data and simulates predictions based on the priors alone. This is particularly useful for performing a **prior predictive check**, which involves generating data purely from the prior distributions to evaluate whether the priors lead to plausible values of the outcome variable.
+
+```{r}
+model_prior_pred <- hbm_binlogitnorm(
+   response = "y",
+   trials = "n",
+   predictors = c("x1", "x2", "x3"),
+   data = data,
+   sample_prior = "only",
+   prior = c(
+    set_prior("normal(-1, 0.7)", class = "Intercept"),   
+    set_prior("normal(0, 0.5)", class = "b")
+  )
+)
+```
+
+-   The intercept prior, **normal(-1, 0.7)**, reflects our belief that on the logit scale, the baseline probability (when all predictors are zero) is centered at **approximately 27%** (since $logit^{-1}(-1) ≈ 0.27$). This prior places most of its mass roughly between **10% and 53%** (±1 standard deviation: $logit^{-1}(-1.7) ≈ 0.15$, $logit^{-1}(-0.3) ≈ 0.43$). Such a prior avoids extreme baseline probabilities near 0 or 1, helping ensure that prior predictive distributions remain within a realistic and interpretable range.
+
+-   The coefficient prior for the predictors, **normal(0, 0.5)**, constrains the effect sizes to be modest. On the odds ratio scale, this implies that for each unit change in a predictor, the odds are expected to change by a factor between **\~0.61 and \~1.65** ($exp(-0.5) ≈ 0.61$, $exp(0.5) ≈ 1.65$) with 68% probability. This prevents the model from assigning overly large predictor effects that could push predicted probabilities too close to the boundaries (0 or 1), maintaining realistic prior predictive outcomes even with large numbers of trials.
+
+```{r}
+summary(model_prior_pred)
+```
+
+## Prior Predictive Check
+
+Before fitting a Bayesian model to the data, it is important to evaluate whether the chosen priors lead to sensible predictions. This process is called a **prior predictive check**.
+
+Prior predictive checks help to:
+
+-   Identify whether the priors are overly vague or unrealistically informative.
+-   Ensure that the prior assumptions do not produce unreasonable predictions before any actual data are used.
+-   Avoid unintentionally strong or misleading prior beliefs that could affect posterior inference.
+
+This step is especially important in Bayesian modeling to build confidence that the model structure and prior choices are coherent before observing any data.
+
+```{r}
+result_hbpc <- hbpc(model_prior_pred, response_var = "y")
+summary(result_hbpc)
+```
+
+```{r}
+result_hbpc$prior_predictive_plot
+```
+
+The prior predictive plot indicates that the priors used in the model are reasonable and appropriate. Here's why:
+
+-   The **prior predictive distributions** (shown in blue) cover a wide but plausible range of values for the response variable, which aligns well with the distribution of the **observed data** (shown in black).
+
+-   The shape of the simulated predictions is **consistent with the general pattern** of the observed outcome, without being overly concentrated or too diffuse.
+
+-   There are **no extreme or unrealistic values** produced by the priors, suggesting that the priors are informative enough to guide the model without being too restrictive.
+
+## Fit a Logit-Normal Model
+
+After prior predictive checks confirm the priors are suitable, we proceed to fit the model using `sample_prior = "no"`. Why `sample_prior = "no"`?
+
+-   We already conducted a prior predictive check (previous explanation), `sample_prior = "no"` tells `brms` to:
+
+    -   Use the **priors** in the estimation.
+
+    -   Focus entirely on drawing from the **posterior** given the observed data.
+
+-   This option is standard for final model fitting after priors have been validated.
+
+### 1. Basic Model
+
+```{r}
+model <- hbm_binlogitnorm(
+   response = "y",
+   trials = "n",
+   predictors = c("x1", "x2", "x3"),
+   data = data,
+   sample_prior = "no",
+   prior = c(
+    set_prior("normal(-1, 0.7)", class = "Intercept"),   
+    set_prior("normal(0, 0.5)", class = "b")
+  )
+)
+```
+
+```{r}
+summary(model)
+```
+
+By default, if we do not explicitly define a random effect, the model will still generate one based on the natural random variations between individual records (rows) in the dataset. However, we can also explicitly define a random effect to account for variations at a specific hierarchical level, such as neighborhoods or residential blocks. We can use paramter re.
+
+```{r}
+model_with_defined_re <- hbm_binlogitnorm(
+   response = "y",
+   trials = "n",
+   predictors = c("x1", "x2", "x3"),
+   group = "group",
+   data = data,
+   prior = c(
+    set_prior("normal(-1, 0.7)", class = "Intercept"),   
+    set_prior("normal(0, 0.5)", class = "b")
+  )
+)
+```
+
+```{r}
+summary(model_with_defined_re)
+```
+
+### 2. Model With Missing Data
+
+The `hbm_binlogitnorm` function supports three strategies for handling missing data
+
+1.  `"deleted"`: Removes rows with missing values.
+
+2.  `"multiple"`: Performs multiple imputation using the `mice` package.
+
+**Important Note:** The `"model"` option is not available for discrete outcomes, including models fitted using `hbm_binlogitnorm`. Since `hbm_binlogitnorm` models binomial data using a logit-normal distribution, missing data must be handled using either `"deleted"` or `"multiple"`.
+
+-   **Handling missing data by deleted (Only if missing in response)**
+
+    ```{r}
+    data_missing <- data
+    data_missing$y[3:5] <- NA 
+    ```
+
+    ```{r}
+    model_deleted <- hbm_binlogitnorm(
+       response = "y",
+       trials = "n",
+       predictors = c("x1", "x2", "x3"),
+       data = data_missing,
+       handle_missing = "deleted",
+       prior = c(
+        set_prior("normal(-1, 0.7)", class = "Intercept"),   
+        set_prior("normal(0, 0.5)", class = "b")
+      )
+    )
+    ```
+
+    ```{r}
+    summary(model_deleted)
+    ```
+
+-   **Handling missing data** **before model fitting using multiple imputation**
+
+    ```{r}
+    data_missing <- data
+    data_missing$y[3:5] <- NA 
+    data_missing$x1[6:7] <- NA
+    ```
+
+    ```{r}
+    model_multiple <- hbm_binlogitnorm(
+       response = "y",
+       trials = "n",
+       predictors = c("x1", "x2", "x3"),
+       data = data_missing,
+       handle_missing = "multiple",
+       prior = c(
+        set_prior("normal(-1, 0.7)", class = "Intercept"),   
+        set_prior("normal(0, 0.5)", class = "b")
+      )
+    )
+    ```
+
+    ```{r}
+    summary(model_multiple)
+    ```
+
+### 3. Model With Spatial Effect
+
+For binomial distribution in model logit normal, this package supports only the Conditional Autoregressive (CAR) spatial structure. The Spatial Autoregressive (SAR) model in currently available only for Gaussian and Student's families. A more detailed explanation of the use of spatial effects can be seen in the spatial vignette in this package
+
+```{r}
+M <- adjacency_matrix_car
+```
+
+```{r}
+model_spatial <- hbm_binlogitnorm(
+   response = "y",
+   trials = "n",
+   predictors = c("x1", "x2", "x3"),
+   sre = "sre",                # Spatial random effect variable
+   sre_type = "car",
+   car_type = "icar",
+   M = M,
+   data = data,
+   prior = c(
+    set_prior("normal(-1, 0.7)", class = "Intercept"),   
+    set_prior("normal(0, 0.5)", class = "b")
+  )
+)
+```
+
+```{r}
+summary(model_spatial)
+```
+
+## Model Diagnostics
+
+The `hbcc` function is designed to evaluate the convergence and quality of a Bayesian hierarchical model. It performs several diagnostic tests and generates various plots to assess Markov Chain Monte Carlo (MCMC) performance.
+
+```{r}
+result_hbcc <- hbcc(model)
+summary(result_hbcc)
+```
+
+The `update_hbm()` function allows you to continue sampling from an existing fitted model by increasing the number of iterations. This is particularly useful when initial model fitting did not achieve convergence, for example due to insufficient iterations or complex posterior geometry.
+
+When `update_hbm()` is called with additional iterations, the sampler resumes from the previous fit, effectively increasing the total number of posterior samples. This helps improve convergence diagnostics such as Rhat, effective sample size, and chain mixing.
+
+```{r}
+model <- update_hbm(model, iter = 8000)
+```
+
+```{r}
+summary(model)
+```
+
+```{r}
+result_hbcc <- hbcc(model)
+summary(result_hbcc)
+```
+
+The **trace plot** (`result_hbcc$plots$trace`) shows the sampled values of each parameter across MCMC iterations for all chains. A well-mixed and stationary trace (with overlapping chains) indicates good convergence and suggests that the sampler has thoroughly explored the posterior distribution.
+
+```{r}
+result_hbcc$plots$trace
+```
+
+The **density plot** (`result_hbcc$plots$dens`) displays the estimated posterior distributions of the model parameters. When the distributions from multiple chains align closely, it supports the conclusion that the chains have converged to the same target distribution.
+
+```{r}
+result_hbcc$plots$dens
+```
+
+The **autocorrelation plot (ACF)** (`result_hbcc$plots$acf`) visualizes the correlation between samples at different lags. High autocorrelation can indicate inefficient sampling, while rapid decay in autocorrelation across lags suggests that the chains are generating nearly independent samples.
+
+```{r}
+result_hbcc$plots$acf
+```
+
+The **NUTS energy plot** (`result_hbcc$plots$nuts_energy`) is specific to models fitted using the No-U-Turn Sampler (NUTS). This plot examines the distribution of the Hamiltonian energy and its changes between iterations. A well-behaved energy plot indicates stable dynamics and efficient exploration of the parameter space.
+
+```{r}
+result_hbcc$plots$nuts_energy
+```
+
+The **Rhat plot** (`result_hbcc$plots$rhat`) presents the potential scale reduction factor (R̂) for each parameter. R̂ values close to 1.00 (typically \< 1.01) are a strong indicator of convergence, showing that the between-chain and within-chain variances are consistent.
+
+```{r}
+result_hbcc$plots$rhat
+```
+
+The **effective sample size (n_eff) plot** (`result_hbcc$plots$neff`) reports how many effectively independent samples have been drawn for each parameter. Higher effective sample sizes are desirable, as they indicate that the posterior estimates are based on a substantial amount of independent information, even if the chains themselves are autocorrelated.
+
+```{r}
+result_hbcc$plots$neff
+```
+
+## Model Comparison
+
+The `hbmc` function is used to compare Bayesian hierarchical models and assess their posterior predictive performance. It allows for model comparison, posterior predictive checks, and additional diagnostic visualizations.
+
+```{r}
+result_hbmc <- hbmc(
+      model = list(model, model_spatial),
+      comparison_metrics = c("loo", "waic", "bf"),
+      run_prior_sensitivity= TRUE, 
+      sensitivity_vars = c ("b_x1")
+  )
+  
+summary(result_hbmc)
+```
+
+The **posterior predictive check plot** (`result_hbmc$primary_model_diagnostics$pp_check_plot`) compares the observed data to replicated datasets generated from the posterior predictive distribution. This visualization helps evaluate how well the model reproduces the observed data. A good model fit is indicated when the simulated data closely resemble the actual data in distribution and structure.
+
+```{r}
+result_hbmc$primary_model_diagnostics$pp_check_plot
+```
+
+The **marginal posterior distributions plot** (`result_hbmc$primary_model_diagnostics$params_plot`) displays the estimated distributions of the model parameters based on the posterior samples. This plot is useful for interpreting the uncertainty and central tendency of each parameter. Peaks in the distribution indicate likely values, while wider distributions suggest greater uncertainty.
+
+```{r}
+result_hbmc$primary_model_diagnostics$params_plot
+```
+
+## Small Area Estimation Predictions
+
+The `hbsae()` function implements Hierarchical Bayesian Small Area Estimation (HBSAE**)** using the `brms` package. It generates small area estimates while accounting for uncertainty and hierarchical structure in the data. The function calculates Mean Predictions, Relative Standard Error (RSE), Mean Squared Error (MSE), and Root Mean Squared Error (RMSE) based on the posterior predictive sample from the fitted Bayesian model.
+
+```{r}
+result_hbsae <- hbsae(model)
+summary(result_hbsae)
+```
+
+## Conclusion
+
+The `hbm_binlogitnorm` function in the `hbsaems` package provides a flexible framework for fitting logit-normal models, offering options for handling missing data, incorporating random effects, and modeling spatial dependencies. This approach is particularly useful for small-area estimation, where overdispersion is accounted for by assuming a logit-normal distribution. The function supports missing data handling through deletion and multiple imputation and allows for the inclusion of both **random and spatial effects** to improve estimation accuracy. Model diagnostics, such as convergence checks and posterior predictive assessments, ensure reliability, while model comparison evaluates the impact of spatial effects or to compare with other model. Finally, predictions are generated using posterior distributions. This vignette has demonstrated the use of `hbm_binlogitnorm` along with supporting functions (`hbcc`, `hbmc`, `hbsae`) for **fitting, diagnosing, comparing, and predicting** with a logit-normal model in small-area estimation.

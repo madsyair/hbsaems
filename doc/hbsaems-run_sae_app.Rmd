@@ -1,0 +1,169 @@
+---
+title: "Graphical user interface of hbsaems using shiny"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Graphical user interface of hbsaems using shiny}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Introduction
+
+The `run_sae_app()` function in the `hbsaems` package provides an interactive **Shiny Dashboard** for **Hierarchical Bayesian Small Area Estimation (HBSAE)** using `brms` for Bayesian inference with `Stan`. This application offers a user-friendly interface to upload data, define models, and obtain estimation results without requiring extensive R coding.
+
+## Install Required Packages
+
+Ensure that you have installed the `hbsaems` package:
+
+``` r
+install.packages("hbsaems")
+```
+
+## Load Required Packages
+
+``` r
+library(hbsaems)
+```
+
+## Running the Shiny App
+
+To launch the application, simply call:
+
+``` r
+run_sae_app()
+```
+
+This will start a Shiny application that runs in your web browser.
+
+## App Structure
+
+### 1. **Data Upload**
+
+Users can either upload a `.csv` file or select a data frame available in the current R environment.
+
+-   **Upload File**: Choose and upload a `.csv` file from your computer.
+-   **Select from Environment**: Choose an existing R data object.
+-   **Data Preview**: The loaded data will be shown in a table preview for inspection.
+
+### 2. **Data Exploration**
+
+This tab provides four types of data exploration tools to help users understand the characteristics of the dataset:
+
+-   **Summary Statistics**: Displays mean, median, min, max, and quartiles for selected numeric variables.
+-   **Histogram**: Shows frequency distribution and density curve for selected variables.
+-   **Boxplot**: Visualizes data spread, median, quartiles, and outliers.
+-   **Scatter Plot & Correlation**: Visualizes relationships between two variables, with support for five correlation coefficients:
+    -   Pearson
+    -   Spearman's Rho
+    -   Chatterjee's Xi
+    -   Distance Correlation
+    -   MIC (Maximal Information Coefficient)
+
+### 3. **Modeling**
+
+#### a. Modeling Configuration
+
+Users can define key model components:
+
+-   **Basic Settings**:
+    -   **Response Variable**
+    -   **Auxiliary Variables** (linear and nonlinear covariates)
+    -   **Group Variables** (for hierarchical modeling)
+    -   **Distribution Type** (e.g., Lognormal, Logitnormal, Beta, or Custom)
+    -   **HB Family & Link Function** (for Custom models)
+-   **Spatial Modeling**:
+    -   Choose spatial type (**SAR** or **CAR**)
+    -   Specify neighborhood structure
+    -   Upload spatial weight matrix (`.csv`)
+-   **Missing Data Handling**:
+    -   Choose between **deletion**, **imputation**, or **model-based handling**
+
+#### b. Prior Checking
+
+Before fitting the model, users can configure prior distributions and perform prior predictive checks:
+
+-   Summarize prior settings
+-   Simulate from prior distributions
+-   Visualize prior predictive plots
+
+#### c. MCMC Settings
+
+Configure sampling parameters for Bayesian estimation:
+
+-   **Seed**
+-   **Chains**
+-   **Cores**
+-   **Thinning Rate**
+-   **Iterations**
+-   **Warm-up**
+-   **Adapt Delta**
+
+Click "Fit Model" to begin model fitting using `brms`.
+
+### 4. **Results**
+
+After fitting, results are available through multiple tabs:
+
+-   **Model Summary**: Shows model output, including estimates and diagnostics.
+-   **Convergence Diagnostics**:
+    -   R-hat, Geweke, Raftery-Lewis, Heidelberger-Welch tests
+    -   Trace, density, ACF, NUTS energy, and ESS plots
+-   **Model Checking**:
+    -   **Numerical**: LOO, WAIC
+    -   **Graphical**: Posterior predictive checks
+-   **Prior Sensitivity Analysis**
+-   **Prediction**:
+    -   Display model-based small area estimates with uncertainty.
+    -   Upload new data for out-of-sample predictions.
+-   **Update Model**:
+    -   Modify and refit the model with updated settings.
+-   **Save Output**:
+    -   **Model Fit (RDS)**: Save fitted model object.
+    -   **Stan Code (TXT)**: Export Stan model code.
+    -   **MCMC Samples (CODA Format)**: Save posterior samples.
+    -   **Diagnostic Plots (PDF)**: Export diagnostic visualizations.
+
+## Example Workflow
+
+1.  **Upload Dataset**: Use `.csv` or select data from environment.
+2.  **Explore Data**: Summarize and visualize key variables.
+3.  **Define Model**: Set model structure, priors, and MCMC settings.
+4.  **Prior Checking**: Validate prior assumptions before sampling.
+5.  **Fit Model**: Run HBSAE using `brms`.
+6.  **Review Results**: Interpret summary and diagnostics.
+7.  **Predict & Save**: Generate estimates and export outputs.
+
+## Troubleshooting
+
+If you encounter errors when launching the app:
+
+1.  Ensure all dependencies are installed manually:
+
+    ``` r
+    install.packages(c("shiny", "shinyWidgets", "shinydashboard", "readxl", "DT"))
+    ```
+
+2.  Reinstall `hbsaems`:
+
+    ``` r
+    remove.packages("hbsaems")
+    install.packages("hbsaems")
+    ```
+
+3.  Check the app directory:
+
+    ``` r
+    system.file("shiny/sae_app", package = "hbsaems")
+    ```
+
+## Conclusion
+
+`run_sae_app()` provides an intuitive way to perform HBSAE modeling using a Shiny interface, making Bayesian small area estimation accessible without requiring in-depth coding knowledge. Users can define models, inspect results, and generate predictions interactively.

@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Logit-normal model for small area estimation in hbsaems package</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Logit-normal model for small area
+estimation in hbsaems package</h1>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>The <code>hbm_binlogitnorm</code> function in the
+<code>hbsaems</code> package fits a Hierarchical Bayesian Small Area
+Estimation using the <strong>logit-normal model</strong> for binomial
+data. This vignette explains the function’s usage, including model
+formulation, handling missing data, and incorporating random and spatial
+effects.</p>
+<p>TThe logit-normal hierarchical model is specified as follows:</p>
+<ul>
+<li><strong>Sampling model:</strong></li>
+</ul>
+<p><span class="math display">\[
+y_i \mid p_i \overset{ind}{\sim} \text{Binomial}(n_i, p_i)
+\]</span></p>
+<p>where:</p>
+<ul>
+<li><p><span class="math inline">\(y_i\)</span> is the observed count of
+successes in area <span class="math inline">\(i\)</span>,</p></li>
+<li><p><span class="math inline">\(n_i\)</span> is the total number of
+trials or observations in area <span class="math inline">\(i\)</span>,</p></li>
+<li><p><span class="math inline">\(p_i\)</span> is the true underlying
+success probability in area <span class="math inline">\(i\)</span>.</p></li>
+<li><p><strong>Linking model:</strong></p></li>
+</ul>
+<p><span class="math display">\[
+\text{logit}(p_i)
+=
+z_i^T \boldsymbol{\eta}
++
+v_i
+\]</span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(\boldsymbol{\eta}\)</span> is the vector
+of fixed effects coefficients (weakly informative prior).</li>
+<li><span class="math inline">\(v_i\)</span> are area-specific random
+effects with standard deviation <span class="math inline">\(\sigma_v\)</span>.</li>
+<li><strong>Prior distributions:</strong></li>
+</ul>
+<p>The prior distributions are assumed independent:</p>
+<p><span class="math display">\[
+f(\boldsymbol{\eta}, \sigma_v)
+\propto
+f(\boldsymbol{\eta}) \cdot f(\sigma_v)
+\]</span></p>
+<p>with:</p>
+<p><span class="math display">\[
+\boldsymbol{\eta} \sim \text{Student-t}(4, 0, 2.5),
+\]</span></p>
+<p><span class="math display">\[
+v_i \overset{iid}{\sim} N(0, \sigma_v^2),
+\]</span></p>
+<p><span class="math display">\[
+\sigma_v \sim \text{Student-t}(3, 0, 2.5).
+\]</span></p>
+<p>To ensure proper model specification, the following conditions must
+be met. The <code>trials</code> variable (denoting the total number of
+trials in a binomial setting) <strong>must be a positive
+integer</strong>. If any value is non-positive or non-integer, the
+function will return an error. The <code>response</code> variable
+(denoting the number of successes) <strong>must be a non-negative
+integer</strong>. The number of successes (<code>response</code>)
+<strong>cannot exceed the total number of trials</strong>. These
+conditions ensure that the model is correctly specified for binomial
+data and prevent computational errors during estimation.</p>
+</div>
+<div id="simulated-data-example" class="section level2">
+<h2>Simulated Data Example</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(hbsaems)</span></code></pre></div>
+<p>The dataset <strong>data_binlogitnorm</strong> is a simulated dataset
+designed to demonstrate the application of Hierarchical Bayesian Small
+Area Estimation (HBSAE) under a logit-normal model using the
+<strong>hbsaems package</strong>. It mimics real-world conditions where
+the response is binomially distributed and is appropriate for modeling
+proportions or prevalence rates across small areas (domains).</p>
+<p>Each area includes several key variables. The <code>area</code>
+variable is a unique identifier ranging from 1 to 50. The variables
+<code>x1</code>, <code>x2</code>, and <code>x3</code> are auxiliary
+covariates at the area level, typically used as fixed effects in
+regression modeling.</p>
+<p>The variable <code>u_true</code> represents the true area-level
+random effect on the logit scale. The linear predictor on the logit
+scale, incorporating both fixed and random effects, is given by
+<code>eta_true</code>. The corresponding true probability of success in
+each area is denoted by <code>p_true</code>.</p>
+<p>The sample size per area is recorded in <code>n</code>. Based on
+this, the observed number of successes is provided in <code>y</code>,
+and the direct estimator of the proportion is given by <code>p</code>.
+The sampling variance of the logit-transformed direct estimator is
+stored in <code>psi_i</code>.</p>
+<p>To mimic realistic observational error, <code>y_obs</code> is
+included as a noisy version of the true linear predictor
+<code>eta_true</code>, and the associated estimated proportion based on
+the inverse-logit transformation of <code>y_obs</code> is represented by
+<code>p_obs</code>.</p>
+<p>This dataset was simulated based on a <strong>Binomial–Logit-Normal
+model</strong>, and is ideal for demonstrating and testing small area
+estimation methods under a Bayesian framework.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(hbsaems)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;data_binlogitnorm&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>data <span class="ot">&lt;-</span> data_binlogitnorm</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">head</span>(data)</span></code></pre></div>
+</div>
+<div id="initial-model" class="section level2">
+<h2>Initial Model</h2>
+<p>We begin by specifying the model with informative priors on the
+coefficients and the intercept. The <code>sample_prior = &quot;only&quot;</code>
+argument ensures that the model ignores the data and simulates
+predictions based on the priors alone. This is particularly useful for
+performing a <strong>prior predictive check</strong>, which involves
+generating data purely from the prior distributions to evaluate whether
+the priors lead to plausible values of the outcome variable.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>model_prior_pred <span class="ot">&lt;-</span> <span class="fu">hbm_binlogitnorm</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>   <span class="at">response =</span> <span class="st">&quot;y&quot;</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>   <span class="at">trials =</span> <span class="st">&quot;n&quot;</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>   <span class="at">predictors =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>   <span class="at">data =</span> data,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>   <span class="at">sample_prior =</span> <span class="st">&quot;only&quot;</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>   <span class="at">prior =</span> <span class="fu">c</span>(</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>    <span class="fu">set_prior</span>(<span class="st">&quot;normal(-1, 0.7)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>),   </span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>    <span class="fu">set_prior</span>(<span class="st">&quot;normal(0, 0.5)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;b&quot;</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  )</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>)</span></code></pre></div>
+<ul>
+<li><p>The intercept prior, <strong>normal(-1, 0.7)</strong>, reflects
+our belief that on the logit scale, the baseline probability (when all
+predictors are zero) is centered at <strong>approximately 27%</strong>
+(since <span class="math inline">\(logit^{-1}(-1) ≈ 0.27\)</span>). This
+prior places most of its mass roughly between <strong>10% and
+53%</strong> (±1 standard deviation: <span class="math inline">\(logit^{-1}(-1.7) ≈ 0.15\)</span>, <span class="math inline">\(logit^{-1}(-0.3) ≈ 0.43\)</span>). Such a prior
+avoids extreme baseline probabilities near 0 or 1, helping ensure that
+prior predictive distributions remain within a realistic and
+interpretable range.</p></li>
+<li><p>The coefficient prior for the predictors, <strong>normal(0,
+0.5)</strong>, constrains the effect sizes to be modest. On the odds
+ratio scale, this implies that for each unit change in a predictor, the
+odds are expected to change by a factor between <strong>~0.61 and
+~1.65</strong> (<span class="math inline">\(exp(-0.5) ≈ 0.61\)</span>,
+<span class="math inline">\(exp(0.5) ≈ 1.65\)</span>) with 68%
+probability. This prevents the model from assigning overly large
+predictor effects that could push predicted probabilities too close to
+the boundaries (0 or 1), maintaining realistic prior predictive outcomes
+even with large numbers of trials.</p></li>
+</ul>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">summary</span>(model_prior_pred)</span></code></pre></div>
+</div>
+<div id="prior-predictive-check" class="section level2">
+<h2>Prior Predictive Check</h2>
+<p>Before fitting a Bayesian model to the data, it is important to
+evaluate whether the chosen priors lead to sensible predictions. This
+process is called a <strong>prior predictive check</strong>.</p>
+<p>Prior predictive checks help to:</p>
+<ul>
+<li>Identify whether the priors are overly vague or unrealistically
+informative.</li>
+<li>Ensure that the prior assumptions do not produce unreasonable
+predictions before any actual data are used.</li>
+<li>Avoid unintentionally strong or misleading prior beliefs that could
+affect posterior inference.</li>
+</ul>
+<p>This step is especially important in Bayesian modeling to build
+confidence that the model structure and prior choices are coherent
+before observing any data.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>result_hbpc <span class="ot">&lt;-</span> <span class="fu">hbpc</span>(model_prior_pred, <span class="at">response_var =</span> <span class="st">&quot;y&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">summary</span>(result_hbpc)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>result_hbpc<span class="sc">$</span>prior_predictive_plot</span></code></pre></div>
+<p>The prior predictive plot indicates that the priors used in the model
+are reasonable and appropriate. Here’s why:</p>
+<ul>
+<li><p>The <strong>prior predictive distributions</strong> (shown in
+blue) cover a wide but plausible range of values for the response
+variable, which aligns well with the distribution of the
+<strong>observed data</strong> (shown in black).</p></li>
+<li><p>The shape of the simulated predictions is <strong>consistent with
+the general pattern</strong> of the observed outcome, without being
+overly concentrated or too diffuse.</p></li>
+<li><p>There are <strong>no extreme or unrealistic values</strong>
+produced by the priors, suggesting that the priors are informative
+enough to guide the model without being too restrictive.</p></li>
+</ul>
+</div>
+<div id="fit-a-logit-normal-model" class="section level2">
+<h2>Fit a Logit-Normal Model</h2>
+<p>After prior predictive checks confirm the priors are suitable, we
+proceed to fit the model using <code>sample_prior = &quot;no&quot;</code>. Why
+<code>sample_prior = &quot;no&quot;</code>?</p>
+<ul>
+<li><p>We already conducted a prior predictive check (previous
+explanation), <code>sample_prior = &quot;no&quot;</code> tells <code>brms</code>
+to:</p>
+<ul>
+<li><p>Use the <strong>priors</strong> in the estimation.</p></li>
+<li><p>Focus entirely on drawing from the <strong>posterior</strong>
+given the observed data.</p></li>
+</ul></li>
+<li><p>This option is standard for final model fitting after priors have
+been validated.</p></li>
+</ul>
+<div id="basic-model" class="section level3">
+<h3>1. Basic Model</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">hbm_binlogitnorm</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>   <span class="at">response =</span> <span class="st">&quot;y&quot;</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>   <span class="at">trials =</span> <span class="st">&quot;n&quot;</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>   <span class="at">predictors =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>   <span class="at">data =</span> data,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>   <span class="at">sample_prior =</span> <span class="st">&quot;no&quot;</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>   <span class="at">prior =</span> <span class="fu">c</span>(</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>    <span class="fu">set_prior</span>(<span class="st">&quot;normal(-1, 0.7)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>),   </span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>    <span class="fu">set_prior</span>(<span class="st">&quot;normal(0, 0.5)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;b&quot;</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>  )</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code></pre></div>
+<p>By default, if we do not explicitly define a random effect, the model
+will still generate one based on the natural random variations between
+individual records (rows) in the dataset. However, we can also
+explicitly define a random effect to account for variations at a
+specific hierarchical level, such as neighborhoods or residential
+blocks. We can use paramter re.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>model_with_defined_re <span class="ot">&lt;-</span> <span class="fu">hbm_binlogitnorm</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>   <span class="at">response =</span> <span class="st">&quot;y&quot;</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>   <span class="at">trials =</span> <span class="st">&quot;n&quot;</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>   <span class="at">predictors =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>   <span class="at">group =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>   <span class="at">data =</span> data,</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>   <span class="at">prior =</span> <span class="fu">c</span>(</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>    <span class="fu">set_prior</span>(<span class="st">&quot;normal(-1, 0.7)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>),   </span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>    <span class="fu">set_prior</span>(<span class="st">&quot;normal(0, 0.5)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;b&quot;</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>  )</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">summary</span>(model_with_defined_re)</span></code></pre></div>
+</div>
+<div id="model-with-missing-data" class="section level3">
+<h3>2. Model With Missing Data</h3>
+<p>The <code>hbm_binlogitnorm</code> function supports three strategies
+for handling missing data</p>
+<ol style="list-style-type: decimal">
+<li><p><code>&quot;deleted&quot;</code>: Removes rows with missing
+values.</p></li>
+<li><p><code>&quot;multiple&quot;</code>: Performs multiple imputation using the
+<code>mice</code> package.</p></li>
+</ol>
+<p><strong>Important Note:</strong> The <code>&quot;model&quot;</code> option is
+not available for discrete outcomes, including models fitted using
+<code>hbm_binlogitnorm</code>. Since <code>hbm_binlogitnorm</code>
+models binomial data using a logit-normal distribution, missing data
+must be handled using either <code>&quot;deleted&quot;</code> or
+<code>&quot;multiple&quot;</code>.</p>
+<ul>
+<li><p><strong>Handling missing data by deleted (Only if missing in
+response)</strong></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>data_missing <span class="ot">&lt;-</span> data</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>data_missing<span class="sc">$</span>y[<span class="dv">3</span><span class="sc">:</span><span class="dv">5</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span> </span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>model_deleted <span class="ot">&lt;-</span> <span class="fu">hbm_binlogitnorm</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>   <span class="at">response =</span> <span class="st">&quot;y&quot;</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>   <span class="at">trials =</span> <span class="st">&quot;n&quot;</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>   <span class="at">predictors =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>   <span class="at">data =</span> data_missing,</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>   <span class="at">handle_missing =</span> <span class="st">&quot;deleted&quot;</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>   <span class="at">prior =</span> <span class="fu">c</span>(</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>    <span class="fu">set_prior</span>(<span class="st">&quot;normal(-1, 0.7)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>),   </span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>    <span class="fu">set_prior</span>(<span class="st">&quot;normal(0, 0.5)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;b&quot;</span>)</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>  )</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">summary</span>(model_deleted)</span></code></pre></div></li>
+<li><p><strong>Handling missing data</strong> <strong>before model
+fitting using multiple imputation</strong></p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>data_missing <span class="ot">&lt;-</span> data</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>data_missing<span class="sc">$</span>y[<span class="dv">3</span><span class="sc">:</span><span class="dv">5</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span> </span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>data_missing<span class="sc">$</span>x1[<span class="dv">6</span><span class="sc">:</span><span class="dv">7</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>model_multiple <span class="ot">&lt;-</span> <span class="fu">hbm_binlogitnorm</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>   <span class="at">response =</span> <span class="st">&quot;y&quot;</span>,</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>   <span class="at">trials =</span> <span class="st">&quot;n&quot;</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>   <span class="at">predictors =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>   <span class="at">data =</span> data_missing,</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>   <span class="at">handle_missing =</span> <span class="st">&quot;multiple&quot;</span>,</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>   <span class="at">prior =</span> <span class="fu">c</span>(</span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>    <span class="fu">set_prior</span>(<span class="st">&quot;normal(-1, 0.7)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>),   </span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>    <span class="fu">set_prior</span>(<span class="st">&quot;normal(0, 0.5)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;b&quot;</span>)</span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a>  )</span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">summary</span>(model_multiple)</span></code></pre></div></li>
+</ul>
+</div>
+<div id="model-with-spatial-effect" class="section level3">
+<h3>3. Model With Spatial Effect</h3>
+<p>For binomial distribution in model logit normal, this package
+supports only the Conditional Autoregressive (CAR) spatial structure.
+The Spatial Autoregressive (SAR) model in currently available only for
+Gaussian and Student’s families. A more detailed explanation of the use
+of spatial effects can be seen in the spatial vignette in this
+package</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>M <span class="ot">&lt;-</span> adjacency_matrix_car</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>model_spatial <span class="ot">&lt;-</span> <span class="fu">hbm_binlogitnorm</span>(</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>   <span class="at">response =</span> <span class="st">&quot;y&quot;</span>,</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>   <span class="at">trials =</span> <span class="st">&quot;n&quot;</span>,</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>   <span class="at">predictors =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>   <span class="at">sre =</span> <span class="st">&quot;sre&quot;</span>,                <span class="co"># Spatial random effect variable</span></span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>   <span class="at">sre_type =</span> <span class="st">&quot;car&quot;</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>   <span class="at">car_type =</span> <span class="st">&quot;icar&quot;</span>,</span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a>   <span class="at">M =</span> M,</span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>   <span class="at">data =</span> data,</span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a>   <span class="at">prior =</span> <span class="fu">c</span>(</span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a>    <span class="fu">set_prior</span>(<span class="st">&quot;normal(-1, 0.7)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>),   </span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a>    <span class="fu">set_prior</span>(<span class="st">&quot;normal(0, 0.5)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;b&quot;</span>)</span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a>  )</span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">summary</span>(model_spatial)</span></code></pre></div>
+</div>
+</div>
+<div id="model-diagnostics" class="section level2">
+<h2>Model Diagnostics</h2>
+<p>The <code>hbcc</code> function is designed to evaluate the
+convergence and quality of a Bayesian hierarchical model. It performs
+several diagnostic tests and generates various plots to assess Markov
+Chain Monte Carlo (MCMC) performance.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>result_hbcc <span class="ot">&lt;-</span> <span class="fu">hbcc</span>(model)</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="fu">summary</span>(result_hbcc)</span></code></pre></div>
+<p>The <code>update_hbm()</code> function allows you to continue
+sampling from an existing fitted model by increasing the number of
+iterations. This is particularly useful when initial model fitting did
+not achieve convergence, for example due to insufficient iterations or
+complex posterior geometry.</p>
+<p>When <code>update_hbm()</code> is called with additional iterations,
+the sampler resumes from the previous fit, effectively increasing the
+total number of posterior samples. This helps improve convergence
+diagnostics such as Rhat, effective sample size, and chain mixing.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">update_hbm</span>(model, <span class="at">iter =</span> <span class="dv">8000</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a>result_hbcc <span class="ot">&lt;-</span> <span class="fu">hbcc</span>(model)</span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a><span class="fu">summary</span>(result_hbcc)</span></code></pre></div>
+<p>The <strong>trace plot</strong>
+(<code>result_hbcc$plots$trace</code>) shows the sampled values of each
+parameter across MCMC iterations for all chains. A well-mixed and
+stationary trace (with overlapping chains) indicates good convergence
+and suggests that the sampler has thoroughly explored the posterior
+distribution.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a>result_hbcc<span class="sc">$</span>plots<span class="sc">$</span>trace</span></code></pre></div>
+<p>The <strong>density plot</strong>
+(<code>result_hbcc$plots$dens</code>) displays the estimated posterior
+distributions of the model parameters. When the distributions from
+multiple chains align closely, it supports the conclusion that the
+chains have converged to the same target distribution.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a>result_hbcc<span class="sc">$</span>plots<span class="sc">$</span>dens</span></code></pre></div>
+<p>The <strong>autocorrelation plot (ACF)</strong>
+(<code>result_hbcc$plots$acf</code>) visualizes the correlation between
+samples at different lags. High autocorrelation can indicate inefficient
+sampling, while rapid decay in autocorrelation across lags suggests that
+the chains are generating nearly independent samples.</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a>result_hbcc<span class="sc">$</span>plots<span class="sc">$</span>acf</span></code></pre></div>
+<p>The <strong>NUTS energy plot</strong>
+(<code>result_hbcc$plots$nuts_energy</code>) is specific to models
+fitted using the No-U-Turn Sampler (NUTS). This plot examines the
+distribution of the Hamiltonian energy and its changes between
+iterations. A well-behaved energy plot indicates stable dynamics and
+efficient exploration of the parameter space.</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a>result_hbcc<span class="sc">$</span>plots<span class="sc">$</span>nuts_energy</span></code></pre></div>
+<p>The <strong>Rhat plot</strong> (<code>result_hbcc$plots$rhat</code>)
+presents the potential scale reduction factor (R̂) for each parameter. R̂
+values close to 1.00 (typically &lt; 1.01) are a strong indicator of
+convergence, showing that the between-chain and within-chain variances
+are consistent.</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a>result_hbcc<span class="sc">$</span>plots<span class="sc">$</span>rhat</span></code></pre></div>
+<p>The <strong>effective sample size (n_eff) plot</strong>
+(<code>result_hbcc$plots$neff</code>) reports how many effectively
+independent samples have been drawn for each parameter. Higher effective
+sample sizes are desirable, as they indicate that the posterior
+estimates are based on a substantial amount of independent information,
+even if the chains themselves are autocorrelated.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" tabindex="-1"></a>result_hbcc<span class="sc">$</span>plots<span class="sc">$</span>neff</span></code></pre></div>
+</div>
+<div id="model-comparison" class="section level2">
+<h2>Model Comparison</h2>
+<p>The <code>hbmc</code> function is used to compare Bayesian
+hierarchical models and assess their posterior predictive performance.
+It allows for model comparison, posterior predictive checks, and
+additional diagnostic visualizations.</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a>result_hbmc <span class="ot">&lt;-</span> <span class="fu">hbmc</span>(</span>
+<span id="cb30-2"><a href="#cb30-2" tabindex="-1"></a>      <span class="at">model =</span> <span class="fu">list</span>(model, model_spatial),</span>
+<span id="cb30-3"><a href="#cb30-3" tabindex="-1"></a>      <span class="at">comparison_metrics =</span> <span class="fu">c</span>(<span class="st">&quot;loo&quot;</span>, <span class="st">&quot;waic&quot;</span>, <span class="st">&quot;bf&quot;</span>),</span>
+<span id="cb30-4"><a href="#cb30-4" tabindex="-1"></a>      <span class="at">run_prior_sensitivity=</span> <span class="cn">TRUE</span>, </span>
+<span id="cb30-5"><a href="#cb30-5" tabindex="-1"></a>      <span class="at">sensitivity_vars =</span> <span class="fu">c</span> (<span class="st">&quot;b_x1&quot;</span>)</span>
+<span id="cb30-6"><a href="#cb30-6" tabindex="-1"></a>  )</span>
+<span id="cb30-7"><a href="#cb30-7" tabindex="-1"></a>  </span>
+<span id="cb30-8"><a href="#cb30-8" tabindex="-1"></a><span class="fu">summary</span>(result_hbmc)</span></code></pre></div>
+<p>The <strong>posterior predictive check plot</strong>
+(<code>result_hbmc$primary_model_diagnostics$pp_check_plot</code>)
+compares the observed data to replicated datasets generated from the
+posterior predictive distribution. This visualization helps evaluate how
+well the model reproduces the observed data. A good model fit is
+indicated when the simulated data closely resemble the actual data in
+distribution and structure.</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" tabindex="-1"></a>result_hbmc<span class="sc">$</span>primary_model_diagnostics<span class="sc">$</span>pp_check_plot</span></code></pre></div>
+<p>The <strong>marginal posterior distributions plot</strong>
+(<code>result_hbmc$primary_model_diagnostics$params_plot</code>)
+displays the estimated distributions of the model parameters based on
+the posterior samples. This plot is useful for interpreting the
+uncertainty and central tendency of each parameter. Peaks in the
+distribution indicate likely values, while wider distributions suggest
+greater uncertainty.</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a>result_hbmc<span class="sc">$</span>primary_model_diagnostics<span class="sc">$</span>params_plot</span></code></pre></div>
+</div>
+<div id="small-area-estimation-predictions" class="section level2">
+<h2>Small Area Estimation Predictions</h2>
+<p>The <code>hbsae()</code> function implements Hierarchical Bayesian
+Small Area Estimation (HBSAE<strong>)</strong> using the
+<code>brms</code> package. It generates small area estimates while
+accounting for uncertainty and hierarchical structure in the data. The
+function calculates Mean Predictions, Relative Standard Error (RSE),
+Mean Squared Error (MSE), and Root Mean Squared Error (RMSE) based on
+the posterior predictive sample from the fitted Bayesian model.</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" tabindex="-1"></a>result_hbsae <span class="ot">&lt;-</span> <span class="fu">hbsae</span>(model)</span>
+<span id="cb33-2"><a href="#cb33-2" tabindex="-1"></a><span class="fu">summary</span>(result_hbsae)</span></code></pre></div>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>The <code>hbm_binlogitnorm</code> function in the
+<code>hbsaems</code> package provides a flexible framework for fitting
+logit-normal models, offering options for handling missing data,
+incorporating random effects, and modeling spatial dependencies. This
+approach is particularly useful for small-area estimation, where
+overdispersion is accounted for by assuming a logit-normal distribution.
+The function supports missing data handling through deletion and
+multiple imputation and allows for the inclusion of both <strong>random
+and spatial effects</strong> to improve estimation accuracy. Model
+diagnostics, such as convergence checks and posterior predictive
+assessments, ensure reliability, while model comparison evaluates the
+impact of spatial effects or to compare with other model. Finally,
+predictions are generated using posterior distributions. This vignette
+has demonstrated the use of <code>hbm_binlogitnorm</code> along with
+supporting functions (<code>hbcc</code>, <code>hbmc</code>,
+<code>hbsae</code>) for <strong>fitting, diagnosing, comparing, and
+predicting</strong> with a logit-normal model in small-area
+estimation.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
