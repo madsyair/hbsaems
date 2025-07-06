@@ -1,8 +1,8 @@
 ---
-title: "hbsaems-run-app"
+title: "Graphical user interface  of hbsaems using shiny "
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{hbsaems-run-app}
+  %\VignetteIndexEntry{Graphical user interface  of hbsaems using shiny}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

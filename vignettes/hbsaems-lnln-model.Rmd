@@ -1,8 +1,8 @@
 ---
-title: "hbsaems-lognormal-model"
+title: "Hbsaems lognormal-lognormal model"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{hbsaems-lognormal-model}
+  %\VignetteIndexEntry{Hbsaems lognormal-lognormal model}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

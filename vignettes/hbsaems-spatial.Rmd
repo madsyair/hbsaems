@@ -1,8 +1,8 @@
 ---
-title: "hbsaems-spatial"
+title: "Small area estimation using spatial modeling in hbsaems"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{hbsaems-spatial}
+  %\VignetteIndexEntry{Small area estimation using spatial modeling in hbsaems}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

@@ -1,8 +1,8 @@
 ---
-title: "Model Beta Logit Normal Small Area Estimation in hbsaems Package"
+title: "Beta-logit-normal model for small area estimation in hbsaems package"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{hbsaems-betalogitnorm-model}
+  %\VignetteIndexEntry{Beta-logit-normal model for small area estimation in hbsaems package}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 

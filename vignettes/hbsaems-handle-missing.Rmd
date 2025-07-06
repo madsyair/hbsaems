@@ -1,8 +1,8 @@
 ---
-title: "Handling Missing Data in Small Area Estimation hbsaems Package"
+title: "Handling missing data in small area estimation in hbsaems package"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{hbsaems-handle-missing}
+  %\VignetteIndexEntry{Handling missing data in small area estimation in hbsaems package}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
