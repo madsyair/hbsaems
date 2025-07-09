@@ -17,7 +17,7 @@
 #' @return An updated `hbmfit` object
 #' 
 #' @examples
-#' #' \dontrun{
+#' \dontrun{
 #' library(hbsaems)
 #' # Load example data
 #' data("data_fhnorm")
