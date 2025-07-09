@@ -13,8 +13,8 @@ Authors@R: c(
     person("Arsyka Laila Oktalia", "Siregar", role = "aut")
     )
 Maintainer: Achmad Syahrul Choir <madsyair@stis.ac.id>
-Description: Implementing Hierarchical Bayesian Small Area 
-    Estimation models using the 'brms' package as the computational backend. The 
+Description: Implementing Hierarchical Bayesian Small Area Estimation 
+    models using the 'brms' package as the computational backend. The 
     modeling framework follows the methodological foundations described in area-level 
     models. This package is designed to facilitate a principled Bayesian workflow, 
     enabling users to conduct prior predictive checks, model fitting, posterior 
