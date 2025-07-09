@@ -43,7 +43,8 @@ Imports:
   stats,
   tools,
   XICOR
-Suggests: 
+Suggests:
+    spelling, 
     kableExtra,
     knitr,
     rmarkdown,
