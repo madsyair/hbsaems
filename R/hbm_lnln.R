@@ -14,7 +14,7 @@
 #'
 #'
 #' The function utilizes the **Bayesian regression modeling framework** provided by `brms`,
-#' which interfaces with **Stan** for efficient Markov Chain Monte Carlo (MCMC) sampling.
+#' which interfaces with 'Stan' for efficient Markov Chain Monte Carlo (MCMC) sampling.
 #' The `brm()` function from `brms` is used to estimate posterior distributions based on user-defined
 #' hierarchical and spatial structures.
 #'

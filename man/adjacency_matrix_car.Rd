@@ -14,7 +14,7 @@ Simulated example created for illustrating spatial structure in CAR models.
 adjacency_matrix_car
 }
 \description{
-The \code{adjacency_metrix_car} contains a symmetric adjacency matrix used for demonstrating
+The \code{adjacency_matrix_car} contains a symmetric adjacency matrix used for demonstrating
 \emph{Hierarchical Bayesian Small Area Estimation} (HB SAE) with spatial structure under the
 Conditional Autoregressive (CAR) model.
 The matrix consists of 0s and 1s to represent neighborhood relationships between areas,

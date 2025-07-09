@@ -3,7 +3,7 @@
 #' @title hbcc : Hierarchical Bayesian Convergence Checks
 #' 
 #' @description This function is designed to evaluate the convergence and quality of a Bayesian hierarchical model. 
-#' It performs several diagnostic tests and generates various plots to assess Markov Chain Monte Carlo (MCMC) performance.
+#' It performs several diagnostic tests and generates various plots to assess Markov Chain Monte Carlo  performance.
 #' 
 #' @name hbcc
 #'

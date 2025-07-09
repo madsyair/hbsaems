@@ -112,7 +112,7 @@ The model accounts for \strong{fixed effects}, \strong{random effects}, \strong{
 and \strong{measurement error correction}, allowing for robust small area estimation.
 
 The function utilizes the \strong{Bayesian regression modeling framework} provided by \code{brms},
-which interfaces with \strong{Stan} for efficient Markov Chain Monte Carlo (MCMC) sampling.
+which interfaces with 'Stan' for efficient Markov Chain Monte Carlo (MCMC) sampling.
 The \code{brm()} function from \code{brms} is used to estimate posterior distributions based on user-defined
 hierarchical and spatial structures.
 }
@@ -171,7 +171,7 @@ summary(model4)
 
 # Fit Logit-Normal Model With Spatial Effect
 data("adjacency_matrix_car")
-M <- spatial_weight
+M <- adjacency_matrix_car
 
 model5 <- hbm_binlogitnorm(
 response = "y",

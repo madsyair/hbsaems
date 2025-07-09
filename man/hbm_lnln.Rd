@@ -119,7 +119,7 @@ which implies:
 \deqn{\log(y_i) \sim \mathcal{N}(\theta_i, \psi_i)}
 
 The function utilizes the \strong{Bayesian regression modeling framework} provided by \code{brms},
-which interfaces with \strong{Stan} for efficient Markov Chain Monte Carlo (MCMC) sampling.
+which interfaces with 'Stan' for efficient Markov Chain Monte Carlo (MCMC) sampling.
 The \code{brm()} function from \code{brms} is used to estimate posterior distributions based on user-defined
 hierarchical and spatial structures.
 }

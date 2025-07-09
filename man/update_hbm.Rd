@@ -42,3 +42,32 @@ It allows updating the formula, data, and other arguments, following the behavio
 \details{
 Update a Hierarchical Bayesian Model (hbm) object
 }
+\examples{
+#' \dontrun{
+library(hbsaems)
+# Load example data
+data("data_fhnorm")
+# Fit initial model
+model <- hbm(
+formula = bf(y ~ x1 + x2 + x3),
+hb_sampling = "gaussian",
+hb_link = "identity",
+data = data_fhnorm,
+chains = 2,
+iter = 10000,
+warmup = 2000,
+cores = 2
+ )
+# Update number of  iterations and warmup
+updated_model <- update_hbm(
+model,
+newdata = data_fhnorm,
+iter = 10000,
+warmup = 2000,
+ chains = 2,
+ cores = 2
+ )
+# Check updated model summary
+summary(updated_model)
+  }
+}

@@ -131,7 +131,7 @@ The range of the variable data \eqn{(y)} that is intended as a beta distribution
 The data proportion is supposed to be implemented with this function.
 
 The function utilizes the \strong{Bayesian regression modeling framework} provided by \code{brms},
-which interfaces with \strong{Stan} for efficient Markov Chain Monte Carlo (MCMC) sampling.
+which interfaces with 'Stan' for efficient Markov Chain Monte Carlo  sampling.
 The \code{brm()} function from \code{brms} is used to estimate posterior distributions based on user-defined
 hierarchical and spatial structures.
 }
@@ -153,7 +153,7 @@ data = data
 )
 summary(model1)
 
-if you have the information of n and deff values you can use the following model
+# if you have the information of n and deff values you can use the following model
 model1 <- hbm_betalogitnorm(
 response = "y",
 predictors = c("x1", "x2", "x3"),
@@ -163,10 +163,10 @@ data = data
 )
 summary(model1)
 
-From this stage to the next will be explained the construction of the model with 
-the condition that the user has information on the value of n and deff. 
-If you do not have information related to the value of n and deff 
-then simply delete the parameters n and deff in your model.
+# From this stage to the next will be explained the construction of the model with 
+# the condition that the user has information on the value of n and deff. 
+# If you do not have information related to the value of n and deff 
+# then simply delete the parameters n and deff in your model.
 
 # Fit Beta Model with Grouping Variable as Random Effect
 model2 <- hbm_betalogitnorm(
@@ -236,7 +236,7 @@ data = data
 summary(model6)
 
 
-have input of argument stanvars
+# have input of argument stanvars as prior distribution of alpha and beta
 
 model7 <- hbm_betalogitnorm(
 response = "y",
@@ -247,7 +247,7 @@ stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of alpha and b
 
 summary(model7)
 
-have input of argument stanvars
+# have input of argument stanvars as prior distribution of beta
 
 model8 <- hbm_betalogitnorm(
 response = "y",

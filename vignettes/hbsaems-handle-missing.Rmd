@@ -1,5 +1,5 @@
 ---
-title: "Handling missing data in small area estimation in hbsaems package"
+title: "Handling Missing Data in Small Area Estimation in 'hbsaems'"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Handling missing data in small area estimation in hbsaems package}

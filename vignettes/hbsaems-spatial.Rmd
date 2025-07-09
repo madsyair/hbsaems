@@ -1,5 +1,5 @@
 ---
-title: "Small area estimation using spatial modeling in hbsaems"
+title: "Small Area Estimation Using Spatial Modeling in 'hbsaems'"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Small area estimation using spatial modeling in hbsaems}

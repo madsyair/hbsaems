@@ -35,7 +35,7 @@ An object of class \code{hbcc_results}, which is a list containing:
 }
 \description{
 This function is designed to evaluate the convergence and quality of a Bayesian hierarchical model.
-It performs several diagnostic tests and generates various plots to assess Markov Chain Monte Carlo (MCMC) performance.
+It performs several diagnostic tests and generates various plots to assess Markov Chain Monte Carlo  performance.
 }
 \details{
 Hierarchical Bayesian Convergence Checks

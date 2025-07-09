@@ -8,7 +8,7 @@
 A data frame with 100 rows and 9 variables:
 \describe{
 \item{y}{Response variable - The proportion of simulation results, has a value between 0 and 1, follows a Beta distribution.}
-\item{theta}{}
+\item{theta}{True latent mean parameter on the logit scale, representing the underlying probability of success in each area.}
 \item{x1, x2, x3}{Predictors Variables}
 \item{n}{The number of sample units for each region used in the survey}
 \item{deff}{Design Effect}
