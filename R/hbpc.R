@@ -41,49 +41,49 @@
 #' # This is a conceptual example. Actual usage requires a brms model
 #' # fitted with sample_prior = "only".
 #'
-#' # library(brms)
-#' # # Assume 'data_df' is your data frame with 'response_variable' and 'predictor_variable'
-#' # data_df <- data.frame(
-#' # response_variable = rnorm(100),
-#' # predictor_variable = rnorm(100)
-#' # )
+#' library(brms)
+#'  # Assume 'data_df' is your data frame with 'response_variable' and 'predictor_variable'
+#'  data_df <- data.frame(
+#'  response_variable = rnorm(100),
+#'  predictor_variable = rnorm(100)
+#'  )
+#' 
+#'  # Define some priors
+#'  example_priors <- c(prior(normal(0, 10), class = "b"),
+#'  prior(cauchy(0, 1), class = "sigma"))
 #' #
-#' # # Define some priors
-#' # example_priors <- c(prior(normal(0, 10), class = "b"),
-#' # prior(cauchy(0, 1), class = "sigma"))
+#'  # Fit a model with sample_prior = "only"
+#'  # Note: For actual prior predictive checks, you'd use your actual model 
+#'  # formula and data structure.
+#'  # The data itself isn't used for fitting parameters when sample_prior = "only",
+#'  # but its structure (like number of observations) can influence y_rep.
+#'  fit_prior_only <- try(brm(
+#'  bf(response_variable ~ predictor_variable),
+#'  data = data_df,
+#'  prior = example_priors,
+#'  sample_prior = "only", # Crucial for prior predictive checks
+#'  chains = 1, iter = 1000, warmup = 200, refresh = 0,
+#'  control = list(adapt_delta = 0.8)
+#'  ))
 #' #
-#' # # Fit a model with sample_prior = "only"
-#' # # Note: For actual prior predictive checks, you'd use your actual model 
-#' # # formula and data structure.
-#' # # The data itself isn't used for fitting parameters when sample_prior = "only",
-#' # # but its structure (like number of observations) can influence y_rep.
-#' # fit_prior_only <- try(brm(
-#' # bf(response_variable ~ predictor_variable),
-#' # data = data_df,
-#' # prior = example_priors,
-#' # sample_prior = "only", # Crucial for prior predictive checks
-#' # chains = 1, iter = 1000, warmup = 200, refresh = 0,
-#' # control = list(adapt_delta = 0.8)
-#' # ))
-#' #
-#' # if (!inherits(fit_prior_only, "try-error")) {
+#'  if (!inherits(fit_prior_only, "try-error")) {
 #' # # Perform prior predictive checking
-#' # prior_check_output <- hbpc(
-#' # model = fit_prior_only,
-#' # data = data_df,
-#' # response_var = "response_variable", # Specify the response variable name
-#' # ndraws_ppc = 50
-#' # )
+#'  prior_check_output <- hbpc(
+#'  model = fit_prior_only,
+#'  data = data_df,
+#'  response_var = "response_variable", # Specify the response variable name
+#'  ndraws_ppc = 50
+#'  )
 #' #
-#' # # Print the summary of priors
-#' # print(prior_check_output$prior_summary)
-#' #
-#' # # Display the prior predictive plot
-#' # # print(prior_check_output$prior_predictive_plot)
-#' #
-#' # # Print summary of parameter draws from prior
-#' # # print(prior_check_output$prior_draws_summary)
-#' # }
+#'  # Print the summary of priors
+#'  print(prior_check_output$prior_summary)
+#' 
+#'  # Display the prior predictive plot
+#'  print(prior_check_output$prior_predictive_plot)
+#' 
+#'  # Print summary of parameter draws from prior
+#'  print(prior_check_output$prior_draws_summary)
+#'  }
 #' }
 hbpc <- function(model, 
                  data, 
