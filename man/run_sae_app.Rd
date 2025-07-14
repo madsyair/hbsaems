@@ -14,6 +14,23 @@ This function launches an interactive \strong{Shiny application} for performing
 \strong{Hierarchical Bayesian Small Area Estimation (HBSAE)} using the \code{brms} package
 with \code{Stan} as the backend for Bayesian inference.
 }
+\examples{
+# Launch the HBSAE Shiny application (run interactively only)
+if (interactive()) {
+  run_sae_app()
+}
+
+# The function will open an interactive web application in your default browser
+# where you can:
+# 1. Upload your small area data
+# 2. Specify model parameters 
+# 3. Run Hierarchical Bayesian analysis
+# 4. View and download results
+# Note: This function requires an interactive R session
+# and will open a web browser to display the Shiny application
+
+
+}
 \references{
 Rao, J. N. K., & Molina, I. (2015). \emph{Small Area Estimation}. John Wiley & Sons.
 }

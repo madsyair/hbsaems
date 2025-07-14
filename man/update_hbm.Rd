@@ -43,7 +43,7 @@ It allows updating the formula, data, and other arguments, following the behavio
 Update a Hierarchical Bayesian Model (hbm) object
 }
 \examples{
-\dontrun{
+\donttest{
 library(hbsaems)
 # Load example data
 data("data_fhnorm")

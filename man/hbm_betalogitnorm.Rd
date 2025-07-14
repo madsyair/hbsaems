@@ -136,7 +136,7 @@ The \code{brm()} function from \code{brms} is used to estimate posterior distrib
 hierarchical and spatial structures.
 }
 \examples{
-\dontrun{
+\donttest{
 
 # Load the example dataset
 library(hbsaems)
@@ -244,6 +244,7 @@ predictors = c("x1", "x2", "x3"),
 data = data,
 stanvars = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
 stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of alpha and beta
+)
 
 summary(model7)
 
@@ -255,6 +256,7 @@ predictors = c("x1", "x2", "x3"),
 data = data,
 stanvars = stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of beta
 
+ ) 
 summary(model8)
 
 }

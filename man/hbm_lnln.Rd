@@ -124,7 +124,7 @@ The \code{brm()} function from \code{brms} is used to estimate posterior distrib
 hierarchical and spatial structures.
 }
 \examples{
-\dontrun{
+\donttest{
 # Load necessary libraries
 library(hbsaems)
 

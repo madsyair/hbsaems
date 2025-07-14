@@ -20,6 +20,22 @@
 #' @return
 #' Opens a Shiny app in the web browser. The function does not return a value.
 #' 
+#' @examples
+#' # Launch the HBSAE Shiny application (run interactively only)
+#' if (interactive()) {
+#'   run_sae_app()
+#' }
+#' 
+#' # The function will open an interactive web application in your default browser
+#' # where you can:
+#' # 1. Upload your small area data
+#' # 2. Specify model parameters 
+#' # 3. Run Hierarchical Bayesian analysis
+#' # 4. View and download results
+#' # Note: This function requires an interactive R session
+#' # and will open a web browser to display the Shiny application
+#' 
+#' 
 #' @export
 #' @author Achmad Syahrul Choir and Arsyka Laila Oktalia Siregar
 #'

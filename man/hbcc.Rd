@@ -41,7 +41,7 @@ It performs several diagnostic tests and generates various plots to assess Marko
 Hierarchical Bayesian Convergence Checks
 }
 \examples{
-\dontrun{
+\donttest{
 
 library(hbsaems)
 data("data_fhnorm")

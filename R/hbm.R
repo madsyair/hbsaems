@@ -89,7 +89,7 @@
 #' Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. *Journal of Statistical Software*, 80(1), 1-28.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' 
 #' # Load the example dataset
 #' library(hbsaems)

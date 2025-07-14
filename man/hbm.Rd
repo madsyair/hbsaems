@@ -128,7 +128,7 @@ spatial random effects (CAR and SAR) and missing data handling (deletion, model-
 Hierarchical Bayesian Small Area Models
 }
 \examples{
-\dontrun{
+\donttest{
 
 # Load the example dataset
 library(hbsaems)

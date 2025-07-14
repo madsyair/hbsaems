@@ -96,7 +96,7 @@
 #' Gelman, A., Jakulin, A., Pittau, M. G., & Su, Y. S. (2008). *A Weakly Informative Default Prior Distribution for Logistic and Other Regression Models*.
 #' 
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' 
 #' # Load the example dataset
 #' library(hbsaems)
@@ -205,7 +205,7 @@
 #' data = data,
 #' stanvars = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
 #' stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of alpha and beta
-#)
+#' )
 #' 
 #' summary(model7)
 #' 
@@ -216,8 +216,8 @@
 #' predictors = c("x1", "x2", "x3"),
 #' data = data,
 #' stanvars = stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of beta
-#)
-#' 
+#'
+#'  ) 
 #' summary(model8)
 #' 
 #' }

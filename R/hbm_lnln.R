@@ -87,7 +87,7 @@
 #' Gelman, A., Jakulin, A., Pittau, M. G., & Su, Y. S. (2008). A Weakly Informative Default Prior Distribution for Logistic and Other Regression Models.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Load necessary libraries
 #' library(hbsaems)
 #'
