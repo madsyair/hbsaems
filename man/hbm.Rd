@@ -166,7 +166,8 @@ summary(model_with_defined_re)
 
 # Fit the Model with Missing Data
 # a. Handling missing by deletion
-data$y[3:5] <- NA 
+data_miss <- data
+data_miss$y[3:5] <- NA 
 model_deleted <- hbm(
 formula = bf(y ~ x1 + x2 + x3),
 hb_sampling = "gaussian",
@@ -197,8 +198,8 @@ cores = 2
 summary(model_multiple)
 
 # c. Handling missing during modeling
-data$y[3:5] <- NA 
-data$x1[6:7] <- NA
+data_miss$y[3:5] <- NA 
+data_miss$x1[6:7] <- NA
 model_model <- hbm(
 formula = bf(y | mi() ~ mi(x1) + x2 + x3) +
 bf(x1 | mi() ~ x2 + x3),

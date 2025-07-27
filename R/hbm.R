@@ -127,7 +127,8 @@
 #' 
 #' # Fit the Model with Missing Data
 #' # a. Handling missing by deletion
-#' data$y[3:5] <- NA 
+#' data_miss <- data
+#' data_miss$y[3:5] <- NA 
 #' model_deleted <- hbm(
 #' formula = bf(y ~ x1 + x2 + x3),
 #' hb_sampling = "gaussian",
@@ -158,8 +159,8 @@
 #' summary(model_multiple)
 #' 
 #' # c. Handling missing during modeling
-#' data$y[3:5] <- NA 
-#' data$x1[6:7] <- NA
+#' data_miss$y[3:5] <- NA 
+#' data_miss$x1[6:7] <- NA
 #' model_model <- hbm(
 #' formula = bf(y | mi() ~ mi(x1) + x2 + x3) +
 #' bf(x1 | mi() ~ x2 + x3),
@@ -377,7 +378,7 @@ hbm <- function(formula,
       all_formulas$formula <- update(all_formulas$formula, ". ~ . + (1 | group)")
     }
   }
- 
+  
   # Check grouping factor sre
   if(!is.null(sre)){
     if (!(sre %in% names(data))) {
@@ -398,9 +399,9 @@ hbm <- function(formula,
       if(!is.null(car_type)){
         if(car_type %in% c("escar", "esicar", "icar", "bym2")){
           if (!is.null(sre)){
-              sre_str <- paste0("car(M, gr =", sre, ", type = '", car_type, "')")
+            sre_str <- paste0("car(M, gr =", sre, ", type = '", car_type, "')")
           } else{
-              sre_str <- paste0("car(M, type = '", car_type, "')")
+            sre_str <- paste0("car(M, type = '", car_type, "')")
           }
         } else{
           stop("'car_type' should be one of 'escar', 'esicar', 'icar', 'bym2'")
