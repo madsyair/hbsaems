@@ -8,8 +8,9 @@
 <!-- badges: start -->
 
 [![R](https://img.shields.io/badge/R-4.0%2B-blue.svg)](https://www.r-project.org/)
-[![License: GPL
-v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![CRAN status](https://www.r-pkg.org/badges/version/hbsaems)](https://CRAN.R-project.org/package=hbsaems)
+[![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/hbsaems)](https://CRAN.R-project.org/package=hbsaems)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![GitHub](https://img.shields.io/badge/GitHub-madsyair/hbsaems-blue.svg)](https://github.com/madsyair/hbsaems)
 <!-- badges: end -->
 
