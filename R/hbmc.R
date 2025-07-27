@@ -410,6 +410,9 @@ hbmc <- function(model,
       vars_in_formula_i <- tryCatch(all.vars(formula(model_i_brms)$formula), error = function(e) NULL)
       safe_data_subset_i <- if(!is.null(data_for_loo_waic_i) && !is.null(vars_in_formula_i)) {
         vars_present_i <- intersect(vars_in_formula_i, names(data_for_loo_waic_i))
+        if("phi_fixed" %in% names(data_for_loo_waic_i)) {
+          vars_present_i <- c(vars_present_i, "phi_fixed")
+        }
         if (length(vars_present_i) < length(vars_in_formula_i) && length(vars_present_i) > 0) {
           # warning(paste0("Not all variables from ",model_i_name,"'s formula found in data for LOO/WAIC. Using subset."))
         } else if (length(vars_present_i) == 0 && length(vars_in_formula_i) > 0) {
