@@ -38,4 +38,5 @@
   - Improved posterior predictive plot and download features.
 
 
-
+# hbsaems 0.1.2
+* fixing bugs in hb,c function
