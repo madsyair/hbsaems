@@ -254,7 +254,7 @@ hbm <- function(formula,
     main_formula <- formula
     all_formulas <- brms::bf(formula)
   } else {
-    stop("Formula must be specified as fomula() or bf()/brmsformula()")
+    stop("Formula must be specified as formula() or bf()/brmsformula()")
   }
   
   # Extract variable from main formula
@@ -274,12 +274,17 @@ hbm <- function(formula,
                          "zero_inflated_binomial", "zero_inflated_beta_binomial", 
                          "zero_inflated_poisson", "zero_inflated_negbinomial")
   is_discrete <- hb_sampling %in% discrete_families
+  valid_handle_missing <- c("deleted", "model", "multiple")
   if (is.null(handle_missing)) {
     if (!is.null(missing_y) || !is.null(missing_x)) {
       stop("Error: `handle_missing` must be specified when there are missing values. ",
            "Please set it to 'deleted', 'model', or 'multiple'.")
     }
   } else {
+    if (!handle_missing %in% valid_handle_missing) {
+      stop("Error: Invalid value for `handle_missing`. ",
+           "Please set it to 'deleted', 'model', or 'multiple'.")
+    }
     # If handle_missing is specified, check compatibility
     if (is_discrete && handle_missing == "model") {
       stop("Error: Discrete distributions do not support `handle_missing = 'model'`. ",

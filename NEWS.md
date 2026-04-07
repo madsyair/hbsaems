@@ -40,3 +40,12 @@
 
 # hbsaems 0.1.2
 * fixing bugs in hb,c function
+
+# hbsaems 0.1.3
+* Fixed typo in `hbm()` error message: "fomula" corrected to "formula".
+* Added input validation for `handle_missing` parameter in `hbm()`: invalid values now produce an informative error.
+* Fixed typo "Summary9" in `summary.hbmc_results()` header.
+* Fixed copy-paste bug in `summary.hbmc_results()`: the params plot section now correctly prints `params_plot` instead of `pp_check_plot`.
+* Fixed missing space in `summary.hbcc_results()` diagnostic description text.
+* Fixed malformed roxygen comment (`##'` → `#'`) for `prior_sensitivity_results` in `hbmc()` documentation.
+* Fixed `message()` call in `hbmc()` to include a separator between "Warning:" and the message text.

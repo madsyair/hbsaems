@@ -47,7 +47,7 @@
 #' LOO results may include notes about Pareto k or reloo.
 #' NULL if fewer than two models or `comparison_metrics` is empty.
 #' Each element is named e.g., "model1_vs_model2".}
-##'   \item{prior_sensitivity_results}{A list where each element (named by model name) contains results
+#'   \item{prior_sensitivity_results}{A list where each element (named by model name) contains results
 #' from prior sensitivity analysis if \code{run_prior_sensitivity = TRUE}.
 #' \code{NULL} otherwise.
 #' Each element in the list is itself a list with the following components:
@@ -166,7 +166,7 @@ hbmc <- function(model,
               msg <- paste0("Model '", model_name, "': ", result$high_k_count,
                             " high Pareto k values (> 0.7). Consider setting moment_match = TRUE.")
               result$warnings <- c(result$warnings, msg)
-              message("Warning", msg)
+              message("Warning: ", msg)
             }
           }
           

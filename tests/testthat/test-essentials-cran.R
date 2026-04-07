@@ -178,6 +178,9 @@ test_that("Missing data parameter validation", {
   # Test error when handle_missing not specified with missing data
   expect_error(hbm(brms::bf(y ~ x1 + x2), data = data_miss))
   
+  # Test error when handle_missing has an invalid value
+  expect_error(hbm(brms::bf(y ~ x1 + x2), data = data, handle_missing = "invalid"))
+  
   # For binomial data
   data_binom <- create_binomial_data()
   data_binom_miss <- data_binom

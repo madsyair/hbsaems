@@ -155,7 +155,7 @@ summary.hbcc_results <- function(object, ...) {
     
     cat(
       paste0(
-        "The following table (shown in the next console output) summarizes convergence diagnostics",
+        "The following table (shown in the next console output) summarizes convergence diagnostics ",
         "including R-hat, Bulk ESS, and Tail ESS for each parameter.\n",
         "Table dimensions: ", nrow(ess_df), " rows x ", ncol(ess_df), " columns.\n",
         "Columns: ", paste(colnames(ess_df), collapse = ", "), ".\n\n"
@@ -224,7 +224,7 @@ summary.hbmc_results <- function(object, ...) {
     stop("Input must be of class 'hbmc_results'.")
   }
   
-  cat("\n=============== Model Goodness of Fit & Comparison Summary9 ===============\n")
+  cat("\n=============== Model Goodness of Fit & Comparison Summary ===============\n")
   
   # --- Primary Model Diagnostics ---
   cat("\n=============== Primary Model Diagnostics ===============\n")
@@ -272,7 +272,7 @@ summary.hbmc_results <- function(object, ...) {
     if(!is.null(primary_diag$params_plot)) {
       cat("Parameter plots for primary model stored in \n")
       cat("'$primary_model_diagnostics$params_plot'.\n")
-      print(primary_diag$pp_check_plot)
+      print(primary_diag$params_plot)
     }
   }
   
