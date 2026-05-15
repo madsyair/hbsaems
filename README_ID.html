@@ -101,11 +101,8 @@
 <h2 id="instalasi">Instalasi<a class="anchor" aria-label="anchor" href="#instalasi"></a></h2>
 <p>Anda dapat menginstal versi pengembangan dari GitHub:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"madsyair/hbsaems"</span><span class="op">)</span></span></code></pre></div>
-<p>Atau bersama vignette:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"madsyair/hbsaems"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"madsyair/hbsaems"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="dependensi">Dependensi<a class="anchor" aria-label="anchor" href="#dependensi"></a></h2>
@@ -127,7 +124,7 @@
 </ul></div>
 <div class="section level2">
 <h2 id="memulai-cepat">Memulai Cepat<a class="anchor" aria-label="anchor" href="#memulai-cepat"></a></h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://madsyair.github.io/hbsaems/">hbsaems</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Memuat data contoh</span></span>
@@ -147,16 +144,16 @@
 </div>
 <div class="section level2">
 <h2 id="api-tiga-lapis">API Tiga Lapis<a class="anchor" aria-label="anchor" href="#api-tiga-lapis"></a></h2>
-<div class="sourceCode" id="cb4"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>                      <span class="fu">hbm</span>()</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>                      Universal<span class="sc">:</span> family brms apa pun, kustomisasi penuh</span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>                                       ▲</span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>                                       <span class="sc">|</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>                      <span class="fu">hbm_flex</span>()</span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>                      Registry family <span class="sc">+</span> auxiliary <span class="sc">+</span> fixed_params</span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>                                       ▲</span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>                                       <span class="sc">|</span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>       <span class="fu">hbm_lnln</span>() <span class="sc">/</span> <span class="fu">hbm_betalogitnorm</span>() <span class="sc">/</span> <span class="fu">hbm_binlogitnorm</span>()</span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>       Wrapper ramah SAE<span class="sc">:</span> response, auxiliary, group, n<span class="sc">/</span>deff, ...</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>                      <span class="fu">hbm</span>()</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>                      Universal<span class="sc">:</span> family brms apa pun, kustomisasi penuh</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>                                       ▲</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>                                       <span class="sc">|</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>                      <span class="fu">hbm_flex</span>()</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>                      Registry family <span class="sc">+</span> auxiliary <span class="sc">+</span> fixed_params</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>                                       ▲</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>                                       <span class="sc">|</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>       <span class="fu">hbm_lnln</span>() <span class="sc">/</span> <span class="fu">hbm_betalogitnorm</span>() <span class="sc">/</span> <span class="fu">hbm_binlogitnorm</span>()</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>       Wrapper ramah SAE<span class="sc">:</span> response, auxiliary, group, n<span class="sc">/</span>deff, ...</span></code></pre></div>
 <p>Sebagian besar pengguna mulai dengan wrapper. Naik ke <code><a href="reference/hbm_flex.html">hbm_flex()</a></code> ketika butuh family kustom atau antarmuka <code>fixed_params</code> generik; naik ke <code><a href="reference/hbm.html">hbm()</a></code> ketika butuh kontrol penuh brms.</p>
 </div>
 <div class="section level2">
@@ -167,7 +164,7 @@
 <h4 id="hbm--fungsi-pemodelan-universal">
 <code>hbm()</code> — Fungsi Pemodelan Universal<a class="anchor" aria-label="anchor" href="#hbm--fungsi-pemodelan-universal"></a></h4>
 <p>Entry point yang dapat dikustomisasi sepenuhnya untuk family brms apa pun:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hbm.html">hbm</a></span><span class="op">(</span></span>
 <span>  formula     <span class="op">=</span> <span class="fu">bf</span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,  <span class="co"># formula brms</span></span>
 <span>  hb_sampling <span class="op">=</span> <span class="st">"gaussian"</span>,             <span class="co"># family likelihood</span></span>
@@ -182,7 +179,7 @@
 <div class="section level4">
 <h4 id="wrapper-spesifik-distribusi">Wrapper Spesifik Distribusi<a class="anchor" aria-label="anchor" href="#wrapper-spesifik-distribusi"></a></h4>
 <p><strong>Beta logit-normal</strong> untuk proporsi di (0, 1):</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_beta</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hbm_betalogitnorm.html">hbm_betalogitnorm</a></span><span class="op">(</span></span>
 <span>  response  <span class="op">=</span> <span class="st">"y"</span>,</span>
 <span>  auxiliary <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,   <span class="co"># variabel penyerta (auxiliary)</span></span>
@@ -193,7 +190,7 @@
 <span>  chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span>, warmup <span class="op">=</span> <span class="fl">2000</span>, cores <span class="op">=</span> <span class="fl">2</span>, seed <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><strong>Binomial logit-normal</strong> untuk sukses dari sejumlah trial:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_bin</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hbm_binlogitnorm.html">hbm_binlogitnorm</a></span><span class="op">(</span></span>
 <span>  response  <span class="op">=</span> <span class="st">"y"</span>,</span>
 <span>  trials    <span class="op">=</span> <span class="st">"n"</span>,</span>
@@ -203,7 +200,7 @@
 <span>  chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span>, warmup <span class="op">=</span> <span class="fl">2000</span>, cores <span class="op">=</span> <span class="fl">2</span>, seed <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><strong>Lognormal-lognormal</strong> (varian Fay-Herriot) untuk respon positif yang skewed:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_lnln</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hbm_lnln.html">hbm_lnln</a></span><span class="op">(</span></span>
 <span>  response     <span class="op">=</span> <span class="st">"y_obs"</span>,</span>
 <span>  auxiliary    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,</span>
@@ -220,7 +217,7 @@
 <h4 id="convergence_check--diagnostik-konvergensi-mcmc">
 <code>convergence_check()</code> — Diagnostik Konvergensi MCMC<a class="anchor" aria-label="anchor" href="#convergence_check--diagnostik-konvergensi-mcmc"></a></h4>
 <p>Menilai konvergensi MCMC (menggantikan <code><a href="reference/deprecated.html">hbcc()</a></code> versi legacy):</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">diag</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/convergence_check.html">convergence_check</a></span><span class="op">(</span></span>
 <span>  <span class="va">model</span>,</span>
 <span>  diag_tests <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rhat"</span>, <span class="st">"geweke"</span>, <span class="st">"heidel"</span>, <span class="st">"raftery"</span><span class="op">)</span>,</span>
@@ -232,7 +229,7 @@
 <h4 id="model_compare--perbandingan-dan-pengecekan-model">
 <code>model_compare()</code> — Perbandingan dan Pengecekan Model<a class="anchor" aria-label="anchor" href="#model_compare--perbandingan-dan-pengecekan-model"></a></h4>
 <p>Mengevaluasi kecocokan model dan membandingkan model (menggantikan <code><a href="reference/deprecated.html">hbmc()</a></code> versi legacy):</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/model_compare.html">model_compare</a></span><span class="op">(</span></span>
 <span>  <span class="va">model</span>,</span>
 <span>  comparison_metrics    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"loo"</span>, <span class="st">"waic"</span>, <span class="st">"bf"</span><span class="op">)</span>,</span>
@@ -245,7 +242,7 @@
 <h4 id="prior_check--prior-predictive-check">
 <code>prior_check()</code> — Prior Predictive Check<a class="anchor" aria-label="anchor" href="#prior_check--prior-predictive-check"></a></h4>
 <p>Memvalidasi asumsi prior sebelum fitting (menggantikan <code><a href="reference/deprecated.html">hbpc()</a></code> versi legacy):</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pcheck</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/prior_check.html">prior_check</a></span><span class="op">(</span></span>
 <span>  <span class="va">model</span>,             <span class="co"># di-fit dengan sample_prior = "only"</span></span>
 <span>  data         <span class="op">=</span> <span class="va">data</span>,</span>
@@ -261,7 +258,7 @@
 <h4 id="sae_predict--estimasi-area-kecil">
 <code>sae_predict()</code> — Estimasi Area Kecil<a class="anchor" aria-label="anchor" href="#sae_predict--estimasi-area-kecil"></a></h4>
 <p>Menghasilkan prediksi dengan kuantifikasi ketidakpastian yang tepat, termasuk untuk area yang belum tersampel (menggantikan <code><a href="reference/deprecated.html">hbsae()</a></code> versi legacy):</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">preds</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sae_predict.html">sae_predict</a></span><span class="op">(</span></span>
 <span>  <span class="va">model</span>,</span>
 <span>  newdata          <span class="op">=</span> <span class="va">new_areas</span>,</span>
@@ -276,7 +273,7 @@
 <h4 id="run_sae_app--dashboard-shiny">
 <code>run_sae_app()</code> — Dashboard Shiny<a class="anchor" aria-label="anchor" href="#run_sae_app--dashboard-shiny"></a></h4>
 <p>Meluncurkan aplikasi Shiny interaktif bilingual (Inggris/Indonesia) untuk pembangunan model, diagnostik, dan visualisasi:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/run_sae_app.html">run_sae_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
@@ -286,7 +283,7 @@
 <div class="section level3">
 <h3 id="penanganan-data-hilang">Penanganan Data Hilang<a class="anchor" aria-label="anchor" href="#penanganan-data-hilang"></a></h3>
 <p>Tiga strategi, dipilih otomatis ketika <code>handle_missing = NULL</code>:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_with_missing</span> <span class="op">&lt;-</span> <span class="va">data_fhnorm</span></span>
 <span><span class="va">data_with_missing</span><span class="op">$</span><span class="va">y</span><span class="op">[</span><span class="fl">3</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
 <span></span>
@@ -315,7 +312,7 @@
 <div class="section level3">
 <h3 id="pemodelan-spasial">Pemodelan Spasial<a class="anchor" aria-label="anchor" href="#pemodelan-spasial"></a></h3>
 <p>Efek acak spasial CAR, SAR, dan BYM2:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># CAR (Conditional Autoregressive) - default ICAR</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"adjacency_matrix_car"</span><span class="op">)</span></span>
 <span><span class="va">model_car</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hbm.html">hbm</a></span><span class="op">(</span></span>
@@ -351,7 +348,7 @@
 <div class="section level3">
 <h3 id="family-brms-kustom">Family brms Kustom<a class="anchor" aria-label="anchor" href="#family-brms-kustom"></a></h3>
 <p>Dua family kustom sudah disertakan (Loglogistic dan Shifted Loglogistic) dengan dukungan penuh untuk <code>loo()</code>, <code>posterior_predict()</code>, dan <code>posterior_epred()</code>:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_ll</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hbm_flex.html">hbm_flex</a></span><span class="op">(</span></span>
 <span>  family_key <span class="op">=</span> <span class="st">"loglogistic"</span>,</span>
 <span>  response   <span class="op">=</span> <span class="st">"y"</span>,</span>
@@ -363,7 +360,7 @@
 </div>
 <div class="section level2">
 <h2 id="contoh-alur-kerja-lengkap">Contoh Alur Kerja Lengkap<a class="anchor" aria-label="anchor" href="#contoh-alur-kerja-lengkap"></a></h2>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://madsyair.github.io/hbsaems/">hbsaems</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 1. Memuat dan mengeksplorasi data</span></span>
@@ -445,15 +442,15 @@
 </tr><tr><td><code>migration-guide</code></td>
 <td>Panduan migrasi untuk pengguna legacy v0.1.x</td>
 </tr></tbody></table><p>Telusuri dengan:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/browseVignettes.html" class="external-link">browseVignettes</a></span><span class="op">(</span><span class="st">"hbsaems"</span><span class="op">)</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="referensi-contoh-komprehensif">Referensi Contoh Komprehensif<a class="anchor" aria-label="anchor" href="#referensi-contoh-komprehensif"></a></h3>
 <p>Selain vignette topikal di atas, paket ini menyertakan <strong>referensi contoh menyeluruh</strong> di <code>inst/examples/hbsaems-examples.Rmd</code> yang mencakup setiap family model, fitur lanjutan, dan utilitas dalam satu dokumen. Temukan dengan:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"examples"</span>, <span class="st">"hbsaems-examples.Rmd"</span>, package <span class="op">=</span> <span class="st">"hbsaems"</span><span class="op">)</span></span></code></pre></div>
 <p>Anda dapat merender-nya secara lokal dengan:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rmd_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"examples"</span>, <span class="st">"hbsaems-examples.Rmd"</span>,</span>
 <span>                         package <span class="op">=</span> <span class="st">"hbsaems"</span><span class="op">)</span></span>
 <span><span class="fu">rmarkdown</span><span class="fu">::</span><span class="fu"><a href="https://pkgs.rstudio.com/rmarkdown/reference/render.html" class="external-link">render</a></span><span class="op">(</span><span class="va">rmd_file</span>, output_dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -511,11 +508,11 @@
 <div class="section level2">
 <h2 id="sitasi">Sitasi<a class="anchor" aria-label="anchor" href="#sitasi"></a></h2>
 <p>Jika Anda menggunakan paket ini dalam penelitian, harap mengutip:</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"hbsaems"</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb22"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a>Choir, A. S., Nurhayati, S. S., Zamzanah, S., <span class="sc">&amp;</span> Siregar, A. L. <span class="fu">O.</span> (<span class="dv">2026</span>).</span>
-<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a>hbsaems<span class="sc">:</span> Hierarchical Bayesian Area<span class="sc">-</span>Level Small Area Estimation Models.</span>
-<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a>R package version <span class="dv">1</span>.<span class="dv">0</span>.<span class="fl">0.</span> https<span class="sc">:</span><span class="er">//</span>github.com<span class="sc">/</span>madsyair<span class="sc">/</span>hbsaems</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>Choir, A. S., Nurhayati, S. S., Zamzanah, S., <span class="sc">&amp;</span> Siregar, A. L. <span class="fu">O.</span> (<span class="dv">2026</span>).</span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>hbsaems<span class="sc">:</span> Hierarchical Bayesian Area<span class="sc">-</span>Level Small Area Estimation Models.</span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>R package version <span class="dv">1</span>.<span class="dv">0</span>.<span class="fl">0.</span> https<span class="sc">:</span><span class="er">//</span>github.com<span class="sc">/</span>madsyair<span class="sc">/</span>hbsaems</span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="referensi">Referensi<a class="anchor" aria-label="anchor" href="#referensi"></a></h2>

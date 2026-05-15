@@ -75,15 +75,8 @@ Anda dapat menginstal versi pengembangan dari GitHub:
 
 ``` r
 
-# install.packages("devtools")
-devtools::install_github("madsyair/hbsaems")
-```
-
-Atau bersama vignette:
-
-``` r
-
-devtools::install_github("madsyair/hbsaems", build_vignettes = TRUE)
+# install.packages("remotes")
+remotes::install_github("madsyair/hbsaems")
 ```
 
 ## Dependensi
