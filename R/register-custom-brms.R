@@ -84,7 +84,7 @@
 #' @seealso \code{\link{register_hbsae_model}},
 #'   \code{\link{brms_custom_loglogistic}},
 #'   \code{\link{brms_custom_shifted_loglogistic}},
-#'   \href{https://cran.r-project.org/web/packages/brms/vignettes/brms_customfamilies.html}{brms vignette on custom families}.
+#'   \href{https://paulbuerkner.com/brms/articles/brms_customfamilies.html}{brms vignette on custom families}.
 #' @export
 register_hbsae_brms_custom <- function(key,
                                        custom_family,
@@ -94,7 +94,7 @@ register_hbsae_brms_custom <- function(key,
                                        supports_mi        = FALSE,
                                        discrete           = FALSE,
                                        overwrite          = FALSE) {
-
+  
   # ---- Input validation ----------------------------------------------------
   stopifnot(is.character(key), length(key) == 1L, nzchar(key))
   if (!inherits(custom_family, "customfamily"))
@@ -102,7 +102,7 @@ register_hbsae_brms_custom <- function(key,
          call. = FALSE)
   if (!inherits(stanvars, "stanvars"))
     stop("`stanvars` must be a brms::stanvars object.", call. = FALSE)
-
+  
   # ---- Build the model spec ------------------------------------------------
   # We store the custom_family object IN the spec under `$family` so the
   # downstream code (.resolve_family_object() in hbm.R) can use it directly.
@@ -121,13 +121,13 @@ register_hbsae_brms_custom <- function(key,
     custom_family      = custom_family,
     custom_stanvars    = stanvars
   )
-
+  
   # ---- Conflict check ------------------------------------------------------
   if (exists(key, envir = .hbsae_model_env, inherits = FALSE) &&
       !overwrite)
     stop("Model '", key, "' is already registered. ",
          "Pass overwrite = TRUE to replace it.", call. = FALSE)
-
+  
   assign(key, spec, envir = .hbsae_model_env)
   invisible(spec)
 }

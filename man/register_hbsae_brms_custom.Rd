@@ -97,5 +97,5 @@ register_hbsae_brms_custom(
 \code{\link{register_hbsae_model}},
   \code{\link{brms_custom_loglogistic}},
   \code{\link{brms_custom_shifted_loglogistic}},
-  \href{https://cran.r-project.org/web/packages/brms/vignettes/brms_customfamilies.html}{brms vignette on custom families}.
+  \href{https://paulbuerkner.com/brms/articles/brms_customfamilies.html}{brms vignette on custom families}.
 }

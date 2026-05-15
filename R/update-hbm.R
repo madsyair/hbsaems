@@ -23,6 +23,15 @@
 #'
 #' @return An updated \code{hbmfit} object.
 #'
+#' @section Auto-fallback for new formula terms:
+#' When you supply a new \code{formula.} that references variables not in
+#' the original model frame, \pkg{brms}'s default \code{update.brmsfit}
+#' refuses with \emph{"New variables found ...; supply data again via
+#' newdata"}.  \code{update_hbm} catches this specific error and
+#' automatically retries with \code{newdata = object$data} (the data
+#' frame stored on the original \code{hbmfit}).  Pass an explicit
+#' \code{newdata} to override this behaviour.
+#'
 #' @examples
 #' \donttest{
 #' library(hbsaems)
@@ -33,10 +42,11 @@
 #'              chains = 2, iter = 1000, warmup = 500, cores = 1,
 #'              seed = 1, refresh = 0)
 #'
-#' # Re-run with more iterations
+#' # Re-run with more iterations (no data change needed)
 #' model2 <- update_hbm(model, iter = 4000, warmup = 2000)
 #'
-#' # Add a predictor
+#' # Add a predictor: the auto-fallback transparently retries with the
+#' # stored data frame.  Equivalent to passing newdata = data_fhnorm.
 #' model3 <- update_hbm(model, formula. = . ~ . + x2)
 #' }
 #' @export
@@ -66,8 +76,27 @@ update_hbm <- function(object,
   if (!is.null(control))  args$control  <- control
   args <- c(args, list(...))
 
-  new_model <- do.call(update, args)
-  data_use  <- if (!is.null(newdata)) newdata else object$data
+  # Defensive: when the user supplies a new formula but no newdata, and
+  # the new formula introduces variables not present in the original
+  # model frame, brms refuses with "New variables found: ... Please
+  # supply your data again via argument 'newdata'."  We try once with
+  # the call as-is, and if it fails for this specific reason, we
+  # retry with `newdata = object$data` (since the variables typically
+  # exist in the stored data frame).
+  new_model <- tryCatch(
+    do.call(update, args),
+    error = function(e) {
+      msg <- conditionMessage(e)
+      if (!is.null(formula.) && is.null(newdata) &&
+          grepl("New variables found", msg, fixed = TRUE)) {
+        args$newdata <- object$data
+        do.call(update, args)
+      } else {
+        stop(e)
+      }
+    }
+  )
+  data_use <- if (!is.null(newdata)) newdata else object$data
 
   new_hbmfit(
     model          = new_model,
