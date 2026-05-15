@@ -1,10 +1,17 @@
+# tests/testthat/dev-tests/test-hbm-betalogitnorm.R
+# =============================================================================
+# Heavy integration test (requires Stan, ~10-60 seconds).
+# Not run on CRAN; not bundled in the package tarball (see .Rbuildignore).
+# Gated centrally by .dev_skip() from helper-dev-setup.R.
+# =============================================================================
+
 # Load data
 data <- data_betalogitnorm
 adjacency_matrix <- adjacency_matrix_car
 
 # Expected result
 test_that("Function returns a model object", {
-  skip_on_cran()
+  .dev_skip()
   # Model without n and deff information
   model <- suppressWarnings(hbm_betalogitnorm(response = "y",
                                               predictors = c("x1", "x2", "x3"),
@@ -31,7 +38,7 @@ test_that("Function returns a model object", {
 
 # Prior implementation
 test_that("Function to check prior implementation", {
-  skip_on_cran()
+  .dev_skip()
   model <- suppressWarnings(hbm_betalogitnorm(response = "y",
                                               predictors = c("x1", "x2", "x3"),
                                               prior = c(
@@ -132,7 +139,7 @@ test_that("Function to check prior implementation", {
 # Error checking
 # 1. Parameter existence
 test_that("Function to check the existence of parameters", {
-  skip_on_cran()
+  .dev_skip()
   expect_error(hbm_betalogitnorm(response = "invalid", 
                         predictors = c("x1", "x2", "x3"), 
                         data = data,
@@ -188,7 +195,7 @@ test_that("Function to check the existence of parameters", {
 
 ## 2. Check for response values
 test_that("Function to check response value", {
-  skip_on_cran()
+  .dev_skip()
   data_wrong1 <- data
   data_wrong1$y[1] <- 2
   expect_error(hbm_betalogitnorm(response = "y", 
@@ -199,7 +206,7 @@ test_that("Function to check response value", {
 
 # check all possible phi conditions
 test_that("Function stops when response variable not found", {
-  skip_on_cran()
+  .dev_skip()
   data_wrong2 <- data
   data_wrong2$n[1] <- NA
   expect_error(hbm_betalogitnorm(response = "y", 
@@ -250,7 +257,7 @@ test_that("Function stops when response variable not found", {
 
 # Missing value
 test_that("Function throws an error when handle missing does not fit with the condition", {
-  skip_on_cran()
+  .dev_skip()
   
   # Missing at response and predictor
   data_miss1 <- data
@@ -291,7 +298,7 @@ test_that("Function throws an error when handle missing does not fit with the co
 
 # Validate spatial effect
 test_that("Function supports spatial random effects", {
-  skip_on_cran()
+  .dev_skip()
   model1 <- suppressWarnings(hbm_betalogitnorm(response = "y", 
                                                predictors = c("x1", "x2", "x3"), 
                                                sre = "sre",
@@ -352,7 +359,7 @@ test_that("Function supports spatial random effects", {
 })
 
 test_that("Function to check for errors in spatial effect models", {
-  skip_on_cran()
+  .dev_skip()
   expect_error(hbm_betalogitnorm(response = "y", 
                                  predictors = c("x1", "x2", "x3"), 
                                  sre = "sre",
@@ -396,7 +403,7 @@ test_that("Function to check for errors in spatial effect models", {
 
 # Checking the adjacency matrix
 test_that("Function throws error when adjacency matrix is incorrect", {
-  skip_on_cran()
+  .dev_skip()
   adjacency_matrix_wrong <- matrix(c(0, 1, 1,
                                      1, 0, 0), nrow = 2, byrow = TRUE)
   expect_error(hbm_betalogitnorm(response = "y", 

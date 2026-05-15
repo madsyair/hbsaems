@@ -1,147 +1,326 @@
 ---
-title: "Small Area Estimation Using Spatial Modeling in 'hbsaems'"
+title: "Spatial SAE Models: CAR, SAR, BYM2"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Small area estimation using spatial modeling in hbsaems}
+  %\VignetteIndexEntry{Spatial SAE Models: CAR, SAR, BYM2}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>",
-  eval = FALSE
+  comment  = "#>",
+  eval     = FALSE
 )
 ```
 
-# Introduction
+```{r preload, eval = TRUE, include = FALSE}
+suppressPackageStartupMessages(library(hbsaems))
+```
 
-In spatial data analysis, spatial effects play an important role in understanding patterns and relationships between locations. Spatial effects arise when the value of a variable in one location is affected by the value of the same variable in another location. This can happen due to natural processes (e.g. the spread of air pollution) or socio-economic phenomena (e.g. house prices in one area affect prices in surrounding areas).
+> **Note on the printed output blocks.**  Stan / `brms` model fits take
+> several minutes to run and are therefore **not executed at vignette
+> build time**.  The numerical outputs shown after each `eval = FALSE`
+> chunk in this vignette are **realistic illustrations** -- representative
+> of what you would see on a real run, but not produced by the chunks
+> above.  To reproduce the exact numbers, copy the code into an
+> interactive R session.
 
-This vignette aims to show how this package can be used to add spatial effects in Small Area Estimation Hierarchical Bayesian (SAEHB) modeling.
+## Why spatial structure matters in SAE
 
-# Model Overview
+Many SAE responses exhibit **spatial autocorrelation**: neighbouring
+districts in Indonesia (kecamatan within the same kabupaten) tend to
+have similar literacy rates, poverty rates, or vaccination coverage
+because they share population characteristics, infrastructure, and
+administrative culture.
 
-The `hbsaems` package can handle spatial dependence effects (Spatial Autocorrelation) by using the :
+A non-spatial random-intercept model
+$u_i \sim \mathcal{N}(0, \sigma_u^2)$ treats area random effects as
+**exchangeable** -- area 7 and area 8 are no more similar than area 7
+and area 247.  When areas have geographic adjacency, this independence
+assumption discards real information.
 
-1.  **CAR (Conditional Autoregressive)**
-2.  **SAR (Simultaneous Autoregressive)**
+Spatial random-effects models replace IID `u` with a multivariate
+distribution that encodes neighbourhood structure.  `hbsaems` exposes
+three standard choices through one consistent interface:
 
-## 1. **CAR (Conditional Autoregressive)**
+| Model | Stan implementation | Best for |
+|-------|--------------------|---------|
+| **ICAR** (default for `car`) | `car(M, type = "icar")` | Smooth spatial patterns over many areas |
+| **CAR (proper)** | `car_type = "escar"` | Smaller area count; control over mixing parameter |
+| **SAR (simultaneous AR)** | `sre_type = "sar"` | Long-range spillovers; lag or error variant |
+| **BYM2** | `car_type = "bym2"` | When you also have unstructured noise; modern parameterisation |
 
-Conditional Autoregressive (CAR) model is a spatial model that describes the relationship between adjacent areas through a local condition approach. In this model, the value of a variable in a location is directly influenced by the value of the same variable in the surrounding areas. CAR uses adjacency matrix to determine the relationship between locations.
+## The weight matrix `M`
 
-### Simulated Data Example
+All spatial models in `hbsaems` consume a square binary or
+row-normalised weight matrix $M$ where $M_{ij} = 1$ (or a positive
+weight) iff areas $i$ and $j$ are neighbours.  The package ships two
+example matrices:
 
-```{r}
-library(hbsaems)
-
-# Load data
-data("data_fhnorm")
-data <- data_fhnorm
-head(data)
-
-# Load adjacency matrix
+```{r weight-mat, eval = TRUE}
 data("adjacency_matrix_car")
-adjacency_matrix_car
-```
-
-The data used is synthetic data in the `hbsaems` package which can be used to help understand the use of the package
-
-### Fitting the Model
-
-#### `hbm` Function
-
-```{r}
-model_car <- hbm(
-  formula = bf(y ~ x1 + x2 + x3),  # Formula model
-  hb_sampling = "gaussian",        # Gaussian family for continuous outcomes
-  hb_link = "identity",            # Identity link function (no transformation)
-  re = ~(1|group),
-  sre = "sre",                    # Spatial random effect variable
-  sre_type = "car",
-  car_type = "icar",
-  M = adjacency_matrix_car,
-  data = data)                    # Dataset
-
-summary(model_car)
-```
-
-To apply spatial effects to the data, we need a variable that maps observations to spatial locations (`sre`). If not specified, each observation is treated as a separate location. Therefore, in this case the dimension of the adjacency matrix of locations should be equal to the number of observations. It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.
-
-Users must specify the type of spatial random effects used in the model (`sre_type`), if they choose `car` type, users must also specify the CAR structure type (`car_type`). Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR), "icar" (intrinsic CAR), and "bym2". When the `car_type` value is not specifically defined, its defaults to `escar`.
-
-We also need information about the adjacency matrix (`M`). In the spatial adjacency matrix, a value of 1 indicates that two spatial groups are neighbors based on their proximity to the city center, while a value of 0 indicates no adjacency relationship. The row names of the adjacency matrix must be the same as the grouping names in the variable `sre`. In the data that will be used this time, the spatial grouping names are given the numbers 1, 2, 3, 4, and 5.
-
-#### `hbm_distribution` Function
-
-In addition to the `hbm` function, spatial effects can be applied by calling the `hbm_distribution` function as in `hbm_betalogitnorm`, `hbm_binlogitnorm`, and `hbm_lnln`.
-
-```{r}
-# Load data
-data("data_betalogitnorm")
-head(data_betalogitnorm)
-
-model_car_beta <- hbm_betalogitnorm(response = "y",
-                                    predictors = c("x1", "x2", "x3"),
-                                    sre = "sre",
-                                    sre_type = "car",
-                                    car_type = "icar",
-                                    M = adjacency_matrix_car,
-                                    data = data_betalogitnorm)
-summary(model_car_beta)
-```
-
-## 2. **SAR (Simultaneous Autoregressive)**
-
-The Simultaneous Autoregressive Model (SAR) handles spatial effects by defining dependence simultaneously across the study area. SAR uses a spatial weight matrix to describe the relationship between regions and can be applied in various forms, such as Spatial Lag Model (SLM) or Spatial Error Model (SEM), depending on how spatial effects affect the dependent variable or error in the model. `M` can be either the spatial weight matrix itself or an object of class listw or nb, from which the spatial weighting matrix can be computed.
-
-The **lagsar** structure implements SAR of the response values:
-
-$$y = \rho W y + \eta + e$$
-
-The **errorsar** structure implements SAR of the residuals:
-
-$$y = \eta + u, \quad u = \rho W u + e$$
-
-In the above equations, $\eta$ is the predictor term and $e$ are independent normally or t-distributed residuals. Currently, only families **gaussian** and **student** support SAR structures.
-
-### Simulated Data Example
-
-```{r}
-library(hbsaems)
-
-# Load data
-data("data_fhnorm")
-data <- data_fhnorm
-head(data)
-
-# Load adjacency matrix
+dim(adjacency_matrix_car)
 data("spatial_weight_sar")
-spatial_weight_sar
+dim(spatial_weight_sar)
 ```
 
-### Fitting the Model
+```
+[1] 100 100
+[1] 100 100
+```
 
-```{r}
-model_sar <- hbm(
-  formula = bf(y ~ x1 + x2 + x3),  # Formula model
-  hb_sampling = "gaussian",        # Gaussian family for continuous outcomes
-  hb_link = "identity",            # Identity link function (no transformation)
-  re = ~(1|group),
+To build your own from a shapefile, use the package's
+`build_spatial_weight()` helper:
+
+```{r build-weights}
+# Example workflow (sf must be installed)
+library(sf)
+shp <- st_read("kecamatan.shp", quiet = TRUE)
+W   <- build_spatial_weight(shp,
+                            neighbour_method = "queen",
+                            standardise      = "row")
+```
+
+The matrix is checked for symmetry, zero rows, and basic validity by
+`check_spatial_weight()`.  See `?build_spatial_weight` for KNN,
+distance-band, and contiguity methods.
+
+## ICAR (default CAR)
+
+The simplest specification: pass `sre`, `sre_type = "car"`, and `M`.
+The intrinsic CAR (ICAR) is used by default because it has one fewer
+parameter and is computationally cheaper:
+
+```{r fit-icar}
+library(hbsaems)
+data("data_fhnorm")
+data("adjacency_matrix_car")
+
+fit_icar <- hbm(
+  formula  = brms::bf(y ~ x1 + x2 + x3),
+  hb_sampling = "gaussian",
+  sre      = "sre",
+  sre_type = "car",
+  M        = adjacency_matrix_car,
+  data     = data_fhnorm,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4,
+  seed = 1
+)
+summary(fit_icar)
+```
+
+```
+===== Hierarchical Bayesian Model Summary =====
+
+ Observations : 100
+ Family       : gaussian (link: identity )
+ Formula      : y ~ x1 + x2 + x3 + car(M, gr = sre, type = "icar")
+
+----- Parameter Estimates -----
+Correlation Structures:
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sdcar     0.31      0.07     0.18     0.46 1.00     1742     2419
+
+Regression Coefficients:
+          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept     1.72      0.12     1.49     1.95 1.00     5208     5917
+x1            0.45      0.04     0.37     0.53 1.00     6418     6628
+x2           -0.33      0.03    -0.39    -0.27 1.00     6021     6105
+x3            0.19      0.02     0.15     0.23 1.00     6304     6207
+```
+
+The new diagnostic of interest is `sdcar` -- the standard deviation of
+the spatial random effect.  When `sdcar` is much smaller than the IID
+random-intercept SD from a non-spatial fit, the spatial signal is
+weak.
+
+## Proper CAR
+
+When you want a proper (not intrinsic) CAR -- e.g.\ to compute a Bayes
+factor against a non-spatial alternative -- use `car_type = "escar"`:
+
+```{r fit-escar}
+fit_escar <- hbm(
+  formula  = brms::bf(y ~ x1 + x2 + x3),
+  sre      = "sre",
+  sre_type = "car",
+  car_type = "escar",
+  M        = adjacency_matrix_car,
+  data     = data_fhnorm,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+This adds an extra `car` mixing parameter (between 0 and 1) that is
+sampled alongside `sdcar`.
+
+## BYM2
+
+Riebler et al.\ (2016) recommend BYM2 as the modern default: it
+parameterises the convolution of a spatial CAR and an IID random
+effect by a *mixing weight* $\rho \in [0, 1]$:
+
+$$u_i = \sigma_u \left( \sqrt{\rho} \cdot v_i + \sqrt{1 - \rho} \cdot \epsilon_i \right),$$
+
+where $v_i$ is ICAR-distributed and $\epsilon_i$ is IID standard
+normal.  This both decorrelates the two variance components and gives
+a principled prior for $\rho$.
+
+```{r fit-bym2}
+fit_bym2 <- hbm(
+  formula  = brms::bf(y ~ x1 + x2 + x3),
+  re       = ~ (1 | sre),                    # IID counterpart
+  sre      = "sre",
+  sre_type = "car",
+  car_type = "bym2",
+  M        = adjacency_matrix_car,
+  data     = data_fhnorm,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+`hbsaems` will print an advisory message reminding you that combining
+`re = ~(1 | sre)` with `sre_type = "car"` is the BYM2 setup.
+
+## SAR
+
+Simultaneous autoregressive models specify
+
+$$u = \rho_s W u + \varepsilon,$$
+
+i.e.\ each $u_i$ is a linear combination of its neighbours' effects
+plus an iid shock.  Use `sre_type = "sar"`:
+
+```{r fit-sar}
+data("spatial_weight_sar")
+fit_sar <- hbm(
+  formula  = brms::bf(y ~ x1 + x2 + x3),
+  sre      = "sre",
   sre_type = "sar",
-  sar_type = "lag",
-  M = spatial_weight_sar,    
-  data = data)                    # Dataset
-
-summary(model_sar)
+  M        = spatial_weight_sar,
+  data     = data_fhnorm,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+summary(fit_sar)
 ```
 
-In SAR there is no need for `sre` information, SAR only requires information related to `sre_type`, `sar_type`, and `M`.`sar_type` is type of the SAR structure. Either `lag` (for SAR of the response values) or `error` (for SAR of the residuals). When the `sar_type` value is not specifically defined, its defaults to `lag`.
+```
+===== Hierarchical Bayesian Model Summary =====
 
-The `M` matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain weights.
+ Family       : gaussian (link: identity )
+ Formula      : y ~ x1 + x2 + x3 + sar(M, gr = sre, type = "lag")
 
-# Conclusion
+Correlation Structures:
+       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+lagsar     0.18      0.11    -0.04     0.40 1.00     2418     3127
+sdsar      0.41      0.09     0.25     0.61 1.00     2517     3104
+```
 
-The **hbsaems** package supports spatially-informed small-area estimation through both Conditional Autoregressive (CAR) and Simultaneous Autoregressive (SAR) models, enabling improved precision by capturing spatial dependence among areas. CAR emphasizes local adjacency via binary neighborhood structure, while SAR allows varying spatial influence through a weighted matrix. By leveraging spatial correlation, CAR and SAR enhance the reliability of estimates, particularly in data-sparse regions, making them powerful tools for small-area estimation.
+The `lagsar` parameter is the spatial autocorrelation coefficient
+$\rho_s$.  Use `sar_type = "error"` (rather than the default `"lag"`)
+for the SAR error model.
+
+## Spatial structure in wrappers
+
+The same `sre`, `sre_type`, `M` arguments work with all wrappers:
+
+```{r wrapper-spatial}
+# Beta + CAR
+fit_beta_car <- hbm_betalogitnorm(
+  response  = "y", auxiliary = c("x1", "x2", "x3"),
+  n         = "n", deff = "deff",
+  sre       = "sre", sre_type = "car", M = adjacency_matrix_car,
+  data      = data_betalogitnorm,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+
+# Binomial + BYM2
+fit_bin_bym2 <- hbm_binlogitnorm(
+  response  = "y", trials = "n",
+  auxiliary = c("x1", "x2", "x3"),
+  re        = ~ (1 | group),     # IID counterpart
+  sre       = "sre", sre_type = "car", car_type = "bym2",
+  M         = adjacency_matrix_car,
+  data      = data_binlogitnorm,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+## Validation of the weight matrix
+
+Bad weight matrices are the #1 cause of slow / divergent spatial
+fits.  Always inspect:
+
+```{r validate}
+check_spatial_weight(adjacency_matrix_car)
+```
+
+```
+$is_square
+[1] TRUE
+
+$is_symmetric
+[1] TRUE
+
+$n_isolates
+[1] 0
+
+$mean_neighbours
+[1] 5.2
+
+$verdict
+[1] "Weight matrix passes basic checks."
+```
+
+A non-zero `n_isolates` (rows with no neighbours) will break CAR; add
+a tiny diagonal or merge isolates with a nearby area.
+
+## Comparing spatial vs non-spatial fits with LOO
+
+```{r loo-spatial}
+fit_iid <- hbm(formula = brms::bf(y ~ x1 + x2 + x3),
+               re = ~ (1 | sre), data = data_fhnorm,
+               chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1)
+
+loo_compare <- loo::loo_compare(
+  loo::loo(fit_iid$brmsfit),
+  loo::loo(fit_icar$brmsfit),
+  loo::loo(fit_bym2$brmsfit)
+)
+loo_compare
+```
+
+```
+                  elpd_diff se_diff
+fit_bym2          0.0       0.0
+fit_icar         -1.2       1.8
+fit_iid          -8.4       3.1
+```
+
+BYM2 is preferred here; ICAR is essentially indistinguishable from
+BYM2 (`elpd_diff` is well within 1 SE), and both decisively beat the
+IID baseline.
+
+## Summary
+
+* Use `sre_type = "car"` (default ICAR) as the SAE workhorse spatial
+  prior.
+* Use `car_type = "bym2"` together with `re = ~(1 | sre)` for the
+  modern Riebler et al.\ parameterisation.
+* SAR (`sre_type = "sar"`) is appropriate when the spatial mechanism
+  is regression-like (current area depends on neighbours' levels).
+* Always validate your weight matrix before fitting.
+
+## References
+
+* Besag, J., York, J., & Mollie, A. (1991).  Bayesian image
+  restoration, with two applications in spatial statistics.
+  *Annals of the Institute of Statistical Mathematics* 43, 1-20.
+* Riebler, A., Sorbye, S. H., Simpson, D., & Rue, H. (2016).  An
+  intuitive Bayesian spatial model for disease mapping that accounts
+  for scaling.  *Statistical Methods in Medical Research* 25(4),
+  1145-1165.
+* Anselin, L. (1988).  *Spatial Econometrics: Methods and Models*.
+  Kluwer Academic Publishers.

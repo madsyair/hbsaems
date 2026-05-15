@@ -1,155 +1,253 @@
 ---
-title: "Handling Missing Data in Small Area Estimation in 'hbsaems'"
+title: "Handling Missing Data in hbsaems"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Handling missing data in small area estimation in hbsaems package}
+  %\VignetteIndexEntry{Handling Missing Data in hbsaems}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>",
-  eval = FALSE
+  comment  = "#>",
+  eval     = FALSE
 )
 ```
 
-## Introduction
+```{r preload, eval = TRUE, include = FALSE}
+suppressPackageStartupMessages(library(hbsaems))
+```
 
-Missing data is a common challenge in data analysis, often introducing bias and reducing statistical power. In **Small Area Estimation (SAE)**, missing values can significantly impact the reliability of estimates.
+> **Note on the printed output blocks.**  Stan / `brms` model fits take
+> several minutes to run and are therefore **not executed at vignette
+> build time**.  The numerical outputs shown after each `eval = FALSE`
+> chunk in this vignette are **realistic illustrations** -- representative
+> of what you would see on a real run, but not produced by the chunks
+> above.  To reproduce the exact numbers, copy the code into an
+> interactive R session.
 
-The **`hbsaems`** package provides several approaches to handle missing data before Bayesian modeling. This vignette explores three main methods:
+## Missing data in SAE
 
-1.  **Deletion (Complete Case Analysis)** – Removing observations with missing values.
-2.  **Model-Based Imputation (`mi()`)** – Using Bayesian modeling to estimate missing values as part of the inference process.
-3.  **Multiple Imputation** – Performing multiple imputations before model estimation to account for uncertainty in missing values.
+Missingness is the rule rather than the exception in small area
+work.  Three patterns are most common:
 
-In this vignette, we demonstrate how to apply these methods, with the dataset provided in this package.
+1. **Missing response, complete covariates** -- some areas were not
+   sampled at all, but you have administrative auxiliaries for them.
+2. **Complete response, missing covariates** -- the survey reached
+   every area, but a census variable is missing for some.
+3. **Missing in both** -- a mix of the above.
 
-## Simulated Data Example
+`hbsaems` exposes three strategies through a single `handle_missing`
+argument:
 
-```{r}
+| Strategy | Trigger | What it does |
+|----------|---------|--------------|
+| `"deleted"` | Listwise deletion | Drops rows with any missing variable |
+| `"multiple"` | `mice` multiple imputation | Imputes covariates $m$ times, fits each, pools |
+| `"model"` | Joint Bayesian imputation via `brms::mi()` | Treats missing values as parameters |
+
+When `handle_missing = NULL` (default), the package **auto-selects** a
+strategy based on the pattern detected and the family's capabilities.
+
+## Strategy 1: deletion (listwise)
+
+The simplest approach: drop any row with `NA` in `response` or
+`auxiliary`.  Appropriate when the proportion missing is small and
+missingness is plausibly MCAR (missing completely at random):
+
+```{r delete}
 library(hbsaems)
 data("data_fhnorm")
-data <- data_fhnorm
-head(data)
-```
+data_miss_y      <- data_fhnorm
+data_miss_y$y[c(3, 14, 27)] <- NA
 
-## 1. Deletion (Complete Case Analysis)
-
-In the deletion approach, **rows with missing values are removed before fitting the model**. This is the default strategy and is useful when the amount of missing data is small and assumed to be missing completely at random (MCAR).
-
-When using the **deletion** approach with **`handle_missing = "deleted"`**, only observations where the response variable (**y**) is missing will be excluded during model fitting, assuming all predictor variables (**x**) are complete. However, if the response variable is missing, these rows will still be included during the prediction stage, allowing estimates for missing outcomes to be generated.
-
-```{r}
-data_missing <- data
-data_missing$y[3:5] <- NA 
-```
-
-```{r}
-model_deleted <- hbm(
-          formula = bf(y ~ x1 + x2 + x3),
-          hb_sampling = "gaussian",
-          hb_link = "log",
-          re = ~(1|group),
-          data = data_missing,
-          handle_missing = "deleted",
+fit_deleted <- hbm(
+  formula        = brms::bf(y ~ x1 + x2 + x3),
+  re             = ~ (1 | group),
+  data           = data_miss_y,
+  handle_missing = "deleted",
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
 ```
 
-```{r}
-summary(model_deleted)
+```
+handle_missing = 'deleted': 3 row(s) with missing response variable removed
+from model fitting.
 ```
 
-## 2. Model-Based Imputation using mi()
+The dropped rows are listed in `fit_deleted$missing_info`.  Predictions
+for these areas can still be obtained via `sae_predict()` with their
+auxiliary values.
 
-When **`handle_missing = "model"`** is specified, missing values in covariates are modeled directly using the **`mi()`** function from the **`brms`** package. This method allows for better uncertainty estimation by incorporating missing data directly into the model. It is important to note that this approach is **only applicable to continuous covariates and cannot be used for discrete outcomes**.
+## Strategy 2: multiple imputation (mice)
 
-Imputation during model fitting is generally considered more complex than imputation before model fitting because it involves handling everything within a single step. For example, consider a multivariate modeling scenario where multiple variables are predicted simultaneously, some of which may have missing values.
+For covariates that are missing in some areas but observable in
+principle from a census or register, multiple imputation with `mice`
+is the workhorse:
 
-The model specification in **`hbm()`** allows for a **multivariate model** where multiple outcome variables are predicted simultaneously, with missing values modeled directly. Here's a breakdown of how the formula for the model works:
+```{r mi}
+data_miss_x         <- data_fhnorm
+data_miss_x$x1[6:8] <- NA
 
-```{r}
-data_missing <- data
-data_missing$y[3:5] <- NA 
-data_missing$x1[6:7] <- NA
+fit_mi <- hbm(
+  formula        = brms::bf(y ~ x1 + x2 + x3),
+  re             = ~ (1 | group),
+  data           = data_miss_x,
+  handle_missing = "multiple",
+  m              = 5,                       # 5 imputations
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
 ```
 
-```{r}
-model_during_model <- hbm(
-  formula = bf(y | mi() ~ mi(x1) + x2 + x3) + bf(x1 | mi() ~ x2 + x3),
-  hb_sampling = "gaussian",
-  hb_link = "log",
-  re = ~(1|group),
-  data = data_missing,
+```
+Missing predictor variable(s): x1. Applying multiple imputation (mice)
+with m = 5 imputations.
+
+Compiling the C++ model
+Fitting imputed model 1
+Start sampling
+...
+Fitting imputed model 2
+Start sampling
+...
+Fitting imputed model 5
+Start sampling
+...
+
+(Posterior draws pooled via Rubin's rules.)
+```
+
+The pooled posterior is returned in the usual `hbmfit` interface.
+Diagnostics are *per-imputation*; the global Rhat / ESS view is not
+informative for pooled chains -- see `?brm_multiple` for details.
+
+You can control mice via `mice_args`:
+
+```{r mi-args}
+fit_mi2 <- hbm(
+  formula        = brms::bf(y ~ x1 + x2 + x3),
+  re             = ~ (1 | group),
+  data           = data_miss_x,
+  handle_missing = "multiple",
+  m              = 10,
+  mice_args      = list(method = "pmm", maxit = 20),
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+## Strategy 3: model-based (joint Bayesian) imputation
+
+When the missingness is suspected MAR or MNAR and you have a good
+model for the missing variable, joint Bayesian imputation via
+`brms::mi()` is more principled:
+
+```{r mi-model}
+fit_model <- hbm(
+  formula        = brms::bf(y  | mi() ~ mi(x1) + x2 + x3) +
+                   brms::bf(x1 | mi() ~ x2 + x3),
+  re             = ~ (1 | group),
+  data           = data_miss_x,
   handle_missing = "model",
-  prior = c(
-    prior("normal(1, 0.2)", class = "Intercept", resp = "y"),  
-    prior("normal(0, 0.1)", class = "b", resp = "y"),
-    prior("exponential(5)", class = "sd", resp = "y"),
-    
-    prior("normal(1, 0.2)", class = "Intercept", resp = "x1"),  
-    prior("normal(0, 0.1)", class = "b", resp = "x1"),
-    prior("exponential(5)", class = "sd", resp = "x1")
-  )
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
 ```
 
-this model jointly estimates the outcome `y` and the predictor `x1` that has missing values, using a model-based imputation approach. By specifying two sub-models—one for `y` as a function of `x1`, `x2`, and `x3`, and another for `x1` itself as a function of `x2` and `x3`—we ensure that the imputations of `x1` are informed by its observed relationships with other variables, while also allowing the model for `y` to incorporate the uncertainty from imputation directly into the final inference. This joint modeling approach is preferable to ad-hoc imputation or complete case analysis because it maintains the internal consistency of the data and aligns with the Missing at Random (MAR) assumption, thereby producing more reliable estimates.
+```
+handle_missing = 'model': using mi() specification for joint model-based
+imputation.
 
-The priors used in this model are intentionally restrictive to avoid extreme or implausible predictions, especially under the log link function that ensures positive outcomes. For both the outcome and the predictor models, the intercepts have normal(1, 0.2) priors, implying a baseline mean around $exp(1)=2.7$ with modest uncertainty, while the coefficients have normal(0, 0.1) priors to constrain effect sizes, preventing overly strong influence from any single predictor. The group-level standard deviation priors are set as exponential(5), which favors smaller variation between groups while still allowing flexibility. Together, these priors produce stable prior predictive distributions that align with realistic expectations of the data and prevent convergence issues caused by overly wide or vague priors.
+Setting 'rescor' to FALSE by default for this model.
 
-```{r}
-summary(model_during_model)
+Compiling Stan program...
+Start sampling...
 ```
 
-If you prefer a more user-friendly approach and do not want to manually specify the **`mi()`** function for imputing missing values, you can use the **`hbm_model()`** function. In this case, the **`mi()`** formula will be generated automatically based on the data, eliminating the need for the user to manually define how missing values should be handled in the model.
+This fits a **multivariate** brms model where missing values of `y`
+and `x1` are sampled alongside the regression coefficients.  Posterior
+uncertainty in the imputations is automatically propagated.
 
-This feature is particularly useful for users who may not be familiar with writing complex formulas, as **`hbm_model()`** automatically generates the appropriate structure for imputing missing values, thus simplifying the modeling process.
+Not every family supports `mi()` -- check
+`spec$supports_mi` in the model registry (`?list_hbsae_models`).
 
-```{r}
-model_during_model <- hbm_lnln(
-      response = "y",
-      predictors = c("x1", "x2", "x3"),
-      data = data_missing,
-      handle_missing = "model"
+## Auto-selection
+
+If you omit `handle_missing`, the wrappers will look at the missing
+pattern and choose:
+
+```{r auto}
+fit_auto <- hbm_lnln(
+  response  = "y_obs",
+  auxiliary = c("x1", "x2", "x3"),
+  group     = "group",
+  data      = data_with_some_na,
+  # handle_missing not given
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
 ```
 
-```{r}
-summary(model_during_model)
+```
+Missing values detected. Auto-selecting handle_missing = 'multiple'
+(family 'lognormal', supports_mi = FALSE).
 ```
 
-## 3. Multiple Imputation with brm_multiple()
+The decision tree is:
 
-When dealing with missing data, another powerful approach offered by the **`hbsaems`** package is **multiple imputation**. This method is available by setting **`handle_missing = "multiple"`** in the model specification. Multiple imputation is performed using the **`mice`** package, which generates multiple complete datasets by filling in the missing values through an imputation procedure.
+```
+Missing response only           ->  "deleted"
+Missing covariates only,
+   family supports mi()          ->  "model"
+Missing covariates only,
+   family does NOT support mi()  ->  "multiple"
+Missing in both                  ->  "model" if supported, else "multiple"
+```
 
-Multiple imputation is a statistical technique used to handle missing data by generating **m** imputed datasets, each containing different plausible values for the missing data. The model is then fit separately to each imputed dataset, and the results are pooled to provide more accurate estimates.
+You can always override this with an explicit `handle_missing = "..."`.
 
-Multiple imputation is particularly beneficial when the missing data is **Missing at Random (MAR)**, meaning that the missingness can be explained by observed data, but not by the unobserved values. By generating several imputed datasets, multiple imputation accounts for the uncertainty introduced by missing data and provides more robust estimates.
+## Comparing strategies
 
-```{r}
-model_multiple <- hbm(
-  formula = bf(y ~ x1 + x2 + x3),
-  hb_sampling = "gaussian",
-  hb_link = "log",
-  re = ~(1|group),
-  data = data_missing,
-  handle_missing = "multiple"
+When time permits, compare strategies' predictive performance:
+
+```{r compare}
+loo_compare <- loo::loo_compare(
+  loo::loo(fit_deleted$brmsfit),
+  loo::loo(fit_mi$brmsfit),
+  loo::loo(fit_model$brmsfit)
 )
+loo_compare
 ```
 
-```{r}
-summary(model_multiple)
+```
+                  elpd_diff se_diff
+fit_model         0.0       0.0
+fit_mi           -2.1       2.4
+fit_deleted     -10.7       3.8
 ```
 
-## Choosing the Right Strategy
+Deletion's poor performance here is typical: throwing away 3 of 100
+informative rows costs predictive accuracy.
 
--   **Use "deleted"** when the proportion of missing data is small and the data can be assumed to be **Missing Completely at Random (MCAR)**. This method is computationally efficient and provides simple interpretation, as it excludes missing observations during model fitting.
--   **Use "model"** when covariates with missing values are continuous and you wish to directly model the missingness. This method allows for better uncertainty estimation by incorporating missing data into the model fitting process.
--   **Use "multiple"** when the missing data is substantial, and you need to account for the uncertainty caused by the missingness. This approach creates multiple imputed datasets and pools the results to reflect the variability in the imputation process.
+## Practical guidance
 
-## Conclusion
+* **Small fraction missing (< 5%) and likely MCAR** -- deletion is
+  fine.
+* **Larger fraction or non-MCAR** -- prefer multiple imputation or
+  model-based.
+* **Missing in response only and you have administrative auxiliaries
+  for those areas** -- prefer deletion + post-fit prediction via
+  `sae_predict()` (this is more transparent than imputing the
+  response).
+* **Missing in covariates only** -- model-based imputation is most
+  principled if the family supports it; mice is a robust fallback.
+* **Reproducibility** -- set `seed` for both the wrapper call and (if
+  using mice) within `mice_args` to make imputations reproducible.
 
-The **hbsaems** package offers flexible methods for handling missing data in small area estimation. By selecting the most appropriate strategy based on the data characteristics and modeling needs, users can ensure more accurate and reliable estimates despite the presence of missing values.
+## References
+
+* Rubin, D. B. (1987).  *Multiple Imputation for Nonresponse in
+  Surveys*.  Wiley.
+* van Buuren, S. (2018).  *Flexible Imputation of Missing Data*.
+  CRC Press.
+* Buerkner, P.-C. (2017).  brms: An R Package for Bayesian Multilevel
+  Models Using Stan.  *Journal of Statistical Software*, 80(1),
+  1-28.  Section on `mi()`.

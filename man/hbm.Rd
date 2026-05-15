@@ -2,7 +2,7 @@
 % Please edit documentation in R/hbm.R
 \name{hbm}
 \alias{hbm}
-\title{hbm : Hierarchical Bayesian Small Area Models}
+\title{hbm: Hierarchical Bayesian Small Area Models}
 \usage{
 hbm(
   formula,
@@ -17,246 +17,474 @@ hbm(
   M = NULL,
   data,
   prior = NULL,
+  fixed_params = NULL,
+  prior_type = "default",
+  hs_df = 1,
+  hs_df_global = 1,
+  hs_df_slab = 4,
+  hs_scale_global = NULL,
+  hs_scale_slab = 2,
+  hs_par_ratio = NULL,
+  r2d2_mean_R2 = 0.5,
+  r2d2_prec_R2 = 2,
+  r2d2_cons_D2 = NULL,
+  nonlinear = NULL,
+  nonlinear_type = "spline",
+  spline_k = -1L,
+  gp_scale = NULL,
   handle_missing = NULL,
-  m = 5,
+  m = 5L,
+  mice_args = list(),
   control = list(),
-  chains = 4,
-  iter = 4000,
+  chains = 4L,
+  iter = 4000L,
   warmup = floor(iter/2),
-  cores = 1,
+  cores = 1L,
   sample_prior = "no",
+  stanvars = NULL,
   ...
 )
 }
 \arguments{
-\item{formula}{Formula specifying the model structure of auxiliary variables and direct estimates
-The formula must be provided as a \code{brmsformula} or \code{formula} object. For multivariate models with multiple
-auxiliary variables, use the \code{+} operator to combine multiple \code{bf()} formulas.
-Example: \code{formula(y ~ x1 + x2 + x3)}, \code{bf(y ~ x1 + x2 + x3)}, or \code{bf(y | mi() ~ mi(x1)) + bf(x1 | mi() ~ x2)}}
+\item{formula}{A \code{\link[brms]{brmsformula}} or standard
+\code{formula} object specifying the model structure.  For multi-response
+or imputation sub-models use \code{\link[brms]{bf}}.  Examples:
+\code{formula(y ~ x1 + x2)}, \code{bf(y ~ x1 + x2)}, or
+\code{bf(y | mi() ~ mi(x1) + x2) + bf(x1 | mi() ~ x2)}.}
 
-\item{hb_sampling}{A character string naming the distribution family of the response variable to be
-used in the model (e.g., "gaussian", "bernoulli", "poisson")}
+\item{hb_sampling}{Character string naming the distribution family of the
+response variable (default: \code{"gaussian"}).  Any family supported by
+\code{\link[brms]{brmsfamily}} is accepted.}
 
-\item{hb_link}{A specification for the model link function. This can be a name/expression or
-character string. See the ’Details’ section for more information on link functions supported by each family.}
+\item{hb_link}{Character string specifying the link function
+(default: \code{"identity"}).}
 
-\item{link_phi}{Link function for the second parameter (phi), typically representing precision, shape, or dispersion
-depending on the family used (e.g., "log", "identity")}
+\item{link_phi}{Character string specifying the link function for the
+precision/phi parameter (default: \code{"log"}).  Only used for Beta and
+related families.}
 
-\item{re}{Random effects formula specifying the grouping structure in the data.
-For example, re = ~(1|area), where "area" is the grouping variable or cluster ID indicating
-that observations within the same area share a common random effect. If not specified,
-each row will be treated as its own group, meaning a separate random effect is estimated for each observation.}
+\item{re}{An optional one-sided \code{formula} specifying group-level
+(random) effects, e.g. \code{~(1|area)}.  Must follow standard
+\code{lme4}-style syntax: \code{~ (1|group1) + (1|group2)}.  If
+\code{NULL} (default) \emph{and} \code{sre_type} is also \code{NULL},
+the function emits a warning recommending an area-level random
+effect, since a Fay-Herriot SAE model with neither IID nor spatial
+area effects degenerates to fixed-effects regression and does not
+borrow strength across areas.  The warning can be silenced with
+\code{suppressWarnings()} if a fixed-effects-only baseline is
+intentional.}
 
-\item{sre}{An optional grouping factor mapping observations to spatial locations.
-If not specified, each observation is treated as a separate location.
-It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.}
+\item{sre}{Character.  Name of the grouping variable used for spatial
+random effects.  Must be supplied \emph{together with} \code{sre_type}
+and \code{M}; providing only one of them is an error.}
 
-\item{sre_type}{Determines the type of spatial random effect used in the model. The function currently supports "sar" and "car"}
+\item{sre_type}{Character.  Type of spatial model: \code{"car"}
+(Conditional Autoregressive) or \code{"sar"} (Simultaneous
+Autoregressive).  Must be supplied \emph{together with} \code{sre}
+and \code{M}; providing only one of them is an error.}
 
-\item{car_type}{Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR),
-"icar" (intrinsic CAR), and "bym2".}
+\item{car_type}{Character.  CAR subtype passed to \code{brms}: one of
+\code{"escar"} (exact sparse CAR), \code{"esicar"} (exact sparse
+intrinsic CAR), \code{"icar"} (intrinsic CAR), or \code{"bym2"}.
+Defaults to \code{"icar"} when \code{sre_type = "car"}.}
 
-\item{sar_type}{Type of the SAR structure. Either "lag" (for SAR of the response values) or
-"error" (for SAR of the residuals).}
+\item{sar_type}{Character.  SAR subtype: \code{"lag"} (SAR of the response
+values) or \code{"error"} (SAR of the residuals).  Defaults to
+\code{"lag"} when \code{sre_type = "sar"}.}
 
-\item{M}{The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain
-weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations.
-SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships.
-If sre is specified, the row names of M have to match the levels of the grouping factor}
+\item{M}{Spatial matrix supplied as \code{data2} to \code{brms}.  For CAR
+this must be a binary adjacency matrix; for SAR a spatial weight matrix.
+Row names must match the levels of the spatial grouping variable.}
 
-\item{data}{Dataset used for model fitting}
+\item{data}{A data frame containing all variables referenced in
+\code{formula}.}
 
-\item{prior}{Priors for the model parameters (default: \code{NULL}).
-Should be specified using the \code{brms::prior()} function or a list of such objects.
-For example, \code{prior = prior(normal(0, 1), class = "b")} sets a Normal(0,1) prior on the regression coefficients.
-Multiple priors can be combined using \code{c()}, e.g.,
-\code{prior = c(prior(normal(0, 1), class = "b"), prior(exponential(1), class = "sd"))}.
-If \code{NULL}, default priors from \code{brms} will be used.}
+\item{prior}{Priors specified via \code{\link[brms]{prior}} or a list
+thereof.  If \code{NULL} (default), \code{brms} default priors are used.}
 
-\item{handle_missing}{Mechanism to handle missing data (NA values) to ensure model stability and avoid estimation errors.
-Three approaches are supported.
-The \code{"deleted"} approach performs complete case analysis by removing all rows with any missing values before model fitting.
-This is done using a simple filter such as \code{complete.cases(data)}.
-It is recommended when the missingness mechanism is Missing Completely At Random (MCAR).
-The \code{"multiple"} approach applies multiple imputation before model fitting.
-Several imputed datasets are created (e.g., using the \code{mice} package or the \code{brm_multiple()} function in \code{brms}),
-the model is fitted separately to each dataset, and the results are combined.
-This method is suitable when data are Missing At Random (MAR).
-The \code{"model"} approach uses model-based imputation within the Bayesian model itself.
-Missing values are incorporated using the \code{mi()} function in the model formula (e.g., \code{y ~ mi(x1) + mi(x2)}),
-allowing the missing values to be jointly estimated with the model parameters.
-This method also assumes a MAR mechanism and is applicable only for continuous variables.
-If data are suspected to be Missing Not At Random (MNAR), none of the above approaches directly apply.
-Further exploration, such as explicitly modeling the missingness process or conducting sensitivity analyses, is recommended.}
+\item{fixed_params}{Named list pinning distributional parameters to
+known values instead of sampling them.  Each entry maps a parameter
+name to one of:
+\describe{
+  \item{A column name (character)}{The named column in \code{data} is
+    used as the fixed values.}
+  \item{A scalar (numeric, length 1)}{Broadcast to all rows.}
+  \item{A vector (numeric, length \code{nrow(data)})}{Used directly.}
+  \item{A one-sided formula (e.g. \code{~ I(n / deff - 1)})}{Evaluated
+    against \code{data} to produce the vector of fixed values.}
+}
+Internally, each pinned parameter \code{<par>} is attached to the
+data as a column \code{.hbsaems_<par>_fixed} and added to the brms
+formula as \code{<par> ~ 0 + offset(.hbsaems_<par>_fixed)}.  Using
+\code{fixed_params} on a parameter for which the user also supplies
+an explicit prior is an error.  Typical use cases include pinning
+\code{phi} for Beta regression from survey design effect
+(\code{phi = ~ I(n / deff - 1)}) and pinning \code{sigma} for
+Fay--Herriot-style models with known sampling variance.}
 
-\item{m}{Number of imputations to perform when using the \code{"multiple"} approach for handling missing data (default: 5).
-This parameter is only used if \code{handle_missing = "multiple"}.
-It determines how many imputed datasets will be generated.
-Each imputed dataset is analyzed separately, and the posterior draws are then combined to account for both within-imputation and between-imputation variability,
-following Rubin’s rules. A typical choice is between 5 and 10 imputations, but more may be needed for higher missingness rates.}
+\item{prior_type}{Character.  Global-local shrinkage prior applied to all
+regression coefficients (\code{class = "b"}).  One of:
+\describe{
+  \item{\code{"default"}}{No shrinkage prior is added; the \code{prior}
+    argument governs everything (default).}
+  \item{\code{"horseshoe"}}{Regularised horseshoe prior
+    (Piironen & Vehtari 2017).  Encourages exact sparsity while allowing
+    large signals through.  Controlled by \code{hs_df},
+    \code{hs_df_global}, \code{hs_df_slab}, \code{hs_scale_global},
+    \code{hs_scale_slab}, and \code{hs_par_ratio}.}
+  \item{\code{"r2d2"}}{R2D2 prior (Zhang et al. 2022).  Places a prior
+    directly on the model \eqn{R^2} and distributes explained variance
+    across predictors via a Dirichlet decomposition.  Controlled by
+    \code{r2d2_mean_R2}, \code{r2d2_prec_R2}, and \code{r2d2_cons_D2}.}
+}
+If \code{prior} already contains a global \code{class = "b"} entry,
+\code{prior_type} is ignored and a warning is issued.}
 
-\item{control}{A list of control parameters for the sampler (default: \code{list()})}
+\item{hs_df}{Numeric \eqn{> 0}.  Local half-\eqn{t} degrees of freedom for
+the horseshoe prior (default \code{1} = half-Cauchy).}
 
-\item{chains}{Number of Markov chains (default: 4)}
+\item{hs_df_global}{Numeric \eqn{> 0}.  Global half-\eqn{t} degrees of
+freedom (default \code{1}).}
 
-\item{iter}{Total number of iterations per chain (default: 4000)}
+\item{hs_df_slab}{Numeric \eqn{> 0}.  Slab half-\eqn{t} degrees of
+freedom (default \code{4}).}
 
-\item{warmup}{Number of warm-up iterations per chain (default: floor(iter/2))}
+\item{hs_scale_global}{Numeric \eqn{> 0} or \code{NULL}.  Scale for the
+global half-\eqn{t} prior.  \code{NULL} (default) lets \code{brms}
+compute it automatically from the number of predictors.}
 
-\item{cores}{Number of CPU cores to use (default: 1)}
+\item{hs_scale_slab}{Numeric \eqn{> 0}.  Scale for the slab component
+(default \code{2}).}
 
-\item{sample_prior}{Character. Indicates whether draws from priors should be sampled in addition to posterior draws. The options are:
-\code{"no"} (default): Do not draw from priors (only posterior draws are obtained). \code{"yes"}: Draw both from the prior and posterior.
-\code{"only"}: Draw solely from the prior, ignoring the likelihood. which allows among others to generate draws from the prior predictive distribution.}
+\item{hs_par_ratio}{Numeric \eqn{> 0} or \code{NULL}.  Expected ratio of
+non-zero to total coefficients.  \code{NULL} (default) treats all
+coefficients as potentially non-zero.}
 
-\item{...}{Additional arguments}
+\item{r2d2_mean_R2}{Numeric in \eqn{(0, 1)}.  Prior mean of the model
+\eqn{R^2} (default \code{0.5}).}
+
+\item{r2d2_prec_R2}{Numeric \eqn{> 0}.  Prior precision of \eqn{R^2}
+(default \code{2}).  Higher values concentrate mass around
+\code{r2d2_mean_R2}.}
+
+\item{r2d2_cons_D2}{Numeric \eqn{> 0} or \code{NULL}.  Dirichlet
+concentration for the D2 component.  \code{NULL} (default) corresponds to
+\code{0.5}, yielding a uniform distribution over the simplex.}
+
+\item{nonlinear}{Character vector or \code{NULL}.  Names of predictor
+variables to model with a smooth nonlinear term.  Each listed variable
+is replaced in the formula RHS with \code{s(var)} (spline) or
+\code{gp(var)} (Gaussian process).  Variables not listed remain linear.
+Do \emph{not} also write \code{s(x)} in the formula when using this
+argument -- the modification is applied automatically.  Default \code{NULL}
+(all predictors remain linear).}
+
+\item{nonlinear_type}{Character.  Smooth term family to use.  One of
+\code{"spline"} (default, thin-plate regression spline via
+\code{mgcv::s()}) or \code{"gp"} (Gaussian process via
+\code{brms::gp()}).}
+
+\item{spline_k}{Integer.  Spline basis dimension (number of knots).
+\code{-1L} (default) lets \pkg{mgcv} choose automatically.  Values
+\eqn{\geq 3} are also accepted.  Ignored when
+\code{nonlinear_type = "gp"}.}
+
+\item{gp_scale}{Numeric \eqn{> 0} or \code{NULL}.  Length-scale
+hyperparameter (\code{c} in \code{brms::gp()}).  \code{NULL} (default)
+uses the \code{brms} default.  Ignored when
+\code{nonlinear_type = "spline"}.}
+
+\item{handle_missing}{Character or \code{NULL}.  Strategy for missing data.
+One of \code{"deleted"}, \code{"multiple"}, or \code{"model"} (see
+\strong{Details}).  If \code{NULL} (default) and missing values exist in
+the data, an informative error is raised.}
+
+\item{m}{Integer.  Number of imputations when
+\code{handle_missing = "multiple"} (default: \code{5}).  Ignored for
+other strategies.}
+
+\item{mice_args}{A named list of additional arguments forwarded to
+\code{\link[mice]{mice}}, for example
+\code{list(method = "pmm", seed = 42)}.  Only used when
+\code{handle_missing = "multiple"}.}
+
+\item{control}{A named list of sampler control parameters
+(default: \code{list()}).  Passed directly to \code{\link[brms]{brm}}.}
+
+\item{chains}{Integer.  Number of MCMC chains (default: \code{4}).}
+
+\item{iter}{Integer.  Total iterations per chain (default: \code{4000}).}
+
+\item{warmup}{Integer.  Warm-up iterations per chain
+(default: \code{floor(iter / 2)}).}
+
+\item{cores}{Integer.  Number of CPU cores for parallel sampling
+(default: \code{1}).}
+
+\item{sample_prior}{Character.  Whether to draw from the prior
+distribution.  One of \code{"no"} (default), \code{"yes"}, or
+\code{"only"}.}
+
+\item{stanvars}{An optional \code{\link[brms]{stanvar}} object (or a list
+of such objects) supplying additional Stan code, data, or parameters.
+Passed directly to \code{\link[brms]{brm}} and
+\code{\link[brms]{brm_multiple}}.  Intended for use by wrapper functions
+such as \code{\link{hbm_betalogitnorm}} that require custom Stan blocks;
+end users typically do not need to set this argument.
+Default: \code{NULL}.}
+
+\item{...}{Additional arguments forwarded to \code{\link[brms]{brm}} or
+\code{\link[brms]{brm_multiple}}.}
 }
 \value{
-A \code{hbmfit} object containing :
-\item{model}{Summary of \code{brms} object.}
-\item{handle_missing}{Handle missing option used in the model.}
-\item{data}{Data passed to the \code{hbm} function. }
+An object of class \code{hbmfit}, which is a named list containing:
+\item{model}{The fitted \code{brmsfit} object (or \code{brmsfit_multiple}
+  when \code{handle_missing = "multiple"} with missing predictors).}
+\item{handle_missing}{The missing-data strategy used (\code{NULL} if the
+  data were complete).}
+\item{data}{The \strong{original} data frame passed to \code{hbm()} before
+  any row deletion or imputation.  This is intentional: \code{\link{hbsae}}
+  needs all rows -- including those with missing \eqn{Y} -- to generate
+  predictions for every small area.}
 }
 \description{
-This function provide flexible modeling approaches to estimate area-level statistics
-while incorporating auxiliary information and spatial structures. This function allows users to fit Bayesian models
-using the \code{brms} package and supports Gaussian, Bernoulli, Poisson, and other distributions. It also accommodates
-spatial random effects (CAR and SAR) and missing data handling (deletion, model-based imputation, and multiple imputation).
+Fits a hierarchical Bayesian model for Small Area Estimation (SAE) using
+the \code{brms} package (Stan back-end).  The function supports fixed
+effects, random effects, spatial random effects (CAR/SAR), user-defined
+priors, and three strategies for handling missing data in auxiliary
+(predictor) variables.
 }
 \details{
-Hierarchical Bayesian Small Area Models
+Hierarchical Bayesian Model for Small Area Estimation
+
+
+**Spatial Small Area Estimation Models**
+
+For spatially correlated areas, hbsaems extends the standard area-level
+SAE model (Fay-Herriot 1979) by adding a spatially structured random
+effect:
+\deqn{y_i = x_i^\top \boldsymbol{\beta} + u_i + e_i,}
+where \eqn{u_i} is the spatial random effect for area \eqn{i} and
+\eqn{e_i} the sampling error.  Two families of spatial structures are
+supported.
+
+\describe{
+  \item{\strong{CAR (Conditional Autoregressive; Besag 1974)}}{
+    Specified by \code{sre_type = "car"}.  The joint distribution of the
+    spatial effects is
+    \deqn{u \sim \mathcal{N}\bigl(0,\, \sigma_u^2 (D - \rho W)^{-1}\bigr),}
+    where \eqn{W} is a binary adjacency matrix (1 if neighbour, 0
+    otherwise) and \eqn{D = \mathrm{diag}(W \mathbf{1})}.  Sub-types via
+    \code{car_type}: \code{"icar"} (intrinsic, \eqn{\rho = 1}; Besag 1991);
+    \code{"escar"}, \code{"esicar"} (exact sparse formulations of
+    Morris et al.\ 2019); \code{"bym2"} (BYM2 reparameterisation of
+    Riebler et al.\ 2016, recommended for disconnected graphs).
+  }
+  \item{\strong{SAR (Simultaneous Autoregressive; Whittle 1954, Anselin 1988)}}{
+    Specified by \code{sre_type = "sar"}.  The model is
+    \deqn{u = \rho W u + \varepsilon,
+       \quad \varepsilon \sim \mathcal{N}(0, \sigma_\varepsilon^2 I),}
+    where \eqn{W} is row-standardised so that
+    \eqn{\rho \in (-1, 1)} carries an interpretable correlation
+    meaning.  Sub-types via \code{sar_type}: \code{"lag"} (spatial lag
+    of the response, \eqn{y = \rho W y + X\boldsymbol{\beta} + \varepsilon});
+    \code{"error"} (spatial error model).
+  }
+}
+
+Use \code{\link{check_spatial_weight}} to verify that \eqn{M} satisfies
+the theoretical requirements (square, zero diagonal, symmetry for CAR,
+style-appropriate for the model class).  Use \code{\link{build_spatial_weight}}
+to construct \eqn{M} from a shapefile.
+
+**Missing Data Strategies**
+
+The three strategies differ in scope and statistical assumptions:
+
+\describe{
+  \item{\code{"deleted"}}{
+    Complete-case analysis.  Only rows where \strong{all} response
+    variable(s) are observed are used for model fitting.  Auxiliary
+    variables must be complete; otherwise an informative error is raised.
+    Appropriate under MCAR (Missing Completely At Random).
+  }
+  \item{\code{"multiple"}}{
+    Multiple imputation via \code{mice} \strong{for auxiliary (predictor)
+    variables only}.  The response variable \eqn{Y} is \strong{never}
+    imputed.  In a Bayesian model, missing outcomes are naturally
+    marginalised through the posterior predictive distribution:
+    \deqn{p(\theta \mid Y_{\text{obs}}, X) =
+      \int p(\theta \mid Y_{\text{obs}}, Y_{\text{mis}}, X)\,
+            p(Y_{\text{mis}} \mid Y_{\text{obs}}, X, \theta)\,
+            \mathrm{d}Y_{\text{mis}}.}
+    Imputing \eqn{Y} before fitting would replace this integral with a
+    single point substitute, deflate posterior uncertainty, and potentially
+    bias the estimates if the imputation model is misspecified.  If \eqn{Y}
+    has missing values, those rows are excluded from model fitting (a
+    \code{warning} is issued) but are retained in the returned object for
+    subsequent prediction via \code{\link{hbsae}}.  Appropriate under MAR
+    (Missing At Random).
+  }
+  \item{\code{"model"}}{
+    Model-based imputation using \code{brms::mi()}.  Missing values in
+    auxiliary variables are jointly estimated with the model parameters.
+    The user must specify imputation sub-models explicitly in the
+    \code{formula} argument, e.g.:
+    \code{bf(y | mi() ~ mi(x1) + x2) + bf(x1 | mi() ~ x2)}.
+    Only applicable to \strong{continuous} distributions.  Appropriate
+    under MAR.
+  }
+}
+
+If data are Missing Not At Random (MNAR), none of the above strategies
+applies directly; sensitivity analyses and explicit missingness models are
+recommended.
 }
 \examples{
 \donttest{
-
-# Load the example dataset
 library(hbsaems)
+library(brms)
 data("data_fhnorm")
-
-# Prepare the dataset
 data <- data_fhnorm
 
-# Fit the Basic Model
-model <- hbm(
-formula = bf(y ~ x1 + x2 + x3), # Formula model
-hb_sampling = "gaussian", # Gaussian family for continuous outcomes
-hb_link = "identity", # Identity link function (no transformation)
-data = data, # Dataset
-chains = 4, # Number of MCMC chains
-iter = 4000, # Total MCMC iterations
-warmup = 2000, # Number of warmup iterations
-cores = 2 # Parallel processing
-)
+# Standard lightweight MCMC settings used throughout these examples.
+# Use chains = 4, iter = 4000 for production runs.
+FAST <- list(chains = 2, iter = 2000, warmup = 1000, cores = 1,
+             seed = 123, refresh = 0)
+
+# -- Basic model --------------------------------------------------------------
+model <- do.call(hbm, c(
+  list(formula     = bf(y ~ x1 + x2 + x3),
+       hb_sampling = "gaussian",
+       hb_link     = "identity",
+       re          = ~(1 | group),
+       data        = data),
+  FAST
+))
 summary(model)
 
-# Fit the Basic Model With Defined Random Effect
-model_with_defined_re <- hbm(
-formula = bf(y ~ x1 + x2 + x3), # Formula model
-hb_sampling = "gaussian", # Gaussian family
-hb_link = "identity", # Identity link
-re = ~(1 | group), # Defined random effect
-data = data,
-chains = 4,
-iter = 4000,
-warmup = 2000,
-cores = 2
-)
-summary(model_with_defined_re)
+# -- Horseshoe prior (sparse coefficients) ------------------------------------
+model_hs <- do.call(hbm, c(
+  list(formula     = bf(y ~ x1 + x2 + x3),
+       re          = ~(1 | group),
+       data        = data,
+       prior_type  = "horseshoe",
+       hs_df       = 1),
+  FAST
+))
+summary(model_hs)
 
-# Fit the Model with Missing Data
-# a. Handling missing by deletion
-data_miss <- data
-data_miss$y[3:5] <- NA 
-model_deleted <- hbm(
-formula = bf(y ~ x1 + x2 + x3),
-hb_sampling = "gaussian",
-hb_link = "identity",
-re = ~(1 | group),
-data = data,
-handle_missing = "deleted",
-chains = 4,
-iter = 4000,
-warmup = 2000,
-cores = 2
-)
+# -- R2D2 prior (prior on model R-squared) -------------------------------------
+model_r2 <- do.call(hbm, c(
+  list(formula      = bf(y ~ x1 + x2 + x3),
+       re           = ~(1 | group),
+       data         = data,
+       prior_type   = "r2d2",
+       r2d2_mean_R2 = 0.5,
+       r2d2_prec_R2 = 2),
+  FAST
+))
+summary(model_r2)
+
+# -- Spline smooth for x1 (nonlinear) -----------------------------------------
+# x1 is modelled with s(x1); x2 and x3 remain linear.
+model_spline <- do.call(hbm, c(
+  list(formula        = bf(y ~ x1 + x2 + x3),
+       re             = ~(1 | group),
+       data           = data,
+       nonlinear      = "x1",
+       nonlinear_type = "spline"),
+  FAST
+))
+summary(model_spline)
+
+# -- Gaussian process for x2 (nonlinear) --------------------------------------
+model_gp <- do.call(hbm, c(
+  list(formula        = bf(y ~ x1 + x2 + x3),
+       re             = ~(1 | group),
+       data           = data,
+       nonlinear      = "x2",
+       nonlinear_type = "gp"),
+  FAST
+))
+summary(model_gp)
+
+# -- Missing data: deletion (Y missing, X complete) ---------------------------
+data_miss_y        <- data
+data_miss_y$y[3:5] <- NA
+
+model_deleted <- do.call(hbm, c(
+  list(formula        = bf(y ~ x1 + x2 + x3),
+       re             = ~(1 | group),
+       data           = data_miss_y,
+       handle_missing = "deleted"),
+  FAST
+))
 summary(model_deleted)
 
-# b. Handling missing using multiple imputation
-model_multiple <- hbm(
-formula = bf(y ~ x1 + x2 + x3),
-hb_sampling = "gaussian",
-hb_link = "identity",
-re = ~(1 | group),
-data = data,
-handle_missing = "multiple",
-chains = 4,
-iter = 4000,
-warmup = 2000,
-cores = 2
-)
+# -- Missing data: multiple imputation (X only -- Y is never imputed) ----------
+data_miss_x          <- data
+data_miss_x$x1[6:8]  <- NA
+
+model_multiple <- do.call(hbm, c(
+  list(formula        = bf(y ~ x1 + x2 + x3),
+       re             = ~(1 | group),
+       data           = data_miss_x,
+       handle_missing = "multiple",
+       m              = 5),
+  FAST
+))
 summary(model_multiple)
 
-# c. Handling missing during modeling
-data_miss$y[3:5] <- NA 
-data_miss$x1[6:7] <- NA
-model_model <- hbm(
-formula = bf(y | mi() ~ mi(x1) + x2 + x3) +
-bf(x1 | mi() ~ x2 + x3),
-hb_sampling = "gaussian",
-hb_link = "identity",
-re = ~(1 | group),
-data = data,
-handle_missing = "model",
-chains = 4,
-iter = 4000,
-warmup = 2000,
-cores = 2
-)
+# -- Missing data: model-based imputation with mi() ---------------------------
+data_miss_x2         <- data
+data_miss_x2$x1[6:7] <- NA
+
+model_model <- do.call(hbm, c(
+  list(formula        = bf(y | mi() ~ mi(x1) + x2 + x3) +
+                        bf(x1 | mi() ~ x2 + x3),
+       re             = ~(1 | group),
+       data           = data_miss_x2,
+       handle_missing = "model"),
+  FAST
+))
 summary(model_model)
 
-# Fit the Model with Spatial Effect
-# a. CAR (Conditional Autoregressive)
+# -- Spatial: CAR (Conditional Autoregressive) --------------------------------
 data("adjacency_matrix_car")
-adjacency_matrix_car
+model_car <- do.call(hbm, c(
+  list(formula     = bf(y ~ x1 + x2 + x3),
+       data        = data,
+       sre         = "sre",
+       sre_type    = "car",
+       M           = adjacency_matrix_car),
+  FAST
+))
+summary(model_car)
 
-model_spatial_car <- hbm(
-formula = bf(y ~ x1 + x2 + x3 ), 
-hb_sampling = "gaussian", 
-hb_link = "identity", 
-data = data, 
-sre = "sre",
-sre_type = "car",
-M = adjacency_matrix_car,
-chains = 4, 
-iter = 4000, 
-warmup = 2000, 
-cores = 2 
-)
-summary(model_spatial_car)
-
-# b. SAR (Simultaneous Autoregressive)
+# -- Spatial: SAR (Simultaneous Autoregressive) -------------------------------
 data("spatial_weight_sar")
-spatial_weight_sar
-
-model_spatial_sar <- hbm(
-formula = bf(y ~ x1 + x2 + x3 ), 
-hb_sampling = "gaussian", 
-hb_link = "identity", 
-data = data, 
-sre_type = "sar",
-M = spatial_weight_sar,
-chains = 4, 
-iter = 4000, 
-warmup = 2000, 
-cores = 2 
-)
-
+model_sar <- do.call(hbm, c(
+  list(formula     = bf(y ~ x1 + x2 + x3),
+       data        = data,
+       sre         = "sre",
+       sre_type    = "sar",
+       M           = spatial_weight_sar),
+  FAST
+))
+summary(model_sar)
 }
 }
 \references{
-Rao, J. N. K., & Molina, I. (2015). \emph{Small Area Estimation}. John Wiley & Sons.
-Bürkner, P. C. (2017). brms: An R package for Bayesian multilevel models using Stan. \emph{Journal of Statistical Software}, 80(1), 1-28.
+Rao, J. N. K., & Molina, I. (2015). \emph{Small Area Estimation}.
+John Wiley & Sons.
+
+Burkner, P. C. (2017). brms: An R package for Bayesian multilevel models
+using Stan. \emph{Journal of Statistical Software}, 80(1), 1--28.
+
+van Buuren, S., & Groothuis-Oudshoorn, K. (2011). mice: Multivariate
+imputation by chained equations in R. \emph{Journal of Statistical
+Software}, 45(3), 1--67.
 }
 \author{
 Achmad Syahrul Choir, Saniyyah Sri Nurhayati, and Sofi Zamzanah

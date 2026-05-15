@@ -1,3 +1,10 @@
+# tests/testthat/dev-tests/test-update_hbm.R
+# =============================================================================
+# Heavy integration test (requires Stan, ~10-60 seconds).
+# Not run on CRAN; not bundled in the package tarball (see .Rbuildignore).
+# Gated centrally by .dev_skip() from helper-dev-setup.R.
+# =============================================================================
+
 set.seed(123)
 df <- data_fhnorm
 
@@ -18,7 +25,7 @@ fit2 <- suppressWarnings(hbm(
 )
 
 test_that("update_hbm works with brmsfit and hbmfit objects", {
-  skip_on_cran()
+  .dev_skip()
   
   # Test update with brmsfit
   fit_brms <- fit$model
@@ -39,7 +46,7 @@ test_that("update_hbm works with brmsfit and hbmfit objects", {
 })
 
 test_that("update_hbm handles newdata correctly", {
-  skip_on_cran()
+  .dev_skip()
   
   df <- data.frame(
     y = rnorm(50),
@@ -64,7 +71,7 @@ test_that("update_hbm handles newdata correctly", {
 })
 
 test_that("update_hbm detects and fills missing grouping variable", {
-  skip_on_cran()
+  .dev_skip()
   
   set.seed(789)
   df <- data.frame(

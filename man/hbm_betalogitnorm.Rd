@@ -2,271 +2,178 @@
 % Please edit documentation in R/hbm_betalogitnorm.R
 \name{hbm_betalogitnorm}
 \alias{hbm_betalogitnorm}
-\title{Small Area Estimation using Hierarchical Bayesian under Beta Distribution}
+\title{Small Area Estimation Under a Beta Likelihood (Logit-Normal Link)}
 \usage{
 hbm_betalogitnorm(
   response,
-  predictors,
+  auxiliary = NULL,
+  data,
   n = NULL,
   deff = NULL,
-  link_phi = "identity",
   group = NULL,
   sre = NULL,
   sre_type = NULL,
   car_type = NULL,
   sar_type = NULL,
   M = NULL,
-  data,
-  handle_missing = NULL,
-  m = 5,
+  link_phi = "identity",
   prior = NULL,
-  control = list(),
-  chains = 4,
-  iter = 4000,
-  warmup = floor(iter/2),
-  cores = 1,
-  sample_prior = "no",
   stanvars = NULL,
+  handle_missing = NULL,
+  m = 5L,
+  control = list(),
+  chains = 4L,
+  iter = 4000L,
+  warmup = floor(iter/2),
+  cores = 1L,
+  sample_prior = "no",
+  fixed_params = NULL,
+  predictors = NULL,
   ...
 )
 }
 \arguments{
-\item{response}{The dependent (outcome) variable in the model. This variable represents the main response being predicted or analyzed.}
+\item{response}{Character. Name of the response column (must lie strictly
+between 0 and 1).}
 
-\item{predictors}{A list of independent (explanatory) variables used in the model. These variables form the fixed effects in the regression equation.}
+\item{auxiliary}{Character vector of auxiliary (fixed-effect) variable
+names; corresponds to area-level covariates in SAE literature
+(see Rao & Molina 2015 Ch. 4).}
 
-\item{n}{The number of sample units for each region used in the survey}
+\item{data}{A data frame.}
 
-\item{deff}{Design Effect}
+\item{n}{Character or \code{NULL}.  Name of the column giving the
+per-area sample size used to compute the fixed \eqn{\phi}.  Must be
+supplied together with \code{deff}.  When supplied, \eqn{\phi_i =
+n_i / \text{deff}_i - 1} is pinned via offset.  Default: \code{NULL}
+(treats \code{phi} as random with hyperprior).}
 
-\item{link_phi}{Link function for the second parameter (phi), typically representing precision, shape, or dispersion depending on the family used (e.g., "log", "identity")}
+\item{deff}{Character or \code{NULL}.  Name of the design-effect
+column.  Required when \code{n} is supplied (and vice versa).}
 
-\item{group}{The name of the grouping variable (e.g., area, cluster, region)
-used to define the hierarchical structure for random effects. This variable should
-correspond to a column in the input data and is typically used to model area-level
-variation through random intercepts}
+\item{group}{Character or \code{NULL}.  Name of the area-grouping
+variable; if supplied, adds \code{(1 | group)} as a random
+intercept.}
 
-\item{sre}{An optional grouping factor mapping observations to spatial locations.
-If not specified, each observation is treated as a separate location.
-It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.}
+\item{sre, sre_type, car_type, sar_type, M}{Spatial random-effect arguments,
+forwarded to \code{\link{hbm}}.}
 
-\item{sre_type}{Determines the type of spatial random effect used in the model. The function currently supports "sar" and "car"}
+\item{link_phi}{Character. Link function for \code{phi}; default
+\code{"identity"} when \code{phi} is pinned (offset must be on the
+identity scale).}
 
-\item{car_type}{Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR),
-"icar" (intrinsic CAR), and "bym2".}
-
-\item{sar_type}{Type of the SAR structure. Either "lag" (for SAR of the response values) or
-"error" (for SAR of the residuals).}
-
-\item{M}{The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain
-weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations.
-SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships.
-If sre is specified, the row names of M have to match the levels of the grouping factor}
-
-\item{data}{Dataset used for model fitting}
-
-\item{handle_missing}{Mechanism to handle missing data (NA values) to ensure model stability and avoid estimation errors.
-Three approaches are supported.
-The \code{"deleted"} approach performs complete case analysis by removing all rows with any missing values before model fitting.
-This is done using a simple filter such as \code{complete.cases(data)}.
-It is recommended when the missingness mechanism is Missing Completely At Random (MCAR).
-The \code{"multiple"} approach applies multiple imputation before model fitting.
-Several imputed datasets are created (e.g., using the \code{mice} package or the \code{brm_multiple()} function in \code{brms}),
-the model is fitted separately to each dataset, and the results are combined.
-This method is suitable when data are Missing At Random (MAR).
-The \code{"model"} approach uses model-based imputation within the Bayesian model itself.
-Missing values are incorporated using the \code{mi()} function in the model formula (e.g., \code{y ~ mi(x1) + mi(x2)}),
-allowing the missing values to be jointly estimated with the model parameters.
-This method also assumes a MAR mechanism and is applicable only for continuous variables.
-If data are suspected to be Missing Not At Random (MNAR), none of the above approaches directly apply.
-Further exploration, such as explicitly modeling the missingness process or conducting sensitivity analyses, is recommended.}
-
-\item{m}{Number of imputations to perform when using the \code{"multiple"} approach for handling missing data (default: 5).
-This parameter is only used if \code{handle_missing = "multiple"}.
-It determines how many imputed datasets will be generated.
-Each imputed dataset is analyzed separately, and the posterior draws are then combined to account for both within-imputation and between-imputation variability,
-following Rubin’s rules. A typical choice is between 5 and 10 imputations, but more may be needed for higher missingness rates.}
-
-\item{prior}{Priors for the model parameters (default: \code{NULL}).
-Should be specified using the \code{brms::prior()} function or a list of such objects.
-For example, \code{prior = prior(normal(0, 1), class = "b")} sets a Normal(0,1) prior on the regression coefficients.
-Multiple priors can be combined using \code{c()}, e.g.,
-\code{prior = c(prior(normal(0, 1), class = "b"), prior(exponential(1), class = "sd"))}.
-If \code{NULL}, default priors from \code{brms} will be used.}
-
-\item{control}{A list of control parameters for the sampler (default: \code{list()})}
-
-\item{chains}{Number of Markov chains (default: 4)}
-
-\item{iter}{Total number of iterations per chain (default: 4000)}
-
-\item{warmup}{Number of warm-up iterations per chain (default: floor(iter/2))}
-
-\item{cores}{Number of CPU cores to use (default: 1)}
-
-\item{sample_prior}{(default: "no")}
-
-\item{stanvars}{An optional \code{stanvar} or combination of \code{stanvar} objects used to define the hyperpriors for the hyperparameter \code{phi}.
-By default, if \code{phi} is not fixed, a gamma prior is used: \code{phi ~ gamma(alpha, beta)}, where \code{alpha} and \code{beta} can be defined via \code{stanvars}.
-Use \code{"+"} to combine multiple \code{stanvar} definitions.
-
-For example:
-\code{
-stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-stanvar(scode = "beta ~ gamma(1, 1);", block = "model")
+\item{prior}{Optional \code{brmsprior} object.  If \code{NULL}, sensible
+defaults are filled in:
+\itemize{
+  \item \code{Intercept ~ student_t(4, 0, 10)}
+  \item \code{b ~ student_t(4, 0, 2.5)}
+  \item \code{phi ~ gamma(alpha, beta)} (random mode only)
 }
+The user may pass a partial prior: missing default classes are
+filled in automatically.}
 
-To use the default hyperprior for \code{phi}, set \code{stanvars = NULL}.}
+\item{stanvars}{Optional \code{brmsstanvars} object specifying
+hyperpriors for \code{alpha} and \code{beta} when \code{phi} is
+random.  If \code{NULL} (default), \code{alpha ~ gamma(1, 1)} and
+\code{beta ~ gamma(1, 1)} are used.  The user may also supply
+custom \code{stanvar()} expressions to override either or both
+hyperpriors, e.g.:
+\preformatted{
+stanvars = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
+           stanvar(scode = "beta  ~ gamma(2, 3);", block = "model")
+}}
 
-\item{...}{Additional arguments passed to the \code{brm()} function.}
+\item{handle_missing, m, control, chains, iter, warmup, cores, sample_prior, ...}{Passed through to \code{\link{hbm}}.}
+
+\item{fixed_params}{Optional named list pinning distributional
+parameters to known values.  See \code{\link{hbm}} for the spec
+format.  Conflicts with \code{n} + \code{deff} on the \code{phi}
+parameter; use one or the other.}
+
+\item{predictors}{\strong{Deprecated.}  Use \code{auxiliary} instead.
+Kept for backward compatibility; will be removed in v2.0.0.}
 }
 \value{
-A \code{hbmfit} object
+An object of class \code{hbmfit}.
 }
 \description{
-This function is implemented a \strong{Hierarchical Bayesian Small Area Estimation (HBSAE)} model
-under a \strong{beta distribution} using \strong{Bayesian inference} with the \code{brms} package.
-
-The range of the variable data \eqn{(y)} that is intended as a beta distribution must be \eqn{0<y<1}.
-The data proportion is supposed to be implemented with this function.
-
-The function utilizes the \strong{Bayesian regression modeling framework} provided by \code{brms},
-which interfaces with 'Stan' for efficient Markov Chain Monte Carlo  sampling.
-The \code{brm()} function from \code{brms} is used to estimate posterior distributions based on user-defined
-hierarchical and spatial structures.
+Convenience wrapper around \code{\link{hbm}} for SAE problems where
+the response \eqn{y_i \in (0, 1)} is modelled as
+\deqn{y_i \mid \theta_i, \phi_i \sim \mathrm{Beta}(\theta_i \phi_i,
+       (1 - \theta_i)\phi_i),}
+\deqn{\mathrm{logit}(\theta_i) = x_i^\top \boldsymbol{\beta} + u_i,
+       \quad u_i \sim \mathcal{N}(0, \sigma_u^2).}
+}
+\details{
+The precision parameter \eqn{\phi_i} can either be pinned to a survey
+design effect (\code{n} + \code{deff}) or sampled with a hierarchical
+hyperprior (\eqn{\phi \sim \mathrm{Gamma}(\alpha, \beta)},
+\eqn{\alpha \sim \mathrm{Gamma}(1,1)}, \eqn{\beta \sim \mathrm{Gamma}(1,1)}
+by default).
 }
 \examples{
 \donttest{
-
-# Load the example dataset
 library(hbsaems)
+library(brms)
 data("data_betalogitnorm")
-
-# Prepare the dataset
 data <- data_betalogitnorm
 
-# Fit Beta Model
+# -- 1. Basic model (phi random, with default hyperprior) --------------------
 model1 <- hbm_betalogitnorm(
-response = "y",
-predictors = c("x1", "x2", "x3"),
-data = data
+  response   = "y",
+  auxiliary  = c("x1", "x2", "x3"),
+  group      = "group",
+  data       = data,
+  chains = 1, iter = 500, warmup = 250, refresh = 0
 )
 summary(model1)
 
-# if you have the information of n and deff values you can use the following model
-model1 <- hbm_betalogitnorm(
-response = "y",
-predictors = c("x1", "x2", "x3"),
-n = "n",
-deff = "deff",
-data = data
-)
-summary(model1)
-
-# From this stage to the next will be explained the construction of the model with 
-# the condition that the user has information on the value of n and deff. 
-# If you do not have information related to the value of n and deff 
-# then simply delete the parameters n and deff in your model.
-
-# Fit Beta Model with Grouping Variable as Random Effect
+# -- 2. Fixed phi via survey design (n + deff) -------------------------------
 model2 <- hbm_betalogitnorm(
-response = "y",
-predictors = c("x1", "x2", "x3"),
-n = "n",
-deff = "deff",
-group = "group",
-data = data
+  response   = "y",
+  auxiliary  = c("x1", "x2", "x3"),
+  n          = "n",
+  deff       = "deff",
+  group      = "group",
+  data       = data,
+  chains = 1, iter = 500, warmup = 250, refresh = 0
 )
 summary(model2)
 
-# Fit Beta Model With Missing Data
-data_miss <- data
-data_miss[5:7, "y"] <- NA
-
-# a. Handling missing data by deleted (Only if missing in response)
+# -- 3. Custom hyperprior on alpha, beta -------------------------------------
 model3 <- hbm_betalogitnorm(
-response = "y",
-predictors = c("x1", "x2", "x3"),
-n = "n",
-deff = "deff",
-data = data_miss,
-handle_missing = "deleted"
-)
-summary(model3)
-
-# b. Handling missing data using multiple imputation (m=5)
-model4 <- hbm_betalogitnorm(
-response = "y",
-predictors = c("x1", "x2", "x3"),
-n = "n",
-deff = "deff",
-data = data_miss,
-handle_missing = "multiple"
-)
-summary(model4)
-
-# c. Handle missing data during model fitting using mi()
-data_miss <- data
-data_miss$x1[3:5] <- NA 
-data_miss$x2[14:17] <- NA 
-model5 <- hbm_betalogitnorm(
-response = "y",
-predictors = c("x1", "x2", "x3"),
-n = "n",
-deff = "deff",
-group = "group",
-data = data_miss,
-handle_missing = "model"
+  response   = "y",
+  auxiliary  = c("x1", "x2", "x3"),
+  group      = "group",
+  data       = data,
+  stanvars   = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
+               stanvar(scode = "beta  ~ gamma(2, 3);", block = "model"),
+  chains = 1, iter = 500, warmup = 250, refresh = 0
 )
 
-# Fit Logit-Normal Model With Spatial Effect
+# -- 4. Spatial CAR model ----------------------------------------------------
 data("adjacency_matrix_car")
-M <- adjacency_matrix_car
-
-model6 <- hbm_betalogitnorm(
-response = "y",
-predictors = c("x1", "x2", "x3"),
-n = "n",
-deff = "deff",
-sre = "sre",
-sre_type = "car",
-M = M,
-data = data
+model4 <- hbm_betalogitnorm(
+  response   = "y",
+  auxiliary  = c("x1", "x2", "x3"),
+  n          = "n",
+  deff       = "deff",
+  sre        = "sre",
+  sre_type   = "car",
+  M          = adjacency_matrix_car,
+  data       = data,
+  chains = 1, iter = 500, warmup = 250, refresh = 0
 )
-summary(model6)
-
-
-# have input of argument stanvars as prior distribution of alpha and beta
-
-model7 <- hbm_betalogitnorm(
-response = "y",
-predictors = c("x1", "x2", "x3"),
-data = data,
-stanvars = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of alpha and beta
-)
-
-summary(model7)
-
-# have input of argument stanvars as prior distribution of beta
-
-model8 <- hbm_betalogitnorm(
-response = "y",
-predictors = c("x1", "x2", "x3"),
-data = data,
-stanvars = stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of beta
-
- ) 
-summary(model8)
-
 }
+
 }
 \references{
-Liu, B. (2009). \emph{Hierarchical Bayes Estimation and Empirical Best Prediction of Small-Area Proportions}. College Park, University of Maryland.
-Rao, J. N. K., & Molina, I. (2015). \emph{Small Area Estimation}. John Wiley & Sons, page 390.
-Gelman, A. (2006). \emph{Prior Distributions for Variance Parameters in Hierarchical Models (Comment on Article by Browne and Draper)}. Bayesian Analysis, 1(3), 527–528.
-Gelman, A., Jakulin, A., Pittau, M. G., & Su, Y. S. (2008). \emph{A Weakly Informative Default Prior Distribution for Logistic and Other Regression Models}.
+Liu, B. (2009). \emph{Hierarchical Bayes Estimation and Empirical Best
+Prediction of Small-Area Proportions}. University of Maryland.
+
+Rao, J. N. K., & Molina, I. (2015). \emph{Small Area Estimation}, 2nd ed.
+Wiley, p. 390.
 }
-\author{
-Sofi Zamzanah
+\seealso{
+\code{\link{hbm_flex}}, \code{\link{hbm}}
 }

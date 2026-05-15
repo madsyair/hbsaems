@@ -1,0 +1,143 @@
+# R/hbsaems-package.R
+# =============================================================================
+# Package-level documentation page (?hbsaems).
+# =============================================================================
+
+#' hbsaems: Hierarchical Bayesian Area-Level Small Area Estimation Models
+#'
+#' @description
+#' \pkg{hbsaems} fits \strong{area-level} Hierarchical Bayesian Small Area
+#' Estimation (HBSAE) models.  Its methodological foundation follows the
+#' standard SAE literature -- primarily Rao and Molina (2015) -- while
+#' computational implementation adapts those models to the parameterisation
+#' and prior-specification conventions of the \pkg{brms} package
+#' (Buerkner 2017), which targets the Stan back-end.
+#'
+#' @section Scope:
+#' The package implements the standard \strong{area-level} SAE models:
+#' \itemize{
+#'   \item Fay-Herriot normal (Fay & Herriot 1979),
+#'   \item lognormal-lognormal for positive, right-skewed responses
+#'         (Slud & Maiti 2006; You & Chapman 2006),
+#'   \item beta logit-normal for proportions (Liu 2009;
+#'         Rao & Molina 2015, Sec.\ 8.2),
+#'   \item binomial logit-normal for counts out of trials.
+#' }
+#' Each can be augmented with spatial random effects (CAR / SAR / BYM2;
+#' Besag et al.\ 1991, Riebler et al.\ 2016, Anselin 1988),
+#' nonlinear smooth terms (thin-plate splines, Gaussian processes), and
+#' survey-design-informed fixed parameters (precision parameter
+#' \eqn{\phi_i = n_i / \mathrm{deff}_i - 1} for the beta model,
+#' \eqn{\sigma_i = \sqrt{\psi_i}} for the lognormal Fay-Herriot variant).
+#'
+#' Unit-level SAE models (e.g.\ the nested error model of Battese, Harter
+#' & Fuller 1988) are \emph{not} the focus of this package.
+#'
+#' @section Bayesian workflow support:
+#' To facilitate the principled Bayesian workflow advocated by
+#' Gelman et al.\ (2020), \pkg{hbsaems} provides:
+#' \itemize{
+#'   \item \strong{Prior predictive checks} via
+#'         \code{\link{prior_check}};
+#'   \item \strong{MCMC convergence diagnostics} (Rhat, ESS, divergent
+#'         transitions) via \code{\link{convergence_check}};
+#'   \item \strong{Posterior predictive checks} via
+#'         \code{brms::pp_check()} on the underlying brmsfit;
+#'   \item \strong{Leave-one-out cross-validation} via \pkg{loo};
+#'   \item \strong{Bayesian model comparison} via
+#'         \code{\link{model_compare}} / \code{\link{model_compare_all}}
+#'         and Bayesian model averaging via \code{\link{model_average}};
+#'   \item \strong{Prior sensitivity analysis} via the optional
+#'         \pkg{priorsense} integration;
+#'   \item \strong{Design-consistent benchmarking} of model-based
+#'         estimates against direct estimates via
+#'         \code{\link{sae_benchmark}};
+#'   \item \strong{Out-of-sample prediction} for unsampled areas via
+#'         \code{\link{sae_predict}}.
+#' }
+#'
+#' @section Layered API:
+#' Three layers of entry points, picked by how much customisation is
+#' needed:
+#' \enumerate{
+#'   \item \strong{Wrappers} -- \code{\link{hbm_lnln}},
+#'         \code{\link{hbm_betalogitnorm}}, \code{\link{hbm_binlogitnorm}}.
+#'         SAE-friendly arguments (\code{auxiliary}, \code{group},
+#'         \code{n} + \code{deff}, \code{sampling_var}).
+#'   \item \strong{Flexible factory} -- \code{\link{hbm_flex}}.  Works
+#'         with any registered family, exposes the generic
+#'         \code{fixed_params} interface.
+#'   \item \strong{Universal entry point} -- \code{\link{hbm}}.  Accepts
+#'         any \code{brms::bf()} formula and any \pkg{brms}
+#'         (or custom) family.
+#' }
+#'
+#' @section Custom likelihoods:
+#' Two custom \pkg{brms} families are shipped (Loglogistic and Shifted
+#' Loglogistic).  Users can register their own via
+#' \code{\link{register_hbsae_brms_custom}}; Stan code lives in
+#' \code{inst/stan/*.stan} as plain text and is loaded by
+#' \code{\link{read_stan_function}}.
+#'
+#' @section Deprecated names (removal scheduled for v2.0.0):
+#' The original v0.1.x short-form names continue to work but emit a
+#' deprecation warning: \code{\link{hbcc}} -> \code{\link{convergence_check}},
+#' \code{\link{hbmc}} -> \code{\link{model_compare}},
+#' \code{\link{hbpc}} -> \code{\link{prior_check}},
+#' \code{\link{hbsae}} -> \code{\link{sae_predict}}.  The argument
+#' \code{predictors} is also deprecated in favour of \code{auxiliary}.
+#' See \code{\link{deprecated}}.
+#'
+#' @section Interactive use:
+#' A bilingual (English / Indonesian) \pkg{shiny} dashboard, launched
+#' via \code{\link{run_sae_app}}, exposes the same workflow to
+#' non-programmer analysts.
+#'
+#' @references
+#' Anselin, L. (1988).  \emph{Spatial Econometrics: Methods and Models}.
+#' Kluwer Academic Publishers.
+#'
+#' Battese, G. E., Harter, R. M., & Fuller, W. A. (1988).  An error
+#' components model for prediction of county crop areas using survey
+#' and satellite data.  \emph{Journal of the American Statistical
+#' Association}, 83(401), 28-36.
+#'
+#' Besag, J., York, J., & Mollie, A. (1991).  Bayesian image
+#' restoration, with two applications in spatial statistics.
+#' \emph{Annals of the Institute of Statistical Mathematics}, 43, 1-20.
+#'
+#' Buerkner, P.-C. (2017).  brms: An R Package for Bayesian Multilevel
+#' Models Using Stan.  \emph{Journal of Statistical Software}, 80(1),
+#' 1-28.  \doi{10.18637/jss.v080.i01}.
+#'
+#' Fay, R. E., & Herriot, R. A. (1979).  Estimates of income for small
+#' places: An application of James-Stein procedures to census data.
+#' \emph{Journal of the American Statistical Association}, 74(366),
+#' 269-277.
+#'
+#' Gelman, A., Vehtari, A., Simpson, D., Margossian, C. C., Carpenter, B.,
+#' Yao, Y., Kennedy, L., Gabry, J., Buerkner, P.-C., & Modrak, M. (2020).
+#' Bayesian workflow.  \emph{arXiv preprint}
+#' \doi{10.48550/arXiv.2011.01808}.
+#'
+#' Liu, B. (2009).  \emph{Hierarchical Bayes Estimation and Empirical
+#' Best Prediction of Small-Area Proportions}.  PhD thesis, University
+#' of Maryland.
+#'
+#' Rao, J. N. K., & Molina, I. (2015).  \emph{Small Area Estimation}
+#' (2nd ed.).  Wiley.  \doi{10.1002/9781118735855}.
+#'
+#' Riebler, A., Sorbye, S. H., Simpson, D., & Rue, H. (2016).  An
+#' intuitive Bayesian spatial model for disease mapping that accounts
+#' for scaling.  \emph{Statistical Methods in Medical Research}, 25(4),
+#' 1145-1165.
+#'
+#' Slud, E. V., & Maiti, T. (2006).  Mean-squared error estimation in
+#' transformed Fay-Herriot models.  \emph{JRSSB}, 68(2), 239-257.
+#'
+#' You, Y., & Chapman, B. (2006).  Small area estimation using area
+#' level models and estimated sampling variances.  \emph{Survey
+#' Methodology}, 32(1), 97-103.
+#'
+#' @keywords internal
+"_PACKAGE"

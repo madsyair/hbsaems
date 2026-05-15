@@ -2,38 +2,54 @@
 % Please edit documentation in R/run_app.R
 \name{run_sae_app}
 \alias{run_sae_app}
-\title{Launch the Shiny App for Small Area Estimation using Hierarchical Bayesian}
+\title{run_sae_app: Interactive Small Area Estimation Dashboard}
 \usage{
-run_sae_app()
+run_sae_app(check_deps = TRUE)
+}
+\arguments{
+\item{check_deps}{Logical.  Whether to verify dependencies before
+launching (default \code{TRUE}).}
 }
 \value{
-Opens a Shiny app in the web browser. The function does not return a value.
+Does not return a value; called for its side effect of launching
+  a Shiny server in the current R session.
 }
 \description{
-This function launches an interactive \strong{Shiny application} for performing
-\strong{Hierarchical Bayesian Small Area Estimation (HBSAE)} using the \code{brms} package
-with \code{Stan} as the backend for Bayesian inference.
+Opens the interactive HBSAE dashboard in the default web browser.  The
+application provides a graphical interface for data upload, exploratory
+analysis, model specification, fitting, and result visualisation,
+covering all modelling functions in \pkg{hbsaems}.
+}
+\details{
+Launch the HBSAE Shiny Application
+
+
+The application is located in \code{inst/shiny/sae_app/app.R} within the
+installed package.  It depends on several packages that are listed in
+\code{Suggests} (rather than \code{Imports}) so they are not required for
+users who only need the modelling functions.
+
+Two classes of dependencies are checked at launch:
+\describe{
+  \item{\strong{Critical}}{Packages without which the app cannot start
+    (\pkg{shinydashboard}, \pkg{DT}).  Missing critical packages raise
+    an error.}
+  \item{\strong{Optional}}{Packages that enable individual panels and
+    features (\pkg{shinyWidgets}, \pkg{readxl}, \pkg{energy},
+    \pkg{minerva}, \pkg{sf}, \pkg{spdep}, \pkg{bridgesampling}).
+    Missing optional packages produce a warning and an in-app banner;
+    the corresponding feature degrades gracefully.}
+}
+
+Use \code{\link{check_shiny_deps}()} to inspect dependency status without
+launching the app.
 }
 \examples{
-# Launch the HBSAE Shiny application (run interactively only)
 if (interactive()) {
   run_sae_app()
 }
 
-# The function will open an interactive web application in your default browser
-# where you can:
-# 1. Upload your small area data
-# 2. Specify model parameters 
-# 3. Run Hierarchical Bayesian analysis
-# 4. View and download results
-# Note: This function requires an interactive R session
-# and will open a web browser to display the Shiny application
-
-
 }
-\references{
-Rao, J. N. K., & Molina, I. (2015). \emph{Small Area Estimation}. John Wiley & Sons.
-}
-\author{
-Achmad Syahrul Choir and Arsyka Laila Oktalia Siregar
+\seealso{
+\code{\link{check_shiny_deps}}
 }

@@ -1,3 +1,10 @@
+# tests/testthat/dev-tests/test-hbmc.R
+# =============================================================================
+# Heavy integration test (requires Stan, ~10-60 seconds).
+# Not run on CRAN; not bundled in the package tarball (see .Rbuildignore).
+# Gated centrally by .dev_skip() from helper-dev-setup.R.
+# =============================================================================
+
 # Data Dummy For Test
 sample_data <- data.frame(
   y = rpois(100, lambda = 10),
@@ -22,7 +29,7 @@ test_that("hbmc() throws error when model list is empty", {
 })
 
 test_that("hbmc runs with a valid hbmfit model and returns expected components", {
-  skip_on_cran()
+  .dev_skip()
   
   result <- suppressWarnings(hbmc(model = list(a=fit, b=fit2), comparison_metrics = c("aaa", "waic", "bf"), plot_types = c("pp_check", "params", "bbb"), moment_match = FALSE, run_prior_sensitivity= TRUE, sensitivity_var=c("b_Intercept", "b_x1")))
   result2 <- suppressWarnings(hbmc(model = list(fit, fit2), moment_match = TRUE, reloo_args = list(reloo = TRUE),run_prior_sensitivity= TRUE, sensitivity_var=c("b_Intercept", "b_x1")))
@@ -31,13 +38,13 @@ test_that("hbmc runs with a valid hbmfit model and returns expected components",
 })
 
 test_that("hbmc throws an error for non-model input", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(hbmc(model = list("not_a_model")))
 })
 
 test_that("hbm triggers reloo when high Pareto k detected", {
-  skip_on_cran()
+  .dev_skip()
   
   set.seed(123)
   N <- 100
@@ -67,7 +74,7 @@ test_that("Warning is issued when run_prior_sensitivity is TRUE but sensitivity_
 })
 
 test_that("hbmc runs with skipping prior sensitivity analysis ", {
-  skip_on_cran()
+  .dev_skip()
   
   fit$model$prior <- NULL
   result <- suppressWarnings(hbmc(model = list(a=fit), moment_match = FALSE, run_prior_sensitivity= TRUE, sensitivity_var=c("b_Intercept", "b_x1")))

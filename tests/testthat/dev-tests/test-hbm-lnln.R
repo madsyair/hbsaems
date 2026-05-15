@@ -1,10 +1,17 @@
+# tests/testthat/dev-tests/test-hbm-lnln.R
+# =============================================================================
+# Heavy integration test (requires Stan, ~10-60 seconds).
+# Not run on CRAN; not bundled in the package tarball (see .Rbuildignore).
+# Gated centrally by .dev_skip() from helper-dev-setup.R.
+# =============================================================================
+
 # Data Dummy For Lognormal
 data <- data_lnln
 M <- adjacency_matrix_car
 
 # Expected result
 test_that("Function returns a model object", {
-  skip_on_cran()
+  .dev_skip()
   suppressWarnings({
     model <- hbm_lnln(
       response = "y_obs",
@@ -18,7 +25,7 @@ test_that("Function returns a model object", {
 
 # Variable not exist
 test_that("Function stops when response variable not found", {
-  skip_on_cran()
+  .dev_skip()
   expect_error(
     hbm_lnln(
       response = "invalid_var",
@@ -30,7 +37,7 @@ test_that("Function stops when response variable not found", {
 })
 
 test_that("Function stops when predictor variable not found", {
-  skip_on_cran()
+  .dev_skip()
   expect_error(
     hbm_lnln(
       response = "y_obs",
@@ -43,7 +50,7 @@ test_that("Function stops when predictor variable not found", {
 
 # Validate response variable
 test_that("Function throws error when response has zero or negative values", {
-  skip_on_cran()
+  .dev_skip()
   data_invalid1 <- data
   data_invalid1$y_obs[1] <- -1 # Inject invalid response
   data_invalid2 <- data
@@ -69,7 +76,7 @@ test_that("Function throws error when response has zero or negative values", {
 
 # Validate prior
 test_that("Function accepts valid priors", {
-  skip_on_cran()
+  .dev_skip()
   suppressWarnings({
     model <- hbm_lnln(
       response = "y_obs",
@@ -85,7 +92,7 @@ test_that("Function accepts valid priors", {
 })
 
 test_that("Function throws error for invalid prior", {
-  skip_on_cran()
+  .dev_skip()
   expect_error(
     hbm_lnln(
       response = "y_obs",
@@ -99,7 +106,7 @@ test_that("Function throws error for invalid prior", {
 
 # Validate random effects
 test_that("Function supports random effects", {
-  skip_on_cran()
+  .dev_skip()
   suppressWarnings({
     model <- hbm_lnln(
       response = "y_obs",
@@ -112,7 +119,7 @@ test_that("Function supports random effects", {
 })
 
 test_that("Function throws error for invalid random effect variable", {
-  skip_on_cran()
+  .dev_skip()
   expect_error(
     hbm_lnln(
       response = "y_obs",
@@ -126,7 +133,7 @@ test_that("Function throws error for invalid random effect variable", {
 
 # Validate handle missing
 test_that("Function support handle missing data with 'model' method", {
-  skip_on_cran()
+  .dev_skip()
   data_missing1 <- data
   data_missing1$y_obs[1] <- NA
   data_missing1$x1[2] <- NA
@@ -143,7 +150,7 @@ test_that("Function support handle missing data with 'model' method", {
 })
 
 test_that("Function support handle missing data without method argument", {
-  skip_on_cran()
+  .dev_skip()
   data_missing1 <- data
   data_missing1$y_obs[1] <- NA
   data_missing1$x1[2] <- NA
@@ -159,7 +166,7 @@ test_that("Function support handle missing data without method argument", {
 })
 
 test_that("Function support handle missing data with 'deleted' method", {
-  skip_on_cran()
+  .dev_skip()
   data_missing2 <- data
   data_missing2$y_obs[1] <- NA
 
@@ -175,7 +182,7 @@ test_that("Function support handle missing data with 'deleted' method", {
 })
 
 test_that("Function support handle missing data with 'multiple' method", {
-  skip_on_cran()
+  .dev_skip()
   data_missing1 <- data
   data_missing1$y_obs[1] <- NA
   data_missing1$x1[2] <- NA
@@ -194,7 +201,7 @@ test_that("Function support handle missing data with 'multiple' method", {
 
 
 test_that("Function throws an error when handle missing does not fit with the condition", {
-  skip_on_cran()
+  .dev_skip()
   data_missing1 <- data
   data_missing1$y_obs[1] <- NA
   data_missing1$x1[2] <- NA
@@ -210,7 +217,7 @@ test_that("Function throws an error when handle missing does not fit with the co
 
 # Validate spatial effect
 test_that("Function supports spatial random effects", {
-  skip_on_cran()
+  .dev_skip()
   suppressWarnings({
     model <- hbm_lnln(
       response = "y_obs",
@@ -226,7 +233,7 @@ test_that("Function supports spatial random effects", {
 })
 
 test_that("Function throws error for invalid spatial random effect", {
-  skip_on_cran()
+  .dev_skip()
   expect_error(
     hbm_lnln(
       response = "y_obs",
@@ -243,7 +250,7 @@ test_that("Function throws error for invalid spatial random effect", {
 })
 
 test_that("Function supports spatial random effects without specified parameter", {
-  skip_on_cran()
+  .dev_skip()
   suppressWarnings({
     model <- hbm_lnln(
       response = "y_obs",
@@ -258,7 +265,7 @@ test_that("Function supports spatial random effects without specified parameter"
 })
 
 test_that("Function throws error for invalid car type", {
-  skip_on_cran()
+  .dev_skip()
   expect_error(
     hbm_lnln(
       response = "y_obs",
@@ -275,7 +282,7 @@ test_that("Function throws error for invalid car type", {
 
 
 test_that("Function supports spatial random effects with missing value in sre", {
-  skip_on_cran()
+  .dev_skip()
   data_missing1 <- data
   data_missing1$area[1] <- NA
   
@@ -291,7 +298,7 @@ test_that("Function supports spatial random effects with missing value in sre", 
 })
 
 test_that("Function throws error for invalid spatial random effect type", {
-  skip_on_cran()
+  .dev_skip()
   expect_error(
     hbm_lnln(
       response = "y_obs",
@@ -307,7 +314,7 @@ test_that("Function throws error for invalid spatial random effect type", {
 })
 
 test_that("Function throws error for spatial random effect type = sar", {
-  skip_on_cran()
+  .dev_skip()
   expect_error(
     hbm_lnln(
       response = "y_obs",
@@ -324,7 +331,7 @@ test_that("Function throws error for spatial random effect type = sar", {
 
 # adj matrix
 test_that("Function throws error when adjacency matrix is incorrect", {
-  skip_on_cran()
+  .dev_skip()
   adjacency_matrix_wrong <- matrix(c(
     0, 1, 1,
     1, 0, 0
@@ -422,7 +429,7 @@ test_that("Function throws error when adjacency matrix is incorrect", {
 })
 
 test_that("Function supports with the number of dimensions greater than the number of locations sre", {
-  skip_on_cran()
+  .dev_skip()
   data2 <- data
   data2$sre <- rep(1:4) 
   

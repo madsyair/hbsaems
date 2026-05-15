@@ -2,196 +2,96 @@
 % Please edit documentation in R/hbm_binlogitnorm.R
 \name{hbm_binlogitnorm}
 \alias{hbm_binlogitnorm}
-\title{Small Area Estimation using Hierarchical Bayesian under Logit-Normal Model}
+\title{Small Area Estimation under a Binomial Logit-Normal Model}
 \usage{
 hbm_binlogitnorm(
   response,
   trials,
-  predictors,
-  group = NULL,
-  sre = NULL,
-  sre_type = NULL,
-  car_type = NULL,
-  sar_type = NULL,
-  M = NULL,
+  auxiliary = NULL,
   data,
-  handle_missing = NULL,
-  m = 5,
-  prior = NULL,
-  control = list(),
-  chains = 4,
-  iter = 4000,
-  warmup = floor(iter/2),
-  cores = 1,
-  sample_prior = "no",
+  fixed_params = NULL,
+  predictors = NULL,
   ...
 )
 }
 \arguments{
-\item{response}{The dependent (outcome) variable in the model. This variable represents the count of successes in a Binomial distribution.}
+\item{response}{Character.  Name of the successes variable
+(non-negative integer, \eqn{y \le n}).}
 
-\item{trials}{Specifies the number of trials in a binomial model. This is required for binomial family models where the response variable is specified as a proportion.}
+\item{trials}{Character.  Name of the trials variable (positive integer).}
 
-\item{predictors}{A list of independent (explanatory) variables used in the model. These variables form the fixed effects in the regression equation.}
+\item{auxiliary}{Character vector of auxiliary (fixed-effect) variable
+names; corresponds to area-level covariates in SAE literature
+(see Rao & Molina 2015 Ch. 4).}
 
-\item{group}{The name of the grouping variable (e.g., area, cluster, region)
-used to define the hierarchical structure for random effects. This variable should
-correspond to a column in the input data and is typically used to model area-level
-variation through random intercepts}
+\item{data}{A \code{data.frame}.}
 
-\item{sre}{An optional grouping factor mapping observations to spatial locations.
-If not specified, each observation is treated as a separate location.
-It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.}
+\item{fixed_params}{Optional named list pinning distributional
+parameters to known values.  See \code{\link{hbm}} for the spec
+format.}
 
-\item{sre_type}{Determines the type of spatial random effect used in the model. The function currently supports "sar" and "car"}
+\item{predictors}{\strong{Deprecated.}  Use \code{auxiliary} instead.
+Kept for backward compatibility; will be removed in v2.0.0.}
 
-\item{car_type}{Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR),
-"icar" (intrinsic CAR), and "bym2".}
-
-\item{sar_type}{Type of the SAR structure. Either "lag" (for SAR of the response values) or
-"error" (for SAR of the residuals).}
-
-\item{M}{The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain
-weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations.
-SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships.
-If sre is specified, the row names of M have to match the levels of the grouping factor}
-
-\item{data}{Dataset used for model fitting}
-
-\item{handle_missing}{Mechanism to handle missing data (NA values) to ensure model stability and avoid estimation errors.
-Three approaches are supported.
-The \code{"deleted"} approach performs complete case analysis by removing all rows with any missing values before model fitting.
-This is done using a simple filter such as \code{complete.cases(data)}.
-It is recommended when the missingness mechanism is Missing Completely At Random (MCAR).
-The \code{"multiple"} approach applies multiple imputation before model fitting.
-Several imputed datasets are created (e.g., using the \code{mice} package or the \code{brm_multiple()} function in \code{brms}),
-the model is fitted separately to each dataset, and the results are combined.
-This method is suitable when data are Missing At Random (MAR).
-The \code{"model"} approach uses model-based imputation within the Bayesian model itself.
-Missing values are incorporated using the \code{mi()} function in the model formula (e.g., \code{y ~ mi(x1) + mi(x2)}),
-allowing the missing values to be jointly estimated with the model parameters.
-This method also assumes a MAR mechanism and is applicable only for continuous variables.
-If data are suspected to be Missing Not At Random (MNAR), none of the above approaches directly apply.
-Further exploration, such as explicitly modeling the missingness process or conducting sensitivity analyses, is recommended.}
-
-\item{m}{Number of imputations to perform when using the \code{"multiple"} approach for handling missing data (default: 5).
-This parameter is only used if \code{handle_missing = "multiple"}.
-It determines how many imputed datasets will be generated.
-Each imputed dataset is analyzed separately, and the posterior draws are then combined to account for both within-imputation and between-imputation variability,
-following Rubin’s rules. A typical choice is between 5 and 10 imputations, but more may be needed for higher missingness rates.}
-
-\item{prior}{Priors for the model parameters (default: \code{NULL}).
-Should be specified using the \code{brms::prior()} function or a list of such objects.
-For example, \code{prior = prior(normal(0, 1), class = "b")} sets a Normal(0,1) prior on the regression coefficients.
-Multiple priors can be combined using \code{c()}, e.g.,
-\code{prior = c(prior(normal(0, 1), class = "b"), prior(exponential(1), class = "sd"))}.
-If \code{NULL}, default priors from \code{brms} will be used.}
-
-\item{control}{A list of control parameters for the sampler (default: \code{list()})}
-
-\item{chains}{Number of Markov chains (default: 4)}
-
-\item{iter}{Total number of iterations per chain (default: 2000)}
-
-\item{warmup}{Number of warm-up iterations per chain (default: floor(iter/2))}
-
-\item{cores}{Number of CPU cores to use (default: 1)}
-
-\item{sample_prior}{(default: "no")}
-
-\item{...}{Additional arguments}
+\item{...}{Additional arguments forwarded to \code{\link{hbm_flex}}.
+See \code{?hbm_flex}.}
 }
 \value{
-A \code{hbmfit} object
+An object of class \code{hbmfit}.
 }
 \description{
-This function implements a \strong{Hierarchical Bayesian Small Area Estimation (HBSAE)}
-under a \strong{Logit-Normal Model} using \strong{Bayesian inference} with the \code{brms} package.
-
-The model accounts for \strong{fixed effects}, \strong{random effects}, \strong{spatial random effects (CAR/SAR models)},
-and \strong{measurement error correction}, allowing for robust small area estimation.
-
-The function utilizes the \strong{Bayesian regression modeling framework} provided by \code{brms},
-which interfaces with 'Stan' for efficient Markov Chain Monte Carlo (MCMC) sampling.
-The \code{brm()} function from \code{brms} is used to estimate posterior distributions based on user-defined
-hierarchical and spatial structures.
+Convenience wrapper that fits a Hierarchical Bayesian Small Area
+Estimation model with a \strong{binomial} likelihood and logit link.
+Internally delegates to \code{\link{hbm_flex}} with
+\code{family_key = "binomial"}.
 }
+\details{
+Let \eqn{y_i} denote the number of successes in area \eqn{i} out of
+\eqn{n_i} trials.  The model is
+\deqn{y_i \mid p_i, n_i \sim \mathrm{Binomial}(n_i, p_i),}
+\deqn{\mathrm{logit}(p_i) = x_i^\top \boldsymbol{\beta} + u_i,
+       \quad u_i \sim \mathcal{N}(0, \sigma_v^2).}
+}
+\section{Notes on missing data}{
+
+The binomial family does not support \code{handle_missing = "model"}
+(joint Bayesian imputation via \code{brms::mi()}).  When NA values are
+detected and \code{handle_missing} is left \code{NULL}, the wrapper
+auto-selects \code{"multiple"} (multiple imputation via \pkg{mice} on
+the predictors only).
+}
+
 \examples{
 \donttest{
-
-# Load the example dataset
 library(hbsaems)
+library(brms)
 data("data_binlogitnorm")
 
-# Prepare the dataset
-data <- data_binlogitnorm
-
-# Fit Logit-Normal Model
-model1 <- hbm_binlogitnorm(
-response = "y",
-trials = "n",
-predictors = c("x1", "x2", "x3"),
-data = data
+# -- 1. Standard binomial logit-normal SAE ---------------------------------
+fit <- hbm_binlogitnorm(
+  response   = "y",
+  trials     = "n",
+  auxiliary  = c("x1", "x2", "x3"),
+  group      = "group",            # area-level random effect
+  data       = data_binlogitnorm,
+  chains = 1, iter = 500, warmup = 250, refresh = 0
 )
-summary(model1)
 
-# Fit Logit-Normal Model with Grouping Variable as Random Effect
-model2 <- hbm_binlogitnorm(
-response = "y",
-trials = "n",
-predictors = c("x1", "x2", "x3"),
-group = "group",
-data = data
-)
-summary(model2)
-
-# Fit Logit-Normal Model With Missing Data
-data_miss <- data
-data_miss[5:7, "y"] <- NA
-
-# a. Handling missing data by deleted (Only if missing in response)
-model3 <- hbm_binlogitnorm(
-response = "y",
-trials = "n",
-predictors = c("x1", "x2", "x3"),
-data = data_miss,
-handle_missing = "deleted"
-)
-summary(model3)
-
-# b. Handling missing data using multiple imputation (m=5)
-model4 <- hbm_binlogitnorm(
-response = "y",
-trials = "n",
-predictors = c("x1", "x2", "x3"),
-data = data_miss,
-handle_missing = "multiple"
-)
-summary(model4)
-
-# Fit Logit-Normal Model With Spatial Effect
+# -- 2. With spatial CAR random effect -------------------------------------
 data("adjacency_matrix_car")
-M <- adjacency_matrix_car
-
-model5 <- hbm_binlogitnorm(
-response = "y",
-trials = "n",
-predictors = c("x1", "x2", "x3"),
-sre = "sre",
-sre_type = "car",
-M = M,
-data = data
+fit_car <- hbm_binlogitnorm(
+  response   = "y",
+  trials     = "n",
+  auxiliary  = c("x1", "x2", "x3"),
+  sre        = "sre",
+  sre_type   = "car",
+  M          = adjacency_matrix_car,
+  data       = data_binlogitnorm,
+  chains = 1, iter = 500, warmup = 250, refresh = 0
 )
-summary(model5)
-
-} 
+}
 
 }
-\references{
-Rao, J. N. K., & Molina, I. (2015). \emph{Small Area Estimation}. John Wiley & Sons, page 390.
-Gelman, A. (2006). Prior Distributions for Variance Parameters in Hierarchical Models (Comment on Article by Browne and Draper). Bayesian Analysis, 1(3), 527–528.
-Gelman, A., Jakulin, A., Pittau, M. G., & Su, Y. S. (2008). A Weakly Informative Default Prior Distribution for Logistic and Other Regression Models.
-}
-\author{
-Saniyyah Sri Nurhayati
+\seealso{
+\code{\link{hbm_flex}}, \code{\link{hbm}}
 }

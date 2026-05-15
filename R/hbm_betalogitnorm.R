@@ -1,555 +1,424 @@
-#' @title Small Area Estimation using Hierarchical Bayesian under Beta Distribution
-#' 
-#' @description This function is implemented a **Hierarchical Bayesian Small Area Estimation (HBSAE)** model 
-#' under a **beta distribution** using **Bayesian inference** with the `brms` package. 
-#' 
-#' The range of the variable data \eqn{(y)} that is intended as a beta distribution must be \eqn{0<y<1}.
-#' The data proportion is supposed to be implemented with this function.
-#' 
-#' The function utilizes the **Bayesian regression modeling framework** provided by `brms`, 
-#' which interfaces with 'Stan' for efficient Markov Chain Monte Carlo  sampling. 
-#' The `brm()` function from `brms` is used to estimate posterior distributions based on user-defined 
-#' hierarchical and spatial structures.
-#' 
-#' @name hbm_betalogitnorm
-#' 
-#' @param response The dependent (outcome) variable in the model. This variable represents the main response being predicted or analyzed.
-#' @param predictors A list of independent (explanatory) variables used in the model. These variables form the fixed effects in the regression equation.
-#' @param n The number of sample units for each region used in the survey
-#' @param deff Design Effect
-#' @param link_phi Link function for the second parameter (phi), typically representing precision, shape, or dispersion depending on the family used (e.g., "log", "identity")
-#' @param group The name of the grouping variable (e.g., area, cluster, region)
-#' used to define the hierarchical structure for random effects. This variable should
-#' correspond to a column in the input data and is typically used to model area-level
-#' variation through random intercepts
-#' @param sre An optional grouping factor mapping observations to spatial locations. 
-#' If not specified, each observation is treated as a separate location. 
-#' It is recommended to always specify a grouping factor to allow for handling of new data in postprocessing methods.
-#' @param sre_type Determines the type of spatial random effect used in the model. The function currently supports "sar" and "car"
-#' @param car_type Type of the CAR structure. Currently implemented are "escar" (exact sparse CAR), "esicar" (exact sparse intrinsic CAR), 
-#' "icar" (intrinsic CAR), and "bym2". 
-#' @param sar_type Type of the SAR structure. Either "lag" (for SAR of the response values) or 
-#' "error" (for SAR of the residuals). 
-#' @param M The M matrix in SAR is a spatial weighting matrix that shows the spatial relationship between locations with certain 
-#' weights, while in CAR, the M matrix is an adjacency matrix that only contains 0 and 1 to show the proximity between locations. 
-#' SAR is more focused on spatial influences with different intensities, while CAR is more on direct adjacency relationships. 
-#' If sre is specified, the row names of M have to match the levels of the grouping factor
-#' @param data Dataset used for model fitting
-#' @param prior Priors for the model parameters (default: `NULL`).
-#' Should be specified using the `brms::prior()` function or a list of such objects. 
-#' For example, `prior = prior(normal(0, 1), class = "b")` sets a Normal(0,1) prior on the regression coefficients. 
-#' Multiple priors can be combined using `c()`, e.g., 
-#' `prior = c(prior(normal(0, 1), class = "b"), prior(exponential(1), class = "sd"))`.
-#' If `NULL`, default priors from `brms` will be used.
-#' @param handle_missing Mechanism to handle missing data (NA values) to ensure model stability and avoid estimation errors. 
-#' Three approaches are supported. 
-#' The `"deleted"` approach performs complete case analysis by removing all rows with any missing values before model fitting. 
-#' This is done using a simple filter such as `complete.cases(data)`. 
-#' It is recommended when the missingness mechanism is Missing Completely At Random (MCAR).
-#' The `"multiple"` approach applies multiple imputation before model fitting. 
-#' Several imputed datasets are created (e.g., using the `mice` package or the `brm_multiple()` function in `brms`), 
-#' the model is fitted separately to each dataset, and the results are combined. 
-#' This method is suitable when data are Missing At Random (MAR).
-#' The `"model"` approach uses model-based imputation within the Bayesian model itself. 
-#' Missing values are incorporated using the `mi()` function in the model formula (e.g., `y ~ mi(x1) + mi(x2)`), 
-#' allowing the missing values to be jointly estimated with the model parameters. 
-#' This method also assumes a MAR mechanism and is applicable only for continuous variables.
-#' If data are suspected to be Missing Not At Random (MNAR), none of the above approaches directly apply. 
-#' Further exploration, such as explicitly modeling the missingness process or conducting sensitivity analyses, is recommended.
-#' @param m Number of imputations to perform when using the `"multiple"` approach for handling missing data (default: 5). 
-#' This parameter is only used if `handle_missing = "multiple"`. 
-#' It determines how many imputed datasets will be generated. 
-#' Each imputed dataset is analyzed separately, and the posterior draws are then combined to account for both within-imputation and between-imputation variability, 
-#' following Rubin’s rules. A typical choice is between 5 and 10 imputations, but more may be needed for higher missingness rates.
-#' @param control A list of control parameters for the sampler (default: `list()`)
-#' @param chains Number of Markov chains (default: 4)
-#' @param iter Total number of iterations per chain (default: 4000)
-#' @param warmup Number of warm-up iterations per chain (default: floor(iter/2))
-#' @param cores Number of CPU cores to use (default: 1)
-#' @param sample_prior (default: "no")
-#' @param stanvars An optional `stanvar` or combination of `stanvar` objects used to define the hyperpriors for the hyperparameter \code{phi}. 
-#' By default, if \code{phi} is not fixed, a gamma prior is used: \code{phi ~ gamma(alpha, beta)}, where \code{alpha} and \code{beta} can be defined via \code{stanvars}.
-#' Use \code{"+"} to combine multiple \code{stanvar} definitions.
-#' 
-#' For example:
-#' \code{
-#' stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-#' stanvar(scode = "beta ~ gamma(1, 1);", block = "model")
-#' }
+# R/hbm_betalogitnorm.R
+# =============================================================================
+# Convenience wrapper for SAE under a Beta likelihood with a logit-normal
+# link.  Supports two modes for the precision parameter `phi`:
+#
+#   (1) FIXED mode  -- user supplies `n` (sample size) and `deff` (design
+#       effect); phi is then computed deterministically as
+#         phi_i = n_i / deff_i - 1
+#       and attached to the model via an offset on the phi linear predictor.
+#       Standard practice for SAE with known survey design (Liu 2009;
+#       Rao & Molina 2015).
+#
+#   (2) RANDOM mode -- if neither `n` nor `deff` is supplied, `phi` is
+#       given a hierarchical hyperprior:
+#         phi   ~ gamma(alpha, beta)
+#         alpha ~ gamma(1, 1)              (default; overridable via stanvars)
+#         beta  ~ gamma(1, 1)              (default; overridable via stanvars)
+#       This matches the pattern of the original GitHub hbsaems package.
+#
+# Both modes also feed the generic `fixed_params` machinery in hbm() so
+# that power users (and custom-distribution authors) can pin `phi`
+# directly without the `n` + `deff` sugar.
+# =============================================================================
+
+
+#' Small Area Estimation Under a Beta Likelihood (Logit-Normal Link)
 #'
-#' To use the default hyperprior for \code{phi}, set \code{stanvars = NULL}.
-#' @param ... Additional arguments passed to the `brm()` function.
-#' 
-#' @return A `hbmfit` object
-#' 
-#' @importFrom stats as.formula
-#' @importFrom brms stanvar set_prior 
-#' 
-#' @export
-#' 
-#' @author Sofi Zamzanah
+#' Convenience wrapper around \code{\link{hbm}} for SAE problems where
+#' the response \eqn{y_i \in (0, 1)} is modelled as
+#' \deqn{y_i \mid \theta_i, \phi_i \sim \mathrm{Beta}(\theta_i \phi_i,
+#'        (1 - \theta_i)\phi_i),}
+#' \deqn{\mathrm{logit}(\theta_i) = x_i^\top \boldsymbol{\beta} + u_i,
+#'        \quad u_i \sim \mathcal{N}(0, \sigma_u^2).}
 #'
-#' @references 
-#' Liu, B. (2009). *Hierarchical Bayes Estimation and Empirical Best Prediction of Small-Area Proportions*. College Park, University of Maryland.
-#' Rao, J. N. K., & Molina, I. (2015). *Small Area Estimation*. John Wiley & Sons, page 390.
-#' Gelman, A. (2006). *Prior Distributions for Variance Parameters in Hierarchical Models (Comment on Article by Browne and Draper)*. Bayesian Analysis, 1(3), 527–528. 
-#' Gelman, A., Jakulin, A., Pittau, M. G., & Su, Y. S. (2008). *A Weakly Informative Default Prior Distribution for Logistic and Other Regression Models*.
-#' 
+#' The precision parameter \eqn{\phi_i} can either be pinned to a survey
+#' design effect (\code{n} + \code{deff}) or sampled with a hierarchical
+#' hyperprior (\eqn{\phi \sim \mathrm{Gamma}(\alpha, \beta)},
+#' \eqn{\alpha \sim \mathrm{Gamma}(1,1)}, \eqn{\beta \sim \mathrm{Gamma}(1,1)}
+#' by default).
+#'
+#' @param response Character. Name of the response column (must lie strictly
+#'   between 0 and 1).
+#' @param auxiliary Character vector of auxiliary (fixed-effect) variable
+#'   names; corresponds to area-level covariates in SAE literature
+#'   (see Rao & Molina 2015 Ch. 4).
+#' @param predictors \strong{Deprecated.}  Use \code{auxiliary} instead.
+#'   Kept for backward compatibility; will be removed in v2.0.0.
+#' @param fixed_params Optional named list pinning distributional
+#'   parameters to known values.  See \code{\link{hbm}} for the spec
+#'   format.  Allows power-user access to the same machinery used by
+#'   the \code{n}/\code{deff} arguments.
+#' @param data A data frame.
+#' @param n Character or \code{NULL}.  Name of the column giving the
+#'   per-area sample size used to compute the fixed \eqn{\phi}.  Must be
+#'   supplied together with \code{deff}.  When supplied, \eqn{\phi_i =
+#'   n_i / \text{deff}_i - 1} is pinned via offset.  Default: \code{NULL}
+#'   (treats \code{phi} as random with hyperprior).
+#' @param deff Character or \code{NULL}.  Name of the design-effect
+#'   column.  Required when \code{n} is supplied (and vice versa).
+#' @param group Character or \code{NULL}.  Name of the area-grouping
+#'   variable; if supplied, adds \code{(1 | group)} as a random
+#'   intercept.
+#' @param sre,sre_type,car_type,sar_type,M Spatial random-effect arguments,
+#'   forwarded to \code{\link{hbm}}.
+#' @param link_phi Character. Link function for \code{phi}; default
+#'   \code{"identity"} when \code{phi} is pinned (offset must be on the
+#'   identity scale).
+#' @param prior Optional \code{brmsprior} object.  If \code{NULL}, sensible
+#'   defaults are filled in:
+#'   \itemize{
+#'     \item \code{Intercept ~ student_t(4, 0, 10)}
+#'     \item \code{b ~ student_t(4, 0, 2.5)}
+#'     \item \code{phi ~ gamma(alpha, beta)} (random mode only)
+#'   }
+#'   The user may pass a partial prior: missing default classes are
+#'   filled in automatically.
+#' @param stanvars Optional \code{brmsstanvars} object specifying
+#'   hyperpriors for \code{alpha} and \code{beta} when \code{phi} is
+#'   random.  If \code{NULL} (default), \code{alpha ~ gamma(1, 1)} and
+#'   \code{beta ~ gamma(1, 1)} are used.  The user may also supply
+#'   custom \code{stanvar()} expressions to override either or both
+#'   hyperpriors, e.g.:
+#'   \preformatted{
+#'   stanvars = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
+#'              stanvar(scode = "beta  ~ gamma(2, 3);", block = "model")
+#'   }
+#' @param fixed_params Optional named list pinning distributional
+#'   parameters to known values.  See \code{\link{hbm}} for the spec
+#'   format.  Conflicts with \code{n} + \code{deff} on the \code{phi}
+#'   parameter; use one or the other.
+#' @param predictors \strong{Deprecated.}  Use \code{auxiliary} instead.
+#'   Kept for backward compatibility; will be removed in v2.0.0.
+#' @param handle_missing,m,control,chains,iter,warmup,cores,sample_prior,...
+#'   Passed through to \code{\link{hbm}}.
+#'
+#' @return An object of class \code{hbmfit}.
+#'
 #' @examples
 #' \donttest{
-#' 
-#' # Load the example dataset
 #' library(hbsaems)
+#' library(brms)
 #' data("data_betalogitnorm")
-#'
-#' # Prepare the dataset
 #' data <- data_betalogitnorm
 #'
-#' # Fit Beta Model
+#' # -- 1. Basic model (phi random, with default hyperprior) --------------------
 #' model1 <- hbm_betalogitnorm(
-#' response = "y",
-#' predictors = c("x1", "x2", "x3"),
-#' data = data
+#'   response   = "y",
+#'   auxiliary  = c("x1", "x2", "x3"),
+#'   group      = "group",
+#'   data       = data,
+#'   chains = 1, iter = 500, warmup = 250, refresh = 0
 #' )
 #' summary(model1)
-#' 
-#' # if you have the information of n and deff values you can use the following model
-#' model1 <- hbm_betalogitnorm(
-#' response = "y",
-#' predictors = c("x1", "x2", "x3"),
-#' n = "n",
-#' deff = "deff",
-#' data = data
-#' )
-#' summary(model1)
-#' 
-#' # From this stage to the next will be explained the construction of the model with 
-#' # the condition that the user has information on the value of n and deff. 
-#' # If you do not have information related to the value of n and deff 
-#' # then simply delete the parameters n and deff in your model.
-#' 
-#' # Fit Beta Model with Grouping Variable as Random Effect
+#'
+#' # -- 2. Fixed phi via survey design (n + deff) -------------------------------
 #' model2 <- hbm_betalogitnorm(
-#' response = "y",
-#' predictors = c("x1", "x2", "x3"),
-#' n = "n",
-#' deff = "deff",
-#' group = "group",
-#' data = data
+#'   response   = "y",
+#'   auxiliary  = c("x1", "x2", "x3"),
+#'   n          = "n",
+#'   deff       = "deff",
+#'   group      = "group",
+#'   data       = data,
+#'   chains = 1, iter = 500, warmup = 250, refresh = 0
 #' )
 #' summary(model2)
 #'
-#' # Fit Beta Model With Missing Data
-#' data_miss <- data
-#' data_miss[5:7, "y"] <- NA
-#'
-#' # a. Handling missing data by deleted (Only if missing in response)
+#' # -- 3. Custom hyperprior on alpha, beta -------------------------------------
 #' model3 <- hbm_betalogitnorm(
-#' response = "y",
-#' predictors = c("x1", "x2", "x3"),
-#' n = "n",
-#' deff = "deff",
-#' data = data_miss,
-#' handle_missing = "deleted"
-#' )
-#' summary(model3)
-#'
-#' # b. Handling missing data using multiple imputation (m=5)
-#' model4 <- hbm_betalogitnorm(
-#' response = "y",
-#' predictors = c("x1", "x2", "x3"),
-#' n = "n",
-#' deff = "deff",
-#' data = data_miss,
-#' handle_missing = "multiple"
-#' )
-#' summary(model4)
-#' 
-#' # c. Handle missing data during model fitting using mi()
-#' data_miss <- data
-#' data_miss$x1[3:5] <- NA 
-#' data_miss$x2[14:17] <- NA 
-#' model5 <- hbm_betalogitnorm(
-#' response = "y",
-#' predictors = c("x1", "x2", "x3"),
-#' n = "n",
-#' deff = "deff",
-#' group = "group",
-#' data = data_miss,
-#' handle_missing = "model"
+#'   response   = "y",
+#'   auxiliary  = c("x1", "x2", "x3"),
+#'   group      = "group",
+#'   data       = data,
+#'   stanvars   = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
+#'                stanvar(scode = "beta  ~ gamma(2, 3);", block = "model"),
+#'   chains = 1, iter = 500, warmup = 250, refresh = 0
 #' )
 #'
-#' # Fit Logit-Normal Model With Spatial Effect
+#' # -- 4. Spatial CAR model ----------------------------------------------------
 #' data("adjacency_matrix_car")
-#' M <- adjacency_matrix_car
-#'
-#' model6 <- hbm_betalogitnorm(
-#' response = "y",
-#' predictors = c("x1", "x2", "x3"),
-#' n = "n",
-#' deff = "deff",
-#' sre = "sre",
-#' sre_type = "car",
-#' M = M,
-#' data = data
+#' model4 <- hbm_betalogitnorm(
+#'   response   = "y",
+#'   auxiliary  = c("x1", "x2", "x3"),
+#'   n          = "n",
+#'   deff       = "deff",
+#'   sre        = "sre",
+#'   sre_type   = "car",
+#'   M          = adjacency_matrix_car,
+#'   data       = data,
+#'   chains = 1, iter = 500, warmup = 250, refresh = 0
 #' )
-#' summary(model6)
-#' 
-
-#' 
-#' # have input of argument stanvars as prior distribution of alpha and beta
-#' 
-#' model7 <- hbm_betalogitnorm(
-#' response = "y",
-#' predictors = c("x1", "x2", "x3"),
-#' data = data,
-#' stanvars = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-#' stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of alpha and beta
-#' )
-#' 
-#' summary(model7)
-#' 
-#' # have input of argument stanvars as prior distribution of beta
-#' 
-#' model8 <- hbm_betalogitnorm(
-#' response = "y",
-#' predictors = c("x1", "x2", "x3"),
-#' data = data,
-#' stanvars = stanvar(scode = "beta ~ gamma(1, 1);", block = "model") #stanvars of beta
-#'
-#'  ) 
-#' summary(model8)
-#' 
 #' }
+#'
+#' @references
+#' Liu, B. (2009). \emph{Hierarchical Bayes Estimation and Empirical Best
+#' Prediction of Small-Area Proportions}. University of Maryland.
+#'
+#' Rao, J. N. K., & Molina, I. (2015). \emph{Small Area Estimation}, 2nd ed.
+#' Wiley, p. 390.
+#'
+#' @seealso \code{\link{hbm_flex}}, \code{\link{hbm}}
+#' @export
 hbm_betalogitnorm <- function(response,
-                     predictors,
-                     n = NULL,
-                     deff = NULL,
-                     link_phi = "identity",
-                     group = NULL,
-                     sre = NULL,
-                     sre_type = NULL,
-                     car_type = NULL,
-                     sar_type = NULL,
-                     M = NULL,
-                     data,
-                     handle_missing = NULL,
-                     m = 5,
-                     prior = NULL,
-                     control = list(),
-                     chains = 4,
-                     iter = 4000,
-                     warmup = floor(iter / 2),
-                     cores = 1,
-                     sample_prior = "no",
-                     stanvars = NULL,
-                      ...){
-  
-  # Ensure response and predictors exist in the data
-  if (!(response %in% names(data))) {
-    stop(sprintf("Variable '%s' not found in the data.", response))
-  }
-  
-  if (!all(predictors %in% names(data))) {
-    missing_predictors <- predictors[!predictors %in% names(data)]
-    stop(sprintf("Variable '%s' not found in the data.", paste(missing_predictors, collapse = ", ")))
-  }
-  
-  if (!is.null(n)){
-    if (!(n %in% names(data))) {
-      stop(sprintf("Variable '%s' not found in the 'data'.", n))
-    }
-  }
-  
-  if(!is.null(deff)){
-    if (!(deff %in% names(data))) {
-      stop(sprintf("Variable '%s' not found in the data.", deff))
-    }
-  }
-  
-  # Validate n and deff
-  if (xor(is.null(n), is.null(deff))) {
-    stop("Both variables 'n' and 'deff' must be specified or undefined simultaneously.")
-  }
-  
-  if(!is.null(group)){
-    if (!(group %in% names(data))) {
-      stop(sprintf("Variable '%s' not found in the data.", group))
-    }
-  }
-  
-  if(!is.null(sre)){
-    if (!(sre %in% names(data))) {
-      stop(sprintf("Variable '%s' not found in the data.", sre))
-    }
-  }
+                              auxiliary      = NULL,
+                              data,
+                              n              = NULL,
+                              deff           = NULL,
+                              group          = NULL,
+                              sre            = NULL,
+                              sre_type       = NULL,
+                              car_type       = NULL,
+                              sar_type       = NULL,
+                              M              = NULL,
+                              link_phi       = "identity",
+                              prior          = NULL,
+                              stanvars       = NULL,
+                              handle_missing = NULL,
+                              m              = 5L,
+                              control        = list(),
+                              chains         = 4L,
+                              iter           = 4000L,
+                              warmup         = floor(iter / 2),
+                              cores          = 1L,
+                              sample_prior   = "no",
+                              fixed_params   = NULL,    # v0.6.1: pinned dist parameters
+                              predictors     = NULL,    # DEPRECATED in v0.6.1
+                              ...) {
 
-  # Check for response values
-  if (any(data[[response]] <= 0, na.rm = TRUE) | any(data[[response]] >= 1, na.rm = TRUE)) {
-    stop("Response variable must be between 0 and 1.")
+  # -- 0. Deprecated alias 'predictors' (v0.6.1) ----------------------------
+  if (!is.null(predictors)) {
+    if (!is.null(auxiliary))
+      stop("Pass either `auxiliary` (preferred) or `predictors` (deprecated), ",
+           "but not both.", call. = FALSE)
+    .deprecate_arg("predictors", "auxiliary", "v2.0.0")
+    auxiliary <- predictors
   }
+  if (is.null(auxiliary))
+    stop("`auxiliary` (auxiliary variables) is required.", call. = FALSE)
 
-  # Add fixed effect formula
-  fixed_effects <- paste(predictors, collapse = " + ")
-  formula <- as.formula(paste(response, "~", fixed_effects))
-  
-  # Prior Handling
-  # Function to check whether a general prior is present for a given class
-  has_general_prior <- function(prior_list_internal, prior_class) {
-    if (is.null(prior_list_internal) || !inherits(prior_list_internal, "brmsprior"))
-      return(FALSE)
-    
-    # Return TRUE if any prior matches the specified class and has no specific coefficient
-    any(prior_list_internal$class == prior_class &
-          (is.na(prior_list_internal$coef) | prior_list_internal$coef == ""))
-  }
-  
-  ###### Defines stanvars of alpha and beta if not provided###
- 
-  
-  #  Extract a list of stanvar elements from the input
-  extract_stanvar_list <- function(stanvars) {
-    if (is.null(stanvars)) {
-      return(list())
-    } else if (inherits(stanvars, "stanvar")) {
-      # Single prior → wrap it in a list
-      return(list(stanvars))
-    } else if (inherits(stanvars, "stanvars")) {
-      # Multiple priors combined via + → unclass to get the underlying list
-      return(unclass(stanvars))
-    }
-    stop("Input must be the result of stanvar(...) or NULL")
-  }
-  
-  # Get all variable names already defined in block = "model"
-  get_model_vars <- function(stanvars) {
-    sv_list <- extract_stanvar_list(stanvars)
-    vars <- character()
-    for (sv in sv_list) {
-      if (!is.null(sv$block) && sv$block == "model") {
-        # Capture the name on the left side of '~'
-        m <- regexec("^\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*~", sv$scode)
-        mm <- regmatches(sv$scode, m)[[1]]
-        if (length(mm) >= 2) vars <- c(vars, mm[2])
-      }
-    }
-    unique(vars)
-  }
-  
-  #  Main function: add default priors for alpha and beta only if they're missing
-  add_default_stanvars <- function(stanvars) {
-    existing <- get_model_vars(stanvars)
-    
-    to_add <- list()
-    if (!("alpha" %in% existing)) {
-      to_add[[length(to_add) + 1]] <- stanvar(
-        scode = "alpha ~ gamma(1, 1);",
-        block = "model"
-      )
-    }
-    if (!("beta" %in% existing)) {
-      to_add[[length(to_add) + 1]] <- stanvar(
-        scode = "beta ~ gamma(1, 1);",
-        block = "model"
-      )
-    }
-    
-    # If nothing to add, return the input as-is
-    if (length(to_add) == 0) return(stanvars)
-    
-    # Combine all new defaults into one stanvars object
-    new_sv <- Reduce(`+`, to_add)
-    
-    # If input is NULL, just return the defaults; otherwise combine with input
-    if (is.null(stanvars)) {
-      return(new_sv)
-    } else {
-      return(stanvars + new_sv)
-    }
-  }
-  
-  #####
-  # Define phi
+
+  # -- 1. Input validation -----------------------------------------------------
+  if (!is.data.frame(data))
+    stop("`data` must be a data frame.", call. = FALSE)
+  if (!response %in% names(data))
+    stop(sprintf("Response variable '%s' not found in `data`.", response),
+         call. = FALSE)
+  missing_aux <- setdiff(auxiliary, names(data))
+  if (length(missing_aux) > 0L)
+    stop("Predictor(s) not found in `data`: ",
+         paste(missing_aux, collapse = ", "), call. = FALSE)
+
+  # n + deff must be supplied together or not at all
+  if (xor(is.null(n), is.null(deff)))
+    stop("Both `n` and `deff` must be supplied together, or both NULL.",
+         call. = FALSE)
+  if (!is.null(n) && !(n    %in% names(data)))
+    stop(sprintf("`n = \"%s\"` is not a column in `data`.", n),
+         call. = FALSE)
+  if (!is.null(deff) && !(deff %in% names(data)))
+    stop(sprintf("`deff = \"%s\"` is not a column in `data`.", deff),
+         call. = FALSE)
+  if (!is.null(group) && !(group %in% names(data)))
+    stop(sprintf("`group = \"%s\"` is not a column in `data`.", group),
+         call. = FALSE)
+
+  # Response support: strictly in (0, 1)
+  y <- data[[response]]
+  if (any(y <= 0 | y >= 1, na.rm = TRUE))
+    stop("Response variable must lie strictly in (0, 1) for Beta likelihood.",
+         call. = FALSE)
+
+  # -- 2. Build fixed_params for phi (if survey-design mode) ------------------
+  # Mode (1): user supplied n + deff -> compute phi_fixed and merge into
+  # the (possibly already-populated) fixed_params list.  If user has also
+  # supplied fixed_params$phi directly, that is a conflict.
+  if (is.null(fixed_params)) fixed_params <- list()
+  if (!is.list(fixed_params))
+    stop("`fixed_params` must be a named list (or NULL).", call. = FALSE)
+
   if (!is.null(n) && !is.null(deff)) {
-    # Check for missing values in n or deff
-    if (anyNA(data[[n]]) || anyNA(data[[deff]])) {
-      stop("Missing values detected in either 'n' or 'deff'.")
-    }
-    
-    # Check if n and deff are non-positive
-    if (any(data[[n]] <= 0) || any(data[[deff]] <= 0)) {
-      stop("Both 'n' and 'deff' must be strictly positive values.")
-    }
-    
-    phi_fixed <- ((data[[n]] / data[[deff]]) - 1)
-    
-    if (any(phi_fixed <= 0)) {
-      stop("The phi value should be positive, but we found phi <=0. Check your n and deff values again.")
-    }
-    
-    data$phi_fixed <- phi_fixed
-    
-    if (is.null(prior)) {
-      adjusted_prior <- c(
-        brms::set_prior("student_t(4,0,10)" , class = "Intercept"),
-        brms::set_prior("student_t(4,0,2.5)", class = "b")
+    if ("phi" %in% names(fixed_params))
+      stop("Cannot supply both `n` + `deff` (which pin phi via survey ",
+           "design) and `fixed_params$phi`.  Pick one.",
+           call. = FALSE)
+    nvec    <- data[[n]]
+    deffvec <- data[[deff]]
+    if (anyNA(nvec) || anyNA(deffvec))
+      stop("Missing values detected in `n` or `deff`; cannot fix phi.",
+           call. = FALSE)
+    if (any(nvec <= 0 | deffvec <= 0))
+      stop("`n` and `deff` must be strictly positive.", call. = FALSE)
+    phi_vec <- nvec / deffvec - 1
+    if (any(phi_vec <= 0))
+      stop("Computed phi = n/deff - 1 contains non-positive values; ",
+           "check `n` and `deff`.", call. = FALSE)
+    fixed_params$phi <- phi_vec
+  }
+
+  # -- 3. Build stanvars for the alpha / beta hyperpriors (random mode only) --
+  # In random mode, phi ~ gamma(alpha, beta) where alpha, beta are themselves
+  # given gamma(1, 1) priors by default.  Users may override one or both
+  # via the `stanvars` argument.
+  if (length(fixed_params) == 0L) {
+    # Declare alpha, beta as Stan parameters
+    parameters_block <- brms::stanvar(
+      scode = paste0(
+        "  real<lower=1> alpha;\n",
+        "  real<lower=0> beta;\n"
+      ),
+      block = "parameters"
+    )
+    # Detect which of alpha/beta the user has already specified a hyperprior for
+    existing_vars <- .extract_model_block_vars(stanvars)
+    to_add <- list()
+    if (!"alpha" %in% existing_vars) {
+      to_add[[length(to_add) + 1L]] <- brms::stanvar(
+        scode = "  alpha ~ gamma(1, 1);", block = "model"
       )
-    } else {
-      adjusted_prior <- prior
-      
-      if (any(adjusted_prior$class == "phi")){
-        stop("Remove priors for 'phi' if phi is fixed using n and deff.")
-      }
-      
-      if (!has_general_prior(adjusted_prior, "Intercept")) {
-        adjusted_prior <- c(adjusted_prior, brms::set_prior("student_t(4,0,10)", class = "Intercept"))
-      }
-      
-      if (!has_general_prior(adjusted_prior, "b")) {
-        adjusted_prior <- c(adjusted_prior, brms::set_prior("student_t(4,0,2.5)", class = "b"))
-      }
-      
     }
-    
-    formula <- brms::bf(formula, phi ~ 0 + offset(phi_fixed))
-  } else {
-    # Define default prior
-    stanvar_par <- 
-      stanvar(scode = "
-          real<lower=1> alpha;
-          real<lower=0> beta;
-        ", block = "parameters") 
-      
-    if (is.null(prior)) {
-  
-      stanvars <- stanvar_par + add_default_stanvars(stanvars)
-      adjusted_prior <- c(
-        brms::set_prior("student_t(4,0,10)", class = "Intercept"),
-        brms::set_prior("student_t(4,0,2.5)", class = "b"),
-        brms::set_prior("gamma(alpha, beta)", class = "phi")
+    if (!"beta" %in% existing_vars) {
+      to_add[[length(to_add) + 1L]] <- brms::stanvar(
+        scode = "  beta  ~ gamma(1, 1);", block = "model"
       )
-    } else {
-        # Use the provided prior
-        adjusted_prior <- prior
-        
-        # If no general prior for the intercept exists, add a default Student t  prior
-        if (!has_general_prior(adjusted_prior, "Intercept")) {
-          adjusted_prior <- c(adjusted_prior, brms::set_prior("student_t(4,0,10)", class = "Intercept"))
-        }
-        
-        # If no general prior for the coefficients exists, add a default Student t prior
-        if (!has_general_prior(adjusted_prior, "b")) {
-          adjusted_prior <- c(adjusted_prior, brms::set_prior("student_t(4,0,2.5)", class = "b"))
-        }
-        
-        # If no prior for phi is provided, add gamma(alpha, beta)
-        if (!has_general_prior(adjusted_prior, "phi")) {
-          stanvar_par<- 
-            stanvar(scode = "
-              real<lower=1> alpha;
-              real<lower=0> beta;
-            ", block = "parameters")
-          stanvars <- stanvar_par + add_default_stanvars(stanvars)
-          adjusted_prior <- c(adjusted_prior, brms::set_prior("gamma(alpha, beta)", class = "phi"))
-        }
     }
-    
-    formula <- brms::bf(formula)
-  }
-  
-  # Check handle missing for continuous distribution
-  if (is.null(handle_missing)) {
-    if (anyNA(data[[response]]) || anyNA(data[predictors])) {
-      handle_missing <- "model"
-    } 
-  }
-  
-  # Add handle missing  
-  if (!is.null(handle_missing) && handle_missing == "model") {
-    vars <- unique(c(response, predictors))
-    missing_vars <- vars[sapply(data[vars], function(x) any(is.na(x)))]
-    
-    # Create the main formula for the response variable
-    response_with_mi <- ifelse(response %in% missing_vars, 
-                               paste0(response, " | mi()"), 
-                               response)
-    
-    # Create a formula for predictors with missing values
-    predictor_with_mi <- sapply(predictors, function(x) {
-      if (x %in% missing_vars) {
-        # If a predictor has missing values, create an imputation formula for that predictor
-        return(paste0("mi(", x, ")"))
-      } else {
-        # If a predictor has no missing values, use the regular predictor name
-        return(x)
+    default_model_block <- if (length(to_add) > 0L)
+      Reduce(`+`, to_add)
+    else
+      NULL
+
+    # Combine: declared parameters + (user stanvars OR default) + missing default
+    combined <- parameters_block
+    if (!is.null(stanvars))            combined <- combined + stanvars
+    if (!is.null(default_model_block)) combined <- combined + default_model_block
+    stanvars_final <- combined
+  } else {
+    # Fixed mode: alpha/beta hyperprior machinery is irrelevant.
+    # If the user has supplied stanvars containing hyperpriors for alpha/beta,
+    # those statements would refer to undeclared Stan parameters and fail at
+    # compile time -- refuse early with a clear error.
+    if (!is.null(stanvars)) {
+      hyperprior_vars <- intersect(
+        .extract_model_block_vars(stanvars),
+        c("alpha", "beta")
+      )
+      if (length(hyperprior_vars) > 0L) {
+        stop(
+          "`stanvars` contains a hyperprior on `",
+          paste(hyperprior_vars, collapse = "`, `"),
+          "`, but `phi` is pinned via `n` + `deff` (or `fixed_params$phi`). ",
+          "Hyperpriors on alpha/beta are only meaningful when `phi` is ",
+          "sampled.  Remove the stanvars block, or remove `n`+`deff`/",
+          "`fixed_params$phi` to let phi be sampled.",
+          call. = FALSE
+        )
       }
-    })
-    
-    # The main formula that combines the response and predictors
-    main_formula <- brms::bf(as.formula(
-      paste0(response_with_mi, " ~ ", paste(predictor_with_mi, collapse = " + "))
-    ))
-    
-    # After adding mi(), the formula has become a standard formula. Adding additional components...
-    if (!is.null(formula$pforms) && length(formula$pforms) > 0) {
-      main_formula$pforms <- formula$pforms
-    } 
-    
-    # Create additional formulas for variables that have missing values
-    auxiliary_formulas <- lapply(missing_vars, function(var) {
-      if (var %in% response) return(NULL)  # Do not create an additional model for the response
-      
-      # Only use variables from the initial formula as predictors
-      predictors_for_var <- setdiff(predictors, var)
-      predictors_for_var <- predictors_for_var[!sapply(data[predictors_for_var], function(x) any(is.na(x)))]  # Avoid predictors that are also missing
-      
-      # If there are no valid predictors, use the intercept (1)
-      if (length(predictors_for_var) > 0) {
-        return(brms::bf(as.formula(paste0(var, " | mi() ~ ", paste(predictors_for_var, collapse = " + ")))))
-      } else {
-        return(brms::bf(as.formula(paste0(var, " | mi() ~ 1"))))  # Use the intercept (1) if there are no valid predictors
-      }
-    })
-    
-    auxiliary_formulas <- Filter(Negate(is.null), auxiliary_formulas)
-    if (length(auxiliary_formulas) > 0) {
-      all_formulas <- Reduce("+", c(list(main_formula), auxiliary_formulas))
-    } else {
-      all_formulas <- main_formula
     }
-  } else {
-    all_formulas <- brms::bf(formula)
+    stanvars_final <- stanvars
   }
-  
-  # Add random effect
-  if (!is.null(group)) {
-    formula_re <- as.formula(paste("~", paste("(1 | ", group, ")", collapse = " + ")))
-  } else {
-    formula_re <- NULL
+
+  # -- 4. Merge user-supplied prior with sensible Beta defaults ---------------
+  adjusted_prior <- .merge_betalogitnorm_priors(
+    user_prior   = prior,
+    phi_is_fixed = length(fixed_params) > 0L
+  )
+
+  # -- 5. Build random-effect formula -----------------------------------------
+  re_formula <- if (!is.null(group))
+    stats::as.formula(paste0("~ (1 | ", group, ")"))
+  else
+    NULL
+
+  # -- 6. Hand off to hbm() ----------------------------------------------------
+  fixed_effects   <- paste(auxiliary, collapse = " + ")
+  main_formula    <- brms::bf(stats::as.formula(
+    paste0(response, " ~ ", fixed_effects)
+  ))
+
+  fit <- hbm(
+    formula        = main_formula,
+    hb_sampling    = "Beta",
+    hb_link        = "logit",
+    link_phi       = link_phi,
+    re             = re_formula,
+    sre            = sre,
+    sre_type       = sre_type,
+    car_type       = car_type,
+    sar_type       = sar_type,
+    M              = M,
+    data           = data,
+    prior          = adjusted_prior,
+    fixed_params   = if (length(fixed_params) > 0L) fixed_params else NULL,
+    handle_missing = handle_missing,
+    m              = m,
+    control        = control,
+    chains         = chains,
+    iter           = iter,
+    warmup         = warmup,
+    cores          = cores,
+    sample_prior   = sample_prior,
+    stanvars       = stanvars_final,
+    ...
+  )
+  fit
+}
+
+
+# -----------------------------------------------------------------------------
+# Internal helpers
+# -----------------------------------------------------------------------------
+
+# Inspect a brmsstanvars object and return the names of variables that
+# already have a sampling statement in the "model" block.  Used to detect
+# whether the user has supplied a hyperprior for alpha / beta so that
+# defaults are not silently added on top.
+.extract_model_block_vars <- function(stanvars) {
+  if (is.null(stanvars)) return(character(0))
+  if (!inherits(stanvars, c("stanvars", "stanvar"))) return(character(0))
+  sv_list <- if (inherits(stanvars, "stanvar")) list(stanvars) else unclass(stanvars)
+  vars <- character(0)
+  for (sv in sv_list) {
+    if (!is.null(sv$block) && identical(sv$block, "model")) {
+      m  <- regexec("\\b([A-Za-z_][A-Za-z0-9_]*)\\s*~", sv$scode)
+      mm <- regmatches(sv$scode, m)[[1L]]
+      if (length(mm) >= 2L) vars <- c(vars, mm[2L])
+    }
   }
-  
-  #Model fitting
-  model <- hbm(formula = all_formulas,
-               hb_sampling= "Beta",
-               hb_link = "logit",
-               link_phi = link_phi,
-               re = formula_re,
-               sre = sre,
-               sre_type = sre_type,
-               car_type = car_type,
-               sar_type = sar_type,
-               M = M,
-               handle_missing = handle_missing,
-               m = m,
-               data = data,
-               prior = adjusted_prior,
-               control = control,
-               chains = chains,
-               iter = iter,
-               warmup = warmup,
-               cores = cores,
-               sample_prior = sample_prior,
-               stanvars = stanvars,
-               ...)
-  return(model)
+  unique(vars)
+}
+
+# Fill in default priors (Intercept, b, phi) for the Beta logit-normal
+# model only when the user has not already specified them for the
+# corresponding class.
+.merge_betalogitnorm_priors <- function(user_prior, phi_is_fixed) {
+
+  has_class <- function(p, cls) {
+    if (is.null(p) || !inherits(p, "brmsprior")) return(FALSE)
+    any(p$class == cls & (is.na(p$coef) | p$coef == ""))
+  }
+
+  defaults <- c(
+    brms::set_prior("student_t(4, 0, 10)",  class = "Intercept"),
+    brms::set_prior("student_t(4, 0, 2.5)", class = "b")
+  )
+  if (!phi_is_fixed) {
+    defaults <- c(defaults,
+                  brms::set_prior("gamma(alpha, beta)", class = "phi"))
+  }
+
+  if (is.null(user_prior)) return(defaults)
+
+  # If user passed any prior on phi but phi is fixed, that's a contradiction
+  if (phi_is_fixed && any(user_prior$class == "phi"))
+    stop("Cannot supply a prior on `phi` when `n` + `deff` pin phi to ",
+         "survey design.  Remove the prior or remove `n` + `deff`.",
+         call. = FALSE)
+
+  out <- user_prior
+  if (!has_class(out, "Intercept"))
+    out <- c(out, brms::set_prior("student_t(4, 0, 10)",  class = "Intercept"))
+  if (!has_class(out, "b"))
+    out <- c(out, brms::set_prior("student_t(4, 0, 2.5)", class = "b"))
+  if (!phi_is_fixed && !has_class(out, "phi"))
+    out <- c(out, brms::set_prior("gamma(alpha, beta)",   class = "phi"))
+  out
 }

@@ -1,85 +1,94 @@
-# ==== LIBRARIES (Implicitly required by the code) ====
+# =============================================================================
+# inst/shiny/sae_app/app.R
+# Shiny application for Hierarchical Bayesian Small Area Estimation (HBSAE)
+#
+# v0.3.0 changes:
+#   - All API calls migrated to snake_case primary names:
+#       hbcc()  -> convergence_check()
+#       hbmc()  -> model_compare()
+#       hbpc()  -> prior_check()      (now requires `data` argument)
+#       hbsae() -> sae_predict()
+#   - Local var renamed to avoid shadowing prior_check() function.
+#
+# Earlier changes (preserved):
+#   - Removed XICOR dependency (Chatterjee's Xi correlation removed)
+#   - Replaced deprecated ggplot2::aes_string() with ggplot2::aes(.data[[]])
+#   - Removed mixed-language (Indonesian) inline comments
+#   - Updated missing data UI note to reflect that "multiple" imputes X only
+#   - Added prior_type UI (horseshoe / R2D2)
+#   - Added nonlinear variable selector (spline / GP)
+#   - Added observer to sync nonlinear_vars choices with linear_aux_vars
+# =============================================================================
 
+# The hbsaems package loads all required dependencies via its NAMESPACE.
+# Only library(shiny) is needed explicitly to start the app before the
+# package namespace is attached.
 library(shiny)
-# library(shinydashboard)
-# library(DT)
-# library(ggplot2)
-# library(shinyWidgets)
-# library(tools)
-# library(readxl)
-# library(stats)
-# library(XICOR)
-# library(energy)
-# library(minerva)
-# library(brms)
-# library(posterior)
-# library(priorsense)
-# library(bayesplot)
-# library(grDevices)
 library(hbsaems)
 
-# ===== UI ====
-# Defines the user interface for the application.
+
+# =============================================================================
+# UI
+# =============================================================================
 ui <- shinydashboard::dashboardPage(
-    shinydashboard::dashboardHeader(title = "Small Area Estimation App"),
-    shinydashboard::dashboardSidebar(
-        # Defines the navigation menu in the sidebar.
-        shinydashboard::sidebarMenu(
-            shinydashboard::menuItem("Home", tabName = "home", icon = icon("home")),
-            shinydashboard::menuItem("Data Upload", tabName = "data_upload", icon = icon("upload")),
-            shinydashboard::menuItem("Data Exploration", tabName = "data_exploration", icon = icon("search")),
-            shinydashboard::menuItem("Modeling", tabName = "modeling", icon = icon("cogs")),
-            shinydashboard::menuItemOutput("update_menu"),
-            shinydashboard::menuItem("Results", tabName = "results", icon = icon("chart-bar"))
+    shinydashboard::dashboardHeader(
+        title = textOutput("ui_app_title", inline = TRUE),
+        # -- Language selector (v0.5.0) ---------------------------------------
+        # Custom dropdown in the header right showing the active language.
+        # Initial state is English; user can switch any time without restart.
+        tags$li(
+            class = "dropdown",
+            style = "padding: 12px 15px;",
+            tags$div(
+                style = "color: white; font-size: 13px;",
+                tags$span(
+                    icon("language"),
+                    style = "margin-right: 6px;"
+                ),
+                selectInput(
+                    inputId  = "app_lang",
+                    label    = NULL,
+                    choices  = c("English" = "en", "Bahasa Indonesia" = "id"),
+                    selected = "en",
+                    width    = "180px"
+                )
+            )
         )
     ),
-    # Defines the main body of the dashboard.
+    shinydashboard::dashboardSidebar(
+        shinydashboard::sidebarMenu(
+            id = "sidebar_menu",
+            shinydashboard::menuItemOutput("menu_home_out"),
+            shinydashboard::menuItemOutput("menu_upload_out"),
+            shinydashboard::menuItemOutput("menu_explore_out"),
+            shinydashboard::menuItemOutput("menu_modeling_out"),
+            shinydashboard::menuItemOutput("menu_spatial_out"),
+            shinydashboard::menuItemOutput("update_menu"),
+            shinydashboard::menuItemOutput("menu_results_out")
+        )
+    ),
     shinydashboard::dashboardBody(
+        # -- Optional-dependency banner (rendered server-side) ----------------
+        # Shows a yellow warning at the top of every page when the user
+        # launched the app via run_sae_app() and one or more OPTIONAL
+        # Suggests packages are not installed.  Disappears entirely when
+        # everything is available.
+        uiOutput("dep_banner"),
+
         shinydashboard::tabItems(
-            ## ===== HOME TAB =====
-            # Content for the Home tab, providing an introduction to the app.
+            
+            # -- HOME TAB -----------------------------------------------------
             shinydashboard::tabItem(
                 tabName = "home",
-                fluidRow(
-                    shinydashboard::box(
-                        title = "Introduction", width = 12, solidHeader = TRUE, status = "primary",
-                        p(
-                            "The ", strong("run_sae_app()"), " function in the ", code("hbsaems"),
-                            " package provides an interactive ", strong("Shiny Dashboard"),
-                            " for ", em("Hierarchical Bayesian Small Area Estimation (HBSAE)"),
-                            " using ", code("brms"), " for Bayesian inference with Stan."
-                        ),
-                        p("This application offers a user-friendly interface to upload data, define models,
-              and obtain estimation results without requiring extensive R coding.")
-                    ),
-                    shinydashboard::box(
-                        title = "App Structure", width = 12, solidHeader = TRUE, status = "primary",
-                        tags$ul(
-                            tags$li(strong("Home:"), " Overview and purpose of the application."),
-                            tags$li(strong("Data Upload:"), " Upload and preview datasets (CSV/Excel), detect missing values."),
-                            tags$li(strong("Modeling:"), " Specify model structure, priors, MCMC settings, and fit the model."),
-                            tags$li(strong("Results:"), " Review model diagnostics, summaries, and prediction outputs.")
-                        )
-                    ),
-                    shinydashboard::box(
-                        title = "Example Workflow", width = 12, solidHeader = TRUE, status = "primary",
-                        tags$ol(
-                            tags$li("Upload a dataset with area-level direct estimates and auxiliary variables."),
-                            tags$li("Specify the modeling structure including response variable, auxiliary variables, random effects, and spatial effects."),
-                            tags$li("Choose distribution, family, link function, and define priors if needed."),
-                            tags$li("Conduct prior predictive checking to evaluate whether the chosen priors and model structure produce plausible simulated data."),
-                            tags$li("Set MCMC configurations and fit the model."),
-                            tags$li("Inspect convergence diagnostics and extract estimation results.")
-                        )
-                    )
-                )
+                # v0.5.0: content rendered server-side so it reacts to
+                # language changes.  See output$home_content in the server.
+                uiOutput("home_content")
             ),
-            ## ===== DATA UPLOAD TAB =====
-            # Content for the Data Upload tab.
+            
+            # -- DATA UPLOAD TAB -----------------------------------------------
             shinydashboard::tabItem(
                 tabName = "data_upload",
                 fluidRow(
-                    # UI element for file input.
                     shinydashboard::box(
                         title = "Upload CSV or Excel File", width = 12, solidHeader = TRUE, status = "primary",
                         tags$ul(
@@ -93,10 +102,10 @@ ui <- shinydashboard::dashboardPage(
                                 tags$li("The ", tags$strong("first row"), " must contain column names (headers)."),
                                 tags$li(
                                     "Include a ", tags$strong("column for direct estimates"),
-                                    " — typically survey-based or observed values for each area."
+                                    " -- typically survey-based or observed values for each area."
                                 ),
-                                tags$li("Include one or more ", tags$strong("auxiliary variables"), "
-                                            (predictors) that can help explain variation in the direct estimates."),
+                                tags$li("Include one or more ", tags$strong("auxiliary variables"),
+                                        " (predictors) that can help explain variation in the direct estimates."),
                                 tags$li(
                                     "Optionally, include a ", tags$strong("unique identifier column"),
                                     " for each area (e.g., area code or name)."
@@ -105,48 +114,67 @@ ui <- shinydashboard::dashboardPage(
                                 tags$ul(
                                     tags$li(".csv files should use a comma (`,`) as the field separator and a period (`.`) for decimal numbers."),
                                     tags$li(".xlsx/.xls files might use a comma (`,`) as the decimal separator, especially in European-style regional settings."),
-                                    tags$li("Make sure numeric columns are not interpreted as text due to wrong decimal separators.")
-                                ),
+                                    tags$li("Make sure numeric columns are not interpreted as text due to incorrect decimal separators.")
+                                )
                             ),
-                            tags$li("The application will automatically detect ", tags$strong("missing values"), ", and you can choose the method for handling them during the modeling stage."),
-                            tags$li("If spatial modeling is intended, you may also prepare a corresponding ", tags$strong("spatial weight matrix"), " (uploaded separately).")
+                            tags$li("The application will automatically detect ", tags$strong("missing values"),
+                                    ", and you can choose a handling strategy during the modeling stage."),
+                            tags$li("If spatial modeling is intended, you may also prepare a corresponding ",
+                                    tags$strong("spatial weight matrix"), " (uploaded separately).")
                         ),
-                        fileInput("data_file", "Upload file", accept = c(".csv", ".xlsx", ".xls", ".rda", ".RData"))
+                        fileInput("data_file", "Upload file", accept = c(".csv", ".xlsx", ".xls", ".rda", ".RData")),
+                        uiOutput("data_upload_error")
                     ),
-                    # UI element for displaying a preview of the uploaded data.
                     shinydashboard::box(
                         title = "Data Preview", width = 12, solidHeader = TRUE, status = "primary",
                         DT::DTOutput("data_preview")
                     )
                 )
             ),
-            ## ===== DATA EXPLORATION TAB =====
-            # Content for the Data Exploration tab.
+            
+            # -- DATA EXPLORATION TAB ------------------------------------------
             shinydashboard::tabItem(
                 tabName = "data_exploration",
                 fluidRow(
-                    # Overview of the data exploration tools available.
                     shinydashboard::box(
                         title = "Data Exploration", width = 12, solidHeader = TRUE, status = "primary",
-                        tags$p("This section allows you to explore your dataset to better understand the variables and their relationships before modeling. The following tools are available:"),
+                        tags$p("This section allows you to explore your dataset to better understand
+                               the variables and their relationships before modeling."),
                         tags$ul(
-                            tags$li(strong("Summary Statistics:"), " Displays basic descriptive statistics like mean, median, min, max, and quartiles for the selected numeric variable."),
-                            tags$li(strong("Histogram:"), " Shows the distribution of the selected variable including density curve to visualize the shape and spread."),
-                            tags$li(strong("Boxplot:"), " Provides a graphical summary of variable distribution highlighting median, quartiles, and potential outliers."),
+                            tags$li(strong("Summary Statistics:"),
+                                    " Displays basic descriptive statistics (mean, median, min, max, quartiles)
+                                     for the selected numeric variable."),
+                            tags$li(strong("Histogram:"),
+                                    " Shows the frequency distribution and a density curve to visualize the
+                                     shape and spread of a variable."),
+                            tags$li(strong("Boxplot:"),
+                                    " Provides a graphical summary highlighting the median, quartiles, and
+                                     potential outliers."),
                             tags$li(
-                                strong("Scatter Plot & Correlation:"), " Visualizes the relationship between two variables with optional transformations on axes. Additionally, calculates several correlation metrics:",
+                                strong("Scatter Plot & Correlation:"),
+                                " Visualizes the relationship between two variables with optional axis
+                                  transformations. Four correlation metrics are computed:",
                                 tags$ul(
-                                    tags$li(strong("Pearson's Correlation:"), " Measures linear association between variables. Values close to ±1 indicate strong linear relationship, while 0 indicates no linear correlation. P-value tests the null hypothesis of no linear relationship."),
-                                    tags$li(strong("Spearman's Rho:"), " Non-parametric measure based on ranks. Captures monotonic (increasing or decreasing) relationships. P-value tests the null hypothesis of no monotonic relationship."),
-                                    tags$li(strong("Chatterjee's Xi:"), " Measures the predictability of one variable from another. Values close to 1 suggest strong predictive association. P-value (available via the XICOR package) tests the null hypothesis of independence."),
-                                    tags$li(strong("Distance Correlation:"), " Captures both linear and nonlinear relationships. A value of 0 implies independence. P-value (from permutation test) tests the null hypothesis of independence."),
-                                    tags$li(strong("Maximal Information Coefficient (MIC):"), " Detects a wide variety of associations, both linear and nonlinear. Ranges from 0 (independent) to 1 (perfect functional relationship). No direct p-value is available")
+                                    tags$li(strong("Pearson's r:"),
+                                            " Measures linear association. Values close to \u00b11 indicate a strong
+                                              linear relationship. The p-value tests H\u2080: no linear relationship."),
+                                    tags$li(strong("Spearman's rho:"),
+                                            " Non-parametric rank-based measure capturing monotonic relationships.
+                                              The p-value tests H\u2080: no monotonic relationship."),
+                                    tags$li(strong("Distance Correlation:"),
+                                            " Captures both linear and nonlinear associations. A value of 0
+                                              implies statistical independence. The p-value comes from a
+                                              permutation test."),
+                                    tags$li(strong("Maximal Information Coefficient (MIC):"),
+                                            " Detects a wide variety of associations, linear and nonlinear.
+                                              Ranges from 0 (independent) to 1 (perfect functional relationship).
+                                              No direct p-value is available.")
                                 )
                             )
                         ),
-                        tags$p(em("Note: A low p-value (typically < 0.05) indicates strong evidence against the null hypothesis, suggesting a statistically significant relationship between the variables."))
+                        tags$p(em("Note: A low p-value (typically < 0.05) indicates strong evidence against
+                                   the null hypothesis of no association."))
                     ),
-                    # UI for displaying summary statistics.
                     shinydashboard::box(
                         title = "Summary Statistics", width = 12, solidHeader = TRUE, status = "primary",
                         selectInput("explore_var_summary", "Select Variable for Summary:", choices = NULL),
@@ -154,13 +182,11 @@ ui <- shinydashboard::dashboardPage(
                     )
                 ),
                 fluidRow(
-                    # UI for Histogram plot.
                     shinydashboard::box(
                         title = "Histogram", width = 6, solidHeader = TRUE, status = "primary",
                         selectInput("explore_var_hist", "Select Variable for Histogram:", choices = NULL),
                         plotOutput("histogram_plot")
                     ),
-                    # UI for Boxplot.
                     shinydashboard::box(
                         title = "Boxplot", width = 6, solidHeader = TRUE, status = "primary",
                         selectInput("explore_var_boxplot", "Select Variable for Boxplot:", choices = NULL),
@@ -168,114 +194,260 @@ ui <- shinydashboard::dashboardPage(
                     )
                 ),
                 fluidRow(
-                    # UI for Scatter plot and correlation analysis.
                     shinydashboard::box(
                         title = "Scatter Plot & Correlation", width = 12, solidHeader = TRUE, status = "primary",
                         fluidRow(
                             column(
                                 width = 6,
                                 selectInput("explore_var_scatter_x", "X-axis Variable:", choices = NULL),
-                                selectInput("explore_transform_x", "X-axis Transformation:", choices = c("None" = "none", "Log" = "log", "Z-score" = "zscore"), selected = "none"),
-                                selectInput("explore_var_scatter_color", "Color by (Categorical, optional):", choices = c("None" = ""), selected = "")
+                                selectInput("explore_transform_x", "X-axis Transformation:",
+                                            choices = c("None" = "none", "Log" = "log", "Z-score" = "zscore"),
+                                            selected = "none"),
+                                selectInput("explore_var_scatter_color", "Color by (Categorical, optional):",
+                                            choices = c("None" = ""), selected = "")
                             ),
                             column(
                                 width = 6,
                                 selectInput("explore_var_scatter_y", "Y-axis Variable:", choices = NULL),
-                                selectInput("explore_transform_y", "Y-axis Transformation:", choices = c("None" = "none", "Log" = "log", "Logit" = "logit", "Z-score" = "zscore"), selected = "none")
+                                selectInput("explore_transform_y", "Y-axis Transformation:",
+                                            choices = c("None" = "none", "Log" = "log",
+                                                        "Logit" = "logit", "Z-score" = "zscore"),
+                                            selected = "none")
                             )
                         ),
                         uiOutput("correlation_results"),
                         plotOutput("scatter_plot_exploration")
                     )
+                ),
+                # -- Data Check (calls hbsaems::check_data) --------------------
+                fluidRow(
+                    shinydashboard::box(
+                        title  = "Data Quality Check",
+                        width  = 12, solidHeader = TRUE, status = "warning",
+                        tags$p("Inspect the data for missing values and dimensional ",
+                               "consistency before fitting the model. The check ",
+                               "recommends an appropriate ",
+                               tags$code("handle_missing"), " strategy."),
+                        fluidRow(
+                            column(4, selectInput("dc_response", "Response Variable",
+                                                   choices = NULL)),
+                            column(4, selectizeInput("dc_predictors", "Predictor Variable(s)",
+                                                       choices = NULL, multiple = TRUE)),
+                            column(4, selectInput("dc_sre", "Spatial Grouping (optional)",
+                                                   choices = NULL))
+                        ),
+                        actionButton("run_data_check", "Run Data Check",
+                                     icon = icon("check-circle"),
+                                     class = "btn-primary"),
+                        br(), br(),
+                        verbatimTextOutput("data_check_output"),
+                        uiOutput("data_check_recommendation")
+                    )
                 )
             ),
-            ## ===== MODELING TAB =====
-            # Content for the Modeling tab, which contains sub-tabs for configuration, prior checking, and MCMC settings.
+            
+            # -- MODELING TAB --------------------------------------------------
             shinydashboard::tabItem(
                 tabName = "modeling",
                 tabsetPanel(
-                    # Sub-tab for Model Configuration.
+                    # Sub-tab: Model Configuration
                     tabPanel(
                         title = "Model Configuration",
                         fluidRow(
                             shinydashboard::box(
                                 title = "Overview", width = 12, solidHeader = TRUE, status = "primary",
-                                tags$p("This section allows you to specify the variables and model settings used for hierarchical Bayesian modeling."),
+                                tags$p("Specify the variables and settings for hierarchical Bayesian modeling."),
                                 tags$ul(
-                                    tags$li(
-                                        strong("Response Variable:"),
-                                        " The outcome variable being modeled. This variable is predicted using auxiliary variables and may follow a specific distribution (e.g., Lognormal, Beta)."
-                                    ),
-                                    tags$li(
-                                        strong("Auxiliary Variables:"),
-                                        " A set of explanatory (independent) variables forming the fixed effects in the model. These are used to explain variability in the response."
-                                    ),
-                                    tags$li(
-                                        strong("Group Variables:"),
-                                        " The name of the grouping variable (e.g., area, cluster, region) used to define the hierarchical structure for random effects. This variable should correspond to a column in the input ⁠ data ⁠ and is typically used to model area-level variation through random intercepts. If omitted, each row is treated as its own group."
-                                    ),
-                                    tags$li(
-                                        strong("Spatial Type:"),
-                                        " Indicates whether spatial random effects are modeled. Options include SAR (Spatial Autoregressive) and CAR (Conditional Autoregressive)."
-                                    ),
-                                    tags$li(
-                                        strong("SAR Type / CAR Type:"),
-                                        " Specifies the subtype of the selected spatial model. For SAR: 'lag' or 'error'. For CAR: 'icar', 'escar', 'esicar', or 'bym2'."
-                                    ),
-                                    tags$li(
-                                        strong("Spatial Random Effects & Weights:"),
-                                        " If spatial effects are included, upload a square spatial weights matrix (CSV) whose row and column names match the spatial grouping variable."
-                                    ),
-                                    tags$li(
-                                        strong("Distribution Type:"),
-                                        " Defines the assumed distribution of the response variable. Options may include Lognormal, Beta, Logitnormal, or custom families for flexible modeling."
-                                    ),
-                                    tags$li(
-                                        strong("HB Family and Link:"),
-                                        " Selects the Bayesian hierarchical family (e.g., lognormal, beta) and associated link function (e.g., log, logit)."
-                                    ),
-                                    tags$li(
-                                        strong("Missing Data Handling:"),
-                                        " Choose a strategy for handling missing values in the response or auxiliary variables: deletion (complete case), multiple imputation, or model-based imputation."
-                                    )
+                                    tags$li(strong("Response Variable:"),
+                                            " The outcome variable being modeled. Predicted using auxiliary
+                                              variables and may follow a specific distribution (e.g., Lognormal, Beta)."),
+                                    tags$li(strong("Auxiliary Variables:"),
+                                            " Predictor variables that help explain variation in the response."),
+                                    tags$li(strong("Nonlinear Variables:"),
+                                            " Subset of auxiliary variables to be modelled with a smooth term
+                                              (spline or Gaussian process) instead of a linear term."),
+                                    tags$li(strong("Group Variables:"),
+                                            " Variables that define the hierarchical (random-effect) grouping
+                                              structure (e.g., area, region)."),
+                                    tags$li(strong("Distribution Type:"),
+                                            " The sampling distribution for the response variable
+                                              (e.g., Lognormal-Lognormal, Beta-Logitnormal, Custom)."),
+                                    tags$li(strong("Prior Settings:"),
+                                            " Optionally apply a global-local shrinkage prior (Horseshoe or R2D2)
+                                              to regression coefficients."),
+                                    tags$li(strong("Spatial Modeling:"),
+                                            " Optionally add spatial random effects (CAR or SAR)."),
+                                    tags$li(strong("Missing Data Handling:"),
+                                            " Choose a strategy for missing values in the response or
+                                              auxiliary variables: deletion, multiple imputation (predictors only),
+                                              or model-based imputation.")
                                 )
                             ),
-                            # UI for selecting variables for the model.
                             shinydashboard::box(
                                 title = "Variable Selection", width = 12, solidHeader = TRUE, status = "primary",
                                 column(6, selectInput("response_var", "Response Variable", choices = NULL)),
-                                # column(6, selectizeInput("linear_aux_vars", "Linear Auxiliary Variables", choices = NULL, multiple = TRUE)),
-                                column(6, selectizeInput("linear_aux_vars", "Auxiliary Variables", choices = NULL, multiple = TRUE)),
-                                # conditionalPanel(
-                                #   condition = "input.dist_type == 'Custom'",
-                                #   column(6, selectizeInput("nonlinear_aux_vars", "Nonlinear Auxiliary Variables", choices = NULL, multiple = TRUE))
-                                # ),
-                                column(6, selectizeInput("re_groups", "Group Variables", choices = NULL, multiple = TRUE)),
-                                column(6, selectInput("sre_type", "Spatial Type", choices = c("None" = "none", "SAR" = "sar", "CAR" = "car"))),
+                                column(6, selectizeInput("linear_aux_vars", "Auxiliary Variables",
+                                                         choices = NULL, multiple = TRUE)),
+                                # Nonlinear variable selector
+                                # Choices are populated dynamically from linear_aux_vars (see server observer)
+                                column(6,
+                                    selectizeInput(
+                                        inputId  = "nonlinear_vars",
+                                        label    = "Nonlinear Variables (optional)",
+                                        choices  = NULL,
+                                        multiple = TRUE,
+                                        options  = list(
+                                            placeholder = "Select variables for smooth (nonlinear) modelling...",
+                                            plugins     = list("remove_button")
+                                        )
+                                    ),
+                                    helpText(
+                                        "Selected variables will be entered as",
+                                        tags$code("s(var)"), "(spline) or",
+                                        tags$code("gp(var)"), "(Gaussian process).",
+                                        "All other auxiliary variables remain linear."
+                                    )
+                                ),
+                                # Smooth-type and knot controls -- visible only when at least one NL var is selected
+                                column(6,
+                                    conditionalPanel(
+                                        condition = "input.nonlinear_vars.length > 0",
+                                        selectInput(
+                                            inputId  = "nonlinear_type",
+                                            label    = "Smooth Term Type",
+                                            choices  = c(
+                                                "Thin-plate regression spline  [s()]" = "spline",
+                                                "Gaussian process              [gp()]" = "gp"
+                                            ),
+                                            selected = "spline"
+                                        ),
+                                        conditionalPanel(
+                                            condition = "input.nonlinear_type == 'spline'",
+                                            numericInput(
+                                                inputId = "spline_k",
+                                                label   = "Basis dimension k  (-1 = automatic)",
+                                                value   = -1,
+                                                min     = -1,
+                                                step    = 1
+                                            ),
+                                            helpText(
+                                                "k = -1 lets mgcv choose the number of basis functions automatically.",
+                                                "Increase k to allow more flexible curves (requires more data)."
+                                            )
+                                        )
+                                    )
+                                ),
+                                # Overlap warning -- shown when a variable is listed in both selectors
+                                column(12, uiOutput("nonlinear_overlap_note")),
+                                column(6, selectizeInput("re_groups", "Group Variables",
+                                                         choices = NULL, multiple = TRUE)),
+                                column(6, selectInput("sre_type", "Spatial Type",
+                                                      choices = c("None" = "none", "SAR" = "sar", "CAR" = "car"))),
                                 column(6, conditionalPanel(
                                     condition = "input.sre_type == 'sar'",
-                                    selectInput("sar_type", "SAR Type", choices = c("Lag" = "lag", "Error" = "error"), selected = "lag")
+                                    selectInput("sar_type", "SAR Type",
+                                                choices = c("Lag" = "lag", "Error" = "error"), selected = "lag")
                                 )),
                                 column(6, conditionalPanel(
                                     condition = "input.sre_type == 'car'",
-                                    selectInput("car_type", "CAR Type", choices = c("eSCAR" = "escar", "eSICAR" = "esicar", "ICAR" = "icar", "BYM2" = "bym2"), selected = "escar")
+                                    selectInput("car_type", "CAR Type",
+                                                choices = c("eSCAR" = "escar", "eSICAR" = "esicar",
+                                                            "ICAR" = "icar", "BYM2" = "bym2"), selected = "escar")
                                 )),
                                 column(6, conditionalPanel(
                                     condition = "input.sre_type == 'sar' || input.sre_type == 'car'",
                                     selectInput("sre", "Spatial Random Effects", choices = NULL),
-                                    fileInput("spatial_weights", "Upload Spatial Weights",
-                                              accept = c(".csv", ".xls", ".xlsx", ".rda", ".RData"))
-                                    
+                                    radioButtons(
+                                        "spatial_source",
+                                        "Spatial Weight Source:",
+                                        choices = c(
+                                            "Upload pre-built matrix (.csv/.xlsx/.rda)" = "matrix",
+                                            "Build from shapefile (.shp via sf)"        = "shp"
+                                        ),
+                                        selected = "matrix"
+                                    ),
+                                    conditionalPanel(
+                                        condition = "input.spatial_source == 'matrix'",
+                                        fileInput("spatial_weights",
+                                                   "Upload Spatial Weights Matrix",
+                                                   accept = c(".csv", ".xls", ".xlsx",
+                                                              ".rda", ".RData"))
+                                    ),
+                                    conditionalPanel(
+                                        condition = "input.spatial_source == 'shp'",
+                                        fileInput("shp_file",
+                                                   "Upload Shapefile (.shp + .shx + .dbf)",
+                                                   accept = c(".shp", ".shx", ".dbf",
+                                                              ".prj", ".cpg"),
+                                                   multiple = TRUE),
+                                        # Theoretical guidance hint
+                                        tags$div(class = "alert alert-info",
+                                            style = "padding: 8px; font-size: 90%;",
+                                            tags$strong("Recommended for:"),
+                                            tags$ul(style = "margin-bottom: 0;",
+                                                tags$li(tags$strong("CAR"),
+                                                    " (Besag 1974): type = queen or rook, style = B (binary)"),
+                                                tags$li(tags$strong("SAR"),
+                                                    " (Anselin 1988): type = knn or distance, style = W (row-standardised)")
+                                            )
+                                        ),
+                                        selectInput("shp_type",
+                                                     "Neighbour Type",
+                                                     choices = c(
+                                                         "Queen contiguity (CAR)" = "queen",
+                                                         "Rook contiguity (CAR)"  = "rook",
+                                                         "K-nearest (SAR)"        = "knn",
+                                                         "Distance band (SAR)"    = "distance"
+                                                     ),
+                                                     selected = "queen"),
+                                        selectInput("shp_style",
+                                                     "Matrix Style",
+                                                     choices = c(
+                                                         "Binary 0/1 (CAR)"             = "B",
+                                                         "Row-standardised (SAR)"        = "W"
+                                                     ),
+                                                     selected = "B"),
+                                        conditionalPanel(
+                                            condition = "input.shp_type == 'knn'",
+                                            numericInput("shp_k", "k (neighbours)",
+                                                          value = 4, min = 1, step = 1)
+                                        ),
+                                        conditionalPanel(
+                                            condition = "input.shp_type == 'distance'",
+                                            numericInput("shp_threshold", "Distance threshold",
+                                                          value = NA, min = 0)
+                                        ),
+                                        textInput("shp_id_col",
+                                                   "ID column (optional)",
+                                                   value = ""),
+                                        actionButton("build_spatial_btn",
+                                                      textOutput("lbl_build_weight",
+                                                                  inline = TRUE),
+                                                      icon = icon("hammer"),
+                                                      class = "btn-primary")
+                                    )
                                 )),
                                 column(6, conditionalPanel(
                                     condition = "input.sre_type != 'none'",
-                                    uiOutput("spatial_weights_error")
+                                    uiOutput("spatial_weights_error"),
+                                    # v0.4.0: theoretical diagnostic on demand
+                                    conditionalPanel(
+                                        condition = "input.sre_type == 'car' || input.sre_type == 'sar'",
+                                        actionButton("show_spatial_diag",
+                                                      textOutput("lbl_inspect_weight",
+                                                                  inline = TRUE),
+                                                      icon = icon("magnifying-glass-chart"),
+                                                      class = "btn-default btn-sm"),
+                                        verbatimTextOutput("spatial_diag_output")
+                                    )
                                 ))
                             ),
-                            # UI for distribution settings.
                             shinydashboard::box(
                                 title = "Distribution Settings", width = 12, solidHeader = TRUE, status = "primary",
-                                column(6, selectInput("dist_type", "Distribution Type", choices = c("Custom", "Beta-Logitnormal", "Binomial-Logitnormal",  "Lognormal-Lognormal"), selected = "Custom")),
+                                column(6, selectInput("dist_type", "Distribution Type",
+                                                      choices = c("Custom", "Beta-Logitnormal",
+                                                                  "Binomial-Logitnormal", "Lognormal-Lognormal"),
+                                                      selected = "Custom")),
                                 column(6, conditionalPanel(
                                     condition = "input.dist_type == 'Binomial-Logitnormal'",
                                     selectInput("trials_logit", "Trials Variable", choices = NULL)
@@ -287,7 +459,6 @@ ui <- shinydashboard::dashboardPage(
                                 )),
                                 conditionalPanel(
                                     condition = "input.dist_type == 'Custom'",
-                                    # column(6, selectInput("model_type", "Model Type for Nonlinear Terms", choices = c("Spline", "Gaussian Process"))),
                                     column(6, selectInput("hb_family", "HB Family", choices = c(
                                         "gaussian", "binomial", "poisson", "gamma", "beta", "lognormal",
                                         "skew_normal", "shifted_lognormal", "negbinomial", "beta_binomial",
@@ -301,10 +472,102 @@ ui <- shinydashboard::dashboardPage(
                                         condition = "input.hb_family == 'binomial'",
                                         selectInput("trials_var", "Trials Variable", choices = NULL)
                                     )),
-                                    column(6, selectInput("hb_link", "HB Link", choices = c("identity", "log", "logit", "probit", "cloglog")))
+                                    column(6, selectInput("hb_link", "HB Link",
+                                                          choices = c("identity", "log", "logit", "probit", "cloglog")))
                                 )
                             ),
-                            # UI for handling missing data, appears conditionally.
+                            # Prior Settings box -- collapsed by default (advanced option)
+                            shinydashboard::box(
+                                title       = "Prior Settings for Regression Coefficients",
+                                width       = 12,
+                                solidHeader = TRUE,
+                                status      = "info",
+                                collapsible = TRUE,
+                                collapsed   = TRUE,
+                                fluidRow(
+                                    column(4,
+                                        selectInput(
+                                            inputId  = "prior_type",
+                                            label    = "Shrinkage Prior",
+                                            choices  = c(
+                                                "Default (brms defaults)" = "default",
+                                                "Horseshoe"               = "horseshoe",
+                                                "R2D2"                    = "r2d2"
+                                            ),
+                                            selected = "default"
+                                        ),
+                                        helpText(
+                                            tags$strong("Horseshoe:"), "promotes sparsity; allows a few large signals.",
+                                            tags$br(),
+                                            tags$strong("R2D2:"), "places a prior on total model R\u00b2."
+                                        )
+                                    ),
+                                    # Horseshoe parameter controls
+                                    column(8,
+                                        conditionalPanel(
+                                            condition = "input.prior_type == 'horseshoe'",
+                                            fluidRow(
+                                                column(4,
+                                                    numericInput("hs_df", "Local half-t df",
+                                                                 value = 1, min = 0.5, step = 0.5),
+                                                    helpText("df = 1 gives a half-Cauchy prior (recommended).")
+                                                ),
+                                                column(4,
+                                                    numericInput("hs_df_global", "Global half-t df",
+                                                                 value = 1, min = 0.5, step = 0.5)
+                                                ),
+                                                column(4,
+                                                    numericInput("hs_df_slab", "Slab df",
+                                                                 value = 4, min = 1, step = 1)
+                                                ),
+                                                column(4,
+                                                    numericInput("hs_scale_slab", "Slab scale",
+                                                                 value = 2, min = 0.1, step = 0.5)
+                                                ),
+                                                column(4,
+                                                    numericInput("hs_par_ratio",
+                                                                 label = "par_ratio (optional)",
+                                                                 value = NA, min = 0, step = 0.05),
+                                                    helpText("Expected proportion of non-zero coefficients.",
+                                                             "Leave blank for automatic.")
+                                                ),
+                                                column(4,
+                                                    numericInput("hs_scale_global",
+                                                                 label = "Global scale (optional)",
+                                                                 value = NA, min = 0, step = 0.1),
+                                                    helpText("Leave blank to let brms compute automatically.")
+                                                )
+                                            )
+                                        ),
+                                        # R2D2 parameter controls
+                                        conditionalPanel(
+                                            condition = "input.prior_type == 'r2d2'",
+                                            fluidRow(
+                                                column(4,
+                                                    sliderInput("r2d2_mean_R2",
+                                                                label = "Prior mean R\u00b2",
+                                                                min = 0.05, max = 0.95, value = 0.5, step = 0.05),
+                                                    helpText("Expected proportion of variance explained by the predictors.")
+                                                ),
+                                                column(4,
+                                                    numericInput("r2d2_prec_R2",
+                                                                 label = "Precision of R\u00b2",
+                                                                 value = 2, min = 0.5, step = 0.5),
+                                                    helpText("Higher values concentrate mass around the prior mean.")
+                                                ),
+                                                column(4,
+                                                    numericInput("r2d2_cons_D2",
+                                                                 label = "Dirichlet concentration D2 (optional)",
+                                                                 value = NA, min = 0.01, step = 0.1),
+                                                    helpText("NULL corresponds to 0.5 (uniform simplex).",
+                                                             "Leave blank for automatic.")
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+                            # Missing data handling panel
                             conditionalPanel(
                                 condition = "output.missing_detected == true",
                                 shinydashboard::box(
@@ -312,7 +575,11 @@ ui <- shinydashboard::dashboardPage(
                                     column(6, uiOutput("missing_vars_list")),
                                     conditionalPanel(
                                         condition = "output.missing_aux_response_detected == true",
-                                        column(6, selectInput("missing_data_method", "Handle Missing Data", choices = c("None" = "none", "Deleted" = "deleted", "Model" = "model", "Multiple" = "multiple")))
+                                        column(6, selectInput("missing_data_method", "Handle Missing Data",
+                                                              choices = c("None"     = "none",
+                                                                          "Deleted"  = "deleted",
+                                                                          "Model"    = "model",
+                                                                          "Multiple" = "multiple")))
                                     ),
                                     column(12, uiOutput("missing_data_note")),
                                     column(6, conditionalPanel(
@@ -329,184 +596,120 @@ ui <- shinydashboard::dashboardPage(
                             )
                         )
                     ),
-                    ### ===== PRIOR CHECKING SUB-TAB =====
+                    
+                    # Sub-tab: Prior Checking
                     tabPanel(
                         title = "Prior Checking",
                         fluidRow(
-                            # Overview of prior specification and checking.
                             shinydashboard::box(
                                 title = "Overview", width = 12, solidHeader = TRUE, status = "primary",
                                 tags$ul(
                                     tags$li(
                                         p(
-                                            "To specify a prior, use valid syntax supported by the ", strong("brms"), " package. Examples include:",
-                                            br(), code('prior(normal(0, 5), class = "b")'), " for fixed effects, or ",
-                                            code('prior(cauchy(0, 2), class = "sd")'), " for standard deviations of group-level effects."
+                                            "To specify a prior, use valid syntax supported by the ", strong("brms"), " package. Examples:",
+                                            br(), code('prior(normal(0, 5), class = "b")'), " for fixed effects,",
+                                            br(), code('prior(cauchy(0, 2), class = "sd")'), " for group-level standard deviations."
                                         )
                                     ),
-                                    tags$li(p("Click ", strong("'Add Prior'"), " to include the specified prior into the model, and use ", strong("'Clear Priors'"), " to remove all existing priors.")),
-                                    tags$li(p("After defining priors, click ", strong("'Prior Predictive Checking'"), " to simulate data from the prior predictive distribution. This helps assess whether your priors lead to reasonable outcomes, before fitting the model.")),
-                                    tags$li(p(strong("Prior Summary Output"), " (", code("prior_summary"), ") displays a list of all currently specified priors, grouped by parameter class.")),
-                                    tags$li(p(strong("Parameter Draws Output"), " (", code("prior_parameter_draw"), ") shows random draws from the prior distributions, helping to understand the scale and variability implied by your prior choices.")),
-                                    tags$li(
-                                        p(
-                                            strong("Prior Predictive Plot"), " (", code("prior_predictive_plot"), ") visualizes the distribution of simulated outcomes generated from your priors. ",
-                                            "You can use this to check whether the prior alone can generate data that fall within a plausible range of the response variable."
-                                        )
-                                    )
+                                    tags$li(p("Click ", strong("'Add Prior'"), " to include the prior; use ", strong("'Clear Priors'"), " to remove all."))
                                 )
                             ),
-                            # UI for defining and checking priors.
                             shinydashboard::box(
-                                title = "Define Priors", width = 12, solidHeader = TRUE, status = "primary",
-                                textInput("prior_input", "Enter Prior:", placeholder = 'e.g., prior(normal(0,5), class = "b")'),
-                                actionButton("add_prior", "Add Prior", icon = icon("plus"), class = "btn-success"),
-                                actionButton("clear_prior", "Clear Priors", icon = icon("trash"), class = "btn-danger"),
-                                br(), br(),
-                                verbatimTextOutput("prior_list"),
-                                actionButton("prior_check", "Prior Predictive Checking", icon = icon("play"), class = "btn-info")
+                                title = "Prior Specification", width = 12, solidHeader = TRUE, status = "primary",
+                                textInput("prior_input", "Enter Prior:", placeholder = 'prior(normal(0, 1), class = "b")'),
+                                fluidRow(
+                                    column(6, actionButton("add_prior",   "Add Prior",    icon = icon("plus"),  class = "btn-success")),
+                                    column(6, actionButton("clear_priors","Clear Priors", icon = icon("trash"), class = "btn-danger"))
+                                ),
+                                br(),
+                                verbatimTextOutput("prior_list_display")
                             ),
-                            # UI for displaying results of prior predictive checking.
                             shinydashboard::box(
-                                title = "Prior Predictive Checking Results", width = 12, solidHeader = TRUE, status = "primary",
-                                verbatimTextOutput("prior_summary"),
-                                verbatimTextOutput("prior_parameter_draw"),
+                                title = "Prior Predictive Check", width = 12, solidHeader = TRUE, status = "primary",
+                                actionButton("run_prior_check", "Run Prior Predictive Check",
+                                             icon = icon("play"), class = "btn-primary"),
+                                br(), br(),
                                 plotOutput("prior_predictive_plot")
                             )
                         )
                     ),
-                    ### ===== MCMC SETTING SUB-TAB ====
+                    
+                    # Sub-tab: MCMC Settings
                     tabPanel(
-                        title = "MCMC Setting",
+                        title = "MCMC Settings",
                         fluidRow(
-                            # Overview of MCMC settings.
                             shinydashboard::box(
-                                title = "Overview", width = 12, solidHeader = TRUE, status = "primary",
-                                tagList(
-                                    p(
-                                        "This section allows you to configure the Markov Chain Monte Carlo (MCMC) settings used by the ",
-                                        code("brms"), " package to fit the hierarchical Bayesian model. These settings impact model accuracy, convergence, and computational performance."
-                                    ),
-                                    tags$ul(
-                                        tags$li(p(
-                                            strong("Seed:"),
-                                            " Sets the random seed for reproducibility. Use NA for random behavior."
-                                        )),
-                                        tags$li(p(
-                                            strong("Chains:"),
-                                            " Number of MCMC chains to run in parallel."
-                                        )),
-                                        tags$li(p(
-                                            strong("Cores:"),
-                                            " Number of CPU cores to use. Ideally equal to the number of chains for efficient parallel computation."
-                                        )),
-                                        tags$li(p(
-                                            strong("Thinning Rate:"),
-                                            " Frequency of sample retention. A value of 1 means no thinning; increase only if memory constraints arise."
-                                        )),
-                                        tags$li(p(
-                                            strong("Iterations:"),
-                                            " Total number of iterations per chain, including warmup. Determines the total number of samples drawn."
-                                        )),
-                                        tags$li(p(
-                                            strong("Warmup:"),
-                                            " Number of initial iterations for sampler adaptation. These are discarded from posterior inference."
-                                        )),
-                                        tags$li(p(
-                                            strong("Adapt Delta:"),
-                                            " Target acceptance probability for the NUTS sampler. Higher values (e.g., 0.99) reduce divergent transitions but may slow sampling."
-                                        )),
-                                        tags$li(p(
-                                            "After configuring these settings, click ", strong("'Fit Model'"),
-                                            " to begin the estimation. Any issues encountered during fitting will be displayed below the interface."
-                                        ))
-                                    )
-                                )
-                            ),
-                            # UI for MCMC settings inputs.
-                            shinydashboard::box(
-                                title = "MCMC Settings", width = 12, solidHeader = TRUE, status = "primary",
-                                column(6, numericInput("num_seed", "Seed:", value = NA, step = 1L)),
-                                column(6, numericInput("num_chains", "Chains", value = 1, min = 1)),
-                                column(6, numericInput("num_cores", "Cores", value = 1, min = 1)),
-                                column(6, numericInput("num_thin", "Thinning rate", value = 1, min = 1)),
-                                column(6, numericInput("num_iter", "Iterations", value = 4000, min = 1)),
-                                column(6, numericInput("num_warmup", "Warmup", value = 2000, min = 1)),
-                                column(6, sliderInput("adapt_delta", "Adapt Delta", min = 0.8, max = 0.99, value = 0.95))
-                            ),
-                            # UI for the "Fit Model" button.
-                            fluidRow(
-                                column(
-                                    12,
-                                    div(
-                                        style = "margin-left: 20px;",
-                                        actionButton("fit_model", "Fit Model", icon = icon("play"), class = "btn-info")
-                                    )
-                                )
-                            ),
-                            uiOutput("model_fitting_error")
+                                title = "Sampling Configuration", width = 12, solidHeader = TRUE, status = "primary",
+                                column(4, numericInput("num_seed",   "Seed",        value = 123,  min = 1)),
+                                column(4, numericInput("num_chains", "Chains",      value = 4,    min = 1)),
+                                column(4, numericInput("num_cores",  "Cores",       value = 1,    min = 1)),
+                                column(4, numericInput("num_thin",   "Thinning Rate", value = 1,  min = 1)),
+                                column(4, numericInput("num_iter",   "Iterations",  value = 4000, min = 1)),
+                                column(4, numericInput("num_warmup", "Warm-up",     value = 2000, min = 1)),
+                                column(4, sliderInput("adapt_delta", "Adapt Delta",
+                                                      min = 0.8, max = 0.99, value = 0.95, step = 0.01)),
+                                br(),
+                                actionButton("fit_model", "Fit Model", icon = icon("play"), class = "btn-primary")
+                            )
                         )
                     )
                 )
             ),
-            
-            ## ===== RESULTS TAB =====
-            # Content for the Results tab, containing multiple sub-tabs for different result types.
+
+            # -- SPATIAL SETUP TAB (v0.5.0) -----------------------------------
+            # Dedicated tab for configuring and exploring the spatial
+            # neighbourhood structure used by CAR/SAR random effects.
+            # Provides a Source / Map / Matrix / Diagnostic / Reference
+            # workflow.  The reactive `spatial_weights()` is the single
+            # source of truth -- the Modeling tab reads from it.
+            shinydashboard::tabItem(
+                tabName = "spatial_setup",
+                uiOutput("spatial_setup_body")
+            ),
+
+            # -- RESULTS TAB ---------------------------------------------------
             shinydashboard::tabItem(
                 tabName = "results",
                 tabsetPanel(
-                    id = "results_tabs",
-                    ### ===== MODEL SUMMARY SUB-TAB =====
                     tabPanel(
                         "Model Summary",
-                        fluidRow(
-                            verbatimTextOutput("model_summary"),
-                            verbatimTextOutput("model_prior")
+                        shinydashboard::box(
+                            title = "Model Summary", width = 12, solidHeader = TRUE, status = "primary",
+                            verbatimTextOutput("model_summary")
                         )
                     ),
-                    ### ===== CONVERGENCE DIAGNOSTICS SUB-TAB =====
                     tabPanel(
                         "Convergence Diagnostics",
                         tabsetPanel(
                             tabPanel(
-                                "Diagnostics Tests",
+                                "Numerical Diagnostics",
                                 fluidRow(
                                     column(3, wellPanel(
-                                        shinyWidgets::pickerInput("diag_tests", "Select Diagnostic Test Types:",
-                                            choices = c(
-                                                "R-hat" = "rhat",
-                                                "Geweke" = "geweke",
-                                                "Raftery-Lewis" = "raftery",
-                                                "Heidelberger-Welch" = "heidel"
-                                            ),
-                                            multiple = FALSE, selected = "rhat"
-                                        )
+                                        shinyWidgets::pickerInput("diag_tests", "Select Diagnostic Tests:",
+                                                                  choices = c("R-hat" = "rhat", "Geweke" = "geweke",
+                                                                              "Raftery-Lewis" = "raftery",
+                                                                              "Heidelberger-Welch" = "heidel"),
+                                                                  multiple = TRUE, selected = "rhat")
                                     )),
-                                    column(
-                                        9,
-                                        uiOutput("diag_definition"),
-                                        verbatimTextOutput("diag_numerical")
-                                    )
+                                    column(9, verbatimTextOutput("convergence_output"))
                                 )
                             ),
                             tabPanel(
-                                "Diagnostics Plots",
+                                "Diagnostic Plots",
                                 fluidRow(
                                     column(3, wellPanel(
-                                        shinyWidgets::pickerInput("plot_types", "Select Diagnostic Plot Types:",
-                                            choices = c(
-                                                "Trace Plot" = "trace",
-                                                "Density Plot" = "dens",
-                                                "Autocorrelation Function (acf) Plot" = "acf",
-                                                "NUTS Energy" = "nuts_energy",
-                                                "R-hat Plot" = "rhat",
-                                                "Effective Sample Size (ESS) Plot" = "neff"
-                                            ),
-                                            multiple = FALSE, selected = "trace"
-                                        )
+                                        shinyWidgets::pickerInput("plot_types", "Select Diagnostic Plot Type:",
+                                                                  choices = c(
+                                                                      "Trace Plot"                     = "trace",
+                                                                      "Density Plot"                   = "dens",
+                                                                      "Autocorrelation (ACF) Plot"     = "acf",
+                                                                      "NUTS Energy"                    = "nuts_energy",
+                                                                      "R-hat Plot"                     = "rhat",
+                                                                      "Effective Sample Size (ESS) Plot" = "neff"
+                                                                  ),
+                                                                  multiple = FALSE, selected = "trace")
                                     )),
-                                    column(
-                                        9,
+                                    column(9,
                                         uiOutput("plot_definition"),
                                         plotOutput("diag_plots", height = "600px")
                                     )
@@ -514,7 +717,6 @@ ui <- shinydashboard::dashboardPage(
                             )
                         )
                     ),
-                    ### ===== MODEL CHECKING SUB-TAB =====
                     tabPanel(
                         "Model Checking (Goodness of Fit)",
                         value = "model_checking_panel",
@@ -522,54 +724,45 @@ ui <- shinydashboard::dashboardPage(
                             tabPanel(
                                 "Numerical Checks",
                                 fluidRow(
-                                    column(
-                                        3,
-                                        wellPanel(
-                                            # actionButton("run_model_check", "▶ Run Model Checking", icon = icon("play"), class = "btn-primary"),
-                                            shinyWidgets::pickerInput(inputId = "gof_metrics_select", label = "Select Goodness-of-Fit Metric to Display:", choices = c("Leave-One-Out (LOO)" = "loo", "WAIC" = "waic"), multiple = FALSE, selected = "loo"),
-                                            checkboxInput("moment_match_check", "Use Moment Matching (recommended for complex models)", value = FALSE),
-                                        )
-                                    ),
-                                    column(
-                                        9,
+                                    column(3, wellPanel(
+                                        shinyWidgets::pickerInput("gof_metrics_select", "Select Metric:",
+                                                                  choices = c("LOO" = "loo", "WAIC" = "waic"),
+                                                                  multiple = FALSE, selected = "loo"),
+                                        actionButton("run_model_check", "Run Check",
+                                                     icon = icon("play"), class = "btn-primary")
+                                    )),
+                                    column(9,
                                         uiOutput("metrics_definition_box"),
-                                        verbatimTextOutput("model_check_metrics_output")
+                                        verbatimTextOutput("model_check_output")
                                     )
                                 )
                             ),
                             tabPanel(
-                                "Graphical Checks",
+                                "Posterior Predictive Check (PPC)",
                                 fluidRow(
                                     column(3, wellPanel(
-                                        selectInput(
-                                            "pp_check_type_select",
-                                            "Select Posterior Predictive Checking Plot Type:",
-                                            choices = c(
-                                                "Density Overlay" = "dens_overlay",
-                                                "Boxplot" = "boxplot",
-                                                "Frequency Plot (Discrete)" = "bars",
-                                                "Scatter Plot (y vs yrep)" = "scatter_avg",
-                                                "Statistic vs Data" = "stat"
-                                            ),
-                                            selected = "dens_overlay"
-                                        ),
-                                        sliderInput(
-                                            "pp_samples_slider",
-                                            "Number of Posterior Predictive Samples:",
-                                            min = 10, max = 200, value = 50, step = 10
-                                        ),
+                                        shinyWidgets::pickerInput("pp_check_type_select", "Select PPC Plot Type:",
+                                                                  choices = c(
+                                                                      "Density Overlay"          = "dens_overlay",
+                                                                      "Ribbon"                   = "ribbon",
+                                                                      "Intervals"                = "intervals",
+                                                                      "Error Scatter (Mean)"     = "error_scatter_avg",
+                                                                      "Bar (Discrete)"           = "bars",
+                                                                      "Scatter (y vs yrep)"      = "scatter_avg",
+                                                                      "Statistic vs Data"        = "stat"
+                                                                  ),
+                                                                  multiple = FALSE, selected = "dens_overlay"),
+                                        sliderInput("pp_samples_slider",
+                                                    "Number of Posterior Predictive Samples:",
+                                                    min = 10, max = 200, value = 50, step = 10),
                                         conditionalPanel(
                                             condition = "input.pp_check_type_select == 'stat'",
-                                            selectInput(
-                                                "pp_check_stat_select",
-                                                "Statistic for PPC:",
-                                                choices = c("mean", "median", "sd", "min", "max"),
-                                                selected = "mean"
-                                            )
+                                            selectInput("pp_check_stat_select", "Statistic for PPC:",
+                                                        choices = c("mean", "median", "sd", "min", "max"),
+                                                        selected = "mean")
                                         )
                                     )),
-                                    column(
-                                        9,
+                                    column(9,
                                         uiOutput("ppc_definition_box"),
                                         plotOutput("model_check_plot_output", height = "600px")
                                     )
@@ -577,87 +770,139 @@ ui <- shinydashboard::dashboardPage(
                             )
                         )
                     ),
-                    ### ===== PRIOR SENSITIVITY SUB-TAB =====
                     tabPanel(
                         "Prior Sensitivity Analysis",
                         value = "prior_sensitivity_panel",
                         shinydashboard::box(
                             title = "Prior Sensitivity Analysis",
-                            width = 12,
-                            solidHeader = TRUE,
-                            status = "primary",
-                            # Detailed explanation of Prior Sensitivity Analysis.
+                            width = 12, solidHeader = TRUE, status = "primary",
                             tagList(
                                 p(
-                                    "This analysis helps to understand how sensitive the posterior distribution is to the choice of prior. ",
-                                    "It is performed using the method of power-scaling perturbations implemented in the ",
-                                    code("priorsense"), " package. This technique evaluates how much the posterior changes as we ",
-                                    "adjust the influence of the prior and likelihood through power-scaling. "
+                                    "This analysis evaluates how sensitive the posterior distribution is to
+                                     the choice of prior. It uses power-scaling perturbations implemented in the ",
+                                    code("priorsense"), " package."
                                 ),
                                 p(
-                                    "The sensitivity is quantified using the ", strong("Cumulative Jensen-Shannon distance (CJS distance)"),
-                                    ", a symmetric metric that measures the divergence between cumulative distribution functions (CDFs). ",
-                                    "High sensitivity values indicate that the posterior is influenced by changes in the prior and/or likelihood."
-                                ),
-                                p(
-                                    strong("Diagnostic interpretation: "), "Based on the calculated sensitivity values, diagnostics are provided:",
-                                    tags$ul(
-                                        tags$li(strong("Potential prior-data conflict: "), "Both prior and likelihood sensitivities are high, indicating possible disagreement between them. "),
-                                        tags$li(strong("Potential strong prior / weak likelihood: "), "Prior sensitivity is high while likelihood sensitivity is low, suggesting that the prior dominates the posterior. "),
-                                        tags$li(strong("- (dash): "), "No notable sensitivity detected. This often implies robustness to prior specification.")
-                                    )
-                                ),
-                                p("For more detail see", a(href = "https://doi.org/10.1007/s11222-023-10366-5", "https://doi.org/10.1007/s11222-023-10366-5", target = "_blank")),
-                                p(
-                                    "These diagnostics are not definitive signs of modeling issues, but rather informative tools. ",
-                                    "If you intended your prior to be informative, its strong influence might be acceptable. ",
-                                    "However, if the priors were chosen arbitrarily or without much consideration, these results may prompt a reassessment of the prior settings."
-                                ),
-                                p(
-                                    strong("Visualization: "), "The ", code("powerscale_plot_dens()"), " function shows how the posterior density shifts ",
-                                    "as the influence of the prior and likelihood are adjusted. Overlapping density lines suggest low sensitivity, ",
-                                    "while widely separated lines indicate higher sensitivity. Dashed lines warn that estimates may be unreliable due to high Pareto k values."
-                                ),
-                                p(strong("References:")),
-                                p(
-                                    "Kallioinen N, Paananen T, Bürkner P, Vehtari A (2023). ", em("“Detecting and diagnosing prior and likelihood sensitivity with power-scaling.”"),
-                                    " Statistics and Computing, 34. ",
-                                    a(href = "https://doi.org/10.1007/s11222-023-10366-5", "https://doi.org/10.1007/s11222-023-10366-5", target = "_blank")
+                                    "Sensitivity is quantified using the ",
+                                    strong("Cumulative Jensen-Shannon (CJS) distance"),
+                                    ", a symmetric metric measuring divergence between cumulative distribution
+                                     functions (CDFs). High CJS distance indicates prior sensitivity."
                                 )
                             ),
-                            selectizeInput("sensitivity_params_results", "Select Parameters for Sensitivity Analysis:", choices = NULL, multiple = TRUE, width = "100%", options = list(maxItems = 5, placeholder = "Select up to 5 parameters"))
-                        ),
-                        verbatimTextOutput("prior_sensitivity_output_results"),
-                        plotOutput("prior_sensitivity_plot_results")
-                    ),
-                    ### ===== PREDICTION =====
-                    tabPanel(
-                        "Predictions",
-                        style = "overflow-y: auto; max-height: 85vh; padding-right: 6px;",
-                        # UI for displaying predictions from the original data.
-                        shinydashboard::box(
-                            title = "Data Prediction", width = 12, solidHeader = TRUE, status = "primary",
-                            DT::DTOutput("prediction_results"),
-                            downloadButton("download_results", "Download")
-                        ),
-                        # UI for predicting on new, user-entered data.
-                        shinydashboard::box(
-                            title = "Input Data for Prediction", width = 12, solidHeader = TRUE, status = "primary",
-                            actionButton("add_row", "Add Row", icon = icon("plus"), class = "btn-success"),
-                            actionButton("remove_row", "Remove Row", icon = icon("trash"), class = "btn-danger"),
-                            br(), br(),
-                            DT::DTOutput("prediction_input_table"),
-                            br(), br(),
-                            actionButton("predict_new", "Predict", icon = icon("play"), class = "btn-primary")
+                            fluidRow(
+                                column(4,
+                                    selectizeInput("sensitivity_params_results",
+                                                   "Select Parameters for Sensitivity Analysis:",
+                                                   choices = NULL, multiple = TRUE, options = list(maxItems = 5)),
+                                    actionButton("run_sensitivity", "Run Sensitivity Analysis",
+                                                 icon = icon("play"), class = "btn-primary")
+                                ),
+                                column(8,
+                                    verbatimTextOutput("prior_sensitivity_output_results"),
+                                    plotOutput("prior_sensitivity_plot_results", height = "400px")
+                                )
+                            )
                         )
                     ),
-                    ## ===== SAVE OUTPUTS SUB-TAB ====
+                    tabPanel(
+                        "Prediction",
+                        fluidRow(
+                            shinydashboard::box(
+                                title = "Data Prediction", width = 12, solidHeader = TRUE, status = "primary",
+                                DT::DTOutput("prediction_results"),
+                                downloadButton("download_results", "Download")
+                            ),
+                            shinydashboard::box(
+                                title = "Input Data for Prediction", width = 12, solidHeader = TRUE, status = "primary",
+                                actionButton("add_row",    "Add Row",    icon = icon("plus"),  class = "btn-success"),
+                                actionButton("remove_row", "Remove Row", icon = icon("trash"), class = "btn-danger"),
+                                br(), br(),
+                                DT::DTOutput("prediction_input_table"),
+                                br(), br(),
+                                actionButton("predict_new", "Predict", icon = icon("play"), class = "btn-primary")
+                            )
+                        )
+                    ),
+                    # -- BENCHMARKING TAB ----------------------------------
+                    tabPanel(
+                        "Benchmark",
+                        shinydashboard::box(
+                            title  = "Benchmark Small-Area Estimates",
+                            width  = 12, solidHeader = TRUE, status = "primary",
+                            tags$p("Adjust area-level predictions so that their ",
+                                   "weighted sum matches a known aggregate total ",
+                                   "(e.g. official provincial or national figure)."),
+                            fluidRow(
+                                column(4, selectInput(
+                                    "bm_method", "Benchmark Method",
+                                    choices = c(
+                                        "Ratio (multiplicative)" = "ratio",
+                                        "Difference (additive)"  = "difference",
+                                        "Raking (multi-target)"  = "raking"
+                                    ),
+                                    selected = "ratio")),
+                                column(4, conditionalPanel(
+                                    condition = "input.bm_method != 'raking'",
+                                    numericInput("bm_target_single",
+                                                  "Benchmark Total",
+                                                  value = NA, min = 0)
+                                )),
+                                column(4, selectInput(
+                                    "bm_weights_var",
+                                    "Weights Variable (optional)",
+                                    choices = c("Equal weights (1/n)" = ""),
+                                    selected = ""))
+                            ),
+                            conditionalPanel(
+                                condition = "input.bm_method == 'raking'",
+                                tags$div(class = "alert alert-info",
+                                    tags$strong("Multi-domain benchmarking. "),
+                                    "Use this when each predicted area belongs to a ",
+                                    "single higher-level domain and you have an ",
+                                    "official total for each domain. ",
+                                    tags$br(),
+                                    tags$em("Example: SAE per kecamatan, benchmark to ",
+                                            "kabupaten totals. The 'Group Variable' is ",
+                                            "the kabupaten ID column; 'Group Targets' is ",
+                                            "the vector of kabupaten totals in the same ",
+                                            "order as ", tags$code("levels(group_var)"), ".")),
+                                fluidRow(
+                                    column(6, selectInput(
+                                        "bm_groups_var",
+                                        "Group Variable (e.g. 'kabupaten')",
+                                        choices = NULL)),
+                                    column(6, textInput(
+                                        "bm_targets_multi",
+                                        "Group Targets (comma-separated)",
+                                        placeholder = "e.g. 110, 145, 145"))
+                                ),
+                                # Live preview of group levels + sums
+                                verbatimTextOutput("bm_group_preview"),
+                                actionButton("bm_template_targets",
+                                              "Auto-fill targets with current group sums",
+                                              icon = icon("magic"),
+                                              class = "btn-default btn-sm"),
+                                br(), br()
+                            ),
+                            actionButton("run_benchmark", "Apply Benchmark",
+                                          icon = icon("balance-scale"),
+                                          class = "btn-primary"),
+                            br(), br(),
+                            verbatimTextOutput("benchmark_summary"),
+                            DT::DTOutput("benchmark_table"),
+                            br(),
+                            plotOutput("benchmark_plot", height = "400px"),
+                            br(),
+                            downloadButton("download_benchmark",
+                                            "Download Benchmarked Predictions (CSV)")
+                        )
+                    ),
                     tabPanel(
                         "Save Outputs",
-                        downloadButton("save_model", "Save Model (RDS)"),
+                        downloadButton("save_model",     "Save Model (RDS)"),
                         downloadButton("save_stan_code", "Save Stan Code"),
-                        downloadButton("save_coda", "Save CODA Samples"),
-                        downloadButton("save_plots", "Save Plots (PDF)")
+                        downloadButton("save_coda",      "Save CODA Samples"),
+                        downloadButton("save_plots",     "Save Plots (PDF)")
                     )
                 )
             )
@@ -666,43 +911,805 @@ ui <- shinydashboard::dashboardPage(
 )
 
 
-# ==== SERVER =====
-# Defines the server-side logic of the Shiny application.
+# =============================================================================
+# SERVER
+# =============================================================================
 server <- function(input, output, session) {
-    # ==== REACTIVE VALUES INITIALIZATION ====
-    # These reactive values store the application's state and data.
-    data <- reactiveVal() # Stores the uploaded dataset.
-    new_data <- reactiveVal(NULL)
-    spatial_weights <- reactiveVal(NULL) # Stores the spatial weights matrix.
-    model_fit <- reactiveVal(NULL) # Stores the fitted brms model object.
-    prior_fit <- reactiveVal(NULL) # Stores the prior predictive checking model object.
-    prior_list <- reactiveVal(character()) # Stores user-defined prior strings.
-    pred_data <- reactiveVal(NULL) # Stores the data for new predictions.
-    check_results <- reactiveVal(NULL)
-    ppc_result <- reactiveVal(NULL)
 
+    # -- Dependency banner -----------------------------------------------------
+    # Reads the missing-optional list set by run_sae_app() via getOption().
+    # When the app is launched directly (e.g. shiny::runApp() instead of
+    # run_sae_app()), the option is NULL and the banner is hidden.
+    output$dep_banner <- renderUI({
+        miss <- getOption("hbsaems.shiny_missing_optional", default = NULL)
+        if (is.null(miss) || length(miss) == 0L) return(NULL)
+
+        # Re-check live so a manual install during the session clears the
+        # banner without needing to relaunch.
+        still_missing <- miss[
+            !vapply(miss, requireNamespace, logical(1L), quietly = TRUE)
+        ]
+        if (length(still_missing) == 0L) {
+            options(hbsaems.shiny_missing_optional = character(0L))
+            return(NULL)
+        }
+
+        cmd <- sprintf(
+            'install.packages(c(%s))',
+            paste(sprintf('"%s"', still_missing), collapse = ", ")
+        )
+
+        div(
+            class = "alert alert-warning",
+            style = "margin: 10px 15px;",
+            tags$h4(
+                tags$i(class = "fa fa-exclamation-triangle"),
+                "  Some optional packages are missing"),
+            tags$p(
+                "The application will continue to work, but the panels ",
+                "depending on the following packages will be disabled or ",
+                "fall back to simpler alternatives:"),
+            tags$ul(lapply(still_missing, tags$li)),
+            tags$p(tags$strong("To enable all features, run:")),
+            tags$pre(cmd),
+            tags$p(
+                tags$em(
+                    "After installing, restart R and call ",
+                    tags$code("hbsaems::run_sae_app()"),
+                    " again."))
+        )
+    })
+
+    # -- Reactive values -------------------------------------------------------
+    data            <- reactiveVal()
+    new_data        <- reactiveVal(NULL)
+    spatial_weights <- reactiveVal(NULL)
+    model_fit       <- reactiveVal(NULL)
+    prior_fit       <- reactiveVal(NULL)
+    prior_list      <- reactiveVal(character())
+    pred_data       <- reactiveVal(NULL)
+    check_results   <- reactiveVal(NULL)
+    ppc_result      <- reactiveVal(NULL)
+
+    # -- v0.5.0: Bilingual support (en / id) ------------------------------------
+    # Active language is read from the header dropdown.  Helper `t_()`
+    # is a closure that wraps tr() with the current language so call
+    # sites stay compact:   t_("menu_home")  ->  "Home" or "Beranda"
+    lang <- reactive({
+        l <- input$app_lang
+        if (is.null(l) || !(l %in% hbsaems::tr_langs())) "en" else l
+    })
+    t_ <- function(key) hbsaems::tr(key, lang())
+
+    # App title (in header)
+    output$ui_app_title <- renderText({ t_("app_title") })
+
+    # Sidebar menu items (re-rendered when language changes)
+    output$menu_home_out <- shinydashboard::renderMenu({
+        shinydashboard::menuItem(t_("menu_home"), tabName = "home",
+                                  icon = icon("home"))
+    })
+    output$menu_upload_out <- shinydashboard::renderMenu({
+        shinydashboard::menuItem(
+            t_("box_data_upload"), tabName = "data_upload",
+            icon = icon("upload"))
+    })
+    output$menu_explore_out <- shinydashboard::renderMenu({
+        shinydashboard::menuItem(
+            t_("menu_data"), tabName = "data_exploration",
+            icon = icon("search"))
+    })
+    output$menu_modeling_out <- shinydashboard::renderMenu({
+        shinydashboard::menuItem(t_("menu_modeling"), tabName = "modeling",
+                                  icon = icon("cogs"))
+    })
+    output$menu_spatial_out <- shinydashboard::renderMenu({
+        shinydashboard::menuItem(t_("menu_spatial"), tabName = "spatial_setup",
+                                  icon = icon("globe"))
+    })
+    output$menu_results_out <- shinydashboard::renderMenu({
+        shinydashboard::menuItem(t_("menu_results"), tabName = "results",
+                                  icon = icon("chart-bar"))
+    })
+
+    # Reactive labels for action buttons (used by textOutput inside
+    # actionButton labels above)
+    output$lbl_build_weight   <- renderText({ t_("btn_build_weight")   })
+    output$lbl_inspect_weight <- renderText({ t_("btn_inspect_weight") })
+
+    # ==========================================================================
+    # SPATIAL SETUP TAB (v0.5.0)
+    # ==========================================================================
+    # Three reactive outputs power this tab:
+    #   * spatial_weights()       -- the W matrix (already exists, reused)
+    #   * spatial_shape_obj()     -- the loaded sf polygon object (NEW)
+    #   * spatial_neighbours()    -- spdep neighbour list (NEW, derived)
+    # All visualisations and summaries read from these reactives, so the
+    # tab stays consistent with whatever the user has built so far.
+
+    # Helper: derive a degree vector (#neighbours per area) from W
+    .deg_from_W <- function(M) {
+        if (is.null(M) || !is.matrix(M)) return(NULL)
+        # Count nonzero off-diagonal entries per row
+        rowSums(M != 0, na.rm = TRUE)
+    }
+
+    # Main render: 4-tab layout
+    output$spatial_setup_body <- renderUI({
+        # v0.5.0: Status indicator — adapts to whether source is shape/matrix/none
+        status_box <- {
+            shape <- spatial_shape_obj()
+            M     <- spatial_weights()
+            if (!is.null(shape)) {
+                # Source = shapefile
+                shinydashboard::valueBox(
+                    value    = paste0(nrow(shape), " areas"),
+                    subtitle = t_("spatial_status_shape"),
+                    icon     = icon("draw-polygon"),
+                    color    = "green",
+                    width    = 12
+                )
+            } else if (!is.null(M) && is.matrix(M)) {
+                # Source = pre-built matrix
+                shinydashboard::valueBox(
+                    value    = paste0(nrow(M), " x ", ncol(M)),
+                    subtitle = t_("spatial_status_matrix"),
+                    icon     = icon("th"),
+                    color    = "blue",
+                    width    = 12
+                )
+            } else {
+                # No source yet
+                shinydashboard::valueBox(
+                    value    = "—",
+                    subtitle = t_("spatial_status_none"),
+                    icon     = icon("circle-info"),
+                    color    = "yellow",
+                    width    = 12
+                )
+            }
+        }
+
+        fluidRow(
+            shinydashboard::box(
+                title = t_("spatial_intro_title"),
+                width = 12, solidHeader = TRUE, status = "info",
+                p(t_("spatial_intro_text"))
+            ),
+            # Status indicator
+            status_box,
+            column(12,
+                tabBox(
+                    width = 12,
+                    # --- Sub-tab 1: Source -----------------------------------
+                    tabPanel(
+                        title = t_("spatial_subtab_source"),
+                        icon  = icon("upload"),
+                        fluidRow(
+                            column(6,
+                                shinydashboard::box(
+                                    title = t_("spatial_box_upload"),
+                                    width = 12, solidHeader = TRUE,
+                                    status = "primary",
+                                    radioButtons(
+                                        "spatial_source_main",
+                                        label = NULL,
+                                        choices = setNames(
+                                            c("matrix", "shp"),
+                                            c("Upload pre-built matrix (.csv/.xlsx/.rda)",
+                                              "Build from shapefile (.shp via sf)")
+                                        ),
+                                        selected = "shp"
+                                    ),
+                                    conditionalPanel(
+                                        condition = "input.spatial_source_main == 'matrix'",
+                                        fileInput("spatial_weights_main",
+                                                   "Upload Weight Matrix",
+                                                   accept = c(".csv", ".xls", ".xlsx",
+                                                              ".rda", ".RData"))
+                                    ),
+                                    conditionalPanel(
+                                        condition = "input.spatial_source_main == 'shp'",
+                                        fileInput("shp_file_main",
+                                                   "Upload Shapefile (.shp + .shx + .dbf)",
+                                                   accept = c(".shp", ".shx", ".dbf",
+                                                              ".prj", ".cpg"),
+                                                   multiple = TRUE)
+                                    )
+                                )
+                            ),
+                            column(6,
+                                shinydashboard::box(
+                                    title = t_("spatial_box_params"),
+                                    width = 12, solidHeader = TRUE,
+                                    status = "primary",
+                                    conditionalPanel(
+                                        condition = "input.spatial_source_main == 'shp'",
+                                        selectInput("shp_type_main",
+                                                     "Neighbour Type",
+                                                     choices = c(
+                                                         "Queen contiguity (CAR)" = "queen",
+                                                         "Rook contiguity (CAR)"  = "rook",
+                                                         "K-nearest (SAR)"        = "knn",
+                                                         "Distance band (SAR)"    = "distance"
+                                                     ),
+                                                     selected = "queen"),
+                                        selectInput("shp_style_main",
+                                                     "Matrix Style",
+                                                     choices = c(
+                                                         "Binary 0/1 (CAR)"        = "B",
+                                                         "Row-standardised (SAR)"   = "W"
+                                                     ),
+                                                     selected = "B"),
+                                        conditionalPanel(
+                                            condition = "input.shp_type_main == 'knn'",
+                                            numericInput("shp_k_main",
+                                                          "k (neighbours)",
+                                                          value = 4, min = 1, step = 1)
+                                        ),
+                                        conditionalPanel(
+                                            condition = "input.shp_type_main == 'distance'",
+                                            numericInput("shp_threshold_main",
+                                                          "Distance threshold",
+                                                          value = NA, min = 0)
+                                        ),
+                                        textInput("shp_id_col_main",
+                                                   "ID column (optional)",
+                                                   value = "")
+                                    ),
+                                    actionButton("build_spatial_main",
+                                                  t_("btn_build_weight"),
+                                                  icon = icon("hammer"),
+                                                  class = "btn-primary"),
+                                    br(), br(),
+                                    div(class = "alert alert-info",
+                                        style = "padding: 8px; font-size: 90%;",
+                                        tags$strong("Recommended for:"),
+                                        tags$ul(style = "margin-bottom: 0;",
+                                            tags$li(tags$strong("CAR"),
+                                                " (Besag 1974): type = queen or rook, style = B"),
+                                            tags$li(tags$strong("SAR"),
+                                                " (Anselin 1988): type = knn or distance, style = W")
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    # --- Sub-tab 2: Map preview -------------------------------
+                    tabPanel(
+                        title = t_("spatial_subtab_map"),
+                        icon  = icon("map"),
+                        # v0.5.0: Adaptive content -- show map only when a
+                        # shapefile is loaded; show an informative banner
+                        # when the user has uploaded a pre-built matrix
+                        # (no geometry to display).
+                        fluidRow(
+                            column(12,
+                                if (is.null(spatial_shape_obj()) &&
+                                    !is.null(spatial_weights())) {
+                                    # Matrix source -- map not applicable
+                                    div(class = "alert alert-warning",
+                                        style = "margin-top: 10px;",
+                                        icon("triangle-exclamation"),
+                                        tags$strong(" Map preview unavailable. "),
+                                        t_("spatial_map_unavailable"))
+                                } else {
+                                    # Either shape loaded or nothing loaded:
+                                    # show the plot (which renders its own
+                                    # "no shape" fallback if needed).
+                                    shinydashboard::box(
+                                        title = t_("spatial_subtab_map"),
+                                        width = 12, solidHeader = TRUE,
+                                        status = "primary",
+                                        plotOutput("spatial_map_plot",
+                                                    height = "500px")
+                                    )
+                                }
+                            )
+                        )
+                    ),
+                    # --- Sub-tab 3: Weight matrix -----------------------------
+                    tabPanel(
+                        title = t_("spatial_subtab_matrix"),
+                        icon  = icon("th"),
+                        fluidRow(
+                            column(7,
+                                shinydashboard::box(
+                                    title = t_("spatial_box_heatmap"),
+                                    width = 12, solidHeader = TRUE,
+                                    status = "primary",
+                                    plotOutput("spatial_heatmap",
+                                                height = "450px")
+                                )
+                            ),
+                            column(5,
+                                shinydashboard::box(
+                                    title = t_("spatial_box_summary"),
+                                    width = 12, solidHeader = TRUE,
+                                    status = "info",
+                                    verbatimTextOutput("spatial_summary")
+                                ),
+                                shinydashboard::box(
+                                    title = t_("spatial_box_degree"),
+                                    width = 12, solidHeader = TRUE,
+                                    status = "primary",
+                                    plotOutput("spatial_degree_plot",
+                                                height = "200px")
+                                )
+                            )
+                        )
+                    ),
+                    # --- Sub-tab 4: Diagnostic --------------------------------
+                    tabPanel(
+                        title = t_("spatial_subtab_diagnostic"),
+                        icon  = icon("stethoscope"),
+                        fluidRow(
+                            column(6,
+                                shinydashboard::box(
+                                    title = t_("spatial_box_diag"),
+                                    width = 12, solidHeader = TRUE,
+                                    status = "primary",
+                                    verbatimTextOutput("spatial_diag_main")
+                                )
+                            ),
+                            column(6,
+                                shinydashboard::box(
+                                    title = t_("spatial_box_advisor"),
+                                    width = 12, solidHeader = TRUE,
+                                    status = "warning",
+                                    htmlOutput("spatial_advisor")
+                                )
+                            )
+                        )
+                    ),
+                    # --- Sub-tab 5: Reference ---------------------------------
+                    tabPanel(
+                        title = t_("spatial_subtab_reference"),
+                        icon  = icon("book"),
+                        shinydashboard::box(
+                            title = t_("spatial_box_reference"),
+                            width = 12, solidHeader = TRUE,
+                            status = "info",
+                            h4("CAR (Conditional Autoregressive)"),
+                            p(t_("spatial_ref_car")),
+                            tags$pre(style = "background-color: #f5f5f5;",
+                                "s ~ N(0, sigma^2 * (D - rho*W)^{-1})\n\n",
+                                "Requirements:\n",
+                                "  - W is square, symmetric, binary (0/1)\n",
+                                "  - Zero diagonal\n",
+                                "  - Connected graph (no isolated areas)\n"),
+                            h4("SAR (Simultaneous Autoregressive)"),
+                            p(t_("spatial_ref_sar")),
+                            tags$pre(style = "background-color: #f5f5f5;",
+                                "s = rho*W*s + epsilon, epsilon ~ N(0, sigma^2*I)\n\n",
+                                "Requirements:\n",
+                                "  - W is square, row-standardised (each row sums to 1)\n",
+                                "  - Zero diagonal\n",
+                                "  - Symmetry NOT required\n"),
+                            h4("References"),
+                            tags$ul(
+                                tags$li("Besag, J. (1974). Spatial Interaction and the Statistical Analysis of Lattice Systems. JRSS-B 36(2), 192-225."),
+                                tags$li("Whittle, P. (1954). On Stationary Processes in the Plane. Biometrika 41(3/4), 434-449."),
+                                tags$li("Anselin, L. (1988). Spatial Econometrics: Methods and Models. Kluwer."),
+                                tags$li("Morris, M. et al. (2019). Bayesian Hierarchical Spatial Models: Implementing the Besag York Mollie Model in Stan.")
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    })
+
+    # -- Spatial reactives: shapefile object + neighbours list ------------------
+    # Triggered when user clicks "Build Weight Matrix" in the spatial tab.
+    spatial_shape_obj <- reactiveVal(NULL)
+
+    observeEvent(input$build_spatial_main, {
+        req(input$spatial_source_main)
+        src <- input$spatial_source_main
+
+        if (src == "shp") {
+            files <- input$shp_file_main
+            if (is.null(files) || nrow(files) == 0L) {
+                showNotification("Please upload shapefile files first.",
+                                  type = "warning")
+                return(invisible(NULL))
+            }
+            # Move files to a temp dir so sf can read the .shp
+            tmp_dir <- tempfile("shp_main_")
+            dir.create(tmp_dir)
+            for (i in seq_len(nrow(files)))
+                file.copy(files$datapath[i],
+                          file.path(tmp_dir, files$name[i]))
+            shp_path <- list.files(tmp_dir, pattern = "\\.shp$",
+                                    full.names = TRUE)[1L]
+            if (is.na(shp_path)) {
+                showNotification(".shp file not found in upload.",
+                                  type = "error")
+                return(invisible(NULL))
+            }
+            shape <- tryCatch(sf::st_read(shp_path, quiet = TRUE),
+                              error = function(e) e)
+            if (inherits(shape, "error")) {
+                showNotification(sprintf("Cannot read shapefile: %s",
+                                          shape$message), type = "error")
+                return(invisible(NULL))
+            }
+            spatial_shape_obj(shape)
+
+            M <- tryCatch(
+                hbsaems::build_spatial_weight(
+                    shp       = shape,
+                    type      = input$shp_type_main,
+                    style     = input$shp_style_main,
+                    k         = input$shp_k_main %||% 4L,
+                    threshold = if (is.na(input$shp_threshold_main))
+                                  NULL else input$shp_threshold_main,
+                    id_col    = if (nzchar(input$shp_id_col_main %||% ""))
+                                  input$shp_id_col_main else NULL,
+                    for_model = NULL
+                ),
+                error = function(e) e
+            )
+            if (inherits(M, "error")) {
+                showNotification(sprintf("build_spatial_weight failed: %s",
+                                          M$message), type = "error")
+                return(invisible(NULL))
+            }
+            spatial_weights(M)
+            showNotification(sprintf("Weight matrix built (%d x %d).",
+                                      nrow(M), ncol(M)),
+                              type = "message")
+        } else {
+            # Matrix upload via the main tab
+            up <- input$spatial_weights_main
+            if (is.null(up)) {
+                showNotification("Please upload a weight matrix file.",
+                                  type = "warning")
+                return(invisible(NULL))
+            }
+            ext <- tolower(tools::file_ext(up$name))
+            M <- tryCatch({
+                if (ext == "csv") {
+                    as.matrix(utils::read.csv(up$datapath,
+                                                row.names = 1))
+                } else if (ext %in% c("xls", "xlsx")) {
+                    as.matrix(readxl::read_excel(up$datapath))
+                } else if (ext %in% c("rda", "rdata")) {
+                    env <- new.env(); load(up$datapath, envir = env)
+                    obj <- get(ls(env)[1L], envir = env)
+                    if (is.matrix(obj)) obj else as.matrix(obj)
+                } else {
+                    stop("Unsupported file type: ", ext)
+                }
+            }, error = function(e) e)
+            if (inherits(M, "error")) {
+                showNotification(sprintf("Could not load matrix: %s",
+                                          M$message), type = "error")
+                return(invisible(NULL))
+            }
+            spatial_weights(M)
+            spatial_shape_obj(NULL)
+            showNotification(sprintf("Weight matrix loaded (%d x %d).",
+                                      nrow(M), ncol(M)),
+                              type = "message")
+        }
+    })
+
+    # -- Visualisations ---------------------------------------------------------
+
+    output$spatial_map_plot <- renderPlot({
+        shape <- spatial_shape_obj()
+        if (is.null(shape)) {
+            plot.new()
+            text(0.5, 0.5, t_("spatial_no_shape"), cex = 1.2)
+            return(invisible(NULL))
+        }
+        M <- spatial_weights()
+        if (!is.null(M)) {
+            # Compute degree per polygon and colour by it
+            deg <- .deg_from_W(M)
+            if (length(deg) == nrow(shape)) {
+                shape$.degree <- deg
+                p <- ggplot2::ggplot(shape) +
+                    ggplot2::geom_sf(ggplot2::aes(fill = .data$.degree),
+                                      colour = "white", linewidth = 0.3) +
+                    ggplot2::scale_fill_viridis_c(
+                        name = "Neighbours", option = "C") +
+                    ggplot2::theme_minimal() +
+                    ggplot2::labs(
+                        title = "Polygon Map (coloured by neighbour count)"
+                    )
+                return(p)
+            }
+        }
+        # Fallback: plain map without colour
+        ggplot2::ggplot(shape) +
+            ggplot2::geom_sf(fill = "lightblue", colour = "white",
+                              linewidth = 0.3) +
+            ggplot2::theme_minimal() +
+            ggplot2::labs(title = "Polygon Map")
+    })
+
+    output$spatial_heatmap <- renderPlot({
+        M <- spatial_weights()
+        if (is.null(M) || !is.matrix(M)) {
+            plot.new()
+            text(0.5, 0.5, t_("spatial_no_matrix"), cex = 1.2)
+            return(invisible(NULL))
+        }
+        n <- nrow(M)
+        # For very large matrices, downsample to keep render fast
+        if (n > 200L) {
+            idx <- round(seq(1L, n, length.out = 200L))
+            M <- M[idx, idx]
+            n <- 200L
+        }
+        df <- expand.grid(i = seq_len(n), j = seq_len(n))
+        df$w <- as.vector(M)
+        ggplot2::ggplot(df, ggplot2::aes(.data$j, .data$i,
+                                          fill = .data$w)) +
+            ggplot2::geom_tile() +
+            ggplot2::scale_fill_viridis_c(name = "W") +
+            ggplot2::scale_y_reverse() +
+            ggplot2::coord_fixed() +
+            ggplot2::theme_minimal() +
+            ggplot2::labs(x = NULL, y = NULL,
+                           title = sprintf("W matrix (%d x %d)",
+                                            nrow(spatial_weights()),
+                                            ncol(spatial_weights())))
+    })
+
+    output$spatial_degree_plot <- renderPlot({
+        M <- spatial_weights()
+        deg <- .deg_from_W(M)
+        if (is.null(deg)) {
+            plot.new()
+            text(0.5, 0.5, t_("spatial_no_matrix"), cex = 1)
+            return(invisible(NULL))
+        }
+        ggplot2::ggplot(data.frame(deg = deg),
+                         ggplot2::aes(x = .data$deg)) +
+            ggplot2::geom_histogram(
+                bins = max(5L, min(20L, length(unique(deg)))),
+                fill = "#3c8dbc", colour = "white") +
+            ggplot2::theme_minimal() +
+            ggplot2::labs(x = "Number of neighbours",
+                           y = "Count of areas",
+                           title = NULL)
+    })
+
+    output$spatial_summary <- renderPrint({
+        M <- spatial_weights()
+        if (is.null(M) || !is.matrix(M)) {
+            cat(t_("spatial_no_matrix"), "\n")
+            return(invisible(NULL))
+        }
+        n   <- nrow(M)
+        deg <- .deg_from_W(M)
+        nbr_total <- sum(M != 0, na.rm = TRUE)
+        dens <- nbr_total / (n * (n - 1L))
+        cat(t_("spatial_n_areas"),     ":", n,                       "\n")
+        cat(t_("spatial_n_links"),     ":", nbr_total,                "\n")
+        cat(t_("spatial_density"),     ":",
+            sprintf("%.4f", dens),                                     "\n")
+        cat(t_("spatial_mean_degree"), ":",
+            sprintf("%.2f", mean(deg, na.rm = TRUE)),                  "\n")
+        cat(t_("spatial_max_degree"),  ":", max(deg, na.rm = TRUE),   "\n")
+        cat(t_("spatial_isolated"),    ":", sum(deg == 0L),           "\n")
+        # Detected style
+        is_binary <- all(M %in% c(0, 1), na.rm = TRUE)
+        is_rownorm <- all(abs(rowSums(M, na.rm = TRUE) - 1) < 1e-8 |
+                            rowSums(M, na.rm = TRUE) == 0)
+        style_str <- if (is_binary) "B (binary)" else
+                     if (is_rownorm) "W (row-standardised)" else
+                     "Other"
+        cat(t_("spatial_style_detected"), ":", style_str, "\n")
+    })
+
+    output$spatial_diag_main <- renderPrint({
+        M <- spatial_weights()
+        if (is.null(M) || !is.matrix(M)) {
+            cat(t_("spatial_no_matrix"), "\n")
+            return(invisible(NULL))
+        }
+        sre_t <- input$sre_type
+        if (is.null(sre_t) || !(sre_t %in% c("car", "sar"))) {
+            cat("Run checks for: CAR\n\n")
+            sre_t <- "car"
+        }
+        chk <- tryCatch(
+            hbsaems::check_spatial_weight(M, sre_type = sre_t,
+                                            verbose = FALSE),
+            error = function(e) NULL
+        )
+        if (is.null(chk)) {
+            cat("Could not run check_spatial_weight().\n")
+            return(invisible(NULL))
+        }
+        print(chk)
+    })
+
+    output$spatial_advisor <- renderUI({
+        M <- spatial_weights()
+        if (is.null(M) || !is.matrix(M)) {
+            return(p(em(t_("spatial_no_matrix"))))
+        }
+        # Detect style
+        is_symmetric <- isSymmetric(unname(M))
+        is_binary    <- all(M %in% c(0, 1), na.rm = TRUE)
+        rs           <- rowSums(M, na.rm = TRUE)
+        is_rownorm   <- all(abs(rs - 1) < 1e-8 | rs == 0)
+
+        recommend <- if (is_symmetric && is_binary) {
+            tags$strong(style = "color: green;",
+                        "Compatible with CAR (Besag 1974)")
+        } else if (is_rownorm) {
+            tags$strong(style = "color: green;",
+                        "Compatible with SAR (Anselin 1988)")
+        } else {
+            tags$strong(style = "color: orange;",
+                        "Atypical structure -- check style manually")
+        }
+
+        tagList(
+            p("Based on the matrix properties:"),
+            tags$ul(
+                tags$li(tags$strong("Symmetric: "),
+                        if (is_symmetric) "Yes" else "No"),
+                tags$li(tags$strong("Binary 0/1: "),
+                        if (is_binary) "Yes" else "No"),
+                tags$li(tags$strong("Row-standardised: "),
+                        if (is_rownorm) "Yes" else "No")
+            ),
+            recommend
+        )
+    })
+
+    # Home tab content -- re-renders when language changes
+    output$home_content <- renderUI({
+        # v0.5.0: bilingual; falls back to English via tr() if a key missing.
+        # Cache the current language in a local variable for clarity.
+        intro_struct <- if (lang() == "id") list(
+            home = "Beranda: Gambaran umum dan tujuan aplikasi.",
+            up   = "Unggah Data: Unggah dan pratinjau dataset (CSV/Excel), deteksi missing values.",
+            mdl  = "Pemodelan: Spesifikasi struktur model, prior, pengaturan MCMC, dan fitting model.",
+            res  = "Hasil: Review diagnostik model, ringkasan, dan output prediksi."
+        ) else list(
+            home = "Home: Overview and purpose of the application.",
+            up   = "Data Upload: Upload and preview datasets (CSV/Excel), detect missing values.",
+            mdl  = "Modeling: Specify model structure, priors, MCMC settings, and fit the model.",
+            res  = "Results: Review model diagnostics, summaries, and prediction outputs."
+        )
+
+        fluidRow(
+            shinydashboard::box(
+                title = t_("box_intro"), width = 12,
+                solidHeader = TRUE, status = "primary",
+                p(t_("text_intro_p1")),
+                p(t_("text_intro_p2"))
+            ),
+            shinydashboard::box(
+                title = if (lang() == "id") "Struktur Aplikasi"
+                        else                "App Structure",
+                width = 12, solidHeader = TRUE, status = "primary",
+                tags$ul(
+                    tags$li(intro_struct$home),
+                    tags$li(intro_struct$up),
+                    tags$li(intro_struct$mdl),
+                    tags$li(intro_struct$res)
+                )
+            ),
+            shinydashboard::box(
+                title = t_("box_workflow"), width = 12,
+                solidHeader = TRUE, status = "primary",
+                tags$ol(
+                    tags$li(t_("step_1")),
+                    tags$li(t_("step_2")),
+                    tags$li(t_("step_3")),
+                    tags$li(t_("step_4")),
+                    tags$li(t_("step_5")),
+                    tags$li(t_("step_6"))
+                )
+            ),
+            shinydashboard::box(
+                title  = t_("box_families"), width = 12,
+                solidHeader = TRUE, status = "info",
+                tags$p(t_("text_families_help")),
+                verbatimTextOutput("families_summary"),
+                tags$p(tags$em(t_("text_families_advanced")))
+            )
+        )
+    })
+    spatial_diag    <- reactiveVal(NULL)
+
+    # -- v0.4.0: Show registered families on Home tab ------------------------
+    output$families_summary <- renderPrint({
+        fams <- list_hbsae_models()
+        cat("Registered families (", length(fams), "):\n", sep = "")
+        for (k in fams) {
+            spec <- get_hbsae_model(k)
+            tag  <- if (isTRUE(spec$discrete))           "[discrete] "
+                    else                                 "[continuous]"
+            mi   <- if (isTRUE(spec$supports_mi))        " mi=TRUE"
+                    else                                 " mi=FALSE"
+            aux  <- if (is.function(spec$aux_param_hyperprior))
+                                                          " +aux"
+                    else                                 ""
+            cat(sprintf("  %-30s %s link=%-9s%s%s\n",
+                        k, tag, spec$link %||% "?", mi, aux))
+        }
+    })
+
+    # -- v0.4.0: On-demand spatial diagnostic display ------------------------
+    # Triggered by [Inspect Weight Matrix] button under spatial weights UI.
+    # Renders the full check_spatial_weight() output so users can verify
+    # theoretical compatibility (CAR/Besag, SAR/Anselin) at a glance.
+    observeEvent(input$show_spatial_diag, {
+        M  <- spatial_weights()
+        st <- input$sre_type
+        if (is.null(M) || !is.matrix(M)) {
+            spatial_diag("No weight matrix loaded.")
+            return(invisible(NULL))
+        }
+        if (is.null(st) || !(st %in% c("car", "sar"))) {
+            spatial_diag("Choose sre_type = 'car' or 'sar' first.")
+            return(invisible(NULL))
+        }
+        chk <- tryCatch(
+            check_spatial_weight(M, sre_type = st, verbose = FALSE),
+            error = function(e) NULL
+        )
+        if (is.null(chk)) {
+            spatial_diag("Could not run check_spatial_weight().")
+            return(invisible(NULL))
+        }
+        spatial_diag(chk)
+    })
+
+    output$spatial_diag_output <- renderPrint({
+        d <- spatial_diag()
+        if (is.null(d)) {
+            cat("Click [Inspect Weight Matrix] to see CAR/SAR theoretical ",
+                "diagnostics.\n", sep = "")
+            return(invisible(NULL))
+        }
+        if (is.character(d)) {
+            cat(d, "\n")
+            return(invisible(NULL))
+        }
+        # d is an hbsaems_spatial_check object
+        print(d)
+    })
+    
+    # -- Dynamic "Update Model" menu item --------------------------------------
     observe({
         if (!is.null(model_fit())) {
             output$update_menu <- shinydashboard::renderMenu({
-                shinydashboard::menuItem("Update Model", tabName = "update_model", icon = icon("sync"))
+                shinydashboard::menuItem(
+                    if (lang() == "id") "Perbarui Model" else "Update Model",
+                    tabName = "update_model", icon = icon("sync"))
             })
-
             if (!"update_model" %in% sapply(shiny::isolate(input$tabs), as.character)) {
                 insertUI(
-                    selector = ".tab-content", # selector CSS valid di dashboardBody
-                    where = "beforeEnd",
+                    selector = ".tab-content",
+                    where    = "beforeEnd",
                     ui = shinydashboard::tabItem(
                         tabName = "update_model",
                         fluidRow(
                             shinydashboard::box(
                                 title = "Update Model", width = 12, solidHeader = TRUE, status = "primary",
-                                fileInput("update_newdata", "Upload New Data *Optional:", accept = c("text/csv", ".csv", ".xlsx", ".xls", ".rda", ".RData")),
-                                numericInput("update_num_chains", "Chains", value = 1, min = 1),
-                                numericInput("update_num_cores", "Cores", value = 1, min = 1),
-                                numericInput("update_num_iter", "Iterations", value = 4000, min = 1),
-                                numericInput("update_num_warmup", "Warmup", value = 2000, min = 1),
-                                sliderInput("update_adapt_delta", "Adapt Delta", min = 0.8, max = 0.99, value = 0.95),
-                                actionButton("update_run", "Run Model Update", icon = icon("refresh"), class = "btn-primary")
+                                fileInput("update_newdata", "Upload New Data (optional):",
+                                          accept = c("text/csv", ".csv", ".xlsx", ".xls", ".rda", ".RData")),
+                                numericInput("update_num_chains", "Chains",     value = 1,    min = 1),
+                                numericInput("update_num_cores",  "Cores",      value = 1,    min = 1),
+                                numericInput("update_num_iter",   "Iterations", value = 4000, min = 1),
+                                numericInput("update_num_warmup", "Warm-up",    value = 2000, min = 1),
+                                sliderInput("update_adapt_delta", "Adapt Delta",
+                                            min = 0.8, max = 0.99, value = 0.95),
+                                actionButton("update_run", "Run Model Update",
+                                             icon = icon("refresh"), class = "btn-primary")
                             )
                         )
                     )
@@ -712,1672 +1719,1510 @@ server <- function(input, output, session) {
             output$update_menu <- shinydashboard::renderMenu(NULL)
         }
     })
-
-
-
-    # ==== DATA UPLOAD HANDLING ====
-    # This observer triggers when a file is uploaded.
+    
+    
+    # -- DATA UPLOAD -----------------------------------------------------------
     observeEvent(input$data_file, {
-        req(input$data_file) # Ensure a file is uploaded before proceeding
-        ext <- tools::file_ext(input$data_file$name) # Get file extension
-        output$data_upload_error <- renderUI(NULL) # Reset any previous error messages
+        req(input$data_file)
+        ext <- tools::file_ext(input$data_file$name)
+        output$data_upload_error <- renderUI(NULL)
         withProgress(message = "Uploading data...", {
-            # Try to read the file based on its extension.
             tryCatch(
                 withCallingHandlers(
                     {
-                        # Read file based on extension
-                        df <- switch(ext,
-                            "csv" = read.csv(input$data_file$datapath,
-                                header = TRUE,
-                                sep = ",", quote = "", fill = TRUE, check.names = FALSE,
-                                na.strings = c("", "NA", "NULL")
-                            ),
-                            "xls" = readxl::read_excel(input$data_file$datapath),
-                            "xlsx" = readxl::read_excel(input$data_file$datapath),
-                            "rda" = {
-                              e <- new.env()
-                              load(input$data_file$datapath, envir = e)
-                              obj_names <- ls(envir = e)
-                              e[[obj_names[1]]]  # Ambil objek pertama
-                            },
-                            "RData" = {
-                              e <- new.env()
-                              load(input$data_file$datapath, envir = e)
-                              obj_names <- ls(envir = e)
-                              e[[obj_names[1]]]
-                            }
-                        )
-
-                        # Clean column names to be valid R variable names.
-                        colnames(df) <- gsub("[^A-Za-z0-9_]", "", colnames(df))
-                        df_numeric <- df[, sapply(df, is.numeric)]
-
-                        # Update all UI selection inputs with the columns from the new data.
-                        updateSelectInput(session, "explore_var_summary", choices = names(df_numeric))
-                        updateSelectInput(session, "explore_var_hist", choices = names(df_numeric))
-                        updateSelectInput(session, "explore_var_boxplot", choices = names(df_numeric))
-                        updateSelectInput(session, "explore_var_scatter_x", choices = names(df_numeric))
-                        updateSelectInput(session, "explore_var_scatter_y", choices = names(df_numeric))
-                        updateSelectInput(session, "explore_var_scatter_color", choices = c("None" = "", names(df)))
-                        updateSelectInput(session, "response_var", choices = names(df_numeric))
-                        updateSelectizeInput(session, "linear_aux_vars", choices = names(df_numeric), server = TRUE)
-                        updateSelectizeInput(session, "nonlinear_aux_vars", choices = names(df_numeric), server = TRUE)
-                        updateSelectizeInput(session, "re_groups", choices = names(df), server = TRUE)
-                        updateSelectInput(session, "trials_var", choices = c("None" = "none", names(df_numeric)))
-                        updateSelectInput(session, "sre", choices = c("None" = "none", names(df)))
-                        updateSelectInput(session, "trials_logit", choices = c("None" = "none", names(df_numeric)))
-                        updateSelectInput(session, "n_beta", choices = c("None" = "none", names(df_numeric)))
-                        updateSelectInput(session, "deff_beta", choices = c("None" = "none", names(df_numeric)))
-
-                        # Store the data and display a preview.
+                        df <- if (ext %in% c("xls", "xlsx")) {
+                            readxl::read_excel(input$data_file$datapath)
+                        } else if (ext == "csv") {
+                            utils::read.csv(input$data_file$datapath, header = TRUE, sep = ",")
+                        } else if (ext %in% c("rda", "RData")) {
+                            env <- new.env()
+                            load(input$data_file$datapath, envir = env)
+                            obj_names <- ls(env)
+                            if (length(obj_names) == 0) stop("No objects found in the file.")
+                            df_candidates <- obj_names[sapply(obj_names, function(n) is.data.frame(env[[n]]))]
+                            if (length(df_candidates) == 0) stop("No data frame found in the file.")
+                            env[[df_candidates[1]]]
+                        } else {
+                            stop("Unsupported file format.")
+                        }
+                        df <- as.data.frame(df)
                         data(df)
                         output$data_preview <- DT::renderDT({
-                            DT::datatable(df, options = list(scrollX = TRUE, scrollY = "370px"))
+                            DT::datatable(df, options = list(scrollX = TRUE, scrollY = "370px",
+                                                             pageLength = 10))
                         })
+                        all_vars     <- names(df)
+                        numeric_vars <- all_vars[sapply(df, is.numeric)]
+                        updateSelectInput(session, "explore_var_summary",       choices = numeric_vars)
+                        updateSelectInput(session, "explore_var_hist",           choices = numeric_vars)
+                        updateSelectInput(session, "explore_var_boxplot",        choices = numeric_vars)
+                        updateSelectInput(session, "explore_var_scatter_x",      choices = numeric_vars)
+                        updateSelectInput(session, "explore_var_scatter_y",      choices = numeric_vars)
+                        updateSelectInput(session, "explore_var_scatter_color",  choices = c("None" = "", all_vars))
+                        updateSelectInput(session, "response_var",               choices = all_vars)
+                        updateSelectizeInput(session, "linear_aux_vars",         choices = all_vars, server = TRUE)
+                        updateSelectizeInput(session, "re_groups",               choices = all_vars, server = TRUE)
+                        updateSelectInput(session, "trials_var",   choices = c("none", all_vars))
+                        updateSelectInput(session, "sre",          choices = c("none", all_vars))
+                        updateSelectInput(session, "trials_logit", choices = c("none", all_vars))
+                        updateSelectInput(session, "n_beta",       choices = c("none", all_vars))
+                        updateSelectInput(session, "deff_beta",    choices = c("none", all_vars))
+                        showNotification("Data uploaded successfully!", type = "message", duration = 5)
                     },
                     warning = function(w) {
-                        showNotification(paste("Data Upload Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                        invokeRestart("muffleWarning") # Supaya warning tidak muncul di console
+                        showNotification(paste("Upload warning:", conditionMessage(w)),
+                                         type = "warning", duration = 10)
+                        invokeRestart("muffleWarning")
                     },
-                    message = function(m) {
-                        showNotification(paste("Data Upload Message:", conditionMessage(m)), type = "message", duration = 10)
-                        invokeRestart("muffleMessage")
-                    }
+                    message = function(m) { invokeRestart("muffleMessage") }
                 ),
-                # Handle errors during file upload and processing.
                 error = function(e) {
-                    # Display error notification
                     showNotification(paste("Data Upload Error:", e$message), type = "error", duration = 10)
-                    # Clear reactive data and UI elements
                     data(NULL)
                     output$data_preview <- DT::renderDT(NULL)
                     output$data_upload_error <- renderUI(
                         div(class = "alert alert-danger", paste("Upload Error:", e$message))
                     )
-                    # Reset all UI inputs if an error occurs.
-                    updateSelectInput(session, "explore_var_summary", choices = NULL)
-                    updateSelectInput(session, "explore_var_hist", choices = NULL)
-                    updateSelectInput(session, "explore_var_boxplot", choices = NULL)
-                    updateSelectInput(session, "explore_var_scatter_x", choices = NULL)
-                    updateSelectInput(session, "explore_var_scatter_y", choices = NULL)
-                    updateSelectInput(session, "explore_var_scatter_color", choices = NULL)
-                    updateSelectInput(session, "response_var", choices = NULL)
-                    updateSelectizeInput(session, "linear_aux_vars", choices = NULL, server = TRUE)
-                    updateSelectizeInput(session, "nonlinear_aux_vars", choices = NULL, server = TRUE)
-                    updateSelectizeInput(session, "re_groups", choices = NULL, server = TRUE)
-                    updateSelectInput(session, "trials_var", choices = NULL)
-                    updateSelectInput(session, "sre", choices = NULL)
-                    updateSelectInput(session, "trials_logit", choices = NULL)
-                    updateSelectInput(session, "n_beta", choices = NULL)
-                    updateSelectInput(session, "deff_beta", choices = NULL)
-                    updateSelectizeInput(session, "sensitivity_params_results", choices = NULL, server = TRUE)
+                    for (id in c("explore_var_summary", "explore_var_hist", "explore_var_boxplot",
+                                 "explore_var_scatter_x", "explore_var_scatter_y",
+                                 "explore_var_scatter_color", "response_var", "trials_var",
+                                 "sre", "trials_logit", "n_beta", "deff_beta")) {
+                        updateSelectInput(session, id, choices = NULL)
+                    }
+                    for (id in c("linear_aux_vars", "re_groups", "sensitivity_params_results")) {
+                        updateSelectizeInput(session, id, choices = NULL, server = TRUE)
+                    }
                 }
             )
         })
     })
-
-
-    # ==== RESET OBSERVERS ====
-    # Reset specific inputs when related settings change to avoid invalid states.
-    # Reset variables when distribution type changes
+    
+    
+    # -- RESET OBSERVERS -------------------------------------------------------
     observeEvent(input$dist_type, {
-        updateSelectInput(session, "trials_var", selected = "none")
+        updateSelectInput(session, "trials_var",   selected = "none")
         updateSelectInput(session, "trials_logit", selected = "none")
-        updateSelectInput(session, "n_beta", selected = "none")
-        updateSelectInput(session, "deff_beta", selected = "none")
+        updateSelectInput(session, "n_beta",       selected = "none")
+        updateSelectInput(session, "deff_beta",    selected = "none")
     })
-
-    # Reset spatial random effects (SRE) variable when spatial type changes
     observeEvent(input$sre_type, {
         updateSelectInput(session, "sre", selected = "none")
-    })
 
-    # Reset trials variable when HB family changes
+        # v0.4.0+: auto-suggest shp_type / shp_style based on theory.
+        # User can still override afterwards (this only fires on sre_type change).
+        if (isTRUE(input$sre_type == "car")) {
+            updateSelectInput(session, "shp_type",  selected = "queen")
+            updateSelectInput(session, "shp_style", selected = "B")
+        } else if (isTRUE(input$sre_type == "sar")) {
+            updateSelectInput(session, "shp_type",  selected = "knn")
+            updateSelectInput(session, "shp_style", selected = "W")
+        }
+    })
     observeEvent(input$hb_family, {
         updateSelectInput(session, "trials_var", selected = "none")
     })
-
-
-    # ==== DATA EXPLORATION ====
-    # Renders the summary statistics for the selected variable.
-    ## ===== SUMMARY =====
+    
+    # -- NONLINEAR VARS: sync choices with linear_aux_vars --------------------
+    # When the user changes the auxiliary variable selection, the nonlinear
+    # selector is refreshed to contain only the currently selected aux vars.
+    # Previously selected nonlinear vars no longer in aux_vars are dropped.
+    observe({
+        req(input$linear_aux_vars)
+        updateSelectizeInput(
+            session,
+            inputId  = "nonlinear_vars",
+            choices  = input$linear_aux_vars,
+            selected = intersect(
+                isolate(input$nonlinear_vars),
+                input$linear_aux_vars
+            )
+        )
+    })
+    
+    
+    # -- DATA EXPLORATION: Summary ---------------------------------------------
     output$numeric_summary <- renderPrint({
         req(data(), input$explore_var_summary)
         summary(data()[[input$explore_var_summary]])
     })
-    ## ===== HISTOGRAM =====
-    # Renders a histogram for the selected variable.
+    
+    # -- DATA EXPLORATION: Histogram -------------------------------------------
     output$histogram_plot <- renderPlot({
         req(data(), input$explore_var_hist)
-        p <- ggplot2::ggplot(data(), ggplot2::aes_string(x = input$explore_var_hist)) +
-            ggplot2::geom_histogram(ggplot2::aes(y = ..density..), bins = 30, fill = "steelblue", color = "white", alpha = 0.7) +
+        var <- input$explore_var_hist
+        p <- ggplot2::ggplot(data(), ggplot2::aes(x = .data[[var]])) +
+            ggplot2::geom_histogram(ggplot2::aes(y = ggplot2::after_stat(density)),
+                                    bins = 30, fill = "steelblue", color = "white", alpha = 0.7) +
             ggplot2::geom_density(alpha = 0.2, fill = "#FF6666") +
-            ggplot2::labs(title = paste("Histogram of", input$explore_var_hist), x = input$explore_var_hist, y = "Density") +
+            ggplot2::labs(title = paste("Histogram of", var), x = var, y = "Density") +
             ggplot2::theme_minimal()
-        withCallingHandlers(
-            {
-                print(p)
-            },
+        withCallingHandlers(print(p),
             warning = function(w) {
-                showNotification(paste("Histogram Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                invokeRestart("muffleWarning") # Supaya warning tidak muncul di console
+                showNotification(paste("Histogram warning:", conditionMessage(w)), type = "warning", duration = 10)
+                invokeRestart("muffleWarning")
             },
-            message = function(m) {
-                showNotification(paste("Histogram Message:", conditionMessage(m)), type = "message", duration = 10)
-                invokeRestart("muffleMessage")
-            }
+            message = function(m) { invokeRestart("muffleMessage") }
         )
     })
-    ## ===== BOXPLOT ====
-    # Renders a boxplot for the selected variable.
+    
+    # -- DATA EXPLORATION: Boxplot ---------------------------------------------
     output$boxplot_plot <- renderPlot({
         req(data(), input$explore_var_boxplot)
-        p <- ggplot2::ggplot(data(), ggplot2::aes_string(y = input$explore_var_boxplot)) +
+        var <- input$explore_var_boxplot
+        p <- ggplot2::ggplot(data(), ggplot2::aes(y = .data[[var]])) +
             ggplot2::geom_boxplot(fill = "skyblue", color = "black", alpha = 0.7) +
-            ggplot2::labs(title = paste("Boxplot of", input$explore_var_boxplot), y = input$explore_var_boxplot) +
+            ggplot2::labs(title = paste("Boxplot of", var), y = var) +
             ggplot2::theme_minimal() +
             ggplot2::coord_flip()
-        withCallingHandlers(
-            {
-                print(p)
-            },
+        withCallingHandlers(print(p),
             warning = function(w) {
-                showNotification(paste("Boxplot Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                invokeRestart("muffleWarning") # Supaya warning tidak muncul di console
+                showNotification(paste("Boxplot warning:", conditionMessage(w)), type = "warning", duration = 10)
+                invokeRestart("muffleWarning")
             },
-            message = function(m) {
-                showNotification(paste("Boxplot Message:", conditionMessage(m)), type = "message", duration = 10)
-                invokeRestart("muffleMessage")
-            }
+            message = function(m) { invokeRestart("muffleMessage") }
         )
     })
-    ## ===== TRANSFORMASI DATA =====
-    # Reactive expression to transform data for the scatter plot based on user selection (log, logit).
+    
+    # -- DATA EXPLORATION: Scatter -- data transformation -----------------------
     scatter_data_transformed <- reactive({
         req(data(), input$explore_var_scatter_x, input$explore_var_scatter_y)
-        df <- data()
-        x <- input$explore_var_scatter_x
-        y <- input$explore_var_scatter_y
-
+        df      <- data()
+        x_col   <- input$explore_var_scatter_x
+        y_col   <- input$explore_var_scatter_y
         epsilon <- 1e-6
-
-        # Y-axis transformation
+        
         if (input$explore_transform_y == "log") {
-            if (any(df[[y]] <= 0, na.rm = TRUE)) {
-                showNotification("Some Y values ≤ 0 replaced with small positive value before log transform.", type = "message", duration = 10)
-            }
-            df[[paste0(y, "_log")]] <- log(pmax(df[[y]], epsilon))
-            y <- paste0(y, "_log")
+            if (any(df[[y_col]] <= 0, na.rm = TRUE))
+                showNotification("Some Y values \u2264 0; replaced with a small positive value before log transform.",
+                                 type = "message", duration = 10)
+            df[[paste0(y_col, "_log")]] <- log(pmax(df[[y_col]], epsilon))
+            y_col <- paste0(y_col, "_log")
         } else if (input$explore_transform_y == "logit") {
-            if (any(df[[y]] <= 0 | df[[y]] >= 1, na.rm = TRUE)) {
-                showNotification("Y values outside (0,1) adjusted before logit transform.", type = "message", duration = 10)
-            }
-            df[[paste0(y, "_logit")]] <- qlogis(pmin(pmax(df[[y]], epsilon), 1 - epsilon))
-            y <- paste0(y, "_logit")
+            if (any(df[[y_col]] <= 0 | df[[y_col]] >= 1, na.rm = TRUE))
+                showNotification("Y values outside (0, 1) adjusted before logit transform.",
+                                 type = "message", duration = 10)
+            df[[paste0(y_col, "_logit")]] <- stats::qlogis(pmin(pmax(df[[y_col]], epsilon), 1 - epsilon))
+            y_col <- paste0(y_col, "_logit")
         } else if (input$explore_transform_y == "zscore") {
-            mu <- mean(df[[y]], na.rm = TRUE)
-            sigma <- sd(df[[y]], na.rm = TRUE)
-            df[[paste0(y, "_std")]] <- (df[[y]] - mu) / sigma
-            y <- paste0(y, "_std")
+            mu <- mean(df[[y_col]], na.rm = TRUE)
+            sg <- stats::sd(df[[y_col]], na.rm = TRUE)
+            df[[paste0(y_col, "_std")]] <- (df[[y_col]] - mu) / sg
+            y_col <- paste0(y_col, "_std")
         }
-
-        # X-axis transformation
+        
         if (input$explore_transform_x == "log") {
-            if (any(df[[x]] <= 0, na.rm = TRUE)) {
-                showNotification("Some X values ≤ 0 replaced with small positive value before log transform.", type = "message", duration = 10)
-            }
-            df[[paste0(x, "_log")]] <- log(pmax(df[[x]], epsilon))
-            x <- paste0(x, "_log")
+            if (any(df[[x_col]] <= 0, na.rm = TRUE))
+                showNotification("Some X values \u2264 0; replaced with a small positive value before log transform.",
+                                 type = "message", duration = 10)
+            df[[paste0(x_col, "_log")]] <- log(pmax(df[[x_col]], epsilon))
+            x_col <- paste0(x_col, "_log")
         } else if (input$explore_transform_x == "zscore") {
-            mu <- mean(df[[x]], na.rm = TRUE)
-            sigma <- sd(df[[x]], na.rm = TRUE)
-            df[[paste0(x, "_std")]] <- (df[[x]] - mu) / sigma
-            x <- paste0(x, "_std")
+            mu <- mean(df[[x_col]], na.rm = TRUE)
+            sg <- stats::sd(df[[x_col]], na.rm = TRUE)
+            df[[paste0(x_col, "_std")]] <- (df[[x_col]] - mu) / sg
+            x_col <- paste0(x_col, "_std")
         }
-        list(data = df, x = x, y = y)
+        list(data = df, x = x_col, y = y_col)
     })
-
-
-    ## ===== SCATTER PLOT =====
-    # Renders the scatter plot.
+    
+    # -- DATA EXPLORATION: Scatter plot ----------------------------------------
     output$scatter_plot_exploration <- renderPlot({
         s <- scatter_data_transformed()
         req(s$data, s$x, s$y)
-        # Avoid plotting a variable against itself without transformation.
-        if (s$x == s$y && input$explore_transform_x == "none" && input$explore_transform_y == "none") {
+        if (s$x == s$y &&
+            input$explore_transform_x == "none" &&
+            input$explore_transform_y == "none") {
             plot(1, type = "n", axes = FALSE, xlab = "", ylab = "")
-            text(1, 1, "Select different variables or apply a transformation", cex = 1.2)
+            text(1, 1, "Select different variables or apply a transformation.", cex = 1.2)
             return()
         }
-        p <- ggplot2::ggplot(s$data, ggplot2::aes_string(x = s$x, y = s$y))
-        # Add color aesthetic if a categorical variable is selected.
-        if (!is.null(input$explore_var_scatter_color) && input$explore_var_scatter_color != "") {
-            p <- p + ggplot2::geom_point(ggplot2::aes_string(color = paste0("as.factor(", input$explore_var_scatter_color, ")")),
-                alpha = 0.7, size = 2.5
-            ) + ggplot2::labs(color = input$explore_var_scatter_color)
+        p <- ggplot2::ggplot(s$data, ggplot2::aes(x = .data[[s$x]], y = .data[[s$y]]))
+        color_var <- input$explore_var_scatter_color
+        if (!is.null(color_var) && nzchar(color_var)) {
+            p <- p +
+                ggplot2::geom_point(ggplot2::aes(color = as.factor(.data[[color_var]])),
+                                    alpha = 0.7, size = 2.5) +
+                ggplot2::labs(color = color_var)
         } else {
             p <- p + ggplot2::geom_point(color = "darkcyan", alpha = 0.6, size = 2.5)
         }
-        p <- p + ggplot2::geom_smooth(method = "lm", color = "red", se = FALSE, linetype = "dashed") +
+        p <- p +
+            ggplot2::geom_smooth(method = "lm", color = "red", se = FALSE, linetype = "dashed") +
             ggplot2::labs(title = paste("Scatter Plot:", s$y, "vs", s$x), x = s$x, y = s$y) +
             ggplot2::theme_minimal()
-        withCallingHandlers(
-            {
-                suppressMessages(print(p))
-            },
+        withCallingHandlers(suppressMessages(print(p)),
             warning = function(w) {
-                showNotification(paste("Scatter Plot Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                invokeRestart("muffleWarning") # Supaya warning tidak muncul di console
+                showNotification(paste("Scatter Plot warning:", conditionMessage(w)), type = "warning", duration = 10)
+                invokeRestart("muffleWarning")
             },
-            message = function(m) {
-                showNotification(paste("Scatter Plot Message:", conditionMessage(m)), type = "message", duration = 10)
-                invokeRestart("muffleMessage")
-            }
+            message = function(m) { invokeRestart("muffleMessage") }
         )
     })
-
-    ## ===== CORRELATION ====
-    # Calculates and renders various correlation coefficients.
+    
+    # -- DATA EXPLORATION: Correlation -----------------------------------------
+    # Pearson, Spearman, Distance Correlation, MIC.
+    # Chatterjee's Xi (XICOR) has been removed to reduce external dependencies.
     output$correlation_results <- renderUI({
         s_data_list <- scatter_data_transformed()
         req(s_data_list$data, s_data_list$y, s_data_list$x)
-
+        
         df_corr <- s_data_list$data
-        y_vec <- df_corr[[s_data_list$y]]
-        x_vec <- df_corr[[s_data_list$x]]
-
-        complete_cases <- stats::complete.cases(x_vec, y_vec)
-        x_vec <- x_vec[complete_cases]
-        y_vec <- y_vec[complete_cases]
-
-        if (length(x_vec) < 3 || length(y_vec) < 3) {
+        y_vec   <- df_corr[[s_data_list$y]]
+        x_vec   <- df_corr[[s_data_list$x]]
+        ok      <- stats::complete.cases(x_vec, y_vec)
+        x_vec   <- x_vec[ok]; y_vec <- y_vec[ok]
+        
+        if (length(x_vec) < 3L)
             return(h4("Not enough complete observations to compute correlations."))
-        }
-
         if (s_data_list$x == s_data_list$y &&
             input$explore_transform_x == "none" &&
-            input$explore_transform_y == "none") {
+            input$explore_transform_y == "none")
             return(h4("Please select different variables or apply a transformation."))
-        }
-
-        # Compute correlations
+        
         results <- list()
-        results[["Pearson's r"]] <- tryCatch(
-            {
-                pearson <- stats::cor.test(x_vec, y_vec, method = "pearson")
-                c(sprintf("%.4f", pearson$estimate), sprintf("%.4f", pearson$p.value))
-            },
-            error = function(e) c("Error", e$message)
-        )
-
-        results[["Spearman's rho"]] <- tryCatch(
-            {
-                spearman <- suppressWarnings(stats::cor.test(x_vec, y_vec, method = "spearman", exact = FALSE))
-                c(sprintf("%.4f", spearman$estimate), sprintf("%.4f", spearman$p.value))
-            },
-            error = function(e) c("Error", e$message)
-        )
-
-        results[["Chatterjee's Xi"]] <- tryCatch(
-            {
-                xi <- XICOR::xicor(x_vec, y_vec, pvalue = TRUE)
-                c(sprintf("%.4f", xi$xi), sprintf("%.4f", xi$pval))
-            },
-            error = function(e) c("Error", e$message)
-        )
-
-        results[["Distance Correlation"]] <- tryCatch(
-            {
-                dcor <- energy::dcor.test(x_vec, y_vec, R = 199)
-                c(sprintf("%.4f", dcor$estimate[1]), sprintf("%.4f", dcor$p.value))
-            },
-            error = function(e) c("Error", e$message)
-        )
-
-        results[["Maximal Information Coefficient (MIC)"]] <- tryCatch(
-            {
-                mic <- minerva::mine(x_vec, y_vec)
-                c(sprintf("%.4f", mic$MIC), "N/A")
-            },
-            error = function(e) c("Error", e$message)
-        )
-
+        
+        results[["Pearson's r"]] <- tryCatch({
+            r <- stats::cor.test(x_vec, y_vec, method = "pearson")
+            c(sprintf("%.4f", r$estimate), sprintf("%.4f", r$p.value))
+        }, error = function(e) c("Error", e$message))
+        
+        results[["Spearman's rho"]] <- tryCatch({
+            r <- suppressWarnings(stats::cor.test(x_vec, y_vec, method = "spearman", exact = FALSE))
+            c(sprintf("%.4f", r$estimate), sprintf("%.4f", r$p.value))
+        }, error = function(e) c("Error", e$message))
+        
+        results[["Distance Correlation"]] <- tryCatch({
+            dc <- energy::dcor.test(x_vec, y_vec, R = 199)
+            c(sprintf("%.4f", dc$estimate[[1L]]), sprintf("%.4f", dc$p.value))
+        }, error = function(e) c("Error", e$message))
+        
+        results[["Maximal Information Coefficient (MIC)"]] <- tryCatch({
+            mic <- minerva::mine(x_vec, y_vec)
+            c(sprintf("%.4f", mic$MIC), "N/A")
+        }, error = function(e) c("Error", e$message))
+        
         df_out <- data.frame(
-            Metric = names(results),
-            Value = sapply(results, `[[`, 1),
-            `p-value` = sapply(results, `[[`, 2),
+            Metric    = names(results),
+            Value     = vapply(results, `[[`, character(1L), 1L),
+            `p-value` = vapply(results, `[[`, character(1L), 2L),
             check.names = FALSE
         )
-
-        # Output combined: dynamic title + table
-        tagList(
-            h5(paste0("Correlation between variables ", s_data_list$y, " and ", s_data_list$x)),
-            tableOutput("correlation_table")
-        ) -> output_ui
-
         output$correlation_table <- renderTable(df_out)
-        output_ui
+        tagList(
+            h5(paste0("Correlation: ", s_data_list$y, " vs ", s_data_list$x)),
+            tableOutput("correlation_table")
+        )
     })
-
-
-    # ==== MISSING DATA CHECKING ====
-    # This complex observer watches all variable selection inputs.
+    
+    
+    # -- MISSING DATA CHECKING -------------------------------------------------
     observe({
         req(data(), input$dist_type)
-        df <- data()
+        df             <- data()
         available_vars <- names(df)
-
-        # It re-evaluates whenever a model variable selection changes.
+        
         observeEvent(
-            c(
-                input$response_var, input$linear_aux_vars, input$nonlinear_aux_vars,
-                input$trials_var, input$trials_logit, input$n_beta,
-                input$deff_beta, input$re_groups, input$sre
-            ),
+            c(input$response_var, input$linear_aux_vars, input$nonlinear_vars,
+              input$trials_var, input$trials_logit, input$n_beta,
+              input$deff_beta, input$re_groups, input$sre),
             {
-                # Collect all unique variables selected by the user.
                 selected_vars <- unique(c(
-                    input$response_var, input$linear_aux_vars,
-                    input$nonlinear_aux_vars, input$trials_var,
-                    input$trials_logit, input$n_beta,
+                    input$response_var, input$linear_aux_vars, input$nonlinear_vars,
+                    input$trials_var, input$trials_logit, input$n_beta,
                     input$deff_beta, input$re_groups, input$sre
                 ))
                 selected_vars <- selected_vars[selected_vars %in% available_vars]
-
-                # Check for missing values (NA) in the selected variables.
-                missing_info <- sapply(selected_vars, function(col) sum(is.na(df[[col]]), na.rm = TRUE))
-                missing_info <- missing_info[missing_info > 0]
-
-                # Categorize variables with missing data based on their role.
-                missing_aux_response <- intersect(names(missing_info), c(input$response_var, input$linear_aux_vars, input$nonlinear_aux_vars))
-                missing_re <- intersect(names(missing_info), input$re_groups)
-                missing_sre <- intersect(names(missing_info), input$sre)
-                missing_trials_var <- intersect(names(missing_info), input$trials_var)
-                missing_trials_logit <- intersect(names(missing_info), input$trials_logit)
-                missing_n_beta <- intersect(names(missing_info), input$n_beta)
-                missing_deff_beta <- intersect(names(missing_info), input$deff_beta)
-
-                # Set reactive flags to conditionally show UI elements.
-                output$missing_detected <- reactive({
-                    length(missing_info) > 0
-                })
+                
+                missing_info <- vapply(selected_vars, function(col) {
+                    sum(is.na(df[[col]]), na.rm = TRUE)
+                }, integer(1L))
+                missing_info <- missing_info[missing_info > 0L]
+                
+                missing_aux_response <- intersect(
+                    names(missing_info),
+                    c(input$response_var, input$linear_aux_vars, input$nonlinear_vars)
+                )
+                missing_re            <- intersect(names(missing_info), input$re_groups)
+                missing_sre           <- intersect(names(missing_info), input$sre)
+                missing_trials_var    <- intersect(names(missing_info), input$trials_var)
+                missing_trials_logit  <- intersect(names(missing_info), input$trials_logit)
+                missing_n_beta        <- intersect(names(missing_info), input$n_beta)
+                missing_deff_beta     <- intersect(names(missing_info), input$deff_beta)
+                
+                output$missing_detected <- reactive({ length(missing_info) > 0L })
                 outputOptions(output, "missing_detected", suspendWhenHidden = FALSE)
-
-                output$missing_aux_response_detected <- reactive({
-                    length(missing_aux_response) > 0
-                })
+                output$missing_aux_response_detected <- reactive({ length(missing_aux_response) > 0L })
                 outputOptions(output, "missing_aux_response_detected", suspendWhenHidden = FALSE)
-
-                # Render a list of variables that contain missing values.
+                
                 output$missing_vars_list <- renderUI({
-                    if (length(missing_info) > 0) {
-                        div(
-                            h5("Selected Variables with Missing Values:"),
-                            HTML(paste0("<ul>", paste(sprintf("<li>%s [ %d Observations ]</li>", names(missing_info), missing_info), collapse = " "), " </ul>"))
-                        )
-                    }
+                    if (length(missing_info) > 0L)
+                        div(h5("Variables with Missing Values:"),
+                            HTML(paste0("<ul>",
+                                        paste(sprintf("<li>%s [%d missing]</li>",
+                                                      names(missing_info), missing_info), collapse = ""),
+                                        "</ul>")))
                 })
-
-                # Set a default method for handling missing data based on the chosen distribution.
-                default_method <- "none"
-                if (length(missing_aux_response) > 0) {
-                    default_method <- switch(input$dist_type,
-                        "Lognormal-Lognormal"   = "model",
-                        "Binomial-Logitnormal" = "multiple",
-                        "Beta-Logitnormal"        = "model",
-                        "none"
-                    )
-                }
-                updateSelectInput(session, "missing_data_method", selected = default_method)
-
-                # Display a note about the default missing data handling method.
+                
                 output$missing_data_note <- renderUI({
-                    if (input$dist_type %in% c("Lognormal-Lognormal", "Binomial-Logitnormal", "Beta-Logitnormal")) {
-                        msg <- switch(input$dist_type,
-                            "Lognormal-Lognormal"   = "Default: Model-based imputation",
-                            "Binomial-Logitnormal" = "Default: Multiple imputation",
-                            "Beta-Logitnormal"        = "Default: Model-based imputation"
-                        )
-                        div(style = "color: blue; font-weight: bold;", msg)
-                    }
+                    method <- input$missing_data_method
+                    response_has_na <- input$response_var %in% names(missing_info)
+                    if (is.null(method) || method == "none") return(NULL)
+                    switch(method,
+                        deleted  = div(class = "alert alert-info",
+                                       strong("Deletion (complete-case analysis):"),
+                                       " Rows where the response variable is missing are removed before
+                              model fitting. All predictor (X) variables must be complete; if
+                              any predictor has missing values, please use 'Multiple' instead."),
+                        multiple = div(class = "alert alert-warning",
+                                       strong("Multiple Imputation \u2014 predictors (X) only:"),
+                                       " Multiple imputation via ", code("mice"), " is applied exclusively
+                              to ", strong("auxiliary predictor variables"), ".",
+                                       if (response_has_na) tagList(
+                                           br(), strong("\u26a0 Warning: "),
+                                           " The response variable has missing values but will ",
+                                           strong("NOT"), " be imputed. In a Bayesian model, missing
+                                      outcomes are naturally integrated out through the posterior
+                                      predictive distribution. Imputing Y would introduce
+                                      unjustified bias. Rows with missing Y will be excluded from
+                                      model fitting but retained for prediction via sae_predict()."
+                                       )),
+                        model    = div(class = "alert alert-info",
+                                       strong("Model-based imputation (mi()):"),
+                                       " Missing values in predictors are estimated jointly with the model
+                              parameters using the ", code("mi()"), " function from ",
+                                       code("brms"), ". Only available for continuous outcomes."),
+                        NULL
+                    )
                 })
-
-                # Display specific warnings or errors if crucial variables have missing data.
+                
                 output$missing_re_warning <- renderUI({
-                    if (length(missing_re) > 0) {
-                        div(style = "color: orange; font-weight: bold;", "Warning: Missing values detected in grouping variable. Rows with missing values will be automatically removed.")
-                    }
+                    if (length(missing_re) > 0L)
+                        div(class = "alert alert-warning", strong("Warning:"),
+                            " Missing values in group variable(s): ", paste(missing_re, collapse = ", "), ".")
                 })
                 output$missing_sre_warning <- renderUI({
-                    if (length(missing_sre) > 0) {
-                        div(style = "color: orange; font-weight: bold;", "Warning: Missing values detected in spatial random effects (SRE). Rows with missing values will be automatically removed.")
-                    }
+                    if (length(missing_sre) > 0L)
+                        div(class = "alert alert-warning", strong("Warning:"),
+                            " Missing values in spatial variable(s): ", paste(missing_sre, collapse = ", "), ".")
                 })
                 output$missing_trials_var_error <- renderUI({
-                    if (length(missing_trials_var) > 0) {
-                        div(style = "color: red; font-weight: bold;", "Error: The count of trials for the Binomial distribution contains missing values. This information is required and must be fully specified.")
-                    }
+                    if (length(missing_trials_var) > 0L)
+                        div(class = "alert alert-danger", strong("Error:"),
+                            " Missing values in trials variable: ", paste(missing_trials_var, collapse = ", "), ".")
                 })
                 output$missing_trials_logit_error <- renderUI({
-                    if (length(missing_trials_logit) > 0) {
-                        div(style = "color: red; font-weight: bold;", "Error: The count of trials for the Logit distribution contains missing values. This information is required and must be fully specified.")
-                    }
+                    if (length(missing_trials_logit) > 0L)
+                        div(class = "alert alert-danger", strong("Error:"),
+                            " Missing values in logit trials variable: ", paste(missing_trials_logit, collapse = ", "), ".")
                 })
                 output$missing_n_beta_error <- renderUI({
-                    if (length(missing_n_beta) > 0) {
-                        div(style = "color: red; font-weight: bold;", "Error: The sample size (n) for the Beta distribution contains missing values. This information is required and must be fully specified.")
-                    }
+                    if (length(missing_n_beta) > 0L)
+                        div(class = "alert alert-danger", strong("Error:"),
+                            " Missing values in sample size variable (n): ", paste(missing_n_beta, collapse = ", "), ".")
                 })
                 output$missing_deff_beta_error <- renderUI({
-                    if (length(missing_deff_beta) > 0) {
-                        div(style = "color: red; font-weight: bold;", "Error: The design effect contains missing values. This information is required and must be fully specified.")
-                    }
+                    if (length(missing_deff_beta) > 0L)
+                        div(class = "alert alert-danger", strong("Error:"),
+                            " Missing values in design effect variable (deff): ", paste(missing_deff_beta, collapse = ", "), ".")
                 })
-            },
-            ignoreNULL = FALSE,
-            ignoreInit = FALSE
-        )
-    })
-
-
-    # ==== INPUT DATA SPATIAL ====
-    observeEvent(input$spatial_weights, {
-        req(input$spatial_weights)
-        output$spatial_error <- renderUI(NULL) # Reset any previous error messages
-
-        tryCatch(
-            {
-                ext <- tools::file_ext(input$spatial_weights$name)
-
-                # Baca file sesuai ekstensi
-                mat_df <- switch(ext,
-                                 "csv" = read.csv(input$spatial_weights$datapath,
-                                                  header = TRUE, row.names = 1, check.names = FALSE),
-                                 "xls" = readxl::read_excel(input$spatial_weights$datapath),
-                                 "xlsx" = readxl::read_excel(input$spatial_weights$datapath),
-                                 "rda" = {
-                                   e <- new.env()
-                                   load(input$spatial_weights$datapath, envir = e)
-                                   obj_names <- ls(envir = e)
-                                   obj <- e[[obj_names[1]]]
-                                   obj
-                                 },
-                                 "RData" = {
-                                   e <- new.env()
-                                   load(input$spatial_weights$datapath, envir = e)
-                                   obj_names <- ls(envir = e)
-                                   obj <- e[[obj_names[1]]]
-                                   obj
-                                 },
-                                 stop("Unsupported file type: must be .csv, .xls, .xlsx, .rda, or .RData")
-                )
-
-                # Jika Excel, atur rownames dari kolom pertama
-                if (ext %in% c("xls", "xlsx")) {
-                    mat_df <- as.data.frame(mat_df)
-                    rownames(mat_df) <- as.character(mat_df[[1]])
-                    mat_df[[1]] <- NULL
-                }
-
-                # Konversi ke matriks
-                M <- as.matrix(mat_df)
-
-                # Simpan matriks valid
-                spatial_weights(M)
-                showNotification("Spatial weights successfully loaded.", type = "message", duration = 10)
-            },
-            error = function(e) {
-                spatial_weights(NULL)
-                output$spatial_error <- renderUI(
-                    div(class = "alert alert-danger", paste("Upload Error:", e$message))
-                )
-                showNotification(paste("Spatial Weights Error:", e$message), type = "error", duration = 15)
+                
+                default_method <- if (input$dist_type %in% c("Beta-Logitnormal", "Binomial-Logitnormal"))
+                    "multiple" else "model"
+                updateSelectInput(session, "missing_data_method", selected = default_method)
             }
         )
     })
-
-
-
-    # ==== PRIOR HANDLING ====
-    # Function to validate the syntax of a user-entered prior string.
-    validate_prior_format <- function(prior_str) {
-        prior_str <- trimws(prior_str)
-        if (prior_str == "") {
-            return("Prior string cannot be empty.")
-        }
-        if (!grepl("^prior\\(.*\\)$", prior_str) && !grepl("^set_prior\\(.*\\)$", prior_str)) {
-            return("Invalid prior format. Use 'prior(...)' or 'set_prior(...)'")
-        }
-        return(NULL)
-    }
-
-    # Adds a validated prior to the list of priors.
+    
+    
+    # -- SPATIAL WEIGHTS UPLOAD ------------------------------------------------
+    observeEvent(input$spatial_weights, {
+        req(input$spatial_weights)
+        ext <- tools::file_ext(input$spatial_weights$name)
+        tryCatch({
+            M <- if (ext %in% c("xls", "xlsx")) {
+                as.matrix(readxl::read_excel(input$spatial_weights$datapath, col_names = FALSE))
+            } else {
+                as.matrix(utils::read.csv(input$spatial_weights$datapath, header = FALSE))
+            }
+            spatial_weights(M)
+            output$spatial_weights_error <- renderUI(
+                div(class = "alert alert-success", "Spatial weights matrix uploaded successfully.")
+            )
+        }, error = function(e) {
+            output$spatial_weights_error <- renderUI(
+                div(class = "alert alert-danger", paste("Error reading spatial weights:", e$message))
+            )
+        })
+    })
+    
+    
+    # -- PRIORS ----------------------------------------------------------------
     observeEvent(input$add_prior, {
         req(input$prior_input)
-        new_prior <- trimws(input$prior_input)
-        error_message <- validate_prior_format(new_prior)
-        if (!is.null(error_message)) {
-            showNotification(error_message, type = "error", duration = 15)
-            return()
-        }
-        current_priors <- prior_list()
-        if (new_prior %in% current_priors) {
-            showNotification("Duplicate prior detected!", type = "warning", duration = 10)
-            return()
-        }
-        updated_priors <- c(current_priors, new_prior)
-        prior_list(updated_priors)
+        prior_list(c(prior_list(), trimws(input$prior_input)))
         updateTextInput(session, "prior_input", value = "")
     })
-
-    # Clears all defined priors.
-    observeEvent(input$clear_prior, {
-        prior_list(character(0))
-        showNotification("All priors cleared.", type = "message", duration = 10)
+    observeEvent(input$clear_priors, { prior_list(character()) })
+    
+    output$prior_list_display <- renderPrint({
+        p <- prior_list()
+        if (length(p) == 0L) cat("No priors specified (brms defaults will be used).\n")
+        else cat(paste0(seq_along(p), ". ", p, collapse = "\n"), "\n")
     })
-
-    # Displays the current list of priors.
-    output$prior_list <- renderText({
-        priors <- prior_list()
-        if (length(priors) == 0) {
-            return("No priors defined. Model will use brms defaults.")
-        }
-        paste(priors, collapse = "\n")
-    })
-
-    # Reactive expression that combines the prior strings into a single brms prior object.
+    
     reactive_prior <- reactive({
-        priors <- prior_list()
-        if (length(priors) == 0) {
-            return(NULL)
-        }
+        p <- prior_list()
+        if (length(p) == 0L) return(NULL)
         tryCatch(
-            {
-                combined_expr <- paste(priors, collapse = " + ")
-                eval(parse(text = combined_expr))
-            },
+            do.call(c, lapply(p, function(x) eval(parse(text = x)))),
             error = function(e) {
-                showNotification(paste("Error parsing priors:", e$message), type = "error", duration = 15)
+                showNotification(paste("Prior parsing error:", e$message), type = "error", duration = 10)
                 NULL
             }
         )
     })
-
-
-    # ==== PRIOR PREDICTIVE CHECKING RESULTS ====
-    # Renders all outputs for the prior predictive checking sub-tab.
-    observe({
-        req(prior_fit())
-        tryCatch(
-            {
-                # Calls a custom function to process prior check results.
-                prior_check <- hbpc(prior_fit(), data(), input$response_var)
-
-                # Renders the prior summary.
-                output$prior_summary <- renderPrint({
-                    withCallingHandlers(
-                        {
-                            cat("================================== Prior Summary ==================================\n")
-                            print(prior_check$prior_summary)
-                        },
-                        warning = function(w) {
-                            showNotification(paste("Prior Summary Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                            invokeRestart("muffleWarning")
-                        },
-                        message = function(m) {
-                            showNotification(paste("Prior Summary Message:", conditionMessage(m)), type = "message", duration = 10)
-                            invokeRestart("muffleMessage")
-                        }
-                    )
-                })
-
-                # Renders a summary of the draws from the prior distributions.
-                output$prior_parameter_draw <- renderPrint({
-                    withCallingHandlers(
-                        {
-                            cat("================================== Summary of Parameter Draws from Prior ==================================\n")
-                            print(prior_check$prior_draws_summary)
-                        },
-                        warning = function(w) {
-                            showNotification(paste("Parameter Draws Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                            invokeRestart("muffleWarning")
-                        },
-                        message = function(m) {
-                            showNotification(paste("Parameter Draws Message:", conditionMessage(m)), type = "message", duration = 10)
-                            invokeRestart("muffleMessage")
-                        }
-                    )
-                })
-
-                # Renders the prior predictive plot.
-                output$prior_predictive_plot <- renderPlot({
-                    withCallingHandlers(
-                        {
-                            print(prior_check$prior_predictive_plot)
-                        },
-                        warning = function(w) {
-                            showNotification(paste("Prior Predictive Plot Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                            invokeRestart("muffleWarning")
-                        },
-                        message = function(m) {
-                            showNotification(paste("Prior Predictive Plot Message:", conditionMessage(m)), type = "message", duration = 10)
-                            invokeRestart("muffleMessage")
-                        }
-                    )
-                })
-            },
-            error = function(e) {
-                showNotification(paste("Prior Check Error:", e$message), type = "error", duration = 15)
-            }
-        )
-    })
-
-
-    # ==== FORMULA CONSTRUCTION ====
-    # Reactive expression to dynamically build the model formula based on user inputs.
+    
+    
+    # -- FORMULA CONSTRUCTION --------------------------------------------------
     reactive_formula <- reactive({
         req(data(), input$response_var)
         output$model_fitting_error <- renderUI(NULL)
-
-        y_var <- input$response_var
-
-        # Start with the base formula: response ~ predictors.
-        formula_str <- paste(y_var, "~")
-        formula_str <- if (length(input$linear_aux_vars) > 0) {
-            paste(formula_str, paste(input$linear_aux_vars, collapse = "+"))
-        } else {
-            "1" # Intercept-only model if no predictors.
-        }
-
-        # # Nonlinear terms (splines or Gaussian processes)
-        # if (length(input$nonlinear_aux_vars) > 0) {
-        #     nonlinear_terms <- if (input$model_type == "Spline") {
-        #         paste0("s(", input$nonlinear_aux_vars, ")") # For splines
-        #     } else {
-        #         paste0("gp(", input$nonlinear_aux_vars, ")") # For Gaussian processes
-        #     }
-        #     formula_str <- paste(formula_str, "+", paste(nonlinear_terms, collapse = "+"))
-        # }
-
-        # Special syntax for binomial family with a 'trials' variable.
-        if (input$hb_family == "binomial") {
-            req(input$trials_var)
-            formula_str <- paste0(y_var, "|trials(", input$trials_var, ") ~ ", gsub(paste0(y_var, " ~ "), "", formula_str))
-        }
-
-        # If model-based imputation is selected, modify the formula for brms.
-        if (input$missing_data_method == "model") {
-            selected_vars <- c(input$response_var, input$linear_aux_vars, input$nonlinear_aux_vars)
-            missing_vars <- selected_vars[sapply(data()[selected_vars], function(x) any(is.na(x)))]
-
-            # Use `mi()` syntax for variables with missing data.
-            response_with_mi <- ifelse(input$response_var %in% missing_vars, paste0(input$response_var, " | mi()"), input$response_var)
-            all_predictors <- c(input$linear_aux_vars, input$nonlinear_aux_vars)
-            predictor_with_mi <- sapply(all_predictors, function(x) {
-                if (x %in% missing_vars) {
-                    return(paste0("mi(", x, ")"))
-                } else {
-                    return(x)
-                }
-            })
-
-            # Create the main formula.
-            main_formula <- brms::bf(stats::as.formula(paste0(response_with_mi, " ~ ", paste(predictor_with_mi, collapse = " + "))))
-
-            # Create auxiliary formulas to model the missing predictors themselves.
-            auxiliary_formulas <- lapply(missing_vars, function(var) {
-                if (var == input$response_var) {
-                    return(NULL)
-                } # Don't model the response variable.
-                predictors_for_var <- setdiff(all_predictors, var)
-                predictors_for_var <- predictors_for_var[!sapply(data()[predictors_for_var], function(x) any(is.na(x)))]
-                if (length(predictors_for_var) > 0) {
-                    return(brms::bf(stats::as.formula(paste0(var, " | mi() ~ ", paste(predictors_for_var, collapse = " + ")))))
-                } else {
-                    return(brms::bf(stats::as.formula(paste0(var, " | mi() ~ 1"))))
-                }
-            })
-            auxiliary_formulas <- Filter(Negate(is.null), auxiliary_formulas)
-
-            # Combine main and auxiliary formulas.
-            if (length(auxiliary_formulas) > 0) {
-                all_formulas <- Reduce("+", c(list(main_formula), auxiliary_formulas))
+        
+        y_var    <- input$response_var
+        aux_vars <- input$linear_aux_vars
+        nl_vars  <- input$nonlinear_vars %||% character(0L)
+        lin_vars <- setdiff(aux_vars, nl_vars)
+        nl_type  <- input$nonlinear_type %||% "spline"
+        nl_k     <- { k <- suppressWarnings(as.integer(input$spline_k)); if (is.na(k)) -1L else k }
+        
+        make_nl_term <- function(v) {
+            if (nl_type == "spline") {
+                if (nl_k == -1L) paste0("s(", v, ")") else paste0("s(", v, ", k = ", nl_k, ")")
             } else {
-                all_formulas <- main_formula
+                paste0("gp(", v, ")")
             }
-        } else {
-            # If no imputation, use the standard formula.
-            all_formulas <- brms::bf(formula_str)
         }
+        
+        if (!is.null(input$missing_data_method) && input$missing_data_method == "model") {
+            d         <- data()
+            all_vars  <- c(y_var, aux_vars)
+            missing_v <- all_vars[sapply(d[all_vars], function(x) any(is.na(x)))]
+            resp_lhs  <- if (y_var %in% missing_v) paste0(y_var, " | mi()") else y_var
+            lin_terms <- vapply(lin_vars, function(v)
+                if (v %in% missing_v) paste0("mi(", v, ")") else v, character(1L))
+            nl_terms  <- vapply(nl_vars, function(v) {
+                inner <- if (v %in% missing_v) paste0("mi(", v, ")") else v
+                if (nl_type == "spline") {
+                    if (nl_k == -1L) paste0("s(", inner, ")") else paste0("s(", inner, ", k = ", nl_k, ")")
+                } else paste0("gp(", inner, ")")
+            }, character(1L))
+            all_terms   <- c(lin_terms, nl_terms)
+            rhs         <- if (length(all_terms) > 0L) paste(all_terms, collapse = " + ") else "1"
+            formula_str <- paste(resp_lhs, "~", rhs)
+        } else {
+            nl_terms    <- vapply(nl_vars, make_nl_term, character(1L))
+            all_terms   <- c(lin_vars, nl_terms)
+            rhs         <- if (length(all_terms) > 0L) paste(all_terms, collapse = " + ") else "1"
+            formula_str <- paste(y_var, "~", rhs)
+        }
+        
+        if (!is.null(input$hb_family) && input$hb_family == "binomial") {
+            req(input$trials_var)
+            formula_str <- paste0(y_var, " | trials(", input$trials_var, ") ~ ",
+                                  sub(paste0(y_var, " ~ "), "", formula_str, fixed = TRUE))
+        }
+        brms::bf(stats::as.formula(formula_str))
     })
-
-    # Reactive expression for the random effects part of the formula.
+    
     reactive_formula_re <- reactive({
-        if (!is.null(input$re_groups)) {
-            stats::as.formula(paste("~", paste("(1 | ", input$re_groups, ")", collapse = " + ")))
-        } else {
-            NULL
-        }
+        if (!is.null(input$re_groups) && length(input$re_groups) > 0L)
+            stats::as.formula(paste("~", paste(paste0("(1 | ", input$re_groups, ")"), collapse = " + ")))
+        else NULL
     })
-
-    # ==== MODEL FITTING & PRIOR CHECKING ====
-    # A single function to handle model fitting for different scenarios.
-    fit_model_function <- function(sample_prior_mode) {
-        # Collect all common arguments for the model fitting functions.
+    
+    # -- SHRINKAGE PRIOR ARGUMENT COLLECTOR ------------------------------------
+    get_prior_args <- function() {
+        pt <- input$prior_type
+        if (is.null(pt) || pt == "default") return(list(prior_type = "default"))
+        if (pt == "horseshoe") {
+            return(list(
+                prior_type      = "horseshoe",
+                hs_df           = as.numeric(input$hs_df),
+                hs_df_global    = as.numeric(input$hs_df_global),
+                hs_df_slab      = as.numeric(input$hs_df_slab),
+                hs_scale_slab   = as.numeric(input$hs_scale_slab),
+                hs_scale_global = if (!is.na(input$hs_scale_global)) as.numeric(input$hs_scale_global) else NULL,
+                hs_par_ratio    = if (!is.na(input$hs_par_ratio))    as.numeric(input$hs_par_ratio)    else NULL
+            ))
+        }
+        if (pt == "r2d2") {
+            return(list(
+                prior_type   = "r2d2",
+                r2d2_mean_R2 = as.numeric(input$r2d2_mean_R2),
+                r2d2_prec_R2 = as.numeric(input$r2d2_prec_R2),
+                r2d2_cons_D2 = if (!is.na(input$r2d2_cons_D2)) as.numeric(input$r2d2_cons_D2) else NULL
+            ))
+        }
+        list(prior_type = "default")
+    }
+    
+    # -- MODEL FITTING ---------------------------------------------------------
+    fit_model_function <- function(sample_prior_mode = "no") {
+        nl_vars <- input$nonlinear_vars %||% character(0L)
+        nl_type <- input$nonlinear_type %||% "spline"
+        nl_k    <- { k <- suppressWarnings(as.integer(input$spline_k)); if (is.na(k)) -1L else k }
+        
         common_args <- list(
-            sre = if (input$sre == "none") NULL else input$sre,
-            sre_type = if (input$sre_type == "none") NULL else input$sre_type,
-            sar_type = if (input$sre_type == "none") NULL else input$sar_type,
-            car_type = if (input$sre_type == "none") NULL else input$car_type,
-            data = data(),
-            M = if (input$sre_type == "none") NULL else spatial_weights(),
+            data           = data(),
             handle_missing = if (input$missing_data_method == "none") NULL else input$missing_data_method,
-            m = input$m_value,
-            prior = reactive_prior(),
-            chains = input$num_chains,
-            seed = input$num_seed,
-            iter = input$num_iter,
-            warmup = input$num_warmup,
-            cores = input$num_cores,
-            thin = input$num_thin,
-            control = list(adapt_delta = input$adapt_delta),
-            refresh = 0, # Suppress printing MCMC progress to the console.
-            sample_prior = sample_prior_mode, # "only" for prior check, "no" for model fit.
-            save_model = "model.stan"
+            m              = input$m_value,
+            chains         = input$num_chains,
+            iter           = input$num_iter,
+            warmup         = input$num_warmup,
+            cores          = input$num_cores,
+            seed           = input$num_seed,
+            sample_prior   = sample_prior_mode,
+            sre            = if (input$sre_type == "none") NULL else input$sre,
+            sre_type       = if (input$sre_type == "none") NULL else input$sre_type,
+            car_type       = if (input$sre_type == "car")  input$car_type else NULL,
+            sar_type       = if (input$sre_type == "sar")  input$sar_type else NULL,
+            M              = if (input$sre_type != "none" && !is.null(spatial_weights()))
+                               as.matrix(spatial_weights()) else NULL,
+            control        = list(adapt_delta = input$adapt_delta),
+            refresh        = 0L
         )
-
-        # Call the appropriate modeling function from the hbsaems package based on distribution type.
+        common_args <- c(common_args, get_prior_args())
+        
         if (input$dist_type == "Custom") {
-            common_args$re <- reactive_formula_re()
-            common_args$formula <- reactive_formula()
+            common_args$re          <- reactive_formula_re()
+            common_args$formula     <- reactive_formula()
             common_args$hb_sampling <- input$hb_family
-            common_args$hb_link <- input$hb_link
+            common_args$hb_link     <- input$hb_link
             fit <- do.call(hbm, common_args)
+            
         } else if (input$dist_type == "Lognormal-Lognormal") {
-            common_args$response <- input$response_var
-            common_args$predictors <- input$linear_aux_vars
-            common_args$group <- input$re_groups
+            common_args$response   <- input$response_var
+            common_args$predictors <- setdiff(input$linear_aux_vars, nl_vars)
+            common_args$group      <- input$re_groups
+            if (length(nl_vars) > 0L) {
+                common_args$nonlinear      <- nl_vars
+                common_args$nonlinear_type <- nl_type
+                common_args$spline_k       <- nl_k
+            }
             fit <- do.call(hbm_lnln, common_args)
+            
         } else if (input$dist_type == "Binomial-Logitnormal") {
-            common_args$trials <- if (input$trials_logit == "none") NULL else input$trials_logit
-            common_args$response <- input$response_var
-            common_args$predictors <- input$linear_aux_vars
-            common_args$group <- input$re_groups
+            common_args$trials     <- if (input$trials_logit == "none") NULL else input$trials_logit
+            common_args$response   <- input$response_var
+            common_args$predictors <- setdiff(input$linear_aux_vars, nl_vars)
+            common_args$group      <- input$re_groups
+            if (length(nl_vars) > 0L) {
+                common_args$nonlinear      <- nl_vars
+                common_args$nonlinear_type <- nl_type
+                common_args$spline_k       <- nl_k
+            }
             fit <- do.call(hbm_binlogitnorm, common_args)
+            
         } else if (input$dist_type == "Beta-Logitnormal") {
-            common_args$n <- if (input$n_beta == "none") NULL else input$n_beta
-            common_args$deff <- if (input$deff_beta == "none") NULL else input$deff_beta
-            common_args$response <- input$response_var
-            common_args$predictors <- input$linear_aux_vars
-            common_args$group <- input$re_groups
+            common_args$n          <- if (input$n_beta    == "none") NULL else input$n_beta
+            common_args$deff       <- if (input$deff_beta == "none") NULL else input$deff_beta
+            common_args$response   <- input$response_var
+            common_args$predictors <- setdiff(input$linear_aux_vars, nl_vars)
+            common_args$group      <- input$re_groups
+            if (length(nl_vars) > 0L) {
+                common_args$nonlinear      <- nl_vars
+                common_args$nonlinear_type <- nl_type
+                common_args$spline_k       <- nl_k
+            }
             fit <- do.call(hbm_betalogitnorm, common_args)
         }
         return(fit)
     }
-
-    ## ==== MODEL FITTING ====
-    # Observer to trigger the main model fitting process.
+    
     observeEvent(input$fit_model, {
         req(input$fit_model)
         withProgress(message = "Fitting model...", {
-            tryCatch(withCallingHandlers(
-                {
-                    # Set sample_prior to 'no' for posterior sampling.
-                    invisible(capture.output(
-                        suppressMessages(
-                            fit <- fit_model_function(sample_prior_mode = "no")
-                        )
-                    ))
-                    model_fit(fit) # Store the fitted model.
-                    showNotification("Model fitting completed!", type = "message", duration = 10)
-                    # Update parameter list for sensitivity analysis.
-                    updateSelectizeInput(session, "sensitivity_params_results", choices = posterior::variables(model_fit()$model), server = TRUE)
-                },
-                warning = function(w) {
-                    showNotification(paste("Model Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                    invokeRestart("muffleWarning")
-                },
-                message = function(m) {
-                    showNotification(paste("Model Message:", conditionMessage(m)), type = "message", duration = 10)
-                    invokeRestart("muffleMessage")
-                }
-            ), error = function(e) {
-                showNotification(paste("Model Error:", e$message), type = "error", duration = 15)
-                model_fit(NULL)
-            })
-        })
-    })
-
-    ## ==== PRIOR CHECKING ====
-    # Observer to trigger prior predictive checking.
-    observeEvent(input$prior_check, {
-        req(input$prior_check)
-        withProgress(message = "Prior predictive checking...", {
-            tryCatch(withCallingHandlers(
-                {
-                    # Set sample_prior to 'only' to sample from the prior.
-                    invisible(capture.output(
-                        suppressMessages(
-                            fit <- fit_model_function(sample_prior_mode = "only")
-                        )
-                    ))
-                    prior_fit(fit) # Store the prior fit object.
-                    showNotification("Prior Predictive Checking completed!", type = "message", duration = 10)
-                },
-                warning = function(w) {
-                    showNotification(paste("Prior Predictive Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                    invokeRestart("muffleWarning")
-                },
-                message = function(m) {
-                    showNotification(paste("Prior Predictive Message:", conditionMessage(m)), type = "message", duration = 10)
-                    invokeRestart("muffleMessage")
-                }
-            ), error = function(e) {
-                showNotification(paste("Prior Predictive Checking Error:", e$message), type = "error", duration = 15)
-                prior_fit(NULL)
-            })
-        })
-    })
-
-
-    # ==== RESULT =====
-    # ==== MODEL SUMMARY ====
-    # Renders the main model summary.
-    output$model_summary <- renderPrint({
-        req(model_fit())
-        withCallingHandlers(
-            {
-                cat("================================ Model Summary ================================\n")
-                print(model_fit()$model)
-            },
-            warning = function(w) {
-                showNotification(paste("Model Summary Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                invokeRestart("muffleWarning")
-            },
-            message = function(m) {
-                showNotification(paste("Model Summary Message:", conditionMessage(m)), type = "message", duration = 10)
-                invokeRestart("muffleMessage")
-            }
-        )
-    })
-
-    # Renders the summary of the priors used in the final model.
-    output$model_prior <- renderPrint({
-        req(model_fit())
-        withCallingHandlers(
-            {
-                cat("================================ Prior Summary ================================\n")
-                print(brms::prior_summary(model_fit()$model))
-            },
-            warning = function(w) {
-                showNotification(paste("Model Prior Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                invokeRestart("muffleWarning")
-            },
-            message = function(m) {
-                showNotification(paste("Model Prior Message:", conditionMessage(m)), type = "message", duration = 10)
-                invokeRestart("muffleMessage")
-            }
-        )
-    })
-
-
-    # ==== CONVERGENCE DIAGNOSTICS ====
-    convergence_result <- reactive({ # Name changed for clarity
-        req(model_fit())
-        withProgress(message = "Convergence test running...", {
-            tryCatch(withCallingHandlers(
-                {
-                    diag_results <- hbcc(model = model_fit())
-                },
-                warning = function(w) {
-                    showNotification(paste("Convergence Warning:", conditionMessage(w)), type = "warning", duration = 15)
-                    invokeRestart("muffleWarning")
-                },
-                message = function(m) {
-                    showNotification(paste("Convergence Message:", conditionMessage(m)), type = "message", duration = 10)
-                    invokeRestart("muffleMessage")
-                }
-            ), error = function(e) {
-                showNotification(paste("Error in Convergent:", e$message), type = "error", duration = 15)
-                return(NULL)
-            })
-        })
-    })
-
-    # ==== CONVERGENCE NUMERIC ====
-    output$diag_numerical <- renderPrint({
-        diag_results <- convergence_result()
-        switch(input$diag_tests,
-            "rhat" = {
-                cat("\n==================== R-hat Statistics ====================\n")
-                print(diag_results$rhat_ess)
-            },
-            "geweke" = {
-                cat("\n================== Geweke Diagnostics ====================\n")
-                print(diag_results$geweke)
-            },
-            "raftery" = {
-                cat("\n================ Raftery-Lewis Diagnostics ===============\n")
-                print(diag_results$raftery)
-            },
-            "heidel" = {
-                cat("\n============= Heidelberger-Welch Diagnostics =============\n")
-                print(diag_results$heidel)
-            },
-            { # default case
-                cat("No diagnostics selected.")
-            }
-        )
-    })
-
-
-    # ====CONVERGENCE PLOT ====
-    # Renders graphical convergence diagnostics (trace plots, density plots, etc.)
-    output$diag_plots <- renderPlot({
-        req(convergence_result())
-        diag_results <- convergence_result()
-        selected_plot <- input$plot_types
-        if (!is.null(diag_results$plots[[selected_plot]])) {
-            suppressMessages(
-                print(diag_results$plots[[selected_plot]])
-            )
-        } else {
-            plot.new()
-            text(0.5, 0.5, "No plot available for this selection", cex = 1.5)
-            return(NULL)
-        }
-    })
-
-
-    # ==== MODEL CHECKING ====
-    check_results <- reactive({ # Name changed for clarity
-        req(model_fit())
-        withProgress(message = "Checking model goodness of fit...", value = 0.5, {
-            tryCatch(withCallingHandlers(
-                {
-                    result <- suppressWarnings(
-                        hbmc(model = model_fit(), ndraws_ppc = 10, moment_match = input$moment_match_check)
-                    )
-                },
-                warning = function(w) {
-                    showNotification(paste("Model Checking Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                    invokeRestart("muffleWarning")
-                },
-                message = function(m) {
-                    showNotification(paste("Model Checkin Message:", conditionMessage(m)), type = "message", duration = 5)
-                    invokeRestart("muffleMessage")
-                }
-            ), error = function(e) {
-                showNotification(paste("Model Checking Error:", e$message), type = "error", duration = 10)
-                check_results(NULL)
-            })
-        })
-    })
-
-    # ==== MODEL RESULT ====
-    output$model_check_metrics_output <- renderPrint({
-        req(input$results_tabs == "model_checking_panel")
-        req(check_results())
-        res <- check_results()
-        if ("loo" %in% input$gof_metrics_select && !is.null(res$primary_model_diagnostics$loo)) {
-            cat("==================== Leave-One-Out (LOO) ====================\n")
-            cat(res$primary_model_diagnostics$loo$warnings)
-            cat("\n\n")
-            print(res$primary_model_diagnostics$loo$estimates)
-        }
-        if ("waic" %in% input$gof_metrics_select && !is.null(res$primary_model_diagnostics$waic)) {
-            cat("=============== Widely Applicable Information Criteria (WAIC) ===============\n")
-            print(res$primary_model_diagnostics$waic$estimates)
-        }
-    })
-
-    # ==== MODEL PLOT ====
-    # Renders graphical posterior predictive checks.
-    observe({
-        req(model_fit())
-        output$model_check_plot_output <- renderPlot({
-            selected_plot <- input$pp_check_type_select
-            y_obs <- model_fit()$model$data[[input$response_var]]
-            # Generate replicated data from the posterior predictive distribution.
-            y_rep <- brms::posterior_predict(model_fit()$model, ndraws = input$pp_samples_slider)
-
-            if (is.null(y_obs) || is.null(y_rep)) {
-                plot.new()
-                text(0.5, 0.5, "Missing y_obs or yrep", cex = 1.5)
-                return()
-            }
-            withProgress(message = "Making Plot...", {
-                tryCatch(withCallingHandlers(
+            tryCatch(
+                withCallingHandlers(
                     {
-                        # Use bayesplot functions to create the selected plot.
-                        plot <- switch(selected_plot,
-                            "dens_overlay" = bayesplot::ppc_dens_overlay(y = y_obs, yrep = y_rep),
-                            "boxplot" = bayesplot::ppc_boxplot(y = y_obs, yrep = y_rep, notch = FALSE),
-                            "bars" = {
-                                if (all(y_obs == floor(y_obs))) {
-                                    bayesplot::ppc_bars(y = y_obs, yrep = y_rep)
-                                } else {
-                                    plot.new()
-                                    text(0.5, 0.5, "'ppc_bars' requires discrete response", cex = 1.5)
-                                    return(NULL)
-                                }
-                            },
-                            "scatter_avg" = bayesplot::ppc_scatter_avg(y = y_obs, yrep = y_rep),
-                            "stat" = {
-                                req(input$pp_check_stat_select)
-                                bayesplot::ppc_stat(y = y_obs, yrep = y_rep, stat = input$pp_check_stat_select)
-                            },
-                            {
-                                plot.new()
-                                text(0.5, 0.5, "Unknown or unsupported plot type", cex = 1.5)
-                            }
+                        invisible(capture.output(
+                            suppressMessages(fit <- fit_model_function(sample_prior_mode = "no"))
+                        ))
+                        model_fit(fit)
+                        showNotification("Model fitting completed!", type = "message", duration = 10)
+                        fit_params <- tryCatch(
+                            colnames(brms::as_draws_matrix(fit$model))[
+                                !startsWith(colnames(brms::as_draws_matrix(fit$model)), "r_") &
+                                    !startsWith(colnames(brms::as_draws_matrix(fit$model)), "lp")
+                            ],
+                            error = function(e) character()
                         )
-                        suppressMessages(print(plot))
-                        ppc_result(plot)
+                        updateSelectizeInput(session, "sensitivity_params_results",
+                                             choices = fit_params, server = TRUE)
                     },
                     warning = function(w) {
-                        showNotification(paste("PPC Warning:", conditionMessage(w)), type = "warning", duration = 8)
+                        showNotification(paste("Fitting warning:", conditionMessage(w)), type = "warning", duration = 10)
                         invokeRestart("muffleWarning")
                     },
-                    message = function(m) {
-                        showNotification(paste("PPC Message:", conditionMessage(m)), type = "message", duration = 8)
-                        invokeRestart("muffleMessage")
-                    }
-                ), error = function(e) {
-                    showNotification(paste("PPC Error:", conditionMessage(e)), type = "error", duration = 10)
-                    plot.new()
-                    text(0.5, 0.5, "Error generating plot", cex = 1.5)
-                })
-            })
-        })
-    })
-
-
-    # ===== PRIOR SENSITIVITY =====
-    # Reactive expression to run prior sensitivity analysis once
-    prior_sens_result <- reactive({
-        req(input$sensitivity_params_results)
-        withProgress(message = "Prior sensitivity running...", {
-            tryCatch(withCallingHandlers(
-                {
-                    hbmc(
-                        model = model_fit(),
-                        plot_types = c(),
-                        comparison_metrics = c(),
-                        run_prior_sensitivity = TRUE,
-                        sensitivity_vars = input$sensitivity_params_results
+                    message = function(m) { invokeRestart("muffleMessage") }
+                ),
+                error = function(e) {
+                    showNotification(paste("Fitting Error:", e$message), type = "error", duration = 15)
+                    output$model_fitting_error <- renderUI(
+                        div(class = "alert alert-danger", paste("Model Error:", e$message))
                     )
-                },
-                warning = function(w) {
-                    showNotification(paste("Prior Sensitivity Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                    invokeRestart("muffleWarning")
-                },
-                message = function(m) {
-                    showNotification(paste("Prior Sensitivity Message:", conditionMessage(m)), type = "message", duration = 10)
-                    invokeRestart("muffleMessage")
-                }
-            ), error = function(e) {
-                showNotification(paste("Error during prior sensitivity analysis:", e$message), type = "error", duration = 15)
-                return(NULL)
-            })
-        })
-    })
-
-    # Output: numerical result
-    output$prior_sensitivity_output_results <- renderPrint({
-        res <- prior_sens_result()
-        if (is.null(res)) {
-            cat("Please choose at least one parameter for sensitivity analysis.")
-        } else {
-            print(res$prior_sensitivity_results$model1$result)
-        }
-    })
-
-    # Output: plot result
-    output$prior_sensitivity_plot_results <- renderPlot({
-        res <- prior_sens_result()
-        validate(need(!is.null(res), "No result available."))
-        print(res$prior_sensitivity_results$model1$plot)
-    })
-
-
-    # ==== PREDICTION ====
-    # Renders the prediction results for the original data.
-    output$prediction_results <- DT::renderDT({
-        req(model_fit())
-        withProgress(message = "Load prediction data...", {
-            withCallingHandlers(
-                {
-                    # Calls a custom function to get predictions.
-                    preds <- hbsae(model_fit())
-                    DT::datatable(round(preds$result_table,4), options = list(scrollX = TRUE, scrollY = "370px"))
-                },
-                warning = function(w) {
-                    showNotification(paste("Prediction Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                    invokeRestart("muffleWarning")
-                },
-                message = function(m) {
-                    showNotification(paste("Prediction Message:", conditionMessage(m)), type = "message", duration = 10)
-                    invokeRestart("muffleMessage")
                 }
             )
         })
     })
-
-
-    # ==== PREDICTION FOR NEW DATA ====
-    # Initializes an empty, editable data frame for new predictions.
+    
+    
+    # -- PRIOR PREDICTIVE CHECK ------------------------------------------------
+    observeEvent(input$run_prior_check, {
+        req(data(), input$response_var)
+        withProgress(message = "Running prior predictive check...", {
+            tryCatch(
+                withCallingHandlers(
+                    {
+                        invisible(capture.output(
+                            suppressMessages(fit_prior <- fit_model_function(sample_prior_mode = "only"))
+                        ))
+                        prior_fit(fit_prior)
+                        # NOTE: rename local var to avoid shadowing prior_check()
+                        # function. v0.3.0 prior_check() requires the `data`
+                        # argument explicitly (was implicit in hbpc()).
+                        pc_result <- prior_check(
+                            model        = fit_prior,
+                            data         = data(),
+                            response_var = input$response_var
+                        )
+                        showNotification("Prior check completed!", type = "message", duration = 10)
+                        output$prior_predictive_plot <- renderPlot({
+                            withCallingHandlers(print(pc_result$prior_predictive_plot),
+                                warning = function(w) {
+                                    showNotification(paste("Prior plot warning:", conditionMessage(w)),
+                                                     type = "warning", duration = 10)
+                                    invokeRestart("muffleWarning")
+                                },
+                                message = function(m) { invokeRestart("muffleMessage") }
+                            )
+                        })
+                    },
+                    warning = function(w) {
+                        showNotification(paste("Prior check warning:", conditionMessage(w)), type = "warning", duration = 10)
+                        invokeRestart("muffleWarning")
+                    },
+                    message = function(m) { invokeRestart("muffleMessage") }
+                ),
+                error = function(e) {
+                    showNotification(paste("Prior Check Error:", e$message), type = "error", duration = 15)
+                }
+            )
+        })
+    })
+    
+    
+    # -- MODEL SUMMARY ---------------------------------------------------------
+    output$model_summary <- renderPrint({
+        req(model_fit())
+        summary(model_fit())
+    })
+    
+    
+    # -- CONVERGENCE DIAGNOSTICS -----------------------------------------------
+    output$convergence_output <- renderPrint({
+        req(model_fit(), input$diag_tests)
+        withCallingHandlers(
+            { res <- convergence_check(model_fit(), diag_tests = input$diag_tests); print(res) },
+            warning = function(w) {
+                showNotification(paste("Diagnostics warning:", conditionMessage(w)), type = "warning", duration = 10)
+                invokeRestart("muffleWarning")
+            },
+            message = function(m) { invokeRestart("muffleMessage") }
+        )
+    })
+    
+    
+    # -- DIAGNOSTIC PLOTS -----------------------------------------------------
+    output$plot_definition <- renderUI({
+        switch(input$plot_types,
+               "trace"       = shinydashboard::box(title = "Trace Plot", width = NULL, solidHeader = TRUE, status = "primary",
+                                                   p("Trace plots show sampled parameter values across MCMC iterations for each chain. Well-mixed, stationary chains indicate good convergence.")),
+               "dens"        = shinydashboard::box(title = "Density Plot", width = NULL, solidHeader = TRUE, status = "primary",
+                                                   p("Density plots show the posterior distribution of each parameter. Overlapping densities across chains indicate good mixing.")),
+               "acf"         = shinydashboard::box(title = "Autocorrelation (ACF) Plot", width = NULL, solidHeader = TRUE, status = "primary",
+                                                   p("ACF plots show autocorrelation at increasing lags. Low autocorrelation at small lags indicates efficient sampling.")),
+               "nuts_energy" = shinydashboard::box(title = "NUTS Energy Plot", width = NULL, solidHeader = TRUE, status = "primary",
+                                                   p("Energy transition plots visualize NUTS sampler efficiency. Large discrepancies between energy and momentum can indicate step-size problems.")),
+               "rhat"        = shinydashboard::box(title = "R-hat Plot", width = NULL, solidHeader = TRUE, status = "primary",
+                                                   p("R-hat values close to 1.00 indicate convergence. Values above 1.05 suggest chains have not fully mixed.")),
+               "neff"        = shinydashboard::box(title = "Effective Sample Size (ESS) Plot", width = NULL, solidHeader = TRUE, status = "primary",
+                                                   p("ESS reflects how many independent draws are equivalent to the correlated MCMC samples. Higher values indicate better sampling efficiency."))
+        )
+    })
+    
+    output$diag_plots <- renderPlot({
+        req(model_fit(), input$plot_types)
+        withCallingHandlers(
+            {
+                res <- convergence_check(model_fit(), plot_types = input$plot_types)
+                if (!is.null(res$plots[[input$plot_types]])) print(res$plots[[input$plot_types]])
+            },
+            warning = function(w) {
+                showNotification(paste("Diagnostic plot warning:", conditionMessage(w)), type = "warning", duration = 10)
+                invokeRestart("muffleWarning")
+            },
+            message = function(m) { invokeRestart("muffleMessage") }
+        )
+    })
+    
+    
+    # -- MODEL CHECKING --------------------------------------------------------
+    output$metrics_definition_box <- renderUI({
+        switch(input$gof_metrics_select,
+               "loo"  = shinydashboard::box(title = "LOO (Leave-One-Out Cross-Validation)",
+                                            width = NULL, solidHeader = TRUE, status = "primary",
+                                            p("LOO estimates out-of-sample predictive accuracy using Pareto-smoothed importance sampling (PSIS). The ", strong("Pareto-k diagnostic"), " measures reliability; values above 0.7 indicate unstable approximations.")),
+               "waic" = shinydashboard::box(title = "WAIC (Widely Applicable Information Criterion)",
+                                            width = NULL, solidHeader = TRUE, status = "primary",
+                                            p("WAIC is a fully Bayesian criterion approximating leave-one-out cross-validation. Lower values indicate better predictive accuracy."))
+        )
+    })
+    
+    observeEvent(input$run_model_check, {
+        req(model_fit())
+        withProgress(message = "Running model check...", {
+            tryCatch(
+                withCallingHandlers(
+                    {
+                        res <- model_compare(model_fit(), comparison_metrics = input$gof_metrics_select)
+                        check_results(res)
+                        showNotification("Model check completed!", type = "message", duration = 10)
+                    },
+                    warning = function(w) {
+                        showNotification(paste("Model check warning:", conditionMessage(w)), type = "warning", duration = 10)
+                        invokeRestart("muffleWarning")
+                    },
+                    message = function(m) { invokeRestart("muffleMessage") }
+                ),
+                error = function(e) {
+                    showNotification(paste("Model Check Error:", e$message), type = "error", duration = 15)
+                }
+            )
+        })
+    })
+    
+    output$model_check_output <- renderPrint({ req(check_results()); print(check_results()) })
+    
+    output$ppc_definition_box <- renderUI({
+        switch(input$pp_check_type_select,
+               "dens_overlay"      = shinydashboard::box(title = "Density Overlay", width = NULL, solidHeader = TRUE, status = "primary",
+                                                         p("Overlays the density of the observed data against densities from multiple replicated datasets. Close alignment indicates good fit.")),
+               "ribbon"            = shinydashboard::box(title = "Ribbon Plot", width = NULL, solidHeader = TRUE, status = "primary",
+                                                         p("Displays a credible interval ribbon of replicated values compared to the observed data.")),
+               "intervals"         = shinydashboard::box(title = "Interval Plot", width = NULL, solidHeader = TRUE, status = "primary",
+                                                         p("Shows posterior predictive intervals per observation. Points outside the intervals suggest model inadequacy.")),
+               "error_scatter_avg" = shinydashboard::box(title = "Error Scatter (Mean)", width = NULL, solidHeader = TRUE, status = "primary",
+                                                         p("Plots prediction errors against observed values. Patterns suggest systematic misfit.")),
+               "bars"              = shinydashboard::box(title = "Frequency Bar Plot (Discrete)", width = NULL, solidHeader = TRUE, status = "primary",
+                                                         p("For discrete outcomes, compares observed frequencies against the posterior predictive distribution.")),
+               "scatter_avg"       = shinydashboard::box(title = "Scatter Plot (y vs yrep)", width = NULL, solidHeader = TRUE, status = "primary",
+                                                         p("Plots observed values against average replicated values. Points near the identity line indicate good accuracy.")),
+               "stat"              = shinydashboard::box(title = "Statistic vs Data", width = NULL, solidHeader = TRUE, status = "primary",
+                                                         p("Compares a chosen summary statistic from replicated data to the same statistic in observed data."))
+        )
+    })
+    
+    output$model_check_plot_output <- renderPlot({
+        req(model_fit(), input$pp_check_type_select)
+        withCallingHandlers(
+            {
+                m      <- if (inherits(model_fit(), "hbmfit")) model_fit()$model else model_fit()
+                ndraws <- input$pp_samples_slider
+                stat   <- if (input$pp_check_type_select == "stat") input$pp_check_stat_select else NULL
+                print(brms::pp_check(m, type = input$pp_check_type_select, ndraws = ndraws, stat = stat))
+            },
+            warning = function(w) {
+                showNotification(paste("PPC warning:", conditionMessage(w)), type = "warning", duration = 10)
+                invokeRestart("muffleWarning")
+            },
+            message = function(m) { invokeRestart("muffleMessage") }
+        )
+    })
+    
+    
+    # -- PRIOR SENSITIVITY ANALYSIS --------------------------------------------
+    prior_sens_result <- reactiveVal(NULL)
+    
+    observeEvent(input$run_sensitivity, {
+        req(model_fit(), input$sensitivity_params_results)
+        withProgress(message = "Running sensitivity analysis...", {
+            tryCatch(
+                withCallingHandlers(
+                    {
+                        res <- model_compare(model_fit(), run_prior_sensitivity = TRUE,
+                                    sensitivity_vars = input$sensitivity_params_results)
+                        prior_sens_result(res)
+                        showNotification("Sensitivity analysis completed!", type = "message", duration = 10)
+                    },
+                    warning = function(w) {
+                        showNotification(paste("Sensitivity warning:", conditionMessage(w)), type = "warning", duration = 10)
+                        invokeRestart("muffleWarning")
+                    },
+                    message = function(m) { invokeRestart("muffleMessage") }
+                ),
+                error = function(e) {
+                    showNotification(paste("Sensitivity Error:", e$message), type = "error", duration = 15)
+                }
+            )
+        })
+    })
+    
+    output$prior_sensitivity_output_results <- renderPrint({
+        res <- prior_sens_result()
+        validate(need(!is.null(res), "No sensitivity results available yet."))
+        print(res$prior_sensitivity_results$model1$result)
+    })
+    output$prior_sensitivity_plot_results <- renderPlot({
+        res <- prior_sens_result()
+        validate(need(!is.null(res), "No sensitivity results available yet."))
+        print(res$prior_sensitivity_results$model1$plot)
+    })
+    
+    
+    # -- PREDICTION ------------------------------------------------------------
+    output$prediction_results <- DT::renderDT({
+        req(model_fit())
+        withProgress(message = "Generating predictions...", {
+            withCallingHandlers(
+                {
+                    preds <- sae_predict(model_fit())
+                    DT::datatable(round(preds$result_table, 4L),
+                                  options = list(scrollX = TRUE, scrollY = "370px"))
+                },
+                warning = function(w) {
+                    showNotification(paste("Prediction warning:", conditionMessage(w)), type = "warning", duration = 10)
+                    invokeRestart("muffleWarning")
+                },
+                message = function(m) { invokeRestart("muffleMessage") }
+            )
+        })
+    })
+    
+    output$download_results <- downloadHandler(
+        filename = function() paste0("sae_predictions_", Sys.Date(), ".csv"),
+        content  = function(file) {
+            preds <- sae_predict(model_fit())
+            utils::write.csv(preds$result_table, file, row.names = FALSE)
+        }
+    )
+    
+    
+    # -- NEW DATA PREDICTION ---------------------------------------------------
     observe({
         req(input$response_var)
         pred_data(NULL)
         model_vars <- unique(stats::na.omit(c(
-            input$linear_aux_vars, input$nonlinear_aux_vars, input$re_groups,
-            if (input$trials_var != "none") input$trials_var else NULL,
-            if (input$trials_logit != "none") input$trials_logit else NULL,
-            if (input$n_beta != "none") input$n_beta else NULL,
-            if (input$deff_beta != "none") input$deff_beta else NULL
+            input$linear_aux_vars, input$nonlinear_vars, input$re_groups,
+            if (!is.null(input$trials_var)   && input$trials_var   != "none") input$trials_var,
+            if (!is.null(input$trials_logit) && input$trials_logit != "none") input$trials_logit,
+            if (!is.null(input$n_beta)       && input$n_beta       != "none") input$n_beta,
+            if (!is.null(input$deff_beta)    && input$deff_beta    != "none") input$deff_beta
         )))
-        df <- data.frame(matrix(NA, nrow = 1, ncol = length(model_vars) + 1))
-        colnames(df) <- c(model_vars, "prediction_result")
+        df <- stats::setNames(
+            data.frame(matrix(NA_real_, nrow = 1L, ncol = length(model_vars) + 1L)),
+            c(model_vars, "prediction_result")
+        )
         pred_data(df)
     })
-
-    # Adds a new empty row to the prediction input table.
+    
     observeEvent(input$add_row, {
         req(model_fit())
         df <- pred_data()
-        df <- rbind(df, stats::setNames(data.frame(matrix(NA, ncol = ncol(df))), names(df)))
+        df <- rbind(df, stats::setNames(
+            data.frame(matrix(NA_real_, nrow = 1L, ncol = ncol(df))), names(df)
+        ))
         pred_data(df)
     })
-
-    # Removes the last row from the prediction input table.
+    
     observeEvent(input$remove_row, {
         req(model_fit())
         df <- pred_data()
-        pred_data(if (nrow(df) > 1) df[-nrow(df), ] else df * NA)
+        pred_data(if (nrow(df) > 1L) df[-nrow(df), ] else df)
     })
-
-    # Renders the editable table for new data input.
+    
     output$prediction_input_table <- DT::renderDT({
         req(pred_data())
-        DT::datatable(pred_data(),
-            selection = "none",
-            editable = list(target = "cell", disable = list(columns = ncol(pred_data())))
-        )
+        DT::datatable(pred_data(), selection = "none",
+                      editable = list(target = "cell",
+                                      disable = list(columns = ncol(pred_data()) - 1L)))
     })
-
-    # Saves user edits from the editable table back to the reactive value.
+    
     observeEvent(input$prediction_input_table_cell_edit, {
         info <- input$prediction_input_table_cell_edit
-        df <- pred_data()
-        df[info$row, info$col] <- as.numeric(info$value)
+        df   <- pred_data()
+        df[info$row, info$col + 1L] <- DT::coerceValue(info$value, df[info$row, info$col + 1L])
         pred_data(df)
     })
-
-    # Triggers prediction on the new data when the "Predict" button is clicked.
+    
     observeEvent(input$predict_new, {
-        req(model_fit())
-        withProgress(message = "Prediction start...", {
-            tryCatch(withCallingHandlers(
+        req(model_fit(), pred_data())
+        new_df <- pred_data()
+        new_df[["prediction_result"]] <- NULL
+        tryCatch(
+            withCallingHandlers(
                 {
-                    df <- pred_data()[, !names(pred_data()) %in% "prediction_result", drop = FALSE]
-                    df$prediction_result <- hbsae(model_fit(), newdata = df)$pred
-                    pred_data(round(df,4))
+                    preds <- sae_predict(model_fit(), newdata = new_df)
+                    df    <- pred_data()
+                    df[["prediction_result"]] <- preds$result_table$Mean
+                    pred_data(df)
                 },
                 warning = function(w) {
-                    showNotification(paste("Prediction Warning:", conditionMessage(w)), type = "warning", duration = 10)
+                    showNotification(paste("Prediction warning:", conditionMessage(w)), type = "warning", duration = 10)
                     invokeRestart("muffleWarning")
                 },
-                message = function(m) {
-                    showNotification(paste("Prediction Message:", conditionMessage(m)), type = "message", duration = 10)
-                    invokeRestart("muffleMessage")
-                }
-            ), error = function(e) {
+                message = function(m) { invokeRestart("muffleMessage") }
+            ),
+            error = function(e) {
                 showNotification(paste("Prediction Error:", e$message), type = "error", duration = 15)
-            })
-        })
+            }
+        )
     })
-
-
-    # ==== DOWNLOAD HANDLERS ====
-    output$download_results <- downloadHandler(
-        filename = function() {
-            paste0("predictions_.csv")
-        },
-        content = function(file) {
-            req(model_fit())
-            withProgress(message = "Downloading table...", {
-                tryCatch(withCallingHandlers(
-                    {
-                        preds <- hbsae(model_fit()) # Fungsi kamu untuk prediksi
-                        write.csv(preds$result_table, file, row.names = FALSE)
-                    },
-                    warning = function(w) {
-                        showNotification(paste("Download Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                        invokeRestart("muffleWarning")
-                    },
-                    message = function(m) {
-                        showNotification(paste("Download Message:", conditionMessage(m)), type = "message", duration = 10)
-                        invokeRestart("muffleMessage")
-                    }
-                ), error = function(e) {
-                    showNotification(paste("Download Error:", e$message), type = "error", duration = 15)
-                })
-            })
-        }
-    )
-
-    output$save_model <- downloadHandler(
-        filename = function() {
-            "model_fit.rds"
-        },
-        content = function(file) {
-            withProgress(message = "Downloading model...", {
-                tryCatch(
-                    withCallingHandlers(
-                        {
-                            saveRDS(model_fit()$model, file)
-                            showNotification("Download completed!", type = "message", duration = 10)
-                        },
-                        warning = function(w) {
-                            showNotification(paste("Download Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                            invokeRestart("muffleWarning")
-                        },
-                        message = function(m) {
-                            showNotification(paste("Download Message:", conditionMessage(m)), type = "message", duration = 10)
-                            invokeRestart("muffleMessage")
-                        }
-                    ),
-                    error = function(e) {
-                        showNotification(paste("Download Error:", e$message), type = "error", duration = 15)
-                    }
-                )
-            })
-        }
-    )
-
-    output$save_stan_code <- downloadHandler(
-        filename = function() {
-            "stan_code.txt"
-        },
-        content = function(file) {
-            withProgress(message = "Downloading Stan code...", {
-                tryCatch(
-                    withCallingHandlers(
-                        {
-                            writeLines(brms::stancode(model_fit()$model), file)
-                            showNotification("Download completed!", type = "message", duration = 10)
-                        },
-                        warning = function(w) {
-                            showNotification(paste("Download Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                            invokeRestart("muffleWarning")
-                        },
-                        message = function(m) {
-                            showNotification(paste("Download Message:", conditionMessage(m)), type = "message", duration = 10)
-                            invokeRestart("muffleMessage")
-                        }
-                    ),
-                    error = function(e) {
-                        showNotification(paste("Download Error:", e$message), type = "error", duration = 15)
-                    }
-                )
-            })
-        }
-    )
-
-    output$save_coda <- downloadHandler(
-        filename = function() {
-            "coda_samples.rds"
-        },
-        content = function(file) {
-            withProgress(message = "Downloading CODA samples...", {
-                tryCatch(
-                    withCallingHandlers(
-                        {
-                            saveRDS(brms::as.mcmc(model_fit()$model), file)
-                            showNotification("Download completed!", type = "message", duration = 10)
-                        },
-                        warning = function(w) {
-                            showNotification(paste("Download Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                            invokeRestart("muffleWarning")
-                        },
-                        message = function(m) {
-                            showNotification(paste("Download Message:", conditionMessage(m)), type = "message", duration = 10)
-                            invokeRestart("muffleMessage")
-                        }
-                    ),
-                    error = function(e) {
-                        showNotification(paste("Download Error:", e$message), type = "error", duration = 15)
-                    }
-                )
-            })
-        }
-    )
-    output$save_plots <- downloadHandler(
-        filename = function() {
-            "diagnostic_plots.pdf"
-        },
-        content = function(file) {
-            withProgress(message = "Generating diagnostic plots...", {
-                tryCatch(
-                    withCallingHandlers(
-                        {
-                            suppressMessages(
-                                grDevices::pdf(file),
-                                print(ppc_result()),
-                                print(prior_sens_result()$prior_sensitivity_results$model1$plot),
-                                print(convergence_result()$plots),
-                                grDevices::dev.off()
-                            )
-                            showNotification("Download completed!", type = "message", duration = 10)
-                        },
-                        warning = function(w) {
-                            showNotification(paste("Download Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                            invokeRestart("muffleWarning")
-                        },
-                        message = function(m) {
-                            showNotification(paste("Download Message:", conditionMessage(m)), type = "message", duration = 10)
-                            invokeRestart("muffleMessage")
-                        }
-                    ),
-                    error = function(e) {
-                        showNotification(paste("Download Error:", e$message), type = "error", duration = 15)
-                        return(NULL)
-                    }
-                )
-            })
-        }
-    )
-
-
-    # ==== UPDATING MODEL ====
-    observeEvent(input$update_newdata, {
-        req(input$update_newdata)
-        ext <- tools::file_ext(input$update_newdata$name)
-        output$newdata_upload_error <- renderUI(NULL) # Reset any previous error messages
-        withProgress(message = "Uploading newdata...", {
-            # Try to read the file based on its extension.
+    
+    
+    # -- UPDATE MODEL ----------------------------------------------------------
+    observeEvent(input$update_run, {
+        req(model_fit())
+        withProgress(message = "Updating model...", {
             tryCatch(
                 withCallingHandlers(
                     {
-                        # Read file based on extension
-                      # Read file based on extension
-                      df <- switch(ext,
-                                   "csv" = read.csv(input$update_newdata$datapath,
-                                                    header = TRUE,
-                                                    sep = ",", quote = "", fill = TRUE, check.names = FALSE,
-                                                    na.strings = c("", "NA", "NULL")
-                                   ),
-                                   "xls" = readxl::read_excel(input$update_newdata$datapath),
-                                   "xlsx" = readxl::read_excel(input$update_newdata$datapath),
-                                   "rda" = {
-                                     e <- new.env()
-                                     load(input$update_newdata$datapath, envir = e)
-                                     obj_names <- ls(envir = e)
-                                     obj <- e[[obj_names[1]]]
-                                     obj
-                                   },
-                                   "RData" = {
-                                     e <- new.env()
-                                     load(input$update_newdata$datapath, envir = e)
-                                     obj_names <- ls(envir = e)
-                                     obj <- e[[obj_names[1]]]
-                                     obj
-                                   },
-                                   stop("Unsupported file type: must be .csv, .xls, .xlsx, .rda, or .RData")
-                      )
-                      
-
-                        # Clean column names to be valid R variable names.
-                        colnames(df) <- gsub("[^A-Za-z0-9_]", "", colnames(df))
-                        # Store the data and display a preview.
-                        new_data(as.data.frame(df))
-                        showNotification("New data loaded successfully", type = "message", duration = 10)
+                        new_d <- if (!is.null(input$update_newdata)) {
+                            ext <- tools::file_ext(input$update_newdata$name)
+                            if (ext %in% c("xls", "xlsx"))
+                                as.data.frame(readxl::read_excel(input$update_newdata$datapath))
+                            else
+                                utils::read.csv(input$update_newdata$datapath, header = TRUE)
+                        } else NULL
+                        updated <- update_hbm(
+                            model_fit(), newdata = new_d,
+                            chains  = input$update_num_chains,
+                            cores   = input$update_num_cores,
+                            iter    = input$update_num_iter,
+                            warmup  = input$update_num_warmup,
+                            control = list(adapt_delta = input$update_adapt_delta)
+                        )
+                        model_fit(updated)
+                        showNotification("Model updated successfully!", type = "message", duration = 10)
                     },
                     warning = function(w) {
-                        showNotification(paste("Newdata Upload Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                        invokeRestart("muffleWarning") # Supaya warning tidak muncul di console
+                        showNotification(paste("Update warning:", conditionMessage(w)), type = "warning", duration = 10)
+                        invokeRestart("muffleWarning")
                     },
-                    message = function(m) {
-                        showNotification(paste("Newdata Upload Message:", conditionMessage(m)), type = "message", duration = 10)
-                        invokeRestart("muffleMessage")
-                    }
+                    message = function(m) { invokeRestart("muffleMessage") }
                 ),
-                # Handle errors during file upload and processing.
                 error = function(e) {
-                    # Display error notification
-                    showNotification(paste("Newdata Upload Error:", e$message), type = "error", duration = 10)
-                    # Clear reactive data and UI elements
-                    new_data(NULL)
-                    output$newdata_upload_error <- renderUI(
-                        div(class = "alert alert-danger", paste("Upload Error:", e$message))
-                    )
+                    showNotification(paste("Update Error:", e$message), type = "error", duration = 15)
                 }
             )
         })
     })
-
-
-    observeEvent(input$update_run, {
-        req(model_fit())
-
-        withProgress(message = "Updating model...", {
-            tryCatch(withCallingHandlers(
-                {
-                    updated_model <- suppressMessages(update_hbm(
-                        model   = model_fit(),
-                        newdata = new_data(), # will be NULL if not uploaded
-                        iter    = input$update_num_iter,
-                        warmup  = input$update_num_warmup,
-                        chains  = input$update_num_chains,
-                        cores   = input$update_num_cores,
-                        control = list(adapt_delta = input$update_adapt_delta)
-                    ))
-
-                    # Store updated model
-                    model_fit(updated_model)
-                    showNotification("Model update completed successfully!", type = "message", duration = 10)
-                },
-                warning = function(w) {
-                    showNotification(paste("Model Update Warning:", conditionMessage(w)), type = "warning", duration = 10)
-                    invokeRestart("muffleWarning")
-                },
-                message = function(m) {
-                    showNotification(paste("Model Update Message:", conditionMessage(m)), type = "message", duration = 10)
-                    invokeRestart("muffleMessage")
-                }
-            ), error = function(e) {
-                showNotification(paste("Model Update Error:", e$message), type = "error", duration = NULL)
+    
+    
+    # -- NONLINEAR OVERLAP WARNING ---------------------------------------------
+    # Shown when the same variable appears in both the auxiliary and nonlinear
+    # selectors (it will be modelled nonlinearly only in that case).
+    output$nonlinear_overlap_note <- renderUI({
+        nl      <- input$nonlinear_vars
+        aux     <- input$linear_aux_vars
+        overlap <- intersect(nl, aux)
+        if (length(overlap) > 0L)
+            div(class = "alert alert-warning",
+                icon("exclamation-triangle"),
+                " Variable(s) ", tags$strong(paste(overlap, collapse = ", ")),
+                " appear in both Auxiliary Variables and Nonlinear Variables. ",
+                "They will be modelled nonlinearly only ",
+                "(removed from the linear part of the formula).")
+    })
+    
+    
+    # -- FORMULA PREVIEW -------------------------------------------------------
+    output$formula_preview <- renderText({
+        req(data(), input$response_var)
+        tryCatch(
+            paste("Formula:", paste(deparse(reactive_formula()$formula), collapse = " ")),
+            error = function(e) "Formula not yet available."
+        )
+    })
+    
+    
+    # -- SAVE OUTPUTS ----------------------------------------------------------
+    output$save_model <- downloadHandler(
+        filename = function() paste0("hbsae_model_", Sys.Date(), ".rds"),
+        content  = function(file) {
+            withProgress(message = "Saving model...", {
+                tryCatch(
+                    withCallingHandlers(
+                        { saveRDS(model_fit(), file); showNotification("Model saved!", type = "message", duration = 10) },
+                        warning = function(w) {
+                            showNotification(paste("Save warning:", conditionMessage(w)), type = "warning", duration = 10)
+                            invokeRestart("muffleWarning")
+                        },
+                        message = function(m) { invokeRestart("muffleMessage") }
+                    ),
+                    error = function(e) {
+                        showNotification(paste("Save Error:", e$message), type = "error", duration = 15)
+                    }
+                )
             })
+        }
+    )
+    
+    output$save_stan_code <- downloadHandler(
+        filename = function() "stan_code.txt",
+        content  = function(file) {
+            withProgress(message = "Exporting Stan code...", {
+                tryCatch(
+                    withCallingHandlers(
+                        {
+                            m <- if (inherits(model_fit(), "hbmfit")) model_fit()$model else model_fit()
+                            writeLines(brms::stancode(m), file)
+                            showNotification("Stan code exported!", type = "message", duration = 10)
+                        },
+                        warning = function(w) {
+                            showNotification(paste("Export warning:", conditionMessage(w)), type = "warning", duration = 10)
+                            invokeRestart("muffleWarning")
+                        },
+                        message = function(m) { invokeRestart("muffleMessage") }
+                    ),
+                    error = function(e) {
+                        showNotification(paste("Export Error:", e$message), type = "error", duration = 15)
+                    }
+                )
+            })
+        }
+    )
+    
+    output$save_coda <- downloadHandler(
+        filename = function() paste0("coda_samples_", Sys.Date(), ".rds"),
+        content  = function(file) {
+            withProgress(message = "Exporting CODA samples...", {
+                tryCatch(
+                    withCallingHandlers(
+                        {
+                            m <- if (inherits(model_fit(), "hbmfit")) model_fit()$model else model_fit()
+                            saveRDS(coda::as.mcmc(m), file)
+                            showNotification("CODA samples exported!", type = "message", duration = 10)
+                        },
+                        warning = function(w) {
+                            showNotification(paste("Export warning:", conditionMessage(w)), type = "warning", duration = 10)
+                            invokeRestart("muffleWarning")
+                        },
+                        message = function(m) { invokeRestart("muffleMessage") }
+                    ),
+                    error = function(e) {
+                        showNotification(paste("Export Error:", e$message), type = "error", duration = 15)
+                    }
+                )
+            })
+        }
+    )
+    
+    output$save_plots <- downloadHandler(
+        filename = function() paste0("diagnostic_plots_", Sys.Date(), ".pdf"),
+        content  = function(file) {
+            withProgress(message = "Exporting diagnostic plots...", {
+                tryCatch(
+                    withCallingHandlers(
+                        {
+                            grDevices::pdf(file, width = 10, height = 8)
+                            res <- convergence_check(model_fit(), plot_types = c("trace", "dens", "acf",
+                                                                    "nuts_energy", "rhat", "neff"))
+                            for (p in res$plots) if (!is.null(p)) print(p)
+                            grDevices::dev.off()
+                            showNotification("Plots exported!", type = "message", duration = 10)
+                        },
+                        warning = function(w) {
+                            showNotification(paste("Export warning:", conditionMessage(w)), type = "warning", duration = 10)
+                            invokeRestart("muffleWarning")
+                        },
+                        message = function(m) { invokeRestart("muffleMessage") }
+                    ),
+                    error = function(e) {
+                        grDevices::dev.off()
+                        showNotification(paste("Export Error:", e$message), type = "error", duration = 15)
+                    }
+                )
+            })
+        }
+    )
+    
+    # =========================================================================
+    # NEW v0.3.0 FEATURES (Data Check / Spatial Weight Builder / Benchmarking)
+    # =========================================================================
+
+    # -- Update select inputs whenever data() changes --------------------------
+    observe({
+        d <- data()
+        req(d)
+        nm <- names(d)
+        updateSelectInput(session,    "dc_response",      choices = nm)
+        updateSelectizeInput(session, "dc_predictors",    choices = nm)
+        updateSelectInput(session,    "dc_sre",
+                           choices = c("(none)" = "", nm))
+        updateSelectInput(session,    "bm_groups_var",    choices = nm)
+        # Restrict weights variable to numeric columns
+        num_cols <- nm[vapply(d, is.numeric, logical(1L))]
+        updateSelectInput(session,    "bm_weights_var",
+                           choices = c("Equal weights (1/n)" = "", num_cols))
+    })
+
+    # -- DATA CHECK -----------------------------------------------------------
+    observeEvent(input$run_data_check, {
+        req(data(), input$dc_response, input$dc_predictors)
+        tryCatch({
+            sre_arg <- if (nzchar(input$dc_sre %||% "")) input$dc_sre else NULL
+            chk <- check_data(
+                data       = data(),
+                response   = input$dc_response,
+                predictors = input$dc_predictors,
+                sre        = sre_arg,
+                M          = spatial_weights()
+            )
+            check_results(chk)
+            output$data_check_output <- renderPrint({ summary(chk) })
+            output$data_check_recommendation <- renderUI({
+                if (length(chk$issues) > 0L) {
+                    div(class = "alert alert-danger",
+                        tags$strong("Issues found:"),
+                        tags$ul(lapply(chk$issues, tags$li)))
+                } else if (!is.na(chk$recommended_method)) {
+                    msg <- paste0(
+                        "Recommended handle_missing: '",
+                        chk$recommended_method, "'. ",
+                        chk$recommendation_text
+                    )
+                    div(class = "alert alert-warning",
+                        tags$strong("Recommendation: "), msg,
+                        if (!is.null(chk$non_sample_warning))
+                          tags$pre(chk$non_sample_warning)
+                        else NULL)
+                } else {
+                    div(class = "alert alert-success",
+                        "Data look complete and consistent.")
+                }
+            })
+        }, error = function(e) {
+            output$data_check_output <- renderPrint({
+                cat("Error running check_data():\n", e$message, "\n")
+            })
+            output$data_check_recommendation <- renderUI(NULL)
         })
     })
 
+    # -- BUILD SPATIAL WEIGHT FROM SHAPEFILE ----------------------------------
+    observeEvent(input$build_spatial_btn, {
+        req(input$shp_file)
+        tryCatch({
+            files <- input$shp_file
+            # Multi-file upload: shp + shx + dbf must coexist in same dir.
+            shp_idx <- grep("\\.shp$", files$name, ignore.case = TRUE)
+            if (length(shp_idx) == 0L)
+              stop("No .shp file found in upload (need .shp + .shx + .dbf).",
+                   call. = FALSE)
+            tmp_dir <- dirname(files$datapath[shp_idx[1L]])
+            for (i in seq_len(nrow(files))) {
+                file.rename(files$datapath[i],
+                             file.path(tmp_dir, files$name[i]))
+            }
+            shp_path <- file.path(tmp_dir, files$name[shp_idx[1L]])
 
-    # ==== DYNAMIC UI TEXT ====
-    # These blocks render descriptive text in the UI based on user selections.
-    ## ===== DIAGNOTICS NUMERIC =====
-    output$diag_definition <- renderUI({
-        switch(input$diag_tests,
-            "rhat" = shinydashboard::box(
-                title = "R-hat Diagnostic", width = NULL, solidHeader = TRUE, status = "info",
-                p(
-                    "The ", strong("R-hat (Gelman-Rubin)"),
-                    " diagnostic measures the convergence of MCMC chains by comparing between- and within-chain variances. ",
-                    "If chains have not mixed well (i.e., the estimates differ across chains), ", strong("R-hat"), " will be greater than ", code("1"), ". ",
-                    "Values below ", code("1.05"), " are generally considered acceptable. ",
-                    "We recommend running at least four chains to compute R-hat reliably."
-                )
-            ),
-            "geweke" = shinydashboard::box(
-                title = "Geweke Diagnostic", width = NULL, solidHeader = TRUE, status = "info",
-                p(
-                    "The ", strong("Geweke"),
-                    " diagnostic compares the mean of the first 10% and the last 50% of a Markov chain. ",
-                    "If the chain has reached its stationary distribution, the two means should be similar, resulting in a Z-score near ", code("0"), ". ",
-                    "Z-scores outside the range ", code("[-1.96, 1.96]"), " may indicate lack of convergence at the 5% significance level."
-                )
-            ),
-            "raftery" = shinydashboard::box(
-                title = "Raftery-Lewis Diagnostic", width = NULL, solidHeader = TRUE, status = "info",
-                p(
-                    "The ", strong("Raftery-Lewis"),
-                    " diagnostic estimates the number of iterations required to estimate a specified posterior quantile to a desired level of accuracy and confidence. ",
-                    "We recommend ensuring that the total number of iterations (", code("N"), ") for each parameter meets or exceeds the value suggested by this diagnostic—",
-                    "especially for parameters that are critical to your inference."
-                )
-            ),
-            "heidel" = shinydashboard::box(
-                title = "Heidelberger-Welch Diagnostic", width = NULL, solidHeader = TRUE, status = "info",
-                p(
-                    "The ", strong("Heidelberger-Welch"),
-                    " diagnostic tests for stationarity and convergence using statistical methods applied to the MCMC sample. ",
-                    "It is typically evaluated at a significance level of ", code("0.05"), ". ",
-                    "If a parameter fails the stationarity test, it suggests that the Markov chain has not yet reached a stable distribution. ",
-                    "In such cases, you may need to run the chain longer to achieve reliable inference."
-                )
-            ),
-            shinydashboard::box(
-                title = "Information", width = NULL, solidHeader = TRUE, status = "warning",
-                p("Please select a diagnostic test to see the explanation here.")
+            id_col <- if (nzchar(input$shp_id_col %||% ""))
+              input$shp_id_col else NULL
+
+            # v0.4.0+: derive for_model from current sre_type so type/style
+            # defaults match the model's theoretical requirements.
+            for_model <- if (!is.null(input$sre_type) &&
+                              input$sre_type %in% c("car", "sar"))
+              input$sre_type else NULL
+
+            M <- build_spatial_weight(
+                shp       = shp_path,
+                for_model = for_model,
+                type      = input$shp_type,
+                style     = input$shp_style,
+                k         = input$shp_k         %||% 4L,
+                threshold = if (is.null(input$shp_threshold) ||
+                                is.na(input$shp_threshold))
+                              NULL else input$shp_threshold,
+                id_col    = id_col,
+                validate  = TRUE
             )
-        )
-    })
+            spatial_weights(M)
 
-    ## ===== DIAGNOTICS PLOTS =====
-    ## ===== DIAGNOSTIC PLOTS =====
-    output$plot_definition <- renderUI({
-        switch(input$plot_types,
-            "trace" = shinydashboard::box(
-                title = "Trace Plot", width = NULL, solidHeader = TRUE, status = "primary",
-                p(
-                    "Trace plots display the sampled values of each parameter across iterations for each MCMC chain. ",
-                    "They are used to assess ", strong("mixing"), " and ", strong("convergence"), " — well-mixed chains appear as 'hairy caterpillars' without long-term trends."
-                )
-            ),
-            "dens" = shinydashboard::box(
-                title = "Density Plot", width = NULL, solidHeader = TRUE, status = "primary",
-                p(
-                    "Density plots show the estimated ", strong("posterior distributions"), " of parameters from the MCMC samples. ",
-                    "They help visualize the central tendency and spread of each parameter."
-                )
-            ),
-            "acf" = shinydashboard::box(
-                title = "Autocorrelation Plot", width = NULL, solidHeader = TRUE, status = "primary",
-                p(
-                    "Autocorrelation plots display the correlation of sampled values with their lagged values. ",
-                    "High autocorrelation indicates poor mixing and a lower ", strong("effective sample size"), ". ",
-                    "Ideally, autocorrelation should drop quickly with increasing lag."
-                )
-            ),
-            "nuts_energy" = shinydashboard::box(
-                title = "NUTS Energy Plot", width = NULL, solidHeader = TRUE, status = "primary",
-                p(
-                    "NUTS (No-U-Turn Sampler) energy plots are used to diagnose ", strong("Hamiltonian Monte Carlo"), " performance. ",
-                    "They show the distribution of energy transitions between states. ",
-                    "Significant discrepancies between energy and momentum can indicate sampling problems such as poor step size or divergences."
-                )
-            ),
-            "rhat" = shinydashboard::box(
-                title = "R-hat Plot", width = NULL, solidHeader = TRUE, status = "primary",
-                p(
-                    "R-hat plots visualize the ", strong("Gelman-Rubin R-hat diagnostic"), " across parameters. ",
-                    "Values close to ", code("1.00"), " suggest convergence. ",
-                    "Values above ", code("1.05"), " may indicate that the chains have not fully mixed."
-                )
-            ),
-            "neff" = shinydashboard::box(
-                title = "Effective Sample Size (ESS) Plot", width = NULL, solidHeader = TRUE, status = "primary",
-                p(
-                    "ESS plots show the ", strong("effective sample size"), " for each parameter, reflecting how many independent draws are equivalent to the correlated samples. ",
-                    "Higher ESS values indicate better sampling efficiency and more reliable estimates."
-                )
-            ),
-            shinydashboard::box(
-                title = "Information", width = NULL, solidHeader = TRUE, status = "warning",
-                p("Please select a diagnostic plot type to see the explanation here.")
-            )
-        )
-    })
+            # Surface the validation diagnostics from the matrix attribute
+            chk <- attr(M, "hbsae_check")
+            warn_html <- if (!is.null(chk) && length(chk$warnings) > 0L)
+              tags$ul(lapply(chk$warnings, tags$li))
+            else NULL
 
-    ## ===== MODEL CHECKING NUMERIC =====
-    output$metrics_definition_box <- renderUI({
-        switch(input$gof_metrics_select,
-            "loo" = shinydashboard::box(
-                title = "LOO (Leave-One-Out Cross-Validation)",
-                width = NULL, solidHeader = TRUE, status = "primary",
-                p(
-                    "LOO estimates out-of-sample predictive accuracy by systematically leaving out one observation at a time, ",
-                    "then computing the log-predictive density for the omitted point. ",
-                    "It is computed efficiently using ", strong("Pareto-smoothed importance sampling (PSIS)"), "."
-                ),
-                p(
-                    "An important diagnostic in LOO is the ", strong("Pareto k diagnostic"), ", which measures the reliability of the importance sampling approximation. ",
-                    "Values of ", code("k > 0.7"), " indicate that the approximation may be unstable for certain observations."
-                ),
-                p(
-                    "If high k values are present, we recommend enabling ", code("moment_match = TRUE"), " to improve the stability of the estimate using moment matching. ",
-                    "In this package, if k values remain high after moment matching, it will automatically fall back to ", code("reloo = TRUE"),
-                    " which recomputes LOO using full model refitting for those problematic observations."
-                )
-            ),
-            "waic" = shinydashboard::box(
-                title = "WAIC (Widely Applicable Information Criterion)",
-                width = NULL, solidHeader = TRUE, status = "primary",
-                p(
-                    "WAIC evaluates model predictive performance by adjusting the log pointwise predictive density (lppd) ",
-                    "using the effective number of parameters to account for overfitting. "
-                ),
-                p("It is a fully Bayesian criterion, asymptotically equivalent to LOO, but can be less robust in small samples or with weak priors. "),
-                p("Lower ", strong("WAIC"), " values indicate better expected predictive performance.")
-            )
-        )
-    })
-
-    ## ===== MODEL CHECKING PLOTS =====
-    output$ppc_definition_box <- renderUI({
-        switch(input$pp_check_type_select,
-            "dens_overlay" = shinydashboard::box(
-                title = "Density Overlay", width = NULL, solidHeader = TRUE, status = "primary",
-                p(
-                    "This plot overlays the density of observed data with densities from the posterior predictive simulations. ",
-                    "Good overlap between the two indicates that the model can capture the overall shape and spread of the observed data distribution."
-                )
-            ),
-            "boxplot" = shinydashboard::box(
-                title = "Boxplot", width = NULL, solidHeader = TRUE, status = "primary",
-                p(
-                    "Boxplots compare the distribution of observed data against replicated (simulated) datasets. ",
-                    "It is useful for assessing central tendency, spread, and outliers—especially when the data contains skewness or variability across groups."
-                )
-            ),
-            "bars" = shinydashboard::box(
-                title = "Frequency Plot (Discrete)", width = NULL, solidHeader = TRUE, status = "primary",
-                p(
-                    "For discrete outcomes, this bar plot compares the frequency of observed values with the frequencies ",
-                    "predicted by the posterior predictive distribution. A close match suggests the model captures the categorical structure well."
-                )
-            ),
-            "scatter_avg" = shinydashboard::box(
-                title = "Scatter Plot (y vs yrep)", width = NULL, solidHeader = TRUE, status = "primary",
-                p(
-                    "Plots the observed values (y) against the average of the replicated values (yrep) from the posterior. ",
-                    "Points close to the identity line (diagonal) suggest the model has good predictive accuracy for individual observations."
-                )
-            ),
-            "stat" = shinydashboard::box(
-                title = "Statistic vs Data", width = NULL, solidHeader = TRUE, status = "primary",
-                p(
-                    "Displays the distribution of a summary statistic (such as mean, standard deviation, min, max) ",
-                    "computed from replicated data (yrep), and compares it to the same statistic calculated from the observed data. ",
-                    "Helps assess whether the model reproduces specific aspects of the data's distribution."
+            output$spatial_weights_error <- renderUI(
+                tagList(
+                    div(class = "alert alert-success",
+                        sprintf(paste0(
+                            "Built %d x %d spatial weight matrix from ",
+                            "shapefile (type = %s, style = %s)."
+                        ), nrow(M), ncol(M),
+                          attr(M, "hbsae_type"),
+                          attr(M, "hbsae_style")),
+                        if (!is.null(chk))
+                            tags$div(
+                                tags$strong("Theoretical check: "),
+                                if (chk$compatible)
+                                  tags$span("compatible.",
+                                              style = "color: green;")
+                                else
+                                  tags$span("INCOMPATIBLE.",
+                                              style = "color: red;"),
+                                tags$br(),
+                                sprintf(paste0(
+                                  "Symmetric: %s, zero-diagonal: %s, ",
+                                  "components: %s, isolated: %s"
+                                ), chk$is_symmetric, chk$has_zero_diag,
+                                  chk$n_components, chk$n_isolated)
+                            )),
+                    if (!is.null(warn_html))
+                      div(class = "alert alert-warning",
+                          tags$strong("Spatial-weight warnings:"),
+                          warn_html)
                 )
             )
-        )
+        }, error = function(e) {
+            output$spatial_weights_error <- renderUI(
+                div(class = "alert alert-danger",
+                    paste("Failed to build weight matrix:", e$message))
+            )
+        })
     })
-}
+
+    # v0.4.0+: also validate user-uploaded matrices.  Fires after the
+    # existing fileInput observer has populated spatial_weights().
+    observe({
+        M <- spatial_weights()
+        if (is.null(M) || !is.matrix(M)) return(invisible(NULL))
+        # Only validate if we have a sre_type selected
+        st <- input$sre_type
+        if (is.null(st) || !(st %in% c("car", "sar"))) return(invisible(NULL))
+        # Skip if matrix already came from build_spatial_weight() (has attr)
+        if (!is.null(attr(M, "hbsae_check"))) return(invisible(NULL))
+
+        chk <- tryCatch(
+            check_spatial_weight(M, sre_type = st, verbose = FALSE),
+            error = function(e) NULL
+        )
+        if (is.null(chk)) return(invisible(NULL))
+
+        if (!chk$compatible) {
+            showNotification(
+                paste("Uploaded matrix is INCOMPATIBLE with sre_type = '",
+                      st, "':\n",
+                      paste(chk$issues, collapse = "; ")),
+                type = "error", duration = 15
+            )
+        } else if (length(chk$warnings) > 0L) {
+            showNotification(
+                paste("Spatial weight warnings:",
+                      paste(chk$warnings, collapse = "; ")),
+                type = "warning", duration = 12
+            )
+        }
+    })
+
+    # -- BENCHMARKING ---------------------------------------------------------
+    benchmark_result <- reactiveVal(NULL)
+
+    # Live preview: how groups partition the kecamatan + what sums look like
+    output$bm_group_preview <- renderPrint({
+        d <- data()
+        req(d, input$bm_groups_var)
+        if (!nzchar(input$bm_groups_var)) return(invisible(NULL))
+        g <- d[[input$bm_groups_var]]
+        if (is.null(g)) {
+            cat("Group variable not in data.\n")
+            return(invisible(NULL))
+        }
+        cat("Group levels (in order):\n")
+        tab <- table(g)
+        print(tab)
+        cat(sprintf("\n=> Provide %d target value(s) above, in the same order.\n",
+                    length(tab)))
+        if (!is.null(model_fit())) {
+            preds <- tryCatch(sae_predict(model_fit()), error = function(e) NULL)
+            if (!is.null(preds) && length(preds$pred) == length(g)) {
+                wts <- if (nzchar(input$bm_weights_var %||% ""))
+                  d[[input$bm_weights_var]][seq_along(preds$pred)]
+                else rep(1 / length(preds$pred), length(preds$pred))
+                grp_sums <- tapply(wts * preds$pred, g, sum)
+                cat("\nCurrent weighted sums per group (BEFORE benchmark):\n")
+                print(round(grp_sums, 4))
+            }
+        }
+    })
+
+    # Auto-fill targets text with current group sums (a sensible starting point)
+    observeEvent(input$bm_template_targets, {
+        req(model_fit(), input$bm_groups_var, data())
+        d <- data()
+        g <- d[[input$bm_groups_var]]
+        preds <- tryCatch(sae_predict(model_fit()), error = function(e) NULL)
+        req(preds)
+        wts <- if (nzchar(input$bm_weights_var %||% ""))
+          d[[input$bm_weights_var]][seq_along(preds$pred)]
+        else rep(1 / length(preds$pred), length(preds$pred))
+        grp_sums <- tapply(wts * preds$pred, g, sum)
+        updateTextInput(session, "bm_targets_multi",
+                         value = paste(round(grp_sums, 4), collapse = ", "))
+        showNotification(
+            "Targets pre-filled with current group sums. ",
+            "Adjust to your official figures.",
+            type = "message", duration = 8)
+    })
+
+    observeEvent(input$run_benchmark, {
+        req(model_fit())
+        tryCatch({
+            # 1. Get baseline SAE predictions
+            preds <- sae_predict(model_fit())
+
+            # 2. Resolve weights
+            wts <- if (nzchar(input$bm_weights_var %||% "")) {
+                w <- data()[[input$bm_weights_var]]
+                if (is.null(w))
+                  stop("Weights variable not found in data.", call. = FALSE)
+                w[seq_len(length(preds$pred))]
+            } else NULL
+
+            # 3. Resolve target depending on method
+            if (input$bm_method == "raking") {
+                req(input$bm_targets_multi, input$bm_groups_var)
+                target_vec <- as.numeric(strsplit(
+                    gsub("\\s+", "", input$bm_targets_multi), ","
+                )[[1L]])
+                if (anyNA(target_vec))
+                  stop("Could not parse 'Group Targets' as numeric vector.",
+                       call. = FALSE)
+                groups_vec <- data()[[input$bm_groups_var]]
+                bm <- sae_benchmark(
+                    predictions = preds,
+                    target      = target_vec,
+                    weights     = wts,
+                    groups      = groups_vec[seq_len(length(preds$pred))],
+                    method      = "raking"
+                )
+            } else {
+                req(input$bm_target_single)
+                bm <- sae_benchmark(
+                    predictions = preds,
+                    target      = as.numeric(input$bm_target_single),
+                    weights     = wts,
+                    method      = input$bm_method
+                )
+            }
+
+            benchmark_result(list(original = preds, benchmarked = bm))
+
+            # 4. Render outputs
+            output$benchmark_summary <- renderPrint({
+                cat(sprintf("Method            : %s\n", bm$benchmark_info$method))
+                if (length(bm$benchmark_info$target) == 1L)
+                  cat(sprintf("Target total      : %.4f\n",
+                              bm$benchmark_info$target))
+                else
+                  cat(sprintf("Target totals     : %s\n",
+                              paste(round(bm$benchmark_info$target, 4),
+                                    collapse = ", ")))
+                if (!is.null(bm$benchmark_info$adjustment))
+                  cat(sprintf("Adjustment        : %.6f\n",
+                              bm$benchmark_info$adjustment))
+                if (!is.na(bm$benchmark_info$converged))
+                  cat(sprintf("Converged         : %s\n",
+                              bm$benchmark_info$converged))
+                cat(sprintf("Sum |delta|       : %.4f\n",
+                            sum(abs(bm$pred - preds$pred))))
+                cat(sprintf("Mean |delta|      : %.4f\n",
+                            mean(abs(bm$pred - preds$pred))))
+            })
+
+            output$benchmark_table <- DT::renderDT({
+                df <- data.frame(
+                    Area        = seq_along(preds$pred),
+                    Original    = round(preds$pred, 4),
+                    Benchmarked = round(bm$pred,    4),
+                    Delta       = round(bm$pred - preds$pred, 4),
+                    RSE_pct     = round(bm$result_table$RSE_percent, 2)
+                )
+                DT::datatable(df, options = list(pageLength = 10),
+                               rownames = FALSE)
+            })
+
+            output$benchmark_plot <- renderPlot({
+                df <- data.frame(
+                    Area        = seq_along(preds$pred),
+                    Original    = preds$pred,
+                    Benchmarked = bm$pred
+                )
+                df_long <- rbind(
+                    data.frame(Area = df$Area,
+                               Estimate = df$Original,
+                               Type = "Original"),
+                    data.frame(Area = df$Area,
+                               Estimate = df$Benchmarked,
+                               Type = "Benchmarked")
+                )
+                ggplot2::ggplot(
+                    df_long,
+                    ggplot2::aes(x = .data$Area, y = .data$Estimate,
+                                 colour = .data$Type)
+                ) +
+                    ggplot2::geom_point(size = 2) +
+                    ggplot2::geom_line(alpha = 0.6) +
+                    ggplot2::theme_minimal() +
+                    ggplot2::labs(title = "Original vs Benchmarked Estimates",
+                                  x = "Area", y = "Estimate") +
+                    ggplot2::scale_colour_manual(
+                        values = c("Original" = "#185FA5",
+                                    "Benchmarked" = "#D85A30"))
+            })
+
+            showNotification("Benchmark applied successfully.",
+                              type = "message", duration = 8)
+
+        }, error = function(e) {
+            showNotification(paste("Benchmark error:", e$message),
+                              type = "error", duration = 15)
+        })
+    })
+
+    output$download_benchmark <- downloadHandler(
+        filename = function()
+          paste0("sae_benchmarked_", Sys.Date(), ".csv"),
+        content  = function(file) {
+            br <- benchmark_result()
+            if (is.null(br)) return(invisible(NULL))
+            df <- data.frame(
+                Area        = seq_along(br$original$pred),
+                Original    = br$original$pred,
+                Benchmarked = br$benchmarked$pred,
+                RSE_pct     = br$benchmarked$result_table$RSE_percent
+            )
+            utils::write.csv(df, file, row.names = FALSE)
+        }
+    )
+
+}   # end server
 
 
-# ==== RUN APP ====
-# Combines the UI and Server logic to launch the Shiny application.
+# =============================================================================
+# RUN APP
+# =============================================================================
 shinyApp(ui, server)

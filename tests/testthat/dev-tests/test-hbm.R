@@ -1,3 +1,10 @@
+# tests/testthat/dev-tests/test-hbm.R
+# =============================================================================
+# Heavy integration test (requires Stan, ~10-60 seconds).
+# Not run on CRAN; not bundled in the package tarball (see .Rbuildignore).
+# Gated centrally by .dev_skip() from helper-dev-setup.R.
+# =============================================================================
+
 # Load data
 data <- data_fhnorm
 adjacency_matrix <- adjacency_matrix_car
@@ -5,7 +12,7 @@ spatial_weight <- spatial_weight_sar
 
 # Expected result
 test_that("Function returns a model object", {
-  skip_on_cran()
+  .dev_skip()
   
   model_hbm <- suppressWarnings(hbm(brms::bf(y ~ x1 + x2 + x3), 
                                     data = data))
@@ -15,7 +22,7 @@ test_that("Function returns a model object", {
 
 # Test the formula
 test_that("Function throws an error when formula is not suitble", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(hbm(123, 
                    data = data))
@@ -31,7 +38,7 @@ test_that("Function throws an error when formula is not suitble", {
 
 # Test the prior argument
 test_that("Function throws an error when prior is invalid", {
-  skip_on_cran()
+  .dev_skip()
   
   # 1. Error when prior is not a brms::prior object
   expect_error(
@@ -69,7 +76,7 @@ test_that("Function throws an error when prior is invalid", {
 
 # Test the re formula 
 test_that("Function throws an error when re formula is not ~(1|group)", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(hbm(brms::bf(y ~ x1 + x2 + x3), 
                    data = data, 
@@ -92,7 +99,7 @@ test_that("Function throws an error when re formula is not ~(1|group)", {
 
 # Test the handle missing
 test_that("Function throws an error when handle missing does not fit with the condition", {
-  skip_on_cran()
+  .dev_skip()
   
   # Data Dummy For Misisng Data
   # Missing at response
@@ -136,7 +143,7 @@ test_that("Function throws an error when handle missing does not fit with the co
 
 suppressWarnings(library(mice))
 test_that("Function runs correctly with valid handle_missing strategies", {
-  skip_on_cran()
+  .dev_skip()
   
   # Deleted: only response is missing
   data_miss1 <- data
@@ -176,7 +183,7 @@ test_that("Function runs correctly with valid handle_missing strategies", {
 
 # Expected result
 test_that("Function returns a model object for logit normal missing data and handle with 'deleted' option", {
-  skip_on_cran()
+  .dev_skip()
   
   data_miss <- data_binlogitnorm
   data_miss$y[1] <- NA
@@ -191,7 +198,7 @@ test_that("Function returns a model object for logit normal missing data and han
 
 # Validate spatial effect
 test_that("Function supports spatial random effects", {
-  skip_on_cran()
+  .dev_skip()
   
   suppressWarnings({
     model_logit <- hbm(brms::bf(y ~ x1 + x2),
@@ -221,7 +228,7 @@ test_that("Function supports spatial random effects", {
 })
 
 test_that("Function throws error for invalid spatial random effect", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(hbm(brms::bf(y ~ x1 + x2),
                    sre = "invalid",
@@ -233,7 +240,7 @@ test_that("Function throws error for invalid spatial random effect", {
 
 
 test_that("Function supports spatial random effects without specified parameter", {
-  skip_on_cran()
+  .dev_skip()
   
   suppressWarnings({
     model_logit <- hbm(brms::bf(y ~ x1 + x2),
@@ -245,7 +252,7 @@ test_that("Function supports spatial random effects without specified parameter"
 })
 
 test_that("Function throws error for invalid car type", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(hbm(brms::bf(y ~ x1 + x2),
                    sre = "sre",
@@ -258,7 +265,7 @@ test_that("Function throws error for invalid car type", {
 
 
 test_that("Function supports spatial random effects with missing value in sre", {
-  skip_on_cran()
+  .dev_skip()
   
   data_missing_sre <- data
   data_missing_sre$sre[1] <- NA
@@ -272,7 +279,7 @@ test_that("Function supports spatial random effects with missing value in sre", 
 })
 
 test_that("Function throws error for invalid spatial random effect type", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(hbm(brms::bf(y ~ x1 + x2),
                    sre = "sre",
@@ -283,7 +290,7 @@ test_that("Function throws error for invalid spatial random effect type", {
 })
 
 test_that("Function throws error for spatial random effect type = sar", {
-  skip_on_cran()
+  .dev_skip()
   expect_error(hbm(brms::bf(y ~ x1 + x2),
                    hb_sampling = "Beta",
                    sre = "sre",
@@ -296,7 +303,7 @@ test_that("Function throws error for spatial random effect type = sar", {
 
 # adj matrix
 test_that("Function throws error when adjacency matrix is incorrect", {
-  skip_on_cran()
+  .dev_skip()
   
   adjacency_matrix_wrong <- matrix(c(
     0, 1, 1,
@@ -358,7 +365,7 @@ test_that("Function throws error when adjacency matrix is incorrect", {
 })
 
 test_that("Function supports with the number of dimensions greater than the number of locations sre", {
-  skip_on_cran()
+  .dev_skip()
   
   data_adj_dim <- data
   data_adj_dim$sre <- rep(1:4)
@@ -373,7 +380,7 @@ test_that("Function supports with the number of dimensions greater than the numb
 })
 
 test_that("Function to check error in SAR model", {
-  skip_on_cran()
+  .dev_skip()
   expect_error(suppressWarnings(
     hbm(
       formula = bf(y ~ x1 + x2 + x3),  

@@ -1,3 +1,10 @@
+# tests/testthat/dev-tests/test-hbpc.R
+# =============================================================================
+# Heavy integration test (requires Stan, ~10-60 seconds).
+# Not run on CRAN; not bundled in the package tarball (see .Rbuildignore).
+# Gated centrally by .dev_skip() from helper-dev-setup.R.
+# =============================================================================
+
 pdf(NULL)
 on.exit(dev.off(), add = TRUE)
 
@@ -6,7 +13,7 @@ fit <- suppressWarnings(hbm(brms::bf(y ~ x1 + x2), data = sample_data))
 
 # hbpc
 test_that("hbpc returns expected structure and classes", {
-  skip_on_cran()
+  .dev_skip()
   
   result <- suppressWarnings(hbpc(model = fit, data = sample_data, response_var = "y"))
   
@@ -16,7 +23,7 @@ test_that("hbpc returns expected structure and classes", {
 })
 
 test_that("hbpc automatically detects response variable and data", {
-  skip_on_cran()
+  .dev_skip()
   
   result_auto <- suppressWarnings(hbpc(model = fit))
   
@@ -26,7 +33,7 @@ test_that("hbpc automatically detects response variable and data", {
 
 
 test_that("hbpc throws error for non-brms/hbmfit model", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(
     hbpc(model = lm(y ~ x1, data = sample_data), data = sample_data, response_var = "y"),
@@ -35,7 +42,7 @@ test_that("hbpc throws error for non-brms/hbmfit model", {
 })
 
 test_that("hbpc throws error for invalid response variable name", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(
     hbpc(model = fit, data = sample_data, response_var = "not_y"),
@@ -44,7 +51,7 @@ test_that("hbpc throws error for invalid response variable name", {
 })
 
 test_that("hbpc gives warning when model is not sampling and not prior-only", {
-  skip_on_cran()
+  .dev_skip()
   
   dummy_model <- list(
     formula = brms::bf(y ~ x1 + x2),
@@ -63,7 +70,7 @@ test_that("hbpc gives warning when model is not sampling and not prior-only", {
 
 
 test_that("hbpc stops when response_var cannot be determined from model formula", {
-  skip_on_cran()
+  .dev_skip()
   
   dummy_model <- list(
     formula = brms::bf(~ x1 + x2),
@@ -80,7 +87,7 @@ test_that("hbpc stops when response_var cannot be determined from model formula"
 })
 
 test_that("hbpc stops when automatically determined response variable not found in data", {
-  skip_on_cran()
+  .dev_skip()
   
   fit_valid <- suppressWarnings(
     hbm(
@@ -107,7 +114,7 @@ test_that("hbpc stops when automatically determined response variable not found 
 })
 
 test_that("hbpc handles all-NA y values for prior predictive check", {
-  skip_on_cran()
+  .dev_skip()
   
   library(ggplot2)
   

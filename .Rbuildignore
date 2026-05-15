@@ -1,34 +1,20 @@
-# Git related
-^\.git/
-^\.gitignore$
-^\.github/
-
-# RStudio files
 ^.*\.Rproj$
-^\.Rproj\.user/
-
-# Documentation
-^README\.Rmd$
-^README\.md$
-^README_ID\.Rmd$
-^README_ID\.md$
-^LICENSE\.md$
-
-# Package build artifacts
-^Meta/
-^doc/
-^docs/
-# Vignettes cache
-^vignettes.*cache/
-^vignettes/.*\.html$ # Juga bisa exclude vignette HTML
-^vignettes/.*\.R$    # Dan vignette R files
-# Test and development files
-^test_script\.R$
-
-# System files
-^\.DS_Store$
 ^\.Rproj\.user$
-# Exclude development test files from CRAN package
-^tests/testthat/test-.*-dev\.R$
-^tests/testthat/dev-tests/
-
+^\.github$
+^\.gitignore$
+^\.lintr$
+^cran-comments\.md$
+^scripts$
+^data-raw$
+^docs$
+^revdep$
+^codecov\.yml$
+^README\.Rmd$
+^\.github/workflows$
+^v030$
+^tests/testthat/dev-tests$
+^_pkgdown\.yml$
+^pkgdown$
+^CHANGELOG\.md$
+^README_ID\.md$
+^README_ID\.Rmd$

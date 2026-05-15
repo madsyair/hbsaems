@@ -1,10 +1,17 @@
+# tests/testthat/dev-tests/test-hbm-binlogitnorm.R
+# =============================================================================
+# Heavy integration test (requires Stan, ~10-60 seconds).
+# Not run on CRAN; not bundled in the package tarball (see .Rbuildignore).
+# Gated centrally by .dev_skip() from helper-dev-setup.R.
+# =============================================================================
+
 # Load data
 data <- data_binlogitnorm
 adjacency_matrix <- adjacency_matrix_car
 
 # Expected result
 test_that("Function returns a model object", {
-  skip_on_cran()
+  .dev_skip()
   
   model_logit <- suppressWarnings(hbm_binlogitnorm(response = "y", 
                                                   trials = "n", 
@@ -16,7 +23,7 @@ test_that("Function returns a model object", {
 
 # Variable not exixt
 test_that("Function throws error when response is missing", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(hbm_binlogitnorm(response = "z_dir", 
                                trials = "n", 
@@ -26,7 +33,7 @@ test_that("Function throws error when response is missing", {
 })
 
 test_that("Function throws error when predictors are missing", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(hbm_binlogitnorm(response = "y", 
                                 trials = "n", 
@@ -36,7 +43,7 @@ test_that("Function throws error when predictors are missing", {
 })
 
 test_that("Function throws error when trials are missing", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(hbm_binlogitnorm(response = "y", 
                                 trials = "m_i", 
@@ -47,7 +54,7 @@ test_that("Function throws error when trials are missing", {
 
 # Validate variable
 test_that("Function throws error when response contains a negative integer.", {
-  skip_on_cran()
+  .dev_skip()
   
   data_wrong1 <- data
   data_wrong1$y[1] <- -1
@@ -59,7 +66,7 @@ test_that("Function throws error when response contains a negative integer.", {
 })
 
 test_that("Function throws error when response is greater than the number of trials.", {
-  skip_on_cran()
+  .dev_skip()
   
   data_wrong2 <- data
   data_wrong2$y[1] <- 101
@@ -72,7 +79,7 @@ test_that("Function throws error when response is greater than the number of tri
 })
 
 test_that("Function throws error when number of trials is not a positive integer.", {
-  skip_on_cran()
+  .dev_skip()
   
   data_wrong3 <- data
   data_wrong3$n[1] <- -1
@@ -85,7 +92,7 @@ test_that("Function throws error when number of trials is not a positive integer
 })
 
 test_that("Function throws error when trials contain NA", {
-  skip_on_cran()
+  .dev_skip()
   
   data_wrong_na <- data
   data_wrong_na$n[1] <- NA
@@ -99,7 +106,7 @@ test_that("Function throws error when trials contain NA", {
 
 # Validate prior
 test_that("Function accepts valid priors", {
-  skip_on_cran()
+  .dev_skip()
   
   suppressWarnings({
     model_logit <- hbm_binlogitnorm(response = "y", 
@@ -114,7 +121,7 @@ test_that("Function accepts valid priors", {
 })
 
 test_that("Function throws error for invalid prior", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(
     hbm_binlogitnorm(response = "y", 
@@ -128,7 +135,7 @@ test_that("Function throws error for invalid prior", {
 
 #Validate random effects
 test_that("Function supports random effects", {
-  skip_on_cran()
+  .dev_skip()
   
   suppressWarnings({
     model <- hbm_binlogitnorm(response = "y", 
@@ -141,7 +148,7 @@ test_that("Function supports random effects", {
 })
 
 test_that("Function throws error for invalid random effect variable", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(hbm_binlogitnorm(response = "y", 
                                 trials = "n", 
@@ -153,7 +160,7 @@ test_that("Function throws error for invalid random effect variable", {
 
 # Validate spatial effect
 test_that("Function supports spatial random effects", {
-  skip_on_cran()
+  .dev_skip()
   
   suppressWarnings({
     model_logit <- hbm_binlogitnorm(response = "y", 
@@ -169,7 +176,7 @@ test_that("Function supports spatial random effects", {
 })
 
 test_that("Function throws error for invalid spatial random effect", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(hbm_binlogitnorm(response = "y", 
                                 trials = "n", 
@@ -184,7 +191,7 @@ test_that("Function throws error for invalid spatial random effect", {
 
 
 test_that("Function supports spatial random effects without specified parameter", {
-  skip_on_cran()
+  .dev_skip()
   
   suppressWarnings({
     model_logit <- hbm_binlogitnorm(response = "y", 
@@ -199,7 +206,7 @@ test_that("Function supports spatial random effects without specified parameter"
 })
 
 test_that("Function throws error for invalid car type", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(hbm_binlogitnorm(response = "y", 
                                 trials = "n", 
@@ -215,7 +222,7 @@ test_that("Function throws error for invalid car type", {
 
 
 test_that("Function supports spatial random effects with missing value in sre", {
-  skip_on_cran()
+  .dev_skip()
   
   data_missing_sre <- data
   data_missing_sre$sre[1] <- NA
@@ -231,7 +238,7 @@ test_that("Function supports spatial random effects with missing value in sre", 
 })
 
 test_that("Function throws error for invalid spatial random effect type", {
-  skip_on_cran()
+  .dev_skip()
   
   expect_error(hbm_binlogitnorm(response = "y", 
                                 trials = "n", 
@@ -244,7 +251,7 @@ test_that("Function throws error for invalid spatial random effect type", {
 })
 
 test_that("Function throws error for spatial random effect type = sar", {
-  skip_on_cran()
+  .dev_skip()
   expect_error(hbm_binlogitnorm(response = "y", 
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"),
@@ -258,7 +265,7 @@ test_that("Function throws error for spatial random effect type = sar", {
 
 # adj matrix
 test_that("Function throws error when adjacency matrix is incorrect", {
-  skip_on_cran()
+  .dev_skip()
   
   adjacency_matrix_wrong <- matrix(c(
     0, 1, 1,
@@ -338,7 +345,7 @@ test_that("Function throws error when adjacency matrix is incorrect", {
 })
 
 test_that("Function supports with the number of dimensions greater than the number of locations sre", {
-  skip_on_cran()
+  .dev_skip()
   
   data_adj_dim <- data
   data_adj_dim$sre <- rep(1:4)
@@ -357,7 +364,7 @@ test_that("Function supports with the number of dimensions greater than the numb
 
 #Validate Handle Missing
 test_that("Function throws an error when handle missing does not fit with the condition", {
-  skip_on_cran()
+  .dev_skip()
   
   #Missing at response and predictor
   data_miss_binom2 <- data
@@ -374,7 +381,7 @@ test_that("Function throws an error when handle missing does not fit with the co
 
 
 test_that("Function support handles missing data with 'deleted' method", {
-  skip_on_cran()
+  .dev_skip()
   
   # Missing at response
   data_miss_binom1 <- data
@@ -392,7 +399,7 @@ test_that("Function support handles missing data with 'deleted' method", {
 })
 
 test_that("Function support handles missing data with 'multiple' method", {
-  skip_on_cran()
+  .dev_skip()
   
   #Missing at response and predictor
   data_miss_binom2 <- data
@@ -411,7 +418,7 @@ test_that("Function support handles missing data with 'multiple' method", {
 })
 
 test_that("Function do not support handles missing data with 'model' method in binlogitnorm model", {
-  skip_on_cran()
+  .dev_skip()
   
   #Missing at response and predictor
   data_miss_binom2 <- data
