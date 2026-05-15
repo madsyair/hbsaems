@@ -1,6 +1,4 @@
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
 # hbsaems: Model Hierarkis Bayesian untuk Estimasi Wilayah Kecil <img src="man/figures/hbsaems.png" align="right" height="139" alt="hbsaems logo" />
 
 **🌏 [Read in
@@ -78,14 +76,8 @@ alur baku.
 Anda dapat menginstal versi pengembangan dari GitHub:
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("madsyair/hbsaems")
-```
-
-Atau bersama vignette:
-
-``` r
-devtools::install_github("madsyair/hbsaems", build_vignettes = TRUE)
+# install.packages("remotes")
+remotes::install_github("madsyair/hbsaems")
 ```
 
 ## Dependensi

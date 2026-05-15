@@ -73,14 +73,8 @@ benchmarking are all part of the standard pipeline.
 You can install the development version from GitHub:
 
 ``` r
-# install.packages("pak")
-pak::pak("madsyair/hbsaems")
-```
-
-Or with vignettes:
-
-``` r
-pak::pak("madsyair/hbsaems", build_vignettes = TRUE)
+# install.packages("remotes")
+remotes::install_github("madsyair/hbsaems")
 ```
 
 ## Dependencies
