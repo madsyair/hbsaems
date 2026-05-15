@@ -42,13 +42,13 @@ Anda dapat menginstal versi pengembangan dari GitHub:
 
 ```r
 # install.packages("devtools")
-devtools::install_github("madsyair/hbsaems")
+pak::pak("madsyair/hbsaems")
 ```
 
 Atau bersama vignette:
 
 ```r
-devtools::install_github("madsyair/hbsaems", build_vignettes = TRUE)
+pak::pak("madsyair/hbsaems", build_vignettes = TRUE)
 ```
 
 ## Dependensi

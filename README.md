@@ -41,14 +41,14 @@ The package is designed to support the principled **Bayesian workflow** (Gelman 
 You can install the development version from GitHub:
 
 ```r
-# install.packages("devtools")
-devtools::install_github("madsyair/hbsaems")
+# install.packages("pak")
+pak::pak("madsyair/hbsaems")
 ```
 
 Or with vignettes:
 
 ```r
-devtools::install_github("madsyair/hbsaems", build_vignettes = TRUE)
+pak::pak("madsyair/hbsaems", build_vignettes = TRUE)
 ```
 
 ## Dependencies
