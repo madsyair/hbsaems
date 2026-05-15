@@ -54,10 +54,12 @@ posterior_draws.hbmfit <- function(model, params = NULL, ...) {
 
 #' Extract Prior Draws
 #'
-#' Requires the model to have been fit with \code{sample_prior = "yes"} or
-#' \code{sample_prior = "only"}.
+#' The \code{\link[brms]{prior_draws}} generic is re-exported from
+#' \pkg{brms} and an S3 method is provided that dispatches on
+#' \code{hbmfit} objects.  Requires the model to have been fit with
+#' \code{sample_prior = "yes"} or \code{sample_prior = "only"}.
 #'
-#' @param model An \code{hbmfit} object.
+#' @param x An \code{hbmfit} object.
 #' @param ...   Additional arguments forwarded to
 #'   \code{\link[brms]{prior_draws}}.
 #'
@@ -69,40 +71,60 @@ posterior_draws.hbmfit <- function(model, params = NULL, ...) {
 #' library(hbsaems)
 #' library(brms)
 #' data("data_fhnorm")
+#' # `sample_prior = "yes"` works best when all coefficients have a
+#' # proper prior; supply explicit priors on the regression class.
 #' model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
 #'              re = ~ (1 | group),    # area-level random effect
 #'              sample_prior = "yes",
+#'              prior        = c(
+#'                brms::prior(normal(0, 1), class = "b"),
+#'                brms::prior(normal(0, 5), class = "Intercept")
+#'              ),
 #'              chains = 2, iter = 1000, warmup = 500,
 #'              cores = 1, seed = 1, refresh = 0)
 #' pd <- prior_draws(model)
 #' head(pd)
 #' }
+#'
+#' @seealso \code{\link[brms]{prior_draws}}
+#'
+#' @name prior_draws
+#' @aliases prior_draws prior_draws.hbmfit
+#'
+#' @importFrom brms prior_draws
+#' @export prior_draws
 #' @export
-prior_draws <- function(model, ...) UseMethod("prior_draws")
-
-#' @export
-prior_draws.hbmfit <- function(model, ...) {
+prior_draws.hbmfit <- function(x, ...) {
   # `sample_prior` is a model attribute -- check the brmsfit metadata
-  sp <- tryCatch(model$model$sample_prior, error = function(e) "no")
+  sp <- tryCatch(x$model$sample_prior, error = function(e) "no")
   if (isTRUE(sp == "no")) {
     warning("No prior draws stored in this model. ",
             "Refit with sample_prior = 'yes' or 'only'.", call. = FALSE)
     return(NULL)
   }
-  brms::prior_draws(model$model, ...)
+  brms::prior_draws(x$model, ...)
 }
 
 
 # =============================================================================
-# posterior_interval()
+# posterior_interval() — re-exported from rstantools + hbmfit method
 # =============================================================================
 
-#' Compute Credible Intervals
+#' Compute Credible Intervals for an hbmfit Object
 #'
-#' @param model  An \code{hbmfit} object.
-#' @param params Optional character vector of parameter names.
-#' @param prob   Coverage probability in \eqn{(0, 1)} (default \code{0.95}).
-#' @param ...    Additional arguments forwarded to \code{posterior_draws}.
+#' The \code{\link[rstantools]{posterior_interval}} generic is re-exported
+#' from \pkg{rstantools} and an S3 method is provided that dispatches on
+#' \code{hbmfit} objects.  This lets users call
+#' \code{posterior_interval(fit)} on the return value of
+#' \code{\link{hbm}} just as they would on a \code{brmsfit}.
+#'
+#' @param object An \code{hbmfit} object.
+#' @param prob   Coverage probability in \eqn{(0, 1)} (default
+#'   \code{0.95}; note that \code{rstantools::posterior_interval}'s own
+#'   default is \code{0.9}).
+#' @param params Optional character vector of parameter names to keep.
+#' @param ...    Additional arguments forwarded to
+#'   \code{\link{posterior_draws}}.
 #'
 #' @return A matrix with two rows giving lower and upper bounds.
 #'
@@ -117,19 +139,22 @@ prior_draws.hbmfit <- function(model, ...) {
 #'              cores = 1, seed = 1, refresh = 0)
 #' posterior_interval(model, prob = 0.90)
 #' }
+#'
+#' @seealso \code{\link[rstantools]{posterior_interval}}
+#'
+#' @name posterior_interval
+#' @aliases posterior_interval posterior_interval.hbmfit
+#'
+#' @importFrom rstantools posterior_interval
+#' @export posterior_interval
 #' @export
-posterior_interval <- function(model, params = NULL, prob = 0.95, ...) {
-  UseMethod("posterior_interval")
-}
-
-#' @export
-posterior_interval.hbmfit <- function(model, params = NULL,
-                                      prob = 0.95, ...) {
+posterior_interval.hbmfit <- function(object, prob = 0.95,
+                                      params = NULL, ...) {
   if (!is.numeric(prob) || length(prob) != 1L || prob <= 0 || prob >= 1)
     stop("'prob' must be a single number in (0, 1).", call. = FALSE)
 
   alpha <- 1 - prob
-  draws <- posterior_draws(model, params = params, ...)
+  draws <- posterior_draws(object, params = params, ...)
 
   apply(draws, 2L, stats::quantile,
         probs = c(alpha / 2, 1 - alpha / 2), na.rm = TRUE)

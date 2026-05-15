@@ -46,7 +46,7 @@ Encoding: UTF-8
 LazyData: true
 Depends: R (>= 4.0.0)
 Imports: brms (>= 2.18.0), coda (>= 0.19-4), ggplot2 (>= 3.3.5), mice
-        (>= 3.14.0), stats, utils
+        (>= 3.14.0), rstantools (>= 2.4.0), stats, utils
 Suggests: bayesplot, bridgesampling, DT, knitr (>= 1.40), mgcv,
         mockery, posterior, priorsense, readxl, rmarkdown (>= 2.16),
         rstan, sf, shiny, shinydashboard (>= 0.7.2), shinyWidgets,
@@ -56,7 +56,7 @@ Config/testthat/edition: 3
 Roxygen: list(markdown = FALSE)
 Language: en-US
 NeedsCompilation: no
-Packaged: 2026-05-15 06:15:05 UTC; root
+Packaged: 2026-05-15 11:28:35 UTC; root
 Author: Achmad Syahrul Choir [aut, cre]
     (<https://orcid.org/0000-0001-7088-0646>),
   Saniyyah Sri Nurhayati [aut],

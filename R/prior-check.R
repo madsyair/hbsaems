@@ -44,10 +44,16 @@
 #' library(hbsaems)
 #' library(brms)
 #' data("data_fhnorm")
+#' # `sample_prior = "only"` requires all coefficients to have a proper
+#' # prior; supply explicit priors on the regression class.
 #' model_prior <- hbm(
 #'   formula      = brms::bf(y ~ x1 + x2 + x3),
 #'   data         = data_fhnorm,
 #'   sample_prior = "only",
+#'   prior        = c(
+#'     brms::prior(normal(0, 1), class = "b"),
+#'     brms::prior(normal(0, 5), class = "Intercept")
+#'   ),
 #'   chains = 2, iter = 1000, warmup = 500, cores = 1,
 #'   seed = 42, refresh = 0
 #' )

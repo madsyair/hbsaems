@@ -2,12 +2,13 @@
 % Please edit documentation in R/posterior-methods.R
 \name{prior_draws}
 \alias{prior_draws}
+\alias{prior_draws.hbmfit}
 \title{Extract Prior Draws}
 \usage{
-prior_draws(model, ...)
+\method{prior_draws}{hbmfit}(x, ...)
 }
 \arguments{
-\item{model}{An \code{hbmfit} object.}
+\item{x}{An \code{hbmfit} object.}
 
 \item{...}{Additional arguments forwarded to
 \code{\link[brms]{prior_draws}}.}
@@ -17,20 +18,32 @@ A \code{data.frame} of prior draws or \code{NULL} if no prior
   samples were stored in the model.
 }
 \description{
-Requires the model to have been fit with \code{sample_prior = "yes"} or
-\code{sample_prior = "only"}.
+The \code{\link[brms]{prior_draws}} generic is re-exported from
+\pkg{brms} and an S3 method is provided that dispatches on
+\code{hbmfit} objects.  Requires the model to have been fit with
+\code{sample_prior = "yes"} or \code{sample_prior = "only"}.
 }
 \examples{
 \donttest{
 library(hbsaems)
 library(brms)
 data("data_fhnorm")
+# `sample_prior = "yes"` works best when all coefficients have a
+# proper prior; supply explicit priors on the regression class.
 model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
              re = ~ (1 | group),    # area-level random effect
              sample_prior = "yes",
+             prior        = c(
+               brms::prior(normal(0, 1), class = "b"),
+               brms::prior(normal(0, 5), class = "Intercept")
+             ),
              chains = 2, iter = 1000, warmup = 500,
              cores = 1, seed = 1, refresh = 0)
 pd <- prior_draws(model)
 head(pd)
 }
+
+}
+\seealso{
+\code{\link[brms]{prior_draws}}
 }

@@ -2,24 +2,32 @@
 % Please edit documentation in R/posterior-methods.R
 \name{posterior_interval}
 \alias{posterior_interval}
-\title{Compute Credible Intervals}
+\alias{posterior_interval.hbmfit}
+\title{Compute Credible Intervals for an hbmfit Object}
 \usage{
-posterior_interval(model, params = NULL, prob = 0.95, ...)
+\method{posterior_interval}{hbmfit}(object, prob = 0.95, params = NULL, ...)
 }
 \arguments{
-\item{model}{An \code{hbmfit} object.}
+\item{object}{An \code{hbmfit} object.}
 
-\item{params}{Optional character vector of parameter names.}
+\item{prob}{Coverage probability in \eqn{(0, 1)} (default
+\code{0.95}; note that \code{rstantools::posterior_interval}'s own
+default is \code{0.9}).}
 
-\item{prob}{Coverage probability in \eqn{(0, 1)} (default \code{0.95}).}
+\item{params}{Optional character vector of parameter names to keep.}
 
-\item{...}{Additional arguments forwarded to \code{posterior_draws}.}
+\item{...}{Additional arguments forwarded to
+\code{\link{posterior_draws}}.}
 }
 \value{
 A matrix with two rows giving lower and upper bounds.
 }
 \description{
-Compute Credible Intervals
+The \code{\link[rstantools]{posterior_interval}} generic is re-exported
+from \pkg{rstantools} and an S3 method is provided that dispatches on
+\code{hbmfit} objects.  This lets users call
+\code{posterior_interval(fit)} on the return value of
+\code{\link{hbm}} just as they would on a \code{brmsfit}.
 }
 \examples{
 \donttest{
@@ -32,4 +40,8 @@ model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
              cores = 1, seed = 1, refresh = 0)
 posterior_interval(model, prob = 0.90)
 }
+
+}
+\seealso{
+\code{\link[rstantools]{posterior_interval}}
 }

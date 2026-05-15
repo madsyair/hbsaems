@@ -88,6 +88,19 @@ versioning and the 1.0.0 line constitutes a frozen public API.
 * **Three retained vignettes**: `complete-workflow`,
   `advanced-features`, `migration-guide`.
 
+## Bug fixes
+
+* **`posterior_interval()` and `prior_draws()` now re-export the
+  upstream generics** from \pkg{rstantools} and \pkg{brms}
+  respectively, rather than defining new generics with conflicting
+  signatures.  This fixes a name-collision crash that occurred when
+  \pkg{brms} was attached together with \pkg{hbsaems} and the user
+  called \code{posterior_interval(fit)} on an \code{hbmfit} object:
+  the error message
+  \emph{"For the default method 'object' should be a matrix"} no
+  longer occurs.  The fix follows the standard R package design
+  pattern used by \pkg{brms} itself.
+
 ## Internal
 
 * All exported functions documented with full `roxygen2` blocks
