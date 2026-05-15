@@ -54,12 +54,12 @@ Suggests: bayesplot, bridgesampling, DT, knitr (>= 1.40), mgcv,
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Roxygen: list(markdown = FALSE)
+RoxygenNote: 7.3.1
 Language: en-US
 NeedsCompilation: no
-Packaged: 2026-05-15 04:57:23 UTC; root
+Packaged: 2026-05-15 06:15:05 UTC; root
 Author: Achmad Syahrul Choir [aut, cre]
     (<https://orcid.org/0000-0001-7088-0646>),
   Saniyyah Sri Nurhayati [aut],
   Sofi Zamzanah [aut],
   Arsyka Laila Oktalia Siregar [aut]
-Config/roxygen2/version: 8.0.0

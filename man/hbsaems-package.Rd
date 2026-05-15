@@ -105,6 +105,19 @@ via \code{\link{run_sae_app}}, exposes the same workflow to
 non-programmer analysts.
 }
 
+\section{Comprehensive examples reference}{
+
+An all-in-one examples document covering every supported model
+family, every advanced feature, and every utility is shipped at
+\code{inst/examples/hbsaems-examples.Rmd}.  Locate it with:
+\preformatted{
+system.file("examples", "hbsaems-examples.Rmd",
+            package = "hbsaems")
+}
+and render with \code{rmarkdown::render()} for a 30+ page quick
+reference card.
+}
+
 \references{
 Anselin, L. (1988).  \emph{Spatial Econometrics: Methods and Models}.
 Kluwer Academic Publishers.
@@ -165,7 +178,6 @@ Useful links:
 
 Authors:
 \itemize{
-  \item Achmad Syahrul Choir \email{madsyair@stis.ac.id} (\href{https://orcid.org/0000-0001-7088-0646}{ORCID})
   \item Saniyyah Sri Nurhayati
   \item Sofi Zamzanah
   \item Arsyka Laila Oktalia Siregar

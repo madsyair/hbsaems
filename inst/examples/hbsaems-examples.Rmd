@@ -1,0 +1,1160 @@
+---
+title: "hbsaems: Complete Examples Reference"
+author: "Achmad Syahrul Choir, Saniyyah Sri Nurhayati, Sofi Zamzanah, Arsyka Laila Oktalia Siregar"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
+output:
+  rmarkdown::html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    code_folding: show
+    df_print: paged
+    highlight: tango
+    theme: cosmo
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  eval     = FALSE,        # All Stan fits not evaluated at build time
+  message  = FALSE,
+  warning  = FALSE
+)
+```
+
+```{r preload, eval = TRUE, include = FALSE}
+suppressPackageStartupMessages({
+  library(hbsaems)
+})
+```
+
+> **Note on the printed output blocks.**  Stan / `brms` model fits take
+> several minutes to run and are therefore **not executed at document
+> build time** -- CRAN imposes tight time limits on R package documents.
+> The numerical outputs shown after each `eval = FALSE` chunk are
+> **realistic illustrations**: representative of what you would see on
+> a real run, but not produced by the chunks above.  To reproduce the
+> exact numbers, copy the code into an interactive R session.
+
+---
+
+# Introduction
+
+This document is a **comprehensive examples reference** for the
+**hbsaems** package, covering every supported model family, every
+advanced feature, and every utility in the Bayesian workflow.
+
+The package fits **area-level** Hierarchical Bayesian Small Area
+Estimation (HBSAE) models following the methodological tradition of
+Rao and Molina (2015), adapted to the parameterisation and
+prior-specification conventions of the [brms](https://paul-buerkner.github.io/brms/)
+package (Bürkner, 2017), which targets the Stan back-end.
+
+For a topical tour, see the dedicated vignettes:
+
+* `vignette("hbsaems-modelling")` -- high-level workflow overview
+* `vignette("hbsaems-lnln-model")` -- lognormal-lognormal model
+* `vignette("hbsaems-betalogitnorm-model")` -- beta logit-normal
+* `vignette("hbsaems-binlogitnorm-model")` -- binomial logit-normal
+* `vignette("hbsaems-spatial")` -- CAR / SAR / BYM2
+* `vignette("hbsaems-handle-missing")` -- missing data strategies
+* `vignette("hbsaems-run_sae_app")` -- Shiny dashboard
+
+---
+
+# 1. Quick-Start Examples by Family
+
+## 1.1 Fay-Herriot Normal model
+
+The classic area-level model with a Gaussian likelihood:
+
+$$
+\begin{aligned}
+y_i \mid \theta_i, \psi_i
+   &\sim \mathcal{N}(\theta_i, \psi_i), \quad \psi_i \text{ known} \\
+\theta_i
+   &= x_i^\top \boldsymbol{\beta} + u_i, \quad
+     u_i \sim \mathcal{N}(0, \sigma_u^2)
+\end{aligned}
+$$
+
+```{r fh-normal}
+library(hbsaems)
+library(brms)
+
+data("data_fhnorm")
+head(data_fhnorm)
+
+fit_fh <- hbm(
+  formula     = bf(y ~ x1 + x2 + x3),
+  hb_sampling = "gaussian",
+  hb_link     = "identity",
+  re          = ~(1 | group),
+  data        = data_fhnorm,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+
+summary(fit_fh)
+```
+
+```
+===== Hierarchical Bayesian Model Summary =====
+
+ Observations : 100
+ Family       : gaussian (link: identity )
+ Formula      : y ~ x1 + x2 + x3 + (1 | group)
+
+----- Parameter Estimates -----
+Multilevel Hyperparameters:
+~group (Number of levels: 100)
+              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)     0.31      0.05     0.21     0.42 1.00     2034     2841
+
+Regression Coefficients:
+          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept     1.72      0.09     1.55     1.89 1.00     4218     5104
+x1            0.45      0.04     0.37     0.53 1.00     6418     6628
+x2           -0.33      0.03    -0.39    -0.27 1.00     6021     6105
+x3            0.19      0.02     0.15     0.23 1.00     6304     6207
+
+Further Distributional Parameters:
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sigma     0.21      0.02     0.17     0.25 1.00     5417     6028
+```
+
+## 1.2 Beta logit-normal: Four operational modes
+
+Beta likelihood for proportions in $(0,1)$:
+
+$$
+\begin{aligned}
+y_i \mid \theta_i, \phi_i
+   &\sim \mathrm{Beta}(\theta_i \phi_i, (1-\theta_i)\phi_i) \\
+\mathrm{logit}(\theta_i)
+   &= x_i^\top \boldsymbol{\beta} + u_i
+\end{aligned}
+$$
+
+```{r beta-data, eval = TRUE}
+data("data_betalogitnorm")
+str(data_betalogitnorm[, c("y", "n", "deff", "x1", "x2", "x3", "group")])
+```
+
+### Mode 1: Random precision $\phi$ (default)
+
+```{r beta-mode1}
+fit_beta_random <- hbm_betalogitnorm(
+  response  = "y",
+  auxiliary = c("x1", "x2", "x3"),
+  group     = "group",
+  data      = data_betalogitnorm,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+summary(fit_beta_random)
+```
+
+```
+Further Distributional Parameters:
+       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi      62.84     12.71    41.22    91.40 1.00     2841     3217
+alpha     1.45      0.92     0.10     3.64 1.00     2104     2519
+beta      0.04      0.03     0.00     0.11 1.00     1873     2241
+```
+
+### Mode 2: Pinned $\phi$ from survey design
+
+$\phi_i = n_i / \mathrm{deff}_i - 1$ pinned via offset:
+
+```{r beta-mode2}
+fit_beta_fixed <- hbm_betalogitnorm(
+  response  = "y",
+  auxiliary = c("x1", "x2", "x3"),
+  n         = "n",
+  deff      = "deff",
+  group     = "group",
+  data      = data_betalogitnorm,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+summary(fit_beta_fixed)
+```
+
+```
+Formula: y ~ x1 + x2 + x3 + (1 | group)
+         phi ~ 0 + offset(.hbsaems_phi_fixed)
+
+Regression Coefficients:
+          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept    -0.16      0.05    -0.25    -0.07 1.00     5841     6024
+x1            0.34      0.03     0.28     0.40 1.00     7158     6841
+x2           -0.20      0.03    -0.26    -0.14 1.00     6915     6517
+x3            0.09      0.03     0.03     0.15 1.00     7204     6624
+```
+
+### Mode 3: Custom hyperprior on $\alpha, \beta$
+
+Override the default $\mathrm{Gamma}(1,1)$ priors:
+
+```{r beta-mode3}
+fit_beta_custom <- hbm_betalogitnorm(
+  response  = "y",
+  auxiliary = c("x1", "x2", "x3"),
+  group     = "group",
+  data      = data_betalogitnorm,
+  stanvars  = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
+              stanvar(scode = "beta  ~ gamma(2, 3);", block = "model"),
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+### Mode 4: Generic `fixed_params` (power user)
+
+Equivalent of Mode 2 via the generic interface:
+
+```{r beta-mode4}
+fit_beta_flex <- hbm_flex(
+  family_key   = "Beta",
+  response     = "y",
+  auxiliary    = c("x1", "x2", "x3"),
+  group        = "group",
+  data         = data_betalogitnorm,
+  fixed_params = list(phi = ~ I(n / deff - 1)),
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+The `fixed_params` spec accepts four kinds:
+
+| Spec type     | Example                       | Meaning                          |
+|---------------|-------------------------------|----------------------------------|
+| column name   | `phi = "phi_col"`             | Use `data$phi_col` directly      |
+| scalar        | `sigma = 1.5`                 | Broadcast to all rows            |
+| vector        | `phi = phi_vec`               | Length `nrow(data)` vector       |
+| formula       | `phi = ~ I(n/deff - 1)`       | Evaluate against `data`          |
+
+## 1.3 Binomial logit-normal
+
+For raw success counts $y_i$ out of $n_i$ trials:
+
+$$
+y_i \mid p_i, n_i \sim \mathrm{Binomial}(n_i, p_i),
+\quad
+\mathrm{logit}(p_i) = x_i^\top \boldsymbol{\beta} + u_i
+$$
+
+```{r bin-data, eval = TRUE}
+data("data_binlogitnorm")
+str(data_binlogitnorm[, c("y", "n", "x1", "x2", "x3", "group")])
+```
+
+```{r bin-fit}
+fit_bin <- hbm_binlogitnorm(
+  response  = "y",
+  trials    = "n",
+  auxiliary = c("x1", "x2", "x3"),
+  group     = "group",
+  data      = data_binlogitnorm,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+summary(fit_bin)
+```
+
+```
+Formula: y | trials(n) ~ x1 + x2 + x3 + (1 | group)
+   Data: data_binlogitnorm (Number of observations: 100)
+
+Regression Coefficients:
+          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept     0.08      0.04     0.00     0.16 1.00     5418     6107
+x1            0.28      0.03     0.22     0.34 1.00     6802     6917
+x2           -0.15      0.03    -0.21    -0.09 1.00     6517     6248
+x3            0.07      0.03     0.01     0.13 1.00     6604     6321
+```
+
+## 1.4 Lognormal-lognormal: random vs Fay-Herriot variant
+
+For positive, right-skewed responses (income, expenditure, yield):
+
+$$
+\log y_i \sim \mathcal{N}(\theta_i, \sigma_i^2),
+\quad \theta_i = x_i^\top \boldsymbol{\beta} + u_i
+$$
+
+### Random $\sigma$ (default)
+
+```{r lnln-random}
+data("data_lnln")
+fit_lnln <- hbm_lnln(
+  response  = "y_obs",
+  auxiliary = c("x1", "x2", "x3"),
+  group     = "group",
+  data      = data_lnln,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+summary(fit_lnln)
+```
+
+### Fay-Herriot variant: $\sigma_i = \sqrt{\psi_i}$ pinned
+
+`sampling_var` expects the variance of $\log(\hat y_i)$.  If your
+survey software produces $\mathrm{Var}(\hat y_i)$ on the original
+scale, convert with $\psi_i \approx \mathrm{Var}(\hat y_i) / \hat y_i^2$
+(delta-method approximation).
+
+```{r lnln-fh}
+fit_lnln_fh <- hbm_lnln(
+  response     = "y_obs",
+  auxiliary    = c("x1", "x2", "x3"),
+  group        = "group",
+  sampling_var = "psi_i",        # known log-scale sampling variance
+  data         = data_lnln,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+summary(fit_lnln_fh)
+```
+
+```
+Formula: y_obs ~ x1 + x2 + x3 + (1 | group)
+         sigma ~ 0 + offset(.hbsaems_sigma_fixed)
+
+Regression Coefficients:
+          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept     1.51      0.05     1.41     1.61 1.00     5012     5783
+x1            0.32      0.04     0.24     0.40 1.00     6204     6519
+x2           -0.18      0.04    -0.26    -0.10 1.00     5891     5934
+x3            0.11      0.03     0.05     0.17 1.00     6308     6147
+```
+
+---
+
+# 2. Spatial Models
+
+## 2.1 CAR (Conditional Autoregressive)
+
+### ICAR (default)
+
+```{r car-icar}
+data("adjacency_matrix_car")
+
+fit_icar <- hbm(
+  formula  = bf(y ~ x1 + x2 + x3),
+  hb_sampling = "gaussian",
+  sre      = "sre",
+  sre_type = "car",
+  M        = adjacency_matrix_car,
+  data     = data_fhnorm,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+summary(fit_icar)
+```
+
+```
+Correlation Structures:
+      Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sdcar     0.31      0.07     0.18     0.46 1.00     1742     2419
+```
+
+### Proper CAR
+
+```{r car-escar}
+fit_escar <- hbm(
+  formula  = bf(y ~ x1 + x2 + x3),
+  sre      = "sre",
+  sre_type = "car",
+  car_type = "escar",            # exact sparse CAR (proper)
+  M        = adjacency_matrix_car,
+  data     = data_fhnorm,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+### BYM2 (Riebler et al., 2016)
+
+Modern convolution of CAR + IID via mixing parameter $\rho$:
+
+```{r car-bym2}
+fit_bym2 <- hbm(
+  formula  = bf(y ~ x1 + x2 + x3),
+  re       = ~ (1 | sre),                # IID counterpart
+  sre      = "sre",
+  sre_type = "car",
+  car_type = "bym2",
+  M        = adjacency_matrix_car,
+  data     = data_fhnorm,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+## 2.2 SAR (Simultaneous Autoregressive)
+
+### Lag model (default)
+
+```{r sar-lag}
+data("spatial_weight_sar")
+
+fit_sar_lag <- hbm(
+  formula  = bf(y ~ x1 + x2 + x3),
+  sre_type = "sar",
+  sar_type = "lag",
+  M        = spatial_weight_sar,
+  data     = data_fhnorm,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+summary(fit_sar_lag)
+```
+
+```
+Correlation Structures:
+       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+lagsar     0.18      0.11    -0.04     0.40 1.00     2418     3127
+sdsar      0.41      0.09     0.25     0.61 1.00     2517     3104
+```
+
+### Error model
+
+```{r sar-error}
+fit_sar_err <- hbm(
+  formula  = bf(y ~ x1 + x2 + x3),
+  sre_type = "sar",
+  sar_type = "error",
+  M        = spatial_weight_sar,
+  data     = data_fhnorm
+)
+```
+
+## 2.3 Building and validating weight matrices
+
+### From a shapefile
+
+```{r weight-build}
+library(sf)
+shp <- st_read("kecamatan.shp", quiet = TRUE)
+W   <- build_spatial_weight(shp,
+                             neighbour_method = "queen",
+                             standardise      = "row")
+```
+
+### Validation
+
+```{r weight-validate}
+check_spatial_weight(adjacency_matrix_car)
+```
+
+```
+$is_square
+[1] TRUE
+
+$is_symmetric
+[1] TRUE
+
+$n_isolates
+[1] 0
+
+$mean_neighbours
+[1] 5.2
+
+$verdict
+[1] "Weight matrix passes basic checks."
+```
+
+## 2.4 Spatial structure in wrappers
+
+The same `sre`, `sre_type`, `M` arguments work with all wrappers:
+
+```{r wrapper-spatial}
+# Beta + CAR
+fit_beta_car <- hbm_betalogitnorm(
+  response  = "y", auxiliary = c("x1", "x2", "x3"),
+  n = "n", deff = "deff",
+  sre = "sre", sre_type = "car", M = adjacency_matrix_car,
+  data = data_betalogitnorm
+)
+
+# Binomial + BYM2
+fit_bin_bym2 <- hbm_binlogitnorm(
+  response  = "y", trials = "n",
+  auxiliary = c("x1", "x2", "x3"),
+  re        = ~(1 | group),
+  sre       = "sre", sre_type = "car", car_type = "bym2",
+  M         = adjacency_matrix_car,
+  data      = data_binlogitnorm
+)
+```
+
+---
+
+# 3. Custom brms Families
+
+Two custom families are shipped, with full support for `loo()`,
+`posterior_predict()`, and `posterior_epred()`.
+
+## 3.1 Loglogistic
+
+The log-logistic distribution with location $\alpha > 0$ and shape
+$\beta > 0$:
+
+$$
+f(y; \alpha, \beta) = \frac{(\beta/\alpha)(y/\alpha)^{\beta-1}}
+                            {[1 + (y/\alpha)^\beta]^2}, \quad y > 0
+$$
+
+```{r loglog}
+fit_ll <- hbm_flex(
+  family_key = "loglogistic",
+  response   = "y",
+  auxiliary  = c("x1", "x2", "x3"),
+  data       = data_lnln,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+summary(fit_ll)
+```
+
+## 3.2 Shifted Loglogistic
+
+Three-parameter version with location shift $\xi$:
+
+```{r shift-loglog}
+fit_sll <- hbm_flex(
+  family_key = "shifted_loglogistic",
+  response   = "y",
+  auxiliary  = c("x1", "x2", "x3"),
+  data       = data_lnln,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+## 3.3 Registering your own custom family
+
+```{r custom-family}
+# Step 1: Write Stan code in a .stan file
+#   inst/stan/my_family.stan:
+#     real my_family_lpdf(real y, real mu, real phi) {
+#       // your log-pdf here
+#     }
+
+# Step 2: Build the brms custom family
+my_fam <- build_brms_custom_family(
+  name        = "my_family",
+  dpars       = c("mu", "phi"),
+  links       = c("log", "log"),
+  lb          = c(NA, 0),
+  type        = "real",
+  stan_funs   = read_stan_function("path/to/my_family.stan")
+)
+
+# Step 3: Register with hbsaems
+register_hbsae_brms_custom(
+  key          = "my_family",
+  brms_family  = my_fam,
+  default_link = "log"
+)
+
+# Step 4: Use via hbm_flex
+fit_custom <- hbm_flex(
+  family_key = "my_family",
+  response   = "y",
+  auxiliary  = c("x1", "x2"),
+  data       = my_data
+)
+```
+
+## 3.4 Listing registered families
+
+```{r list-models}
+list_hbsae_models()
+```
+
+```
+[1] "gaussian"            "lognormal"
+[3] "Beta"                "binomial"
+[5] "loglogistic"         "shifted_loglogistic"
+```
+
+---
+
+# 4. Missing Data Handling
+
+Three strategies, auto-selected when `handle_missing = NULL`.
+
+## 4.1 Strategy "deleted": listwise deletion
+
+```{r mi-deleted}
+data_miss <- data_fhnorm
+data_miss$y[c(3, 14, 27)] <- NA
+
+fit_del <- hbm(
+  formula        = bf(y ~ x1 + x2 + x3),
+  re             = ~(1 | group),
+  data           = data_miss,
+  handle_missing = "deleted",
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+```
+handle_missing = 'deleted': 3 row(s) with missing response variable removed
+from model fitting.
+```
+
+## 4.2 Strategy "multiple": mice multiple imputation
+
+```{r mi-multiple}
+data_miss$x1[6:8] <- NA
+
+fit_mi <- hbm(
+  formula        = bf(y ~ x1 + x2 + x3),
+  re             = ~(1 | group),
+  data           = data_miss,
+  handle_missing = "multiple",
+  m              = 5,
+  mice_args      = list(method = "pmm", maxit = 20),
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+## 4.3 Strategy "model": joint Bayesian via brms::mi()
+
+```{r mi-model}
+fit_joint <- hbm(
+  formula        = bf(y  | mi() ~ mi(x1) + x2 + x3) +
+                   bf(x1 | mi() ~ x2 + x3),
+  re             = ~(1 | group),
+  data           = data_miss,
+  handle_missing = "model",
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+## 4.4 Auto-selection
+
+When `handle_missing = NULL` and missingness is detected, the wrapper
+auto-selects based on the family's `supports_mi` flag and the pattern:
+
+```{r mi-auto}
+fit_auto <- hbm_lnln(
+  response  = "y_obs",
+  auxiliary = c("x1", "x2", "x3"),
+  group     = "group",
+  data      = data_with_some_na,
+  # handle_missing left NULL
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+```
+Missing values detected. Auto-selecting handle_missing = 'multiple'
+(family 'lognormal', supports_mi = FALSE).
+```
+
+---
+
+# 5. Prior Specification
+
+## 5.1 Default Student-t priors
+
+If no `prior` is supplied, sensible defaults are filled in:
+
+* `Intercept ~ student_t(4, 0, 10)`
+* `b ~ student_t(4, 0, 2.5)`
+* Family-specific defaults for distributional parameters
+
+## 5.2 Horseshoe (regularised)
+
+Heavy-tailed shrinkage for many covariates with sparse signal
+(Piironen & Vehtari, 2017):
+
+```{r prior-horseshoe}
+fit_hs <- hbm(
+  formula         = bf(y ~ x1 + x2 + x3),
+  re              = ~(1 | group),
+  data            = data_fhnorm,
+  prior_type      = "horseshoe",
+  hs_df           = 1,             # df of half-Student-t on local scale
+  hs_df_global    = 1,             # df of half-Student-t on global scale
+  hs_df_slab      = 4,             # df of slab
+  hs_scale_slab   = 2,
+  hs_par_ratio    = 0.5,           # expected nonzero / total ratio
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+## 5.3 R2D2 prior
+
+Concentration-of-variance shrinkage prior (Zhang et al., 2022):
+
+```{r prior-r2d2}
+fit_r2d2 <- hbm(
+  formula      = bf(y ~ x1 + x2 + x3),
+  re           = ~(1 | group),
+  data         = data_fhnorm,
+  prior_type   = "R2D2",
+  r2d2_mean_R2 = 0.5,              # prior mean of R^2
+  r2d2_prec_R2 = 2,                # prior precision of R^2
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+## 5.4 Custom priors via `prior` argument
+
+```{r prior-custom}
+custom_prior <- prior(normal(0, 1), class = "b") +
+                prior(normal(0, 5), class = "Intercept") +
+                prior(student_t(3, 0, 2), class = "sd", group = "group")
+
+fit_custom_prior <- hbm(
+  formula = bf(y ~ x1 + x2 + x3),
+  re      = ~(1 | group),
+  data    = data_fhnorm,
+  prior   = custom_prior,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+## 5.5 Distributional parameters via stanvars
+
+```{r prior-stanvars}
+fit_stanvars <- hbm_betalogitnorm(
+  response  = "y",
+  auxiliary = c("x1", "x2", "x3"),
+  group     = "group",
+  data      = data_betalogitnorm,
+  stanvars  = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
+              stanvar(scode = "beta  ~ gamma(2, 3);", block = "model")
+)
+```
+
+> **Conflict policy.**  When a distributional parameter is pinned (e.g.\ via
+> `n` + `deff`, `sampling_var`, or `fixed_params`), supplying a `prior`
+> or `stanvars` sampling statement on that same parameter is rejected with
+> a clear error at construction time.
+
+---
+
+# 6. Nonlinear Smooth Terms
+
+## 6.1 Thin-plate splines
+
+```{r spline}
+fit_spline <- hbm_lnln(
+  response       = "y_obs",
+  auxiliary      = c("x1", "x2", "x3"),
+  group          = "group",
+  data           = data_lnln,
+  nonlinear      = "x1",
+  nonlinear_type = "spline",
+  spline_k       = -1L,     # automatic k via mgcv
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+The formula becomes `y_obs ~ s(x1) + x2 + x3 + (1 | group)`.
+
+## 6.2 Gaussian processes
+
+```{r gp}
+fit_gp <- hbm_lnln(
+  response       = "y_obs",
+  auxiliary      = c("x1", "x2", "x3"),
+  group          = "group",
+  data           = data_lnln,
+  nonlinear      = "x1",
+  nonlinear_type = "gp",
+  gp_scale       = 0.5,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+The formula becomes `y_obs ~ gp(x1) + x2 + x3 + (1 | group)`.
+
+---
+
+# 7. Bayesian Workflow
+
+## 7.1 Prior predictive check (`prior_check`)
+
+Fit only from the prior (set `sample_prior = "only"`) and inspect:
+
+```{r prior-check}
+fit_prior_only <- hbm(
+  formula      = bf(y ~ x1 + x2 + x3),
+  re           = ~(1 | group),
+  data         = data_fhnorm,
+  sample_prior = "only",
+  prior        = c(
+    prior(normal(0, 1), class = "b"),
+    prior(normal(0, 2), class = "Intercept")
+  ),
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+
+pcheck <- prior_check(
+  fit_prior_only,
+  data         = data_fhnorm,
+  response_var = "y",
+  ndraws_ppc   = 50
+)
+print(pcheck)
+plot(pcheck)
+```
+
+```
+Prior Predictive Check Summary
+==============================
+
+ Response variable : y
+ Number of draws   : 50
+
+ Prior predictive mean: 1.71 (95% CI: [-3.14, 6.58])
+ Observed mean        : 4.93
+ Observed range       : [2.111, 8.969]
+
+ Verdict: Prior predictive distribution covers the observed data range.
+```
+
+## 7.2 MCMC convergence diagnostics (`convergence_check`)
+
+```{r conv-check}
+diag <- convergence_check(
+  fit_fh,
+  diag_tests = c("rhat", "geweke", "heidel", "raftery"),
+  plot_types = c("trace", "dens", "acf", "nuts_energy", "rhat", "neff")
+)
+print(diag)
+```
+
+```
+$rhat_max
+[1] 1.0027
+
+$ess_bulk_min
+[1] 1843
+
+$ess_tail_min
+[1] 2104
+
+$divergent_transitions
+[1] 0
+
+$geweke
+[1] "All Geweke z-scores within [-1.96, 1.96]"
+
+$verdict
+[1] "All chains converged: Rhat < 1.01, ESS > 400, no divergent transitions."
+```
+
+## 7.3 Model comparison (`model_compare`)
+
+LOO-CV, WAIC, and Bayes factors:
+
+```{r model-compare}
+fit_no_x3 <- hbm(
+  formula = bf(y ~ x1 + x2),         # drop x3
+  re      = ~(1 | group),
+  data    = data_fhnorm,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+
+cmp <- model_compare(
+  fit_fh,
+  fit_no_x3,
+  comparison_metrics    = c("loo", "waic", "bf"),
+  run_prior_sensitivity = TRUE,
+  sensitivity_vars      = c("b_x1", "b_x2", "b_x3")
+)
+print(cmp)
+```
+
+```
+Model Comparison Results
+========================
+
+  LOO-CV (higher is better):
+                  elpd_loo se_diff
+  fit_fh           0.0     0.0
+  fit_no_x3       -7.3     2.4
+
+  WAIC (lower is better):
+                  waic    se
+  fit_fh           412.4   8.7
+  fit_no_x3        427.2  10.1
+
+  Bayes factor (fit_fh vs fit_no_x3):
+                  log_BF: 3.42 (BF = 30.6)
+
+  Prior sensitivity:
+                  b_x1: max abs Spearman = 0.18 (low sensitivity)
+                  b_x2: max abs Spearman = 0.12 (low sensitivity)
+                  b_x3: max abs Spearman = 0.45 (moderate sensitivity)
+
+  Verdict: fit_fh is preferred by both LOO and WAIC; positive log BF.
+```
+
+## 7.4 Bayesian model averaging (`model_average`)
+
+```{r model-average}
+avg <- model_average(
+  fit_fh,
+  fit_no_x3,
+  method = "stacking"      # or "pseudo-bma", "uniform"
+)
+print(avg)
+```
+
+```
+Bayesian Model Averaging (stacking weights)
+============================================
+
+  fit_fh:      0.78
+  fit_no_x3:   0.22
+```
+
+## 7.5 Out-of-sample prediction (`sae_predict`)
+
+```{r predict}
+new_areas <- data.frame(
+  group = 101:105,
+  x1    = rnorm(5),
+  x2    = rnorm(5),
+  x3    = rnorm(5)
+)
+
+preds <- sae_predict(
+  fit_fh,
+  newdata          = new_areas,
+  allow_new_levels = TRUE
+)
+print(preds)
+```
+
+```
+  group estimate  lower  upper
+1   101    1.84   1.31   2.41
+2   102    2.27   1.65   2.94
+3   103    1.62   1.11   2.18
+4   104    2.05   1.49   2.68
+5   105    1.92   1.40   2.51
+```
+
+## 7.6 Design-consistent benchmarking (`sae_benchmark`)
+
+Adjust model-based estimates to match a known direct-estimate
+benchmark (Pfeffermann, 2013):
+
+```{r benchmark}
+bench <- sae_benchmark(
+  fit_fh,
+  direct_estimate = data_fhnorm$y_direct,
+  weights         = data_fhnorm$n,           # population weights
+  area_id         = "group"
+)
+print(bench)
+```
+
+```
+Benchmark Adjustment
+====================
+
+  Pre-benchmark mean:   1.842
+  Post-benchmark mean:  1.875 (= direct estimate)
+  Adjustment factor:    1.018
+```
+
+## 7.7 Aggregating, filtering, transforming results
+
+```{r post-process}
+# Aggregate to a higher level
+agg <- sae_aggregate(
+  preds,
+  by_var  = "province",
+  agg_fun = "mean",
+  weights = "population"
+)
+
+# Filter by quality threshold
+filt <- sae_filter(
+  preds,
+  rse_threshold = 0.30      # drop areas with RSE > 30%
+)
+
+# Transform (e.g., back-transform from log scale)
+tr <- sae_transform(preds, fun = "exp")
+
+# Scale to known totals
+sc <- sae_scale(preds, total = 1e6)
+```
+
+---
+
+# 8. Configuration Bundles
+
+Pre-built argument lists to keep complex calls tidy.
+
+## 8.1 Sampler controls (`hbm_control`)
+
+```{r control}
+ctrl <- hbm_control(
+  adapt_delta   = 0.99,         # tighter step-size adaptation
+  max_treedepth = 15,           # allow deeper trees
+  step_size     = 0.01,         # smaller initial step
+  init          = "random"
+)
+
+fit_tuned <- hbm(
+  formula = bf(y ~ x1 + x2 + x3),
+  data    = data_fhnorm,
+  control = ctrl,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+## 8.2 Prior bundle (`hbm_priors`)
+
+```{r priors-bundle}
+prior_bundle <- hbm_priors(
+  intercept = prior(normal(0, 5), class = "Intercept"),
+  beta      = prior(normal(0, 1), class = "b"),
+  sigma     = prior(exponential(1), class = "sigma"),
+  sd        = prior(student_t(3, 0, 1), class = "sd")
+)
+
+fit_p <- hbm(
+  formula = bf(y ~ x1 + x2 + x3),
+  re      = ~(1 | group),
+  data    = data_fhnorm,
+  prior   = prior_bundle,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+## 8.3 Nonlinear term bundle (`hbm_nonlinear`)
+
+```{r nonlinear-bundle}
+nl <- hbm_nonlinear(
+  variables = c("x1", "x2"),
+  type      = "spline",
+  k         = 10,
+  by_var    = "group"          # group-specific smooths
+)
+
+fit_nl <- hbm_lnln(
+  response  = "y_obs",
+  auxiliary = c("x1", "x2", "x3"),
+  group     = "group",
+  data      = data_lnln,
+  nonlinear = nl,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+---
+
+# 9. Interactive Shiny Dashboard
+
+The bundled bilingual (English / Indonesian) GUI exposes the same
+workflow to non-programmer analysts:
+
+```{r run-app}
+run_sae_app()
+# Or with a fixed port:
+run_sae_app(port = 4242)
+```
+
+The app has six sidebar sections:
+
+| Section | Purpose |
+|---------|---------|
+| Data Upload | CSV / RDS / bundled-dataset selector |
+| Spatial Setup | Shapefile / adjacency upload + diagnostic |
+| Model Specification | Family, formula, priors, RE / spatial RE |
+| MCMC Settings | Chains, iter, warmup, cores, control |
+| Fit & Diagnostics | Run, summary, traceplot, posterior, LOO |
+| Predictions | Predict for unsampled areas, export CSV |
+
+See `vignette("hbsaems-run_sae_app")` for the full walkthrough.
+
+---
+
+# 10. Working with Custom `brmsfit` Objects
+
+Every `hbm*()` call returns an `hbmfit` object that wraps the
+underlying `brms::brmsfit`.  To access the raw brmsfit:
+
+```{r raw-brms}
+str(fit_fh, max.level = 1)
+```
+
+```
+List of 7
+ $ brmsfit       : brmsfit object
+ $ family        : "gaussian"
+ $ formula       : language y ~ x1 + x2 + x3
+ $ link          : "identity"
+ $ control       : list
+ $ data          : data.frame
+ $ missing_info  : list
+```
+
+```{r brms-direct}
+# Access underlying brmsfit for any brms operation
+library(brms)
+pp_check(fit_fh$brmsfit, ndraws = 50)        # Posterior predictive check
+plot(fit_fh$brmsfit, ask = FALSE)            # Trace + density
+posterior_summary(fit_fh$brmsfit)
+```
+
+---
+
+# 11. Deprecated Functions (v0.1.x compatibility)
+
+These continue to work in v1.0.0 with a deprecation warning, but
+**will be removed in v2.0.0**:
+
+```{r deprecated, eval = FALSE}
+# These all work but warn:
+hbcc(model)          # use convergence_check()
+hbmc(model)          # use model_compare()
+hbpc(model, ...)     # use prior_check()
+hbsae(model)         # use sae_predict()
+
+# Also deprecated: predictors argument
+hbm_betalogitnorm(
+  response   = "y",
+  predictors = c("x1", "x2"),    # warns, use auxiliary
+  data       = data_betalogitnorm
+)
+```
+
+---
+
+# References
+
+- Anselin, L. (1988). *Spatial Econometrics: Methods and Models*. Kluwer.
+- Besag, J., York, J., & Mollié, A. (1991). Bayesian image restoration.
+  *Annals of the Institute of Statistical Mathematics*, 43, 1-20.
+- Bürkner, P.-C. (2017). brms: An R Package for Bayesian Multilevel
+  Models Using Stan. *Journal of Statistical Software*, 80(1), 1-28.
+  [doi:10.18637/jss.v080.i01](https://doi.org/10.18637/jss.v080.i01).
+- Fay, R. E., & Herriot, R. A. (1979). Estimates of income for small
+  places: An application of James-Stein procedures to census data.
+  *JASA*, 74(366), 269-277.
+- Gelman, A., Vehtari, A., Simpson, D., et al. (2020). Bayesian
+  workflow. *arXiv preprint*
+  [doi:10.48550/arXiv.2011.01808](https://doi.org/10.48550/arXiv.2011.01808).
+- Liu, B. (2009). *Hierarchical Bayes Estimation and Empirical Best
+  Prediction of Small-Area Proportions*. PhD thesis, U. Maryland.
+- Pfeffermann, D. (2013). New important developments in small area
+  estimation. *Statistical Science*, 28(1), 40-68.
+- Piironen, J., & Vehtari, A. (2017). Sparsity information and
+  regularization in the horseshoe and other shrinkage priors.
+  *Electronic Journal of Statistics*, 11(2), 5018-5051.
+- Rao, J. N. K., & Molina, I. (2015). *Small Area Estimation* (2nd ed.).
+  Wiley. [doi:10.1002/9781118735855](https://doi.org/10.1002/9781118735855).
+- Riebler, A., Sørbye, S. H., Simpson, D., & Rue, H. (2016). An
+  intuitive Bayesian spatial model for disease mapping that accounts
+  for scaling (BYM2). *Statistical Methods in Medical Research*,
+  25(4), 1145-1165.
+- Slud, E. V., & Maiti, T. (2006). Mean-squared error estimation in
+  transformed Fay-Herriot models. *JRSSB*, 68(2), 239-257.
+- Zhang, Y., Naughton, B., Bondell, H., & Reich, B. (2022). Bayesian
+  regression using a prior on the model fit: The R2-D2 shrinkage
+  prior. *JASA*, 117, 862-874.

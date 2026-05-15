@@ -1,0 +1,441 @@
+---
+title: "Advanced Features: Spatial, Benchmarking, Custom Families, Smooth Terms"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Advanced Features: Spatial, Benchmarking, Custom Families, Smooth Terms}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  eval     = FALSE
+)
+```
+
+This vignette demonstrates the advanced features added in
+**hbsaems v0.3.0 -- v0.5.0**, complementing the
+`complete-workflow` vignette which focuses on the core fitting pipeline.
+
+Topics covered:
+
+1.  **Pre-fit data quality checking** (`check_data`)
+2.  **Spatial weight matrices** -- building from shapefiles + theory checks
+3.  **Multi-domain benchmarking** -- kecamatan to kabupaten with raking
+4.  **Fully Bayesian benchmarking** -- correct uncertainty after adjustment
+5.  **Smooth terms** -- splines and Gaussian processes
+6.  **Shrinkage priors** -- horseshoe and R2D2
+7.  **Custom distributions** -- the model registry
+
+```{r}
+library(hbsaems)
+```
+
+---
+
+## 1. Pre-fit data quality checking
+
+Before fitting any model, run `check_data()` to verify the variables
+exist, identify missing patterns, and get a recommendation for the
+`handle_missing` strategy.
+
+```{r}
+data("data_fhnorm")
+
+chk <- check_data(
+  data       = data_fhnorm,
+  response   = "y",
+  predictors = c("x1", "x2", "x3"),
+  sre        = "sre"
+)
+
+print(chk)
+#>  HBSAE Data Check  [hbsaems_data_check]
+#>  ---------------------------------------
+#>   Observations    : 50
+#>   Missing pattern : none (data complete)
+#>   Issues          : none
+#>
+#>   - No missing values detected. handle_missing can stay NULL.
+```
+
+`check_data()` returns an object of class
+`c("hbsaems_data_check", "hbsaems_check")`, so you can test it with the
+generic predicate:
+
+```{r}
+is.hbsaems_check(chk)   # TRUE
+```
+
+### When the response has missing values
+
+Missing values in *Y* often correspond to **non-sample areas** -- domains
+for which you want a prediction but have no direct estimate.
+`check_data()` highlights this explicitly:
+
+```{r}
+d2 <- data_fhnorm
+d2$y[1:5] <- NA
+chk2 <- check_data(d2, response = "y", predictors = c("x1", "x2", "x3"))
+chk2$non_sample_warning
+```
+
+If those rows really are non-sample areas, **keep them**: fit the model
+on the complete-Y subset and use `sae_predict(..., newdata = na_rows)`.
+
+---
+
+## 2. Spatial weight matrices
+
+### Building W from a shapefile
+
+`build_spatial_weight()` constructs a CAR-ready binary matrix or a
+SAR-ready row-standardised matrix from a polygon shapefile:
+
+```{r}
+# Queen contiguity + binary -> for CAR (Besag 1974)
+M_car <- build_spatial_weight(
+  shp       = "path/to/areas.shp",
+  for_model = "car"         # implies type = "queen", style = "B"
+)
+
+# K-nearest + row-standardised -> for SAR (Anselin 1988)
+M_sar <- build_spatial_weight(
+  shp       = "path/to/areas.shp",
+  for_model = "sar",        # implies type = "knn", style = "W"
+  k         = 4
+)
+```
+
+Distance-band and rook contiguity are also supported -- see
+`?build_spatial_weight`.
+
+### Theoretical compatibility check
+
+`check_spatial_weight()` runs five checks against the requirements of
+the chosen model class:
+
+```{r}
+check_spatial_weight(M_car, sre_type = "car")
+#> Spatial Weight Matrix Diagnostic
+#> ---------------------------------
+#>   Square          : TRUE
+#>   Zero diagonal   : TRUE
+#>   Symmetric       : TRUE
+#>   Detected style  : B
+#>   Isolated areas  : 0
+#>   Components      : 1
+#>   Matrix is theoretically compatible.
+```
+
+This catches the common mistakes: non-symmetric matrices fed into CAR,
+isolated areas under ICAR, etc.  It also runs automatically inside
+`hbm()` whenever `sre_type` is set.
+
+---
+
+## 3. Multi-domain benchmarking: kecamatan to kabupaten
+
+A common SAE scenario: you have estimates per kecamatan and need them
+to roll up to a published kabupaten total from BPS.  `sae_benchmark()`
+with `method = "raking"` handles this:
+
+```{r}
+# Suppose we have SAE estimates per kecamatan, with a kabupaten column
+estimates <- sae_predict(fit_hbm)
+
+# Official BPS totals
+T_kab <- c(Bogor = 110, Sukabumi = 145, Cianjur = 145)
+
+bm <- sae_benchmark(
+  predictions = estimates,
+  target      = T_kab,                  # one target per kabupaten
+  weights     = data_fhnorm$populasi,   # population per kecamatan
+  groups      = data_fhnorm$kabupaten,  # mapping kec -> kab
+  method      = "raking"
+)
+
+bm$benchmark_info$converged    # raking with one group var: converges in 1 sweep
+```
+
+The adjustment factor is *constant within each kabupaten* but
+*different across kabupaten* -- exactly what multi-domain benchmarking
+requires.
+
+### Unit consistency
+
+The critical rule: `sum(weights * theta) == target`, with consistent
+units.  Two common pitfalls:
+
+| Wrong                              | Right                                  |
+|------------------------------------|----------------------------------------|
+| weights in raw count, target in %  | both as totals OR both as means        |
+| theta in proportion, weights as N  | weights = N/total, then target as rate |
+
+---
+
+## 4. Fully Bayesian benchmarking (v0.5.0)
+
+The default `sae_benchmark()` mode applies the adjustment to the
+posterior **mean** only -- the SD column is approximated as unchanged.
+**This understates uncertainty for multiplicative ratios** and over- or
+understates it for additive shifts.
+
+The fully Bayesian mode applies the benchmark to **every posterior
+draw** and recomputes SD, RSE, and quantiles correctly:
+
+```{r}
+# Pass posterior = TRUE if predictions object carries draws
+bm_bayes <- sae_benchmark(
+  predictions = estimates,
+  target      = 1000,
+  method      = "ratio",
+  posterior   = TRUE,                # NEW in v0.5.0
+  probs       = c(0.025, 0.5, 0.975)
+)
+
+bm_bayes$result_table
+#>    Prediction      SD  RSE_percent      Q025      Q50      Q975
+#> 1     ...           ...     ...          ...      ...      ...
+
+# Or supply your own draws matrix (D x n)
+draws <- posterior_predict(fit$model)
+bm_bayes2 <- sae_benchmark(estimates, target = 1000,
+                            method = "ratio",
+                            posterior = draws)
+```
+
+### Why this matters
+
+For multiplicative ratio benchmarking, the adjustment factor itself is
+a random variable computed from the same draws:
+\[
+  r_d = T \, / \, \sum_j w_j \, \theta_{d,j},
+  \qquad
+  \theta_{d,i}^{B} = \theta_{d,i} \cdot r_d.
+\]
+Since $\theta_{d,i}$ and $r_d$ are negatively correlated (a draw with
+larger area-$i$ value implies a smaller $r_d$), the post-benchmark
+variance is **strictly smaller** than the naive $r^2 \, \mathrm{Var}(\theta)$
+approximation.  Fully Bayesian benchmarking captures this exactly.
+
+---
+
+## 5. Smooth terms: splines and Gaussian processes
+
+Replace any linear predictor with a smooth function:
+
+```{r}
+# Penalised regression spline (mgcv backend)
+fit_spline <- hbm(
+  formula        = brms::bf(y ~ x1 + x2 + x3),
+  data           = data_fhnorm,
+  nonlinear      = c("x2", "x3"),     # variables to smooth
+  nonlinear_type = "spline",
+  spline_k       = 7L,                 # basis dimension (-1 = auto)
+  chains = 2, iter = 2000, refresh = 0
+)
+
+# Gaussian process
+fit_gp <- hbm(
+  formula        = brms::bf(y ~ x1 + x2),
+  data           = data_fhnorm,
+  nonlinear      = c("x1"),
+  nonlinear_type = "gp",
+  gp_scale       = 1.5,                # length-scale 'c' (NULL -> brms default)
+  chains = 2, iter = 2000, refresh = 0
+)
+```
+
+The same arguments work in the distribution-specific wrappers
+(`hbm_lnln`, `hbm_binlogitnorm`, `hbm_betalogitnorm`) and in
+`hbm_flex()` (the flexible registry-aware factory).
+
+---
+
+## 6. Shrinkage priors
+
+### Horseshoe (Piironen & Vehtari 2017)
+
+```{r}
+fit_hs <- hbm(
+  formula        = brms::bf(y ~ x1 + x2 + x3 + x4 + x5),
+  data           = my_data,
+  prior_type     = "horseshoe",
+  hs_df          = 1,        # local half-t df  (1 = original HS)
+  hs_df_global   = 1,        # global half-t df
+  hs_df_slab     = 4,        # slab half-t df   (regularised HS+)
+  hs_scale_slab  = 2,        # slab scale
+  chains = 2, iter = 2000, refresh = 0
+)
+```
+
+### R2D2 (Zhang, Yang & Bondell 2022)
+
+```{r}
+fit_r2d2 <- hbm(
+  formula        = brms::bf(y ~ x1 + x2 + x3 + x4 + x5),
+  data           = my_data,
+  prior_type     = "r2d2",
+  r2d2_mean_R2   = 0.5,      # prior mean of R^2
+  r2d2_prec_R2   = 2,        # prior precision of R^2
+  chains = 2, iter = 2000, refresh = 0
+)
+```
+
+Both priors are **cross-cutting** -- they work with any family
+(Gaussian, Beta, binomial, lognormal, custom...) and combine with
+splines / GPs without extra setup.
+
+---
+
+## 7. Custom distributions: the model registry
+
+The model registry (`R/models-registry.R`) catalogues every model spec
+hbsaems knows about.  Each spec bundles a likelihood family, a default
+link, optional auxiliary-parameter hyperpriors, missing-data support
+flags, and response-domain checks.  Registered models are usable via
+`hbm()`, the convenience wrappers, and the flexible factory
+`hbm_flex()`.
+
+### Inspecting the registry
+
+```{r}
+list_hbsae_models()
+#> [1] "bernoulli" "Beta" "beta-binomial" "binomial" ...
+
+get_hbsae_model("beta")
+#> $family             : "Beta"
+#> $link               : "logit"
+#> $discrete           : FALSE
+#> $supports_mi        : TRUE
+#> $aux_param_hyperprior: function(args, data) ...   # phi ~ gamma(alpha, beta)
+```
+
+### Adding a custom model (Tier-1: pure metadata)
+
+For distributions that just need a name, link, and domain check:
+
+```{r}
+register_hbsae_model(
+  key                = "gamma_log",
+  family             = "Gamma",
+  link               = "log",
+  discrete           = FALSE,
+  supports_mi        = TRUE,
+  response_check     = function(y) all(y > 0, na.rm = TRUE),
+  response_check_msg = "Gamma response must be strictly positive."
+)
+
+# Use immediately
+fit_gamma <- hbm_flex(
+  family_key = "gamma_log",
+  response   = "expenditure",
+  predictors = c("age", "income", "education"),
+  data       = my_household_data
+)
+```
+
+### Adding a custom model (Tier-2: auxiliary parameter hyperprior)
+
+For distributions with auxiliary parameters (e.g.\ $\phi$ for Beta,
+shape for Gamma):
+
+```{r}
+register_hbsae_model(
+  key            = "gamma_with_hyperprior",
+  family         = "Gamma",
+  link           = "log",
+  response_check = function(y) all(y > 0, na.rm = TRUE),
+
+  # Inject Stan code via stanvars + a prior on the shape parameter
+  aux_param_hyperprior = function(args, data) {
+    if (!isTRUE(args$add_shape_prior)) return(NULL)
+    list(
+      stanvars = brms::stanvar(
+                  scode = "real<lower=0> shape_a;\n  real<lower=0> shape_b;",
+                  block = "parameters") +
+                brms::stanvar(
+                  scode = "shape_a ~ gamma(1, 1);\n  shape_b ~ gamma(1, 1);",
+                  block = "model"),
+      prior    = brms::set_prior("gamma(shape_a, shape_b)", class = "shape")
+    )
+  }
+)
+
+# Trigger the hyperprior via aux_args
+fit <- hbm_flex(
+  family_key = "gamma_with_hyperprior",
+  response   = "y",
+  predictors = c("x1", "x2"),
+  data       = my_data,
+  aux_args   = list(add_shape_prior = TRUE)
+)
+```
+
+---
+
+## Putting it all together
+
+A realistic workflow combining everything:
+
+```{r}
+# 1. Check data
+chk <- check_data(my_data, response = "y",
+                   predictors = c("x1", "x2", "x3"),
+                   sre = "kecamatan")
+
+# 2. Build CAR matrix from shapefile
+M <- build_spatial_weight("kecamatan.shp",
+                            for_model = "car",
+                            id_col    = "kec_code")
+
+# 3. Configure with helpers (v0.4.1+); pass bundles directly to hbm()
+priors <- hbm_priors(prior_type = "horseshoe", hs_df_slab = 4)
+nl     <- hbm_nonlinear(c("x1"), type = "spline", k = 5)
+ctrl   <- hbm_control(chains = 4, iter = 4000, cores = 4,
+                       adapt_delta = 0.95)
+
+# 4. Fit
+fit <- hbm(
+  formula = brms::bf(y ~ x1 + x2 + x3),
+  data    = my_data,
+  sre = "kecamatan", sre_type = "car", M = M,
+  handle_missing = chk$recommended_method,
+  priors, nl, ctrl
+)
+
+# 5. Predict at all areas (including non-sample)
+est <- sae_predict(fit)
+
+# 6. Benchmark to kabupaten totals (fully Bayesian)
+T_kab <- c(Bogor = 110, Sukabumi = 145, Cianjur = 145)
+bm <- sae_benchmark(est,
+                     target  = T_kab,
+                     weights = my_data$populasi,
+                     groups  = my_data$kabupaten,
+                     method  = "raking",
+                     posterior = TRUE)
+
+# 7. Use the corrected uncertainty
+bm$result_table
+```
+
+---
+
+## References
+
+* **Besag, J.** (1974). Spatial interaction and the statistical analysis
+  of lattice systems. *JRSS-B*, 36(2), 192-225.
+* **Anselin, L.** (1988). *Spatial Econometrics: Methods and Models*.
+  Kluwer.
+* **Pfeffermann, D.** (2013). New important developments in small area
+  estimation. *Statistical Science*, 28(1), 40-68.
+* **Piironen, J. & Vehtari, A.** (2017). Sparsity information and
+  regularization in the horseshoe and other shrinkage priors.
+  *Electronic J. of Statistics*, 11(2), 5018-5051.
+* **Zhang, Y. D., Naughton, B. P., Bondell, H. D., & Reich, B. J.**
+  (2022). Bayesian Regression Using a Prior on the Model Fit: The R2-D2
+  Shrinkage Prior. *JASA*, 117(538), 862-874.

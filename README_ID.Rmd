@@ -1,90 +1,69 @@
+---
+output: github_document
+---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/",
+  out.width = "100%",
+  eval = FALSE
+)
+```
+
 # hbsaems: Model Hierarkis Bayesian untuk Estimasi Wilayah Kecil <img src="man/figures/hbsaems.png" align="right" height="139" alt="hbsaems logo" />
 
-**🌏 [Read in
-English](https://github.com/madsyair/hbsaems/blob/main/README.md)**
+**🌏 [Read in English](https://github.com/madsyair/hbsaems/blob/main/README.md)**
 
 <!-- badges: start -->
-
 [![R](https://img.shields.io/badge/R-4.0%2B-blue.svg)](https://www.r-project.org/)
-[![CRAN
-status](https://www.r-pkg.org/badges/version/hbsaems)](https://CRAN.R-project.org/package=hbsaems)
-[![CRAN
-downloads](https://cranlogs.r-pkg.org/badges/grand-total/hbsaems)](https://CRAN.R-project.org/package=hbsaems)
-[![License: GPL
-v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![CRAN status](https://www.r-pkg.org/badges/version/hbsaems)](https://CRAN.R-project.org/package=hbsaems)
+[![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/hbsaems)](https://CRAN.R-project.org/package=hbsaems)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![GitHub](https://img.shields.io/badge/GitHub-madsyair/hbsaems-blue.svg)](https://github.com/madsyair/hbsaems)
-[![Lifecycle:
-stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
+[![Lifecycle: stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
 <!-- badges: end -->
 
 ## Ringkasan
 
-**hbsaems** adalah paket R untuk **Estimasi Area Kecil (Small Area
-Estimation, SAE) Hierarki Bayesian berbasis area**. Fondasi
-metodologisnya mengikuti literatur SAE standar — terutama **Rao dan
-Molina (2015)** — sedangkan implementasi komputasinya disesuaikan dengan
-konvensi parameterisasi dan spesifikasi prior dari paket **brms**
-(Bürkner, 2017), yang menggunakan **Stan** sebagai back-end.
+**hbsaems** adalah paket R untuk **Estimasi Area Kecil (Small Area Estimation, SAE) Hierarki Bayesian berbasis area**. Fondasi metodologisnya mengikuti literatur SAE standar — terutama **Rao dan Molina (2015)** — sedangkan implementasi komputasinya disesuaikan dengan konvensi parameterisasi dan spesifikasi prior dari paket **brms** (Bürkner, 2017), yang menggunakan **Stan** sebagai back-end.
 
-Paket ini dirancang untuk mendukung **alur kerja Bayesian (Bayesian
-workflow)** yang prinsipil (Gelman dkk., 2020) sehingga pemodelan SAE
-menjadi sistematis: prior predictive check, diagnostik konvergensi MCMC,
-posterior predictive check, leave-one-out cross-validation, perbandingan
-dan averaging model Bayesian, analisis sensitivitas prior, serta
-benchmarking yang konsisten secara desain — semuanya menjadi bagian dari
-alur baku.
+Paket ini dirancang untuk mendukung **alur kerja Bayesian (Bayesian workflow)** yang prinsipil (Gelman dkk., 2020) sehingga pemodelan SAE menjadi sistematis: prior predictive check, diagnostik konvergensi MCMC, posterior predictive check, leave-one-out cross-validation, perbandingan dan averaging model Bayesian, analisis sensitivitas prior, serta benchmarking yang konsisten secara desain — semuanya menjadi bagian dari alur baku.
 
-> **Cakupan.** Paket ini fokus pada model SAE **berbasis area**
-> (*area-level*). Model SAE berbasis unit (misalnya nested error model
-> dari Battese, Harter & Fuller, 1988) bukan fokus paket ini.
+> **Cakupan.** Paket ini fokus pada model SAE **berbasis area** (*area-level*). Model SAE berbasis unit (misalnya nested error model dari Battese, Harter & Fuller, 1988) bukan fokus paket ini.
 
 ## Fitur Utama
 
-- **Model SAE berbasis area**: Fay-Herriot Normal, Lognormal-Lognormal,
-  Beta Logit-Normal, dan Binomial Logit-Normal — masing-masing
-  diadaptasi dari Rao dan Molina (2015) ke parameterisasi brms
-- **API yang idiomatik SAE**: argumen dinamai sesuai konsep SAE
-  (`auxiliary`, `group`, `sampling_var`, `n`, `deff`)
+- **Model SAE berbasis area**: Fay-Herriot Normal, Lognormal-Lognormal, Beta Logit-Normal, dan Binomial Logit-Normal — masing-masing diadaptasi dari Rao dan Molina (2015) ke parameterisasi brms
+- **API yang idiomatik SAE**: argumen dinamai sesuai konsep SAE (`auxiliary`, `group`, `sampling_var`, `n`, `deff`)
 - **Parameter tetap berbasis desain sampling**:
-  - Presisi Beta: $\phi_i = n_i / \text{deff}_i - 1$ disematkan via
-    offset
-  - Lognormal: $\sigma_i = \sqrt{\psi_i}$ disematkan via offset (varian
-    Fay-Herriot lognormal)
-- **Mekanisme `fixed_params` generik** untuk pengguna lanjutan dan
-  distribusi kustom
-- **Pengaruh acak spasial**: CAR (ICAR / proper / BYM2) dan SAR (lag /
-  error)
-- **Distribusi brms kustom**: built-in Loglogistic dan Shifted
-  Loglogistic, plus framework registrasi untuk distribusi buatan
-  pengguna
-- **Data hilang**: penghapusan listwise, multiple imputation (`mice`),
-  atau joint Bayesian imputation (`brms::mi()`) dengan auto-seleksi
-- **Alur kerja Bayesian komprehensif**: prior predictive check,
-  diagnostik konvergensi MCMC, posterior predictive check, LOO-CV,
-  perbandingan dan averaging model, analisis sensitivitas prior via
-  `priorsense`, benchmarking konsisten desain
+  - Presisi Beta: $\phi_i = n_i / \text{deff}_i - 1$ disematkan via offset
+  - Lognormal: $\sigma_i = \sqrt{\psi_i}$ disematkan via offset (varian Fay-Herriot lognormal)
+- **Mekanisme `fixed_params` generik** untuk pengguna lanjutan dan distribusi kustom
+- **Pengaruh acak spasial**: CAR (ICAR / proper / BYM2) dan SAR (lag / error)
+- **Distribusi brms kustom**: built-in Loglogistic dan Shifted Loglogistic, plus framework registrasi untuk distribusi buatan pengguna
+- **Data hilang**: penghapusan listwise, multiple imputation (`mice`), atau joint Bayesian imputation (`brms::mi()`) dengan auto-seleksi
+- **Alur kerja Bayesian komprehensif**: prior predictive check, diagnostik konvergensi MCMC, posterior predictive check, LOO-CV, perbandingan dan averaging model, analisis sensitivitas prior via `priorsense`, benchmarking konsisten desain
 - **Prior shrinkage**: Horseshoe dan R2D2 dapat dipilih via `prior_type`
 - **Term smooth nonlinear**: thin-plate splines dan Gaussian process
-- **Dashboard Shiny interaktif**: GUI bilingual (Inggris/Indonesia) via
-  `run_sae_app()`
-- **Sepuluh vignette komprehensif** yang mencakup setiap model dan topik
-  lanjutan
+- **Dashboard Shiny interaktif**: GUI bilingual (Inggris/Indonesia) via `run_sae_app()`
+- **Sepuluh vignette komprehensif** yang mencakup setiap model dan topik lanjutan
 
 ## Instalasi
 
 Anda dapat menginstal versi pengembangan dari GitHub:
 
-``` r
+```r
 # install.packages("devtools")
 devtools::install_github("madsyair/hbsaems")
 ```
 
 Atau bersama vignette:
 
-``` r
+```r
 devtools::install_github("madsyair/hbsaems", build_vignettes = TRUE)
 ```
 
@@ -96,14 +75,13 @@ Paket ini memerlukan:
 - **coda**, **posterior** (diagnostik MCMC)
 - **ggplot2** (plotting)
 - **mice** (multiple imputation)
-- **shiny**, **shinydashboard**, **shinyWidgets**, **readxl**, **DT**
-  (aplikasi interaktif)
+- **shiny**, **shinydashboard**, **shinyWidgets**, **readxl**, **DT** (aplikasi interaktif)
 - **priorsense** (analisis sensitivitas prior, opsional)
 - **sf**, **spdep** (matriks bobot spasial, opsional)
 
 ## Memulai Cepat
 
-``` r
+```r
 library(hbsaems)
 
 # Memuat data contoh
@@ -124,20 +102,20 @@ summary(model)
 
 ## API Tiga Lapis
 
-                          hbm()
-                          Universal: family brms apa pun, kustomisasi penuh
-                                           ▲
-                                           |
-                          hbm_flex()
-                          Registry family + auxiliary + fixed_params
-                                           ▲
-                                           |
-           hbm_lnln() / hbm_betalogitnorm() / hbm_binlogitnorm()
-           Wrapper ramah SAE: response, auxiliary, group, n/deff, ...
+```
+                      hbm()
+                      Universal: family brms apa pun, kustomisasi penuh
+                                       ▲
+                                       |
+                      hbm_flex()
+                      Registry family + auxiliary + fixed_params
+                                       ▲
+                                       |
+       hbm_lnln() / hbm_betalogitnorm() / hbm_binlogitnorm()
+       Wrapper ramah SAE: response, auxiliary, group, n/deff, ...
+```
 
-Sebagian besar pengguna mulai dengan wrapper. Naik ke `hbm_flex()`
-ketika butuh family kustom atau antarmuka `fixed_params` generik; naik
-ke `hbm()` ketika butuh kontrol penuh brms.
+Sebagian besar pengguna mulai dengan wrapper. Naik ke `hbm_flex()` ketika butuh family kustom atau antarmuka `fixed_params` generik; naik ke `hbm()` ketika butuh kontrol penuh brms.
 
 ## Fungsi Utama
 
@@ -145,10 +123,9 @@ ke `hbm()` ketika butuh kontrol penuh brms.
 
 #### `hbm()` — Fungsi Pemodelan Universal
 
-Entry point yang dapat dikustomisasi sepenuhnya untuk family brms apa
-pun:
+Entry point yang dapat dikustomisasi sepenuhnya untuk family brms apa pun:
 
-``` r
+```r
 model <- hbm(
   formula     = bf(y ~ x1 + x2 + x3),  # formula brms
   hb_sampling = "gaussian",             # family likelihood
@@ -165,7 +142,7 @@ model <- hbm(
 
 **Beta logit-normal** untuk proporsi di (0, 1):
 
-``` r
+```r
 fit_beta <- hbm_betalogitnorm(
   response  = "y",
   auxiliary = c("x1", "x2", "x3"),   # variabel penyerta (auxiliary)
@@ -179,7 +156,7 @@ fit_beta <- hbm_betalogitnorm(
 
 **Binomial logit-normal** untuk sukses dari sejumlah trial:
 
-``` r
+```r
 fit_bin <- hbm_binlogitnorm(
   response  = "y",
   trials    = "n",
@@ -190,10 +167,9 @@ fit_bin <- hbm_binlogitnorm(
 )
 ```
 
-**Lognormal-lognormal** (varian Fay-Herriot) untuk respon positif yang
-skewed:
+**Lognormal-lognormal** (varian Fay-Herriot) untuk respon positif yang skewed:
 
-``` r
+```r
 fit_lnln <- hbm_lnln(
   response     = "y_obs",
   auxiliary    = c("x1", "x2", "x3"),
@@ -210,7 +186,7 @@ fit_lnln <- hbm_lnln(
 
 Menilai konvergensi MCMC (menggantikan `hbcc()` versi legacy):
 
-``` r
+```r
 diag <- convergence_check(
   model,
   diag_tests = c("rhat", "geweke", "heidel", "raftery"),
@@ -221,10 +197,9 @@ print(diag)
 
 #### `model_compare()` — Perbandingan dan Pengecekan Model
 
-Mengevaluasi kecocokan model dan membandingkan model (menggantikan
-`hbmc()` versi legacy):
+Mengevaluasi kecocokan model dan membandingkan model (menggantikan `hbmc()` versi legacy):
 
-``` r
+```r
 cmp <- model_compare(
   model,
   comparison_metrics    = c("loo", "waic", "bf"),
@@ -236,10 +211,9 @@ print(cmp)
 
 #### `prior_check()` — Prior Predictive Check
 
-Memvalidasi asumsi prior sebelum fitting (menggantikan `hbpc()` versi
-legacy):
+Memvalidasi asumsi prior sebelum fitting (menggantikan `hbpc()` versi legacy):
 
-``` r
+```r
 pcheck <- prior_check(
   model,             # di-fit dengan sample_prior = "only"
   data         = data,
@@ -253,11 +227,9 @@ print(pcheck)
 
 #### `sae_predict()` — Estimasi Area Kecil
 
-Menghasilkan prediksi dengan kuantifikasi ketidakpastian yang tepat,
-termasuk untuk area yang belum tersampel (menggantikan `hbsae()` versi
-legacy):
+Menghasilkan prediksi dengan kuantifikasi ketidakpastian yang tepat, termasuk untuk area yang belum tersampel (menggantikan `hbsae()` versi legacy):
 
-``` r
+```r
 preds <- sae_predict(
   model,
   newdata          = new_areas,
@@ -270,10 +242,9 @@ print(preds)
 
 #### `run_sae_app()` — Dashboard Shiny
 
-Meluncurkan aplikasi Shiny interaktif bilingual (Inggris/Indonesia)
-untuk pembangunan model, diagnostik, dan visualisasi:
+Meluncurkan aplikasi Shiny interaktif bilingual (Inggris/Indonesia) untuk pembangunan model, diagnostik, dan visualisasi:
 
-``` r
+```r
 run_sae_app()
 ```
 
@@ -283,7 +254,7 @@ run_sae_app()
 
 Tiga strategi, dipilih otomatis ketika `handle_missing = NULL`:
 
-``` r
+```r
 data_with_missing <- data_fhnorm
 data_with_missing$y[3:5] <- NA
 
@@ -314,7 +285,7 @@ model_joint <- hbm(
 
 Efek acak spasial CAR, SAR, dan BYM2:
 
-``` r
+```r
 # CAR (Conditional Autoregressive) - default ICAR
 data("adjacency_matrix_car")
 model_car <- hbm(
@@ -350,11 +321,9 @@ model_sar <- hbm(
 
 ### Family brms Kustom
 
-Dua family kustom sudah disertakan (Loglogistic dan Shifted Loglogistic)
-dengan dukungan penuh untuk `loo()`, `posterior_predict()`, dan
-`posterior_epred()`:
+Dua family kustom sudah disertakan (Loglogistic dan Shifted Loglogistic) dengan dukungan penuh untuk `loo()`, `posterior_predict()`, dan `posterior_epred()`:
 
-``` r
+```r
 fit_ll <- hbm_flex(
   family_key = "loglogistic",
   response   = "y",
@@ -367,7 +336,7 @@ Daftarkan family kustom Anda sendiri via `register_hbsae_brms_custom()`.
 
 ## Contoh Alur Kerja Lengkap
 
-``` r
+```r
 library(hbsaems)
 
 # 1. Memuat dan mengeksplorasi data
@@ -422,7 +391,7 @@ sae_predict(model)
 Paket ini menyertakan **10 vignette komprehensif**:
 
 | Vignette | Topik |
-|----|----|
+|----------|-------|
 | `hbsaems-modelling` | Tinjauan alur kerja tingkat tinggi (mulai di sini) |
 | `hbsaems-lnln-model` | Lognormal-lognormal; varian Fay-Herriot via `sampling_var` |
 | `hbsaems-betalogitnorm-model` | Beta logit-normal; empat mode untuk $\phi$ |
@@ -436,7 +405,7 @@ Paket ini menyertakan **10 vignette komprehensif**:
 
 Telusuri dengan:
 
-``` r
+```r
 browseVignettes("hbsaems")
 ```
 
@@ -447,13 +416,13 @@ contoh menyeluruh** di `inst/examples/hbsaems-examples.Rmd` yang
 mencakup setiap family model, fitur lanjutan, dan utilitas dalam satu
 dokumen. Temukan dengan:
 
-``` r
+```r
 system.file("examples", "hbsaems-examples.Rmd", package = "hbsaems")
 ```
 
 Anda dapat merender-nya secara lokal dengan:
 
-``` r
+```r
 rmd_file <- system.file("examples", "hbsaems-examples.Rmd",
                          package = "hbsaems")
 rmarkdown::render(rmd_file, output_dir = tempdir())
@@ -464,105 +433,76 @@ Ini ideal sebagai *quick reference card* atau pendamping JSS
 
 ## Metodologi
 
-Paket ini mengimplementasikan SAE Hierarki Bayesian berbasis area
-mengikuti tradisi metodologis Rao dan Molina (2015), diadaptasi ke
-parameterisasi brms:
+Paket ini mengimplementasikan SAE Hierarki Bayesian berbasis area mengikuti tradisi metodologis Rao dan Molina (2015), diadaptasi ke parameterisasi brms:
 
 - **Borrowing strength** antar area kecil yang berkaitan
 - **Kuantifikasi ketidakpastian yang tepat** untuk estimasi level area
-- **Pemodelan yang fleksibel** untuk berbagai struktur informasi
-  penyerta
-- **Estimasi yang robust** untuk area dengan ukuran sampel kecil atau
-  nol
-- **Alur kerja Bayesian yang prinsipil** (Gelman dkk., 2020)
-  terintegrasi sepanjang proses
+- **Pemodelan yang fleksibel** untuk berbagai struktur informasi penyerta
+- **Estimasi yang robust** untuk area dengan ukuran sampel kecil atau nol
+- **Alur kerja Bayesian yang prinsipil** (Gelman dkk., 2020) terintegrasi sepanjang proses
 
 ## Nama yang Deprecated (penghapusan dijadwalkan v2.0.0)
 
-Nama pendek asli v0.1.x masih berfungsi tetapi mengeluarkan peringatan
-soft-deprecation:
+Nama pendek asli v0.1.x masih berfungsi tetapi mengeluarkan peringatan soft-deprecation:
 
-| Deprecated             | Gunakan sebagai gantinya |
-|------------------------|--------------------------|
-| `hbcc()`               | `convergence_check()`    |
-| `hbmc()`               | `model_compare()`        |
-| `hbpc()`               | `prior_check()`          |
-| `hbsae()`              | `sae_predict()`          |
-| argumen `predictors =` | argumen `auxiliary =`    |
+| Deprecated | Gunakan sebagai gantinya |
+|------------|---------------------------|
+| `hbcc()` | `convergence_check()` |
+| `hbmc()` | `model_compare()` |
+| `hbpc()` | `prior_check()` |
+| `hbsae()` | `sae_predict()` |
+| argumen `predictors =` | argumen `auxiliary =` |
 
 ## Penulis dan Kontributor
 
 Paket ini dikembangkan di **Politeknik Statistika STIS, Jakarta** oleh:
 
-- **Achmad Syahrul Choir** ([ORCID
-  0000-0001-7088-0646](https://orcid.org/0000-0001-7088-0646)) —
-  penulis, pengelola
+- **Achmad Syahrul Choir** ([ORCID 0000-0001-7088-0646](https://orcid.org/0000-0001-7088-0646)) — penulis, pengelola
 - **Saniyyah Sri Nurhayati** — penulis
 - **Sofi Zamzanah** — penulis
 - **Arsyka Laila Oktalia Siregar** — penulis
 
 ## Lisensi
 
-GPL (\>= 3). Lihat [LICENSE.md](LICENSE.md).
+GPL (>= 3). Lihat [LICENSE.md](LICENSE.md).
 
 ## Sitasi
 
 Jika Anda menggunakan paket ini dalam penelitian, harap mengutip:
 
-``` r
+```r
 citation("hbsaems")
 ```
 
-    Choir, A. S., Nurhayati, S. S., Zamzanah, S., & Siregar, A. L. O. (2026).
-    hbsaems: Hierarchical Bayesian Area-Level Small Area Estimation Models.
-    R package version 1.0.0. https://github.com/madsyair/hbsaems
+```
+Choir, A. S., Nurhayati, S. S., Zamzanah, S., & Siregar, A. L. O. (2026).
+hbsaems: Hierarchical Bayesian Area-Level Small Area Estimation Models.
+R package version 1.0.0. https://github.com/madsyair/hbsaems
+```
 
 ## Referensi
 
 **Referensi SAE Utama**
 
-- Rao, J. N. K., & Molina, I. (2015). *Small Area Estimation* (edisi
-  ke-2). Wiley. doi:
-  [10.1002/9781118735855](https://doi.org/10.1002/9781118735855).
-- Fay, R. E., & Herriot, R. A. (1979). Estimates of income for small
-  places: An application of James-Stein procedures to census data.
-  *JASA*, 74(366), 269–277.
-- Pfeffermann, D. (2013). New important developments in small area
-  estimation. *Statistical Science*, 28(1), 40–68.
-- Liu, B. (2009). *Hierarchical Bayes Estimation and Empirical Best
-  Prediction of Small-Area Proportions*. Disertasi PhD, University of
-  Maryland.
-- Slud, E. V., & Maiti, T. (2006). Mean-squared error estimation in
-  transformed Fay-Herriot models. *JRSSB*, 68(2), 239–257.
-- You, Y., & Chapman, B. (2006). Small area estimation using area level
-  models and estimated sampling variances. *Survey Methodology*, 32(1),
-  97–103.
-- Fabrizi, E., Ferrante, M. R., & Trivisano, C. (2018). Bayesian Small
-  Area Estimation for Skewed Business Survey Variables. *Journal of the
-  Royal Statistical Society Series C: Applied Statistics*, 67(4),
-  861–879.
+- Rao, J. N. K., & Molina, I. (2015). *Small Area Estimation* (edisi ke-2). Wiley. doi: [10.1002/9781118735855](https://doi.org/10.1002/9781118735855).
+- Fay, R. E., & Herriot, R. A. (1979). Estimates of income for small places: An application of James-Stein procedures to census data. *JASA*, 74(366), 269–277.
+- Pfeffermann, D. (2013). New important developments in small area estimation. *Statistical Science*, 28(1), 40–68.
+- Liu, B. (2009). *Hierarchical Bayes Estimation and Empirical Best Prediction of Small-Area Proportions*. Disertasi PhD, University of Maryland.
+- Slud, E. V., & Maiti, T. (2006). Mean-squared error estimation in transformed Fay-Herriot models. *JRSSB*, 68(2), 239–257.
+- You, Y., & Chapman, B. (2006). Small area estimation using area level models and estimated sampling variances. *Survey Methodology*, 32(1), 97–103.
+- Fabrizi, E., Ferrante, M. R., & Trivisano, C. (2018). Bayesian Small Area Estimation for Skewed Business Survey Variables. *Journal of the Royal Statistical Society Series C: Applied Statistics*, 67(4), 861–879.
 
 **Mesin Bayesian dan Alur Kerja**
 
-- Bürkner, P.-C. (2017). brms: An R Package for Bayesian Multilevel
-  Models Using Stan. *Journal of Statistical Software*, 80(1), 1–28.
-  doi: [10.18637/jss.v080.i01](https://doi.org/10.18637/jss.v080.i01).
-- Gelman, A., Vehtari, A., Simpson, D., dkk. (2020). Bayesian workflow.
-  *arXiv preprint* doi:
-  [10.48550/arXiv.2011.01808](https://doi.org/10.48550/arXiv.2011.01808).
-- Gelman, A., & Hill, J. (2006). *Data Analysis Using Regression and
-  Multilevel/Hierarchical Models*. Cambridge University Press.
+- Bürkner, P.-C. (2017). brms: An R Package for Bayesian Multilevel Models Using Stan. *Journal of Statistical Software*, 80(1), 1–28. doi: [10.18637/jss.v080.i01](https://doi.org/10.18637/jss.v080.i01).
+- Gelman, A., Vehtari, A., Simpson, D., dkk. (2020). Bayesian workflow. *arXiv preprint* doi: [10.48550/arXiv.2011.01808](https://doi.org/10.48550/arXiv.2011.01808).
+- Gelman, A., & Hill, J. (2006). *Data Analysis Using Regression and Multilevel/Hierarchical Models*. Cambridge University Press.
 
 **Efek Acak Spasial**
 
-- Besag, J., York, J., & Mollié, A. (1991). Bayesian image restoration.
-  *Annals of the Institute of Statistical Mathematics*, 43, 1–20.
-- Riebler, A., Sørbye, S. H., Simpson, D., & Rue, H. (2016). An
-  intuitive Bayesian spatial model for disease mapping that accounts for
-  scaling (BYM2). *Statistical Methods in Medical Research*, 25(4),
-  1145–1165.
-- Anselin, L. (1988). *Spatial Econometrics: Methods and Models*.
-  Kluwer.
+- Besag, J., York, J., & Mollié, A. (1991). Bayesian image restoration. *Annals of the Institute of Statistical Mathematics*, 43, 1–20.
+- Riebler, A., Sørbye, S. H., Simpson, D., & Rue, H. (2016). An intuitive Bayesian spatial model for disease mapping that accounts for scaling (BYM2). *Statistical Methods in Medical Research*, 25(4), 1145–1165.
+- Anselin, L. (1988). *Spatial Econometrics: Methods and Models*. Kluwer.
 
 ## Mendapatkan Bantuan
 
@@ -570,7 +510,6 @@ Untuk pertanyaan dan dukungan:
 
 - Cek [GitHub Issues](https://github.com/madsyair/hbsaems/issues)
 - Tinjau dokumentasi dan vignette paket
-- Gunakan aplikasi Shiny interaktif (`run_sae_app()`) untuk pembangunan
-  model dengan panduan
-- Situs referensi (ketika dipublikasi):
-  <https://madsyair.github.io/hbsaems/>
+- Gunakan aplikasi Shiny interaktif (`run_sae_app()`) untuk pembangunan model dengan panduan
+- Situs referensi (ketika dipublikasi): <https://madsyair.github.io/hbsaems/>
+
