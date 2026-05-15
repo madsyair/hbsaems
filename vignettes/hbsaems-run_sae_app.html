@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Interactive Modelling with the SAE Shiny Dashboard</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Interactive Modelling with the SAE Shiny
+Dashboard</h1>
+
+
+
+<blockquote>
+<p><strong>Note.</strong> This vignette describes the interactive
+<strong>Shiny application</strong> bundled with <code>hbsaems</code>.
+Because Shiny apps are stateful and interactive, the screenshots and
+example workflows below are <strong>descriptive</strong> – they show
+what the user sees when running the app locally. Stan fits triggered
+from within the GUI are not run at vignette-build time.</p>
+</blockquote>
+<div id="when-to-use-the-shiny-app" class="section level2">
+<h2>When to use the Shiny app</h2>
+<p>The bundled Shiny dashboard, launched by <code>run_sae_app()</code>,
+is intended for two audiences:</p>
+<ul>
+<li><strong>Non-programmers</strong>: subject-matter experts, BPS staff,
+NGO analysts, or students who want to fit and inspect an SAE model
+without writing R code.</li>
+<li><strong>Programmers prototyping a model</strong>: a quick way to
+explore the effect of priors, link functions, or spatial structure on a
+small dataset before committing to a scripted workflow.</li>
+</ul>
+<p>The app is <strong>not</strong> meant to replace scripted modelling
+for production work – the audit trail of an <code>.R</code> script is
+essential there.</p>
+</div>
+<div id="launching-the-app" class="section level2">
+<h2>Launching the app</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(hbsaems)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">run_sae_app</span>()</span></code></pre></div>
+<p>This launches the app in your default browser. By default it runs on
+a random local port; pass <code>port = 4242</code> to fix the port.</p>
+<p>The app calls <code>check_shiny_deps()</code> at startup; if the
+required Shiny packages are missing it prints an actionable install
+message:</p>
+<pre><code>The Shiny dashboard requires the following packages:
+  - shiny (&gt;= 1.7.0)
+  - shinydashboard
+  - DT
+  - bslib
+
+Install them with:
+  install.packages(c(&quot;shiny&quot;, &quot;shinydashboard&quot;, &quot;DT&quot;, &quot;bslib&quot;))</code></pre>
+</div>
+<div id="layout-overview" class="section level2">
+<h2>Layout overview</h2>
+<p>The dashboard is organised into six sidebar sections:</p>
+<pre><code>+------------------------+-----------------------------------------------+
+|  Sidebar               |  Main panel (sub-tabs)                        |
++========================+===============================================+
+|  Data Upload           |  CSV / RDS / use built-in datasets            |
+|  Spatial Setup         |  Source / Map / Matrix / Diagnostic / Ref     |
+|  Model Specification   |  Family, formula, priors, RE / spatial RE     |
+|  MCMC Settings         |  Chains, iter, warmup, cores, control         |
+|  Fit &amp; Diagnostics     |  Run, summary, traceplot, posterior, LOO       |
+|  Predictions           |  Predict for unsampled areas, export CSV       |
++------------------------+-----------------------------------------------+</code></pre>
+<p>A language selector at the top of the sidebar toggles the UI between
+English and Bahasa Indonesia (<code>tr()</code>-driven; see
+<code>vignette(&quot;complete-workflow&quot;)</code> for the i18n
+architecture).</p>
+</div>
+<div id="section-1-data-upload" class="section level2">
+<h2>Section 1: Data Upload</h2>
+<p>Three options:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Upload a CSV / RDS file</strong> – standard file-picker; the
+app previews the first 10 rows and lets you mark columns as response,
+auxiliary, group, or trial/n.</li>
+<li><strong>Use a bundled dataset</strong> – dropdown selector with
+<code>data_fhnorm</code>, <code>data_lnln</code>,
+<code>data_betalogitnorm</code>, <code>data_binlogitnorm</code>.</li>
+<li><strong>Paste from clipboard</strong> – for quick experiments with
+copied spreadsheet data.</li>
+</ol>
+<p>Every uploaded dataset is validated by <code>check_data()</code>,
+which reports:</p>
+<ul>
+<li>Total rows and columns</li>
+<li>Missing-value counts per column</li>
+<li>Response distribution check (e.g. “98% in (0, 1)” for
+proportions)</li>
+</ul>
+</div>
+<div id="section-2-spatial-setup" class="section level2">
+<h2>Section 2: Spatial Setup</h2>
+<p>A dedicated section since spatial modelling is the trickiest part of
+SAE for newcomers. Five sub-tabs:</p>
+<ul>
+<li><strong>Source</strong>: choose between (a) a shapefile / GeoJSON
+upload,
+<ol start="2" style="list-style-type: lower-alpha">
+<li>a precomputed adjacency matrix CSV, or (c) one of the bundled
+example matrices.</li>
+</ol></li>
+<li><strong>Map</strong>: leaflet-based preview of the polygons coloured
+by the response variable.</li>
+<li><strong>Matrix</strong>: heatmap of the weight matrix, with
+row-normalisation and standardisation options.</li>
+<li><strong>Diagnostic</strong>: runs
+<code>check_spatial_weight()</code> and reports symmetry, isolates, mean
+neighbours, and a verdict.</li>
+<li><strong>Reference</strong>: short text on CAR, SAR, BYM2, and the
+recommended parameterisations.</li>
+</ul>
+</div>
+<div id="section-3-model-specification" class="section level2">
+<h2>Section 3: Model Specification</h2>
+<p>Step-by-step:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Likelihood family</strong>: dropdown (<code>gaussian</code>,
+<code>lognormal</code>, <code>Beta</code>, <code>binomial</code>,
+<code>loglogistic</code>, <code>shifted_loglogistic</code>, …). Custom
+families registered via <code>register_hbsae_brms_custom()</code> appear
+in the same list.</li>
+<li><strong>Response variable</strong>: dropdown of numeric columns; the
+app greys out incompatible options (e.g. negative values for a
+lognormal).</li>
+<li><strong>Auxiliary variables</strong>: multi-select.</li>
+<li><strong>Group (random intercept)</strong>: dropdown of
+integer/character columns.</li>
+<li><strong>Spatial random effect</strong>: toggle on/off; if on, choose
+CAR or SAR.</li>
+<li><strong>Pinned parameters</strong>: toggle on/off for <span class="math inline">\(\phi\)</span> from
+<code>n</code>+<code>deff</code> (Beta) or <span class="math inline">\(\sigma\)</span> from <code>sampling_var</code>
+(lnln).</li>
+<li><strong>Priors</strong>: a table of priors with reasonable defaults
+that the user can edit. Distribution preview (PDF/CDF plots) is shown
+for the currently-selected class.</li>
+</ol>
+<p>The “Build formula” button assembles the <code>bf(...)</code> call
+and shows the equivalent R code in a code block, which can be copied for
+scripted use:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Equivalent R code (copy this for a scripted workflow):</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">hbm_lnln</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">response     =</span> <span class="st">&quot;y_obs&quot;</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">auxiliary    =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">group        =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">sampling_var =</span> <span class="st">&quot;psi_i&quot;</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">data         =</span> my_data,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="section-4-mcmc-settings" class="section level2">
+<h2>Section 4: MCMC Settings</h2>
+<p>Sliders for <code>chains</code> (1-8), <code>iter</code>
+(1000-10000), <code>warmup</code> (fraction of iter), <code>cores</code>
+(capped at <code>parallel::detectCores()</code>), and <code>seed</code>.
+Advanced control options (<code>adapt_delta</code>,
+<code>max_treedepth</code>) are exposed under an “Advanced”
+disclosure.</p>
+</div>
+<div id="section-5-fit-diagnostics" class="section level2">
+<h2>Section 5: Fit &amp; Diagnostics</h2>
+<p>Once “Fit Model” is clicked, the app:</p>
+<ol style="list-style-type: decimal">
+<li>Disables the Fit button and shows a progress bar with the live Stan
+output (compilation + each chain’s iteration count).</li>
+<li>After the fit completes, populates four diagnostic sub-tabs:
+<ul>
+<li><strong>Summary</strong>: the standard <code>summary()</code> output
+rendered as an HTML table.</li>
+<li><strong>Traceplot</strong>: <code>bayesplot::mcmc_trace()</code> for
+selected parameters.</li>
+<li><strong>Posterior</strong>: density plots / <code>mcmc_areas</code>
+for selected parameters; “Compare with prior” toggle.</li>
+<li><strong>LOO</strong>: <code>loo()</code> output and Pareto-<span class="math inline">\(k\)</span> diagnostic plot.</li>
+</ul></li>
+</ol>
+<p>Saving the fit creates an <code>.rds</code> file with the
+<code>hbmfit</code> object.</p>
+</div>
+<div id="section-6-predictions" class="section level2">
+<h2>Section 6: Predictions</h2>
+<p>Two modes:</p>
+<ul>
+<li><strong>In-sample</strong>: posterior mean and 95% CI for every area
+in the original dataset, joined with the area ID, exported as CSV.</li>
+<li><strong>Out-of-sample</strong>: upload (or paste) auxiliary values
+for new areas; the app calls
+<code>sae_predict(..., allow_new_levels = TRUE)</code> and produces a
+downloadable predictions table plus, if a polygon layer is loaded, a
+choropleth map.</li>
+</ul>
+</div>
+<div id="reproducibility" class="section level2">
+<h2>Reproducibility</h2>
+<p>Every action in the app is logged to a hidden R log that can be
+exported as a runnable <code>.R</code> script. This gives users the best
+of both worlds: interactive exploration plus a scripted record that
+reproduces the entire session.</p>
+</div>
+<div id="limitations" class="section level2">
+<h2>Limitations</h2>
+<ul>
+<li><strong>Single-user</strong>. The app is designed to be run locally
+(<code>run_sae_app()</code> on your laptop); it is not a multi-user web
+service. For a deployable web service, use Shiny Server or Posit Connect
+with the bundled app source at
+<code>system.file(&quot;shiny&quot;, &quot;sae_app&quot;, package = &quot;hbsaems&quot;)</code>.</li>
+<li><strong>Dataset size</strong>. In-memory only; not designed for
+datasets larger than a few thousand areas.</li>
+<li><strong>Custom families</strong>. Custom brms families must be
+registered <em>before</em> launching the app
+(<code>register_hbsae_brms_custom()</code>); they cannot be defined from
+inside the app.</li>
+<li><strong>Stan compilation time</strong> is unaffected by the GUI; the
+first fit in a session still incurs the one-time compile cost.</li>
+</ul>
+</div>
+<div id="see-also" class="section level2">
+<h2>See also</h2>
+<ul>
+<li><code>vignette(&quot;hbsaems-modelling&quot;)</code> – the scripted workflow
+this app parallels.</li>
+<li><code>?run_sae_app</code> – function reference.</li>
+<li><code>system.file(&quot;shiny&quot;, &quot;sae_app&quot;, package = &quot;hbsaems&quot;)</code> –
+the app source, suitable for adaptation.</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

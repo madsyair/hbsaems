@@ -154,6 +154,7 @@ Methodology}, 32(1), 97-103.
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://madsyair.github.io/hbsaems/}
   \item \url{https://github.com/madsyair/hbsaems}
   \item Report bugs at \url{https://github.com/madsyair/hbsaems/issues}
 }
@@ -164,6 +165,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Achmad Syahrul Choir \email{madsyair@stis.ac.id} (\href{https://orcid.org/0000-0001-7088-0646}{ORCID})
   \item Saniyyah Sri Nurhayati
   \item Sofi Zamzanah
   \item Arsyka Laila Oktalia Siregar
