@@ -1,0 +1,200 @@
+# Fit a Flexible HBSAE Model with Any Registered Family
+
+Flexible factory that fits an HBSAE model using any distribution
+currently registered in the family registry, together with the full set
+of cross-cutting features: spatial random effects (CAR/SAR), shrinkage
+priors (horseshoe, R2D2), smooth terms (penalised splines, Gaussian
+processes), auxiliary-parameter hyperpriors, and missing-data
+strategies. Distribution-specific wrappers
+([`hbm_lnln`](https://madsyair.github.io/hbsaems/reference/hbm_lnln.md),
+[`hbm_binlogitnorm`](https://madsyair.github.io/hbsaems/reference/hbm_binlogitnorm.md),
+[`hbm_betalogitnorm`](https://madsyair.github.io/hbsaems/reference/hbm_betalogitnorm.md))
+are thin signature shims around this function with preset `family_key`
+values. Advanced users can also call it directly once a custom family
+has been registered via
+[`register_hbsae_model`](https://madsyair.github.io/hbsaems/reference/register_hbsae_model.md).
+
+## Usage
+
+``` r
+hbm_flex(
+  family_key,
+  response,
+  auxiliary = NULL,
+  data,
+  addition_var = NULL,
+  group = NULL,
+  sre = NULL,
+  sre_type = NULL,
+  car_type = NULL,
+  sar_type = NULL,
+  M = NULL,
+  prior = NULL,
+  fixed_params = NULL,
+  prior_type = "default",
+  hs_df = 1,
+  hs_df_global = 1,
+  hs_df_slab = 4,
+  hs_scale_global = NULL,
+  hs_scale_slab = 2,
+  hs_par_ratio = NULL,
+  r2d2_mean_R2 = 0.5,
+  r2d2_prec_R2 = 2,
+  r2d2_cons_D2 = NULL,
+  nonlinear = NULL,
+  nonlinear_type = "spline",
+  spline_k = -1L,
+  gp_scale = NULL,
+  handle_missing = NULL,
+  m = 5L,
+  mice_args = list(),
+  control = list(),
+  chains = 4L,
+  iter = 4000L,
+  warmup = floor(iter/2),
+  cores = 1L,
+  sample_prior = "no",
+  link = NULL,
+  aux_args = NULL,
+  stanvars = NULL,
+  predictors = NULL,
+  ...
+)
+```
+
+## Arguments
+
+- family_key:
+
+  Character. The registry key of the desired family (e.g.\\
+  `"lognormal"`, `"binomial"`, `"gamma_log"`).
+
+- response:
+
+  Character. Name of the response variable column.
+
+- auxiliary:
+
+  Character vector. Names of auxiliary (fixed-effect) variables;
+  corresponds to area-level covariates in SAE literature.
+
+- data:
+
+  A `data.frame`.
+
+- addition_var:
+
+  Character or `NULL`. Name of the addition term variable (e.g.\\ trials
+  for binomial). Required when the family spec has
+  `has_addition_term = TRUE`.
+
+- group, sre, sre_type, car_type, sar_type, M:
+
+  Random/spatial effect arguments forwarded to
+  [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md).
+
+- prior, prior_type, hs_df, hs_df_global, hs_df_slab, hs_scale_global,
+  hs_scale_slab, hs_par_ratio, r2d2_mean_R2, r2d2_prec_R2, r2d2_cons_D2:
+
+  Shrinkage prior arguments forwarded to
+  [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md).
+
+- fixed_params:
+
+  Optional named list pinning distributional parameters to known values.
+  See [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md) for
+  the spec format. Allows power-user access to the generic
+  fixed-parameter machinery (works with custom families too).
+
+- nonlinear, nonlinear_type, spline_k, gp_scale:
+
+  Nonlinear-term arguments forwarded to
+  [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md).
+
+- handle_missing, m, mice_args:
+
+  Missing-data arguments. When `handle_missing = NULL` the wrapper
+  auto-selects a strategy based on the family registry's `supports_mi`
+  flag.
+
+- control, chains, iter, warmup, cores, sample_prior, link:
+
+  Sampler and model-spec arguments forwarded to
+  [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md).
+
+- aux_args:
+
+  Optional named list of family-specific auxiliary arguments (e.g.\\
+  `list(n = "n", deff = "deff")` for the Beta family's phi hyperprior).
+  Forwarded to the family's `aux_param_hyperprior` callback if it has
+  one.
+
+- stanvars:
+
+  Optional
+  [`stanvar`](https://paulbuerkner.com/brms/reference/stanvar.html)
+  object passed through to brms. When the family has an
+  `aux_param_hyperprior` callback that returns its own `stanvars`, the
+  two are concatenated.
+
+- predictors:
+
+  **Deprecated.** Use `auxiliary` instead. Kept for backward
+  compatibility; will be removed in v2.0.0.
+
+- ...:
+
+  Additional arguments forwarded to
+  [`brm`](https://paulbuerkner.com/brms/reference/brm.html).
+
+## Value
+
+An object of class `hbmfit`.
+
+## Details
+
+The factory performs five duties that were previously duplicated across
+wrappers:
+
+1.  Validate that `response`, `auxiliary`, and optional variables exist
+    in `data`.
+
+2.  Run the family's `response_check` on the response and report a
+    human-readable error on failure.
+
+3.  Auto-select a missing-data strategy that respects the family's
+    `supports_mi` flag (e.g.\\ binomial cannot use `"model"`).
+
+4.  Build the brms formula with optional addition terms and apply
+    spline/GP transformations.
+
+5.  Invoke the family's `aux_param_hyperprior` callback (if defined) so
+    distributions with a hyperprior on auxiliary parameters – e.g.\\ phi
+    for the Beta family, shape for Gamma, nu for Student-t – can inject
+    Stan code without writing a thick wrapper file.
+
+## See also
+
+[`register_hbsae_model`](https://madsyair.github.io/hbsaems/reference/register_hbsae_model.md),
+[`list_hbsae_models`](https://madsyair.github.io/hbsaems/reference/list_hbsae_models.md),
+[`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md)
+
+## Examples
+
+``` r
+# \donttest{
+library(hbsaems)
+data("data_lnln")
+# Equivalent to hbm_lnln(...)
+fit <- hbm_flex(
+  family_key = "lognormal",
+  response   = "y_obs",
+  auxiliary  = c("x1", "x2", "x3"),
+  group      = "group",            # area-level random effect: (1 | group)
+  data       = data_lnln,
+  chains = 2, iter = 1000, refresh = 0
+)
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+# }
+```
