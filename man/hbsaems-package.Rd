@@ -178,6 +178,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Achmad Syahrul Choir \email{madsyair@stis.ac.id} (\href{https://orcid.org/0000-0001-7088-0646}{ORCID})
   \item Saniyyah Sri Nurhayati
   \item Sofi Zamzanah
   \item Arsyka Laila Oktalia Siregar
