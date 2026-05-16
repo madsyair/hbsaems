@@ -198,6 +198,9 @@ Useful links:
 
 Authors:
 
+- Achmad Syahrul Choir <madsyair@stis.ac.id>
+  ([ORCID](https://orcid.org/0000-0001-7088-0646))
+
 - Saniyyah Sri Nurhayati
 
 - Sofi Zamzanah

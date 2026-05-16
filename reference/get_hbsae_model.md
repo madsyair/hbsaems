@@ -51,8 +51,8 @@ get_hbsae_model("lognormal")
 #>     v <- y[!is.na(y)]
 #>     length(v) == 0L || all(v > 0)
 #> }
-#> <bytecode: 0x565401079fd8>
-#> <environment: 0x5654010ad478>
+#> <bytecode: 0x559b3d385258>
+#> <environment: 0x559b3d3ab818>
 #> 
 #> $response_check_msg
 #> [1] "Lognormal response must be strictly positive (y > 0)."
@@ -60,7 +60,7 @@ get_hbsae_model("lognormal")
 #> $default_priors
 #> function (...) 
 #> NULL
-#> <bytecode: 0x5654010774d8>
-#> <environment: 0x5654010ad478>
+#> <bytecode: 0x559b3d376ca8>
+#> <environment: 0x559b3d3ab818>
 #> 
 ```

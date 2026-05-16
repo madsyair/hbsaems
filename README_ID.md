@@ -595,5 +595,4 @@ Untuk pertanyaan dan dukungan:
 - Gunakan aplikasi Shiny interaktif
   ([`run_sae_app()`](https://madsyair.github.io/hbsaems/reference/run_sae_app.md))
   untuk pembangunan model dengan panduan
-- Situs referensi (ketika dipublikasi):
-  <https://madsyair.github.io/hbsaems/>
+- Situs referensi: <https://madsyair.github.io/hbsaems/>

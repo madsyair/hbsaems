@@ -111,16 +111,18 @@ summary(model)
 
 ## The Three-Layer Function Family
 
-                          hbm()
-                          Universal: any brms family, full customisation
-                                           ▲
-                                           |
-                          hbm_flex()
-                          Family registry + auxiliary + fixed_params
-                                           ▲
-                                           |
-           hbm_lnln() / hbm_betalogitnorm() / hbm_binlogitnorm()
-           SAE-friendly wrappers: response, auxiliary, group, n/deff, ...
+``` R
+                      hbm()
+                      Universal: any brms family, full customisation
+                                       ▲
+                                       |
+                      hbm_flex()
+                      Family registry + auxiliary + fixed_params
+                                       ▲
+                                       |
+       hbm_lnln() / hbm_betalogitnorm() / hbm_binlogitnorm()
+       SAE-friendly wrappers: response, auxiliary, group, n/deff, ...
+```
 
 Most users start with a wrapper. Step up to
 [`hbm_flex()`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md)
@@ -522,9 +524,11 @@ If you use this package in your research, please cite:
 citation("hbsaems")
 ```
 
-    Choir, A. S., Nurhayati, S. S., Zamzanah, S., & Siregar, A. L. O. (2026).
-    hbsaems: Hierarchical Bayesian Area-Level Small Area Estimation Models.
-    R package version 1.0.0. https://github.com/madsyair/hbsaems
+``` R
+Choir, A. S., Nurhayati, S. S., Zamzanah, S., & Siregar, A. L. O. (2026).
+hbsaems: Hierarchical Bayesian Area-Level Small Area Estimation Models.
+R package version 1.0.0. https://github.com/madsyair/hbsaems
+```
 
 ## References
 
