@@ -495,7 +495,7 @@ by:
 
 ## License
 
-GPL (\>= 3). See [LICENSE.md](LICENSE.md).
+GPL (\>= 3).
 
 ## Citation
 
