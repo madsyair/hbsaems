@@ -51,7 +51,7 @@ Wraps a \code{brms::custom_family} + \code{stanvars} pair into a model
 spec usable by \code{\link{hbm}} and the flexible factory
 \code{\link{hbm_flex}}.  The custom likelihood is then available
 throughout the package -- in \code{\link{run_sae_app}}, in
-\code{\link{sae_predict}}, in the Shiny dashboard, and so on -- as if it
+\code{\link{sae_predict}}, in the Shiny application, and so on -- as if it
 were a built-in family.
 }
 \details{

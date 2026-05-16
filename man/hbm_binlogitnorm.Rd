@@ -52,6 +52,16 @@ Let \eqn{y_i} denote the number of successes in area \eqn{i} out of
 \deqn{\mathrm{logit}(p_i) = x_i^\top \boldsymbol{\beta} + u_i,
        \quad u_i \sim \mathcal{N}(0, \sigma_v^2).}
 }
+\section{Conflict policy}{
+
+\itemize{
+  \item \code{auxiliary} \emph{and} the deprecated \code{predictors}
+        in the same call are rejected with an informative error.
+  \item \code{handle_missing = "model"} is not supported (binomial is a
+        discrete family; see \emph{Notes on missing data}).
+}
+}
+
 \section{Notes on missing data}{
 
 The binomial family does not support \code{handle_missing = "model"}

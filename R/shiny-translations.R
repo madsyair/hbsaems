@@ -33,7 +33,7 @@
   en = list(
 
     # ---- App-wide ----
-    app_title        = "HBSAE Dashboard",
+    app_title        = "HBSAE Application",
     app_subtitle     = "Hierarchical Bayesian Small Area Estimation",
     language_label   = "Language",
 
@@ -46,6 +46,7 @@
     menu_benchmark   = "Benchmark",
     menu_help        = "Help",
     menu_spatial     = "Spatial Setup",
+    menu_update      = "Update Model",
 
     # ---- Spatial setup tab (v0.5.0) ----
     spatial_intro_title    = "About Spatial Setup",
@@ -188,7 +189,7 @@
 
     # ---- Static text ----
     text_intro_p1 = paste0(
-      "Welcome to the hbsaems Shiny dashboard. This interactive ",
+      "Welcome to the hbsaems Shiny application. This interactive ",
       "interface lets you fit Hierarchical Bayesian Small Area ",
       "Estimation models without writing R code."
     ),
@@ -221,7 +222,7 @@
   id = list(
 
     # ---- App-wide ----
-    app_title        = "Dasbor HBSAE",
+    app_title        = "Aplikasi HBSAE",
     app_subtitle     = "Pendugaan Area Kecil Hirarkis Bayesian",
     language_label   = "Bahasa",
 
@@ -234,6 +235,7 @@
     menu_benchmark   = "Benchmark",
     menu_help        = "Bantuan",
     menu_spatial     = "Pengaturan Spasial",
+    menu_update      = "Perbarui Model",
 
     # ---- Spatial setup tab (v0.5.0) ----
     spatial_intro_title    = "Tentang Pengaturan Spasial",
@@ -376,7 +378,7 @@
 
     # ---- Static text ----
     text_intro_p1 = paste0(
-      "Selamat datang di dasbor Shiny hbsaems. Antarmuka interaktif ini ",
+      "Selamat datang di aplikasi Shiny hbsaems. Antarmuka interaktif ini ",
       "memungkinkan Anda untuk fitting model Hierarchical Bayesian Small ",
       "Area Estimation tanpa menulis kode R."
     ),

@@ -59,7 +59,7 @@ For a topical tour, see the dedicated vignettes:
 * `vignette("hbsaems-binlogitnorm-model")` -- binomial logit-normal
 * `vignette("hbsaems-spatial")` -- CAR / SAR / BYM2
 * `vignette("hbsaems-handle-missing")` -- missing data strategies
-* `vignette("hbsaems-run_sae_app")` -- Shiny dashboard
+* `vignette("hbsaems-run_sae_app")` -- Shiny application
 
 ---
 
@@ -578,6 +578,11 @@ Three strategies, auto-selected when `handle_missing = NULL`.
 
 ## 4.1 Strategy "deleted": listwise deletion
 
+The `"deleted"` strategy **drops rows with missing response** ($Y$)
+only.  If any auxiliary variable contains `NA`, the call is rejected
+with an informative error -- use `"multiple"` to impute $X$, or
+`"model"` for joint Bayesian imputation.
+
 ```{r mi-deleted}
 data_miss <- data_fhnorm
 data_miss$y[c(3, 14, 27)] <- NA
@@ -597,6 +602,13 @@ from model fitting.
 ```
 
 ## 4.2 Strategy "multiple": mice multiple imputation
+
+The `"multiple"` strategy uses `mice` to impute the missing
+**auxiliary** variables $m$ times, fits the brms model on each
+imputed dataset, and pools the posterior draws via Rubin's rules.
+The response $Y$ is **never** imputed by mice.  If $Y$ is also
+missing, the rows are excluded from fitting (a warning is issued) but
+retained in the returned object for prediction via `sae_predict()`.
 
 ```{r mi-multiple}
 data_miss$x1[6:8] <- NA
@@ -627,8 +639,17 @@ fit_joint <- hbm(
 
 ## 4.4 Auto-selection
 
-When `handle_missing = NULL` and missingness is detected, the wrapper
-auto-selects based on the family's `supports_mi` flag and the pattern:
+When `handle_missing = NULL` and **any** missingness is detected
+(in the response or in any auxiliary), the wrapper auto-selects
+based on the family's `supports_mi` flag alone:
+
+* family `supports_mi == TRUE`  -> `"model"` (joint Bayesian via `mi()`)
+* family `supports_mi == FALSE` -> `"multiple"` (mice on X only)
+
+The selection rule is intentionally simple and does **not** branch on
+Y-only vs X-only patterns; those subtleties are handled inside the
+chosen strategy itself (see the `hbsaems-handle-missing` vignette for
+details).
 
 ```{r mi-auto}
 fit_auto <- hbm_lnln(
@@ -1048,7 +1069,7 @@ fit_nl <- hbm_lnln(
 
 ---
 
-# 9. Interactive Shiny Dashboard
+# 9. Interactive Shiny Application
 
 The bundled bilingual (English / Indonesian) GUI exposes the same
 workflow to non-programmer analysts:

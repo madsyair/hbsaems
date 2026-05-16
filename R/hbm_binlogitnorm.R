@@ -35,6 +35,14 @@
 #'
 #' @return An object of class \code{hbmfit}.
 #'
+#' @section Conflict policy:
+#' \itemize{
+#'   \item \code{auxiliary} \emph{and} the deprecated \code{predictors}
+#'         in the same call are rejected with an informative error.
+#'   \item \code{handle_missing = "model"} is not supported (binomial is a
+#'         discrete family; see \emph{Notes on missing data}).
+#' }
+#'
 #' @section Notes on missing data:
 #' The binomial family does not support \code{handle_missing = "model"}
 #' (joint Bayesian imputation via \code{brms::mi()}).  When NA values are

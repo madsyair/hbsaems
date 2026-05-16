@@ -111,6 +111,27 @@ hyperprior (\eqn{\phi \sim \mathrm{Gamma}(\alpha, \beta)},
 \eqn{\alpha \sim \mathrm{Gamma}(1,1)}, \eqn{\beta \sim \mathrm{Gamma}(1,1)}
 by default).
 }
+\section{Conflict policy}{
+
+When the precision parameter \eqn{\phi} is pinned via \code{n} +
+\code{deff} (or via \code{fixed_params$phi}), the function refuses
+any additional specification that would also set \eqn{\phi}.
+Specifically, all of the following are rejected with an informative
+error at construction time:
+\itemize{
+  \item \code{n} supplied without \code{deff}, or vice versa.
+  \item \code{n} + \code{deff} \emph{and} \code{fixed_params$phi}.
+  \item \code{n} + \code{deff} \emph{and} a user \code{prior} on
+        \code{class = "phi"}.
+  \item \code{n} + \code{deff} \emph{and} a \code{stanvars}
+        hyperprior on \code{alpha} or \code{beta} (the
+        \eqn{\mathrm{Gamma}(\alpha, \beta)} hyperparameters used in
+        random-\eqn{\phi} mode).
+  \item \code{auxiliary} \emph{and} the deprecated \code{predictors}
+        in the same call.
+}
+}
+
 \examples{
 \donttest{
 library(hbsaems)

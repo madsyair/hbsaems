@@ -57,6 +57,23 @@
 #'   (e.g. \code{group}, \code{sre}, \code{prior_type}, \code{nonlinear},
 #'   \code{handle_missing}, sampler controls).
 #'
+#' @section Conflict policy:
+#' When the residual standard deviation \eqn{\sigma_i = \sqrt{\psi_i}}
+#' is pinned via \code{sampling_var} (or via
+#' \code{fixed_params$sigma}), the function refuses any additional
+#' specification that would also set \eqn{\sigma}.  Specifically, all
+#' of the following are rejected with an informative error at
+#' construction time:
+#' \itemize{
+#'   \item \code{sampling_var} \emph{and} \code{fixed_params$sigma}.
+#'   \item \code{sampling_var} \emph{and} a user \code{prior} on
+#'         \code{class = "sigma"}.
+#'   \item \code{sampling_var} \emph{and} a \code{stanvars} sampling
+#'         statement involving \code{sigma}.
+#'   \item \code{auxiliary} \emph{and} the deprecated \code{predictors}
+#'         in the same call.
+#' }
+#'
 #' @return An object of class \code{hbmfit}.
 #'
 #' @examples

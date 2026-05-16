@@ -58,13 +58,47 @@ ui <- shinydashboard::dashboardPage(
     shinydashboard::dashboardSidebar(
         shinydashboard::sidebarMenu(
             id = "sidebar_menu",
-            shinydashboard::menuItemOutput("menu_home_out"),
-            shinydashboard::menuItemOutput("menu_upload_out"),
-            shinydashboard::menuItemOutput("menu_explore_out"),
-            shinydashboard::menuItemOutput("menu_modeling_out"),
-            shinydashboard::menuItemOutput("menu_spatial_out"),
-            shinydashboard::menuItemOutput("update_menu"),
-            shinydashboard::menuItemOutput("menu_results_out")
+            # All menu items are STATIC at UI build time so the
+            # dashboard's `tabName` <-> `tabItem` wiring is intact at
+            # first paint.  Labels are updated reactively from the
+            # server (see updateMenuLabels) when the user toggles the
+            # language switch, which preserves the active selection
+            # (otherwise renderMenu() re-creates menus on every tick
+            # and the dashboard loses track of the current tab).
+            shinydashboard::menuItem(
+                "Home", tabName = "home", icon = icon("home"),
+                selected = TRUE
+            ),
+            shinydashboard::menuItem(
+                "Data Upload", tabName = "data_upload",
+                icon = icon("upload")
+            ),
+            shinydashboard::menuItem(
+                "Data Exploration", tabName = "data_exploration",
+                icon = icon("search")
+            ),
+            shinydashboard::menuItem(
+                "Modeling", tabName = "modeling",
+                icon = icon("cogs")
+            ),
+            shinydashboard::menuItem(
+                "Spatial Setup", tabName = "spatial_setup",
+                icon = icon("globe")
+            ),
+            # Update tab: ONLY shown when a model is fitted (toggled
+            # reactively via shinyjs::toggle on the wrapping div)
+            shiny::tags$div(
+                id = "menu_update_wrap",
+                style = "display:none;",   # hidden until model fitted
+                shinydashboard::menuItem(
+                    "Update", tabName = "update_model",
+                    icon = icon("redo")
+                )
+            ),
+            shinydashboard::menuItem(
+                "Results", tabName = "results",
+                icon = icon("chart-bar")
+            )
         )
     ),
     shinydashboard::dashboardBody(
@@ -667,6 +701,39 @@ ui <- shinydashboard::dashboardPage(
                 uiOutput("spatial_setup_body")
             ),
 
+            # -- UPDATE TAB ----------------------------------------------------
+            # Always present in the UI (so the sidebar tab tracking
+            # works); the corresponding menu item is hidden until a
+            # model is fit.
+            shinydashboard::tabItem(
+                tabName = "update_model",
+                fluidRow(
+                    shinydashboard::box(
+                        title = "Update Model", width = 12,
+                        solidHeader = TRUE, status = "primary",
+                        fileInput("update_newdata",
+                                   "Upload New Data (optional):",
+                                   accept = c("text/csv", ".csv",
+                                              ".xlsx", ".xls",
+                                              ".rda", ".RData")),
+                        numericInput("update_num_chains", "Chains",
+                                      value = 1,    min = 1),
+                        numericInput("update_num_cores",  "Cores",
+                                      value = 1,    min = 1),
+                        numericInput("update_num_iter",   "Iterations",
+                                      value = 4000, min = 1),
+                        numericInput("update_num_warmup", "Warm-up",
+                                      value = 2000, min = 1),
+                        sliderInput("update_adapt_delta", "Adapt Delta",
+                                     min = 0.8, max = 0.99,
+                                     value = 0.95),
+                        actionButton("update_run", "Run Model Update",
+                                      icon = icon("refresh"),
+                                      class = "btn-primary")
+                    )
+                )
+            ),
+
             # -- RESULTS TAB ---------------------------------------------------
             shinydashboard::tabItem(
                 tabName = "results",
@@ -984,32 +1051,49 @@ server <- function(input, output, session) {
     # App title (in header)
     output$ui_app_title <- renderText({ t_("app_title") })
 
-    # Sidebar menu items (re-rendered when language changes)
-    output$menu_home_out <- shinydashboard::renderMenu({
-        shinydashboard::menuItem(t_("menu_home"), tabName = "home",
-                                  icon = icon("home"))
-    })
-    output$menu_upload_out <- shinydashboard::renderMenu({
-        shinydashboard::menuItem(
-            t_("box_data_upload"), tabName = "data_upload",
-            icon = icon("upload"))
-    })
-    output$menu_explore_out <- shinydashboard::renderMenu({
-        shinydashboard::menuItem(
-            t_("menu_data"), tabName = "data_exploration",
-            icon = icon("search"))
-    })
-    output$menu_modeling_out <- shinydashboard::renderMenu({
-        shinydashboard::menuItem(t_("menu_modeling"), tabName = "modeling",
-                                  icon = icon("cogs"))
-    })
-    output$menu_spatial_out <- shinydashboard::renderMenu({
-        shinydashboard::menuItem(t_("menu_spatial"), tabName = "spatial_setup",
-                                  icon = icon("globe"))
-    })
-    output$menu_results_out <- shinydashboard::renderMenu({
-        shinydashboard::menuItem(t_("menu_results"), tabName = "results",
-                                  icon = icon("chart-bar"))
+    # ------------------------------------------------------------------
+    # Sidebar menu labels: re-injected via JavaScript whenever the
+    # language toggle changes.  This avoids rebuilding menus on the
+    # server (which makes shinydashboard lose track of the active tab
+    # and breaks the Home button), while still keeping the labels
+    # bilingual.  Icons and tabName are kept from the static UI.
+    # ------------------------------------------------------------------
+    observe({
+        labels <- list(
+            home             = t_("menu_home"),
+            data_upload      = t_("box_data_upload"),
+            data_exploration = t_("menu_data"),
+            modeling         = t_("menu_modeling"),
+            spatial_setup    = t_("menu_spatial"),
+            update_model     = t_("menu_update"),
+            results          = t_("menu_results")
+        )
+        # Build a tiny JS payload that updates each menu item's label.
+        # Use base R string assembly (no jsonlite) to keep dependencies
+        # minimal -- jsonlite is not in Imports.  Escape any quotes in
+        # the labels to keep the JS string valid.
+        esc <- function(x) gsub('"', '\\\\"',
+                                 gsub("\\\\", "\\\\\\\\", x))
+        pairs <- vapply(names(labels), function(k)
+            sprintf('"%s":"%s"', k, esc(labels[[k]])),
+            character(1L))
+        js <- sprintf(
+            paste0(
+                '(function(){\n',
+                '  var labels = {%s};\n',
+                '  for (var key in labels) {\n',
+                '    var el = document.querySelector(\n',
+                "      \".sidebar a[data-value='\" + key + \"'] span\"\n",
+                '    );\n',
+                '    if (el) el.textContent = labels[key];\n',
+                '  }\n',
+                '})();'
+            ),
+            paste(pairs, collapse = ",")
+        )
+        shiny::insertUI(selector = "head", where = "beforeEnd",
+                         ui = shiny::tags$script(shiny::HTML(js)),
+                         immediate = TRUE)
     })
 
     # Reactive labels for action buttons (used by textOutput inside
@@ -1684,40 +1768,27 @@ server <- function(input, output, session) {
     })
     
     # -- Dynamic "Update Model" menu item --------------------------------------
+    # Approach: the menu item is ALWAYS in the static UI (wrapped in
+    # <div id="menu_update_wrap"> with display:none initially).  When a
+    # model is fit, we just toggle visibility via JavaScript -- avoiding
+    # dynamic renderMenu() calls that would break the sidebar's tab
+    # tracking.  The tab content panel for "update" is also static (added
+    # to the UI's tabItems block).
     observe({
-        if (!is.null(model_fit())) {
-            output$update_menu <- shinydashboard::renderMenu({
-                shinydashboard::menuItem(
-                    if (lang() == "id") "Perbarui Model" else "Update Model",
-                    tabName = "update_model", icon = icon("sync"))
-            })
-            if (!"update_model" %in% sapply(shiny::isolate(input$tabs), as.character)) {
-                insertUI(
-                    selector = ".tab-content",
-                    where    = "beforeEnd",
-                    ui = shinydashboard::tabItem(
-                        tabName = "update_model",
-                        fluidRow(
-                            shinydashboard::box(
-                                title = "Update Model", width = 12, solidHeader = TRUE, status = "primary",
-                                fileInput("update_newdata", "Upload New Data (optional):",
-                                          accept = c("text/csv", ".csv", ".xlsx", ".xls", ".rda", ".RData")),
-                                numericInput("update_num_chains", "Chains",     value = 1,    min = 1),
-                                numericInput("update_num_cores",  "Cores",      value = 1,    min = 1),
-                                numericInput("update_num_iter",   "Iterations", value = 4000, min = 1),
-                                numericInput("update_num_warmup", "Warm-up",    value = 2000, min = 1),
-                                sliderInput("update_adapt_delta", "Adapt Delta",
-                                            min = 0.8, max = 0.99, value = 0.95),
-                                actionButton("update_run", "Run Model Update",
-                                             icon = icon("refresh"), class = "btn-primary")
-                            )
-                        )
-                    )
-                )
-            }
-        } else {
-            output$update_menu <- shinydashboard::renderMenu(NULL)
-        }
+        has_fit <- !is.null(model_fit())
+        # Toggle the visibility of the menu wrapper div
+        js <- sprintf(
+            paste0(
+                'var el = document.getElementById("menu_update_wrap"); ',
+                'if (el) el.style.display = "%s";'
+            ),
+            if (has_fit) "block" else "none"
+        )
+        shiny::insertUI(
+            selector = "head", where = "beforeEnd",
+            ui = shiny::tags$script(shiny::HTML(js)),
+            immediate = TRUE
+        )
     })
     
     

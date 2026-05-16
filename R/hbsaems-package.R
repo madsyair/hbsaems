@@ -89,7 +89,7 @@
 #' See \code{\link{deprecated}}.
 #'
 #' @section Interactive use:
-#' A bilingual (English / Indonesian) \pkg{shiny} dashboard, launched
+#' A bilingual (English / Indonesian) \pkg{shiny} application, launched
 #' via \code{\link{run_sae_app}}, exposes the same workflow to
 #' non-programmer analysts.
 #'

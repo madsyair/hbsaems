@@ -1,8 +1,8 @@
 ---
-title: "Interactive Modelling with the SAE Shiny Dashboard"
+title: "Interactive Modelling with the SAE Shiny Application"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Interactive Modelling with the SAE Shiny Dashboard}
+  %\VignetteIndexEntry{Interactive Modelling with the SAE Shiny Application}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -28,7 +28,7 @@ suppressPackageStartupMessages(library(hbsaems))
 
 ## When to use the Shiny app
 
-The bundled Shiny dashboard, launched by `run_sae_app()`, is intended
+The bundled Shiny application, launched by `run_sae_app()`, is intended
 for two audiences:
 
 * **Non-programmers**: subject-matter experts, BPS staff, NGO
@@ -55,7 +55,7 @@ The app calls `check_shiny_deps()` at startup; if the required Shiny
 packages are missing it prints an actionable install message:
 
 ```
-The Shiny dashboard requires the following packages:
+The Shiny application requires the following packages:
   - shiny (>= 1.7.0)
   - shinydashboard
   - DT
@@ -67,7 +67,7 @@ Install them with:
 
 ## Layout overview
 
-The dashboard is organised into six sidebar sections:
+The application is organised into six sidebar sections:
 
 ```
 +------------------------+-----------------------------------------------+

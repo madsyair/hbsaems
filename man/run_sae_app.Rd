@@ -2,7 +2,7 @@
 % Please edit documentation in R/run_app.R
 \name{run_sae_app}
 \alias{run_sae_app}
-\title{run_sae_app: Interactive Small Area Estimation Dashboard}
+\title{run_sae_app: Interactive Small Area Estimation Application}
 \usage{
 run_sae_app(check_deps = TRUE)
 }
@@ -15,7 +15,7 @@ Does not return a value; called for its side effect of launching
   a Shiny server in the current R session.
 }
 \description{
-Opens the interactive HBSAE dashboard in the default web browser.  The
+Opens the interactive HBSAE application in the default web browser.  The
 application provides a graphical interface for data upload, exploratory
 analysis, model specification, fitting, and result visualisation,
 covering all modelling functions in \pkg{hbsaems}.

@@ -12,7 +12,7 @@
 
 
 
-<title>Interactive Modelling with the SAE Shiny Dashboard</title>
+<title>Interactive Modelling with the SAE Shiny Application</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -338,7 +338,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 <h1 class="title toc-ignore">Interactive Modelling with the SAE Shiny
-Dashboard</h1>
+Application</h1>
 
 
 
@@ -352,8 +352,8 @@ from within the GUI are not run at vignette-build time.</p>
 </blockquote>
 <div id="when-to-use-the-shiny-app" class="section level2">
 <h2>When to use the Shiny app</h2>
-<p>The bundled Shiny dashboard, launched by <code>run_sae_app()</code>,
-is intended for two audiences:</p>
+<p>The bundled Shiny application, launched by
+<code>run_sae_app()</code>, is intended for two audiences:</p>
 <ul>
 <li><strong>Non-programmers</strong>: subject-matter experts, BPS staff,
 NGO analysts, or students who want to fit and inspect an SAE model
@@ -375,7 +375,7 @@ a random local port; pass <code>port = 4242</code> to fix the port.</p>
 <p>The app calls <code>check_shiny_deps()</code> at startup; if the
 required Shiny packages are missing it prints an actionable install
 message:</p>
-<pre><code>The Shiny dashboard requires the following packages:
+<pre><code>The Shiny application requires the following packages:
   - shiny (&gt;= 1.7.0)
   - shinydashboard
   - DT
@@ -386,7 +386,7 @@ Install them with:
 </div>
 <div id="layout-overview" class="section level2">
 <h2>Layout overview</h2>
-<p>The dashboard is organised into six sidebar sections:</p>
+<p>The application is organised into six sidebar sections:</p>
 <pre><code>+------------------------+-----------------------------------------------+
 |  Sidebar               |  Main panel (sub-tabs)                        |
 +========================+===============================================+
