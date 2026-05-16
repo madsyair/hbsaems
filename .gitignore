@@ -26,3 +26,5 @@ src/*.dll
 docs_test/
 _pkgdown_test.yml
 docs
+/doc/
+/Meta/

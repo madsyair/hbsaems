@@ -18,3 +18,5 @@
 ^CHANGELOG\.md$
 ^README_ID\.md$
 ^README_ID\.Rmd$
+^doc$
+^Meta$
