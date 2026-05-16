@@ -1,8 +1,8 @@
 # Advanced Features: Spatial, Benchmarking, Custom Families, Smooth Terms
 
-This vignette demonstrates the advanced features added in **hbsaems
-v0.3.0 – v0.5.0**, complementing the `complete-workflow` vignette which
-focuses on the core fitting pipeline.
+This vignette demonstrates the advanced features available in **hbsaems
+v1.0.0**, complementing the `complete-workflow` vignette which focuses
+on the core fitting pipeline.
 
 Topics covered:
 
@@ -174,7 +174,7 @@ units. Two common pitfalls:
 
 ------------------------------------------------------------------------
 
-## 4. Fully Bayesian benchmarking (v0.5.0)
+## 4. Fully Bayesian benchmarking (v1.0.0)
 
 The default
 [`sae_benchmark()`](https://madsyair.github.io/hbsaems/reference/sae_benchmark.md)
@@ -192,7 +192,7 @@ bm_bayes <- sae_benchmark(
   predictions = estimates,
   target      = 1000,
   method      = "ratio",
-  posterior   = TRUE,                # NEW in v0.5.0
+  posterior   = TRUE,                # NEW in v1.0.0
   probs       = c(0.025, 0.5, 0.975)
 )
 
@@ -402,7 +402,7 @@ M <- build_spatial_weight("kecamatan.shp",
                             for_model = "car",
                             id_col    = "kec_code")
 
-# 3. Configure with helpers (v0.4.1+); pass bundles directly to hbm()
+# 3. Configure with helpers (v1.0.0+); pass bundles directly to hbm()
 priors <- hbm_priors(prior_type = "horseshoe", hs_df_slab = 4)
 nl     <- hbm_nonlinear(c("x1"), type = "spline", k = 5)
 ctrl   <- hbm_control(chains = 4, iter = 4000, cores = 4,

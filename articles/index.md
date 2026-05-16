@@ -20,5 +20,5 @@
   Application](https://madsyair.github.io/hbsaems/articles/hbsaems-run_sae_app.md):
 - [Spatial SAE Models: CAR, SAR,
   BYM2](https://madsyair.github.io/hbsaems/articles/hbsaems-spatial.md):
-- [Migration Guide: v0.2.x to
-  v0.3.0](https://madsyair.github.io/hbsaems/articles/migration-guide.md):
+- [Migration Guide: legacy v0.1.x names to
+  v1.0.0](https://madsyair.github.io/hbsaems/articles/migration-guide.md):

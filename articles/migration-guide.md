@@ -1,6 +1,6 @@
-# Migration Guide: v0.2.x to v0.3.0
+# Migration Guide: legacy v0.1.x names to v1.0.0
 
-## What changed in v0.3.0
+## What changed in v1.0.0
 
 Function names have been modernised to follow the **brms** snake_case
 convention. The original short-form names (`hbcc`, `hbmc`, `hbpc`,
@@ -14,19 +14,19 @@ once per session.
 | `hbpc(model, data, response_var)` | `prior_check(model, data, response_var)` |
 | `hbsae(model)` | `sae_predict(model)` |
 
-The deprecated names will be **removed in v1.0.0**.
+The deprecated names will be **removed in v2.0.0**.
 
 ## Quick before/after
 
 ``` r
 
-# Before (v0.2.x)
+# Before (legacy v0.1.x names)
 diag  <- hbcc(model)
 comp  <- hbmc(model, model2)
 pc    <- hbpc(model_prior, data, "y")
 est   <- hbsae(model)
 
-# After (v0.3.0)
+# After (v1.0.0 names)
 diag  <- convergence_check(model)
 comp  <- model_compare(model, model2)
 pc    <- prior_check(model_prior, data = data, response_var = "y")
@@ -44,7 +44,7 @@ sed -i "s/hbpc(/prior_check(/g"        *.R
 sed -i "s/hbsae(/sae_predict(/g"       *.R
 ```
 
-## New functionality in v0.3.0
+## New functionality in v1.0.0
 
 ``` r
 
