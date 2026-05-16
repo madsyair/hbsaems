@@ -2,8 +2,7 @@
 # inst/shiny/sae_app/app.R
 # Shiny application for Hierarchical Bayesian Small Area Estimation (HBSAE)
 #
-# v0.3.0 changes:
-#   - All API calls migrated to snake_case primary names:
+# #   - All main functions calls migrated to snake_case primary names:
 #       hbcc()  -> convergence_check()
 #       hbmc()  -> model_compare()
 #       hbpc()  -> prior_check()      (now requires `data` argument)
@@ -33,7 +32,7 @@ library(hbsaems)
 ui <- shinydashboard::dashboardPage(
     shinydashboard::dashboardHeader(
         title = textOutput("ui_app_title", inline = TRUE),
-        # -- Language selector (v0.5.0) ---------------------------------------
+        # -- Language selector ---------------------------------------
         # Custom dropdown in the header right showing the active language.
         # Initial state is English; user can switch any time without restart.
         tags$li(
@@ -78,12 +77,12 @@ ui <- shinydashboard::dashboardPage(
                 icon = icon("search")
             ),
             shinydashboard::menuItem(
-                "Modeling", tabName = "modeling",
-                icon = icon("cogs")
-            ),
-            shinydashboard::menuItem(
                 "Spatial Setup", tabName = "spatial_setup",
                 icon = icon("globe")
+            ),
+            shinydashboard::menuItem(
+                "Modeling", tabName = "modeling",
+                icon = icon("cogs")
             ),
             # Update tab: ONLY shown when a model is fitted (toggled
             # reactively via shinyjs::toggle on the wrapping div)
@@ -108,13 +107,13 @@ ui <- shinydashboard::dashboardPage(
         # Suggests packages are not installed.  Disappears entirely when
         # everything is available.
         uiOutput("dep_banner"),
-
+        
         shinydashboard::tabItems(
             
             # -- HOME TAB -----------------------------------------------------
             shinydashboard::tabItem(
                 tabName = "home",
-                # v0.5.0: content rendered server-side so it reacts to
+                # content rendered server-side so it reacts to
                 # language changes.  See output$home_content in the server.
                 uiOutput("home_content")
             ),
@@ -264,11 +263,11 @@ ui <- shinydashboard::dashboardPage(
                                tags$code("handle_missing"), " strategy."),
                         fluidRow(
                             column(4, selectInput("dc_response", "Response Variable",
-                                                   choices = NULL)),
+                                                  choices = NULL)),
                             column(4, selectizeInput("dc_predictors", "Predictor Variable(s)",
-                                                       choices = NULL, multiple = TRUE)),
+                                                     choices = NULL, multiple = TRUE)),
                             column(4, selectInput("dc_sre", "Spatial Grouping (optional)",
-                                                   choices = NULL))
+                                                  choices = NULL))
                         ),
                         actionButton("run_data_check", "Run Data Check",
                                      icon = icon("check-circle"),
@@ -325,51 +324,51 @@ ui <- shinydashboard::dashboardPage(
                                 # Nonlinear variable selector
                                 # Choices are populated dynamically from linear_aux_vars (see server observer)
                                 column(6,
-                                    selectizeInput(
-                                        inputId  = "nonlinear_vars",
-                                        label    = "Nonlinear Variables (optional)",
-                                        choices  = NULL,
-                                        multiple = TRUE,
-                                        options  = list(
-                                            placeholder = "Select variables for smooth (nonlinear) modelling...",
-                                            plugins     = list("remove_button")
-                                        )
-                                    ),
-                                    helpText(
-                                        "Selected variables will be entered as",
-                                        tags$code("s(var)"), "(spline) or",
-                                        tags$code("gp(var)"), "(Gaussian process).",
-                                        "All other auxiliary variables remain linear."
-                                    )
+                                       selectizeInput(
+                                           inputId  = "nonlinear_vars",
+                                           label    = "Nonlinear Variables (optional)",
+                                           choices  = NULL,
+                                           multiple = TRUE,
+                                           options  = list(
+                                               placeholder = "Select variables for smooth (nonlinear) modelling...",
+                                               plugins     = list("remove_button")
+                                           )
+                                       ),
+                                       helpText(
+                                           "Selected variables will be entered as",
+                                           tags$code("s(var)"), "(spline) or",
+                                           tags$code("gp(var)"), "(Gaussian process).",
+                                           "All other auxiliary variables remain linear."
+                                       )
                                 ),
                                 # Smooth-type and knot controls -- visible only when at least one NL var is selected
                                 column(6,
-                                    conditionalPanel(
-                                        condition = "input.nonlinear_vars.length > 0",
-                                        selectInput(
-                                            inputId  = "nonlinear_type",
-                                            label    = "Smooth Term Type",
-                                            choices  = c(
-                                                "Thin-plate regression spline  [s()]" = "spline",
-                                                "Gaussian process              [gp()]" = "gp"
-                                            ),
-                                            selected = "spline"
-                                        ),
-                                        conditionalPanel(
-                                            condition = "input.nonlinear_type == 'spline'",
-                                            numericInput(
-                                                inputId = "spline_k",
-                                                label   = "Basis dimension k  (-1 = automatic)",
-                                                value   = -1,
-                                                min     = -1,
-                                                step    = 1
-                                            ),
-                                            helpText(
-                                                "k = -1 lets mgcv choose the number of basis functions automatically.",
-                                                "Increase k to allow more flexible curves (requires more data)."
-                                            )
-                                        )
-                                    )
+                                       conditionalPanel(
+                                           condition = "input.nonlinear_vars.length > 0",
+                                           selectInput(
+                                               inputId  = "nonlinear_type",
+                                               label    = "Smooth Term Type",
+                                               choices  = c(
+                                                   "Thin-plate regression spline  [s()]" = "spline",
+                                                   "Gaussian process              [gp()]" = "gp"
+                                               ),
+                                               selected = "spline"
+                                           ),
+                                           conditionalPanel(
+                                               condition = "input.nonlinear_type == 'spline'",
+                                               numericInput(
+                                                   inputId = "spline_k",
+                                                   label   = "Basis dimension k  (-1 = automatic)",
+                                                   value   = -1,
+                                                   min     = -1,
+                                                   step    = 1
+                                               ),
+                                               helpText(
+                                                   "k = -1 lets mgcv choose the number of basis functions automatically.",
+                                                   "Increase k to allow more flexible curves (requires more data)."
+                                               )
+                                           )
+                                       )
                                 ),
                                 # Overlap warning -- shown when a variable is listed in both selectors
                                 column(12, uiOutput("nonlinear_overlap_note")),
@@ -403,75 +402,75 @@ ui <- shinydashboard::dashboardPage(
                                     conditionalPanel(
                                         condition = "input.spatial_source == 'matrix'",
                                         fileInput("spatial_weights",
-                                                   "Upload Spatial Weights Matrix",
-                                                   accept = c(".csv", ".xls", ".xlsx",
-                                                              ".rda", ".RData"))
+                                                  "Upload Spatial Weights Matrix",
+                                                  accept = c(".csv", ".xls", ".xlsx",
+                                                             ".rda", ".RData"))
                                     ),
                                     conditionalPanel(
                                         condition = "input.spatial_source == 'shp'",
                                         fileInput("shp_file",
-                                                   "Upload Shapefile (.shp + .shx + .dbf)",
-                                                   accept = c(".shp", ".shx", ".dbf",
-                                                              ".prj", ".cpg"),
-                                                   multiple = TRUE),
+                                                  "Upload Shapefile (.shp + .shx + .dbf)",
+                                                  accept = c(".shp", ".shx", ".dbf",
+                                                             ".prj", ".cpg"),
+                                                  multiple = TRUE),
                                         # Theoretical guidance hint
                                         tags$div(class = "alert alert-info",
-                                            style = "padding: 8px; font-size: 90%;",
-                                            tags$strong("Recommended for:"),
-                                            tags$ul(style = "margin-bottom: 0;",
-                                                tags$li(tags$strong("CAR"),
-                                                    " (Besag 1974): type = queen or rook, style = B (binary)"),
-                                                tags$li(tags$strong("SAR"),
-                                                    " (Anselin 1988): type = knn or distance, style = W (row-standardised)")
-                                            )
+                                                 style = "padding: 8px; font-size: 90%;",
+                                                 tags$strong("Recommended for:"),
+                                                 tags$ul(style = "margin-bottom: 0;",
+                                                         tags$li(tags$strong("CAR"),
+                                                                 " (Besag 1974): type = queen or rook, style = B (binary)"),
+                                                         tags$li(tags$strong("SAR"),
+                                                                 " (Anselin 1988): type = knn or distance, style = W (row-standardised)")
+                                                 )
                                         ),
                                         selectInput("shp_type",
-                                                     "Neighbour Type",
-                                                     choices = c(
-                                                         "Queen contiguity (CAR)" = "queen",
-                                                         "Rook contiguity (CAR)"  = "rook",
-                                                         "K-nearest (SAR)"        = "knn",
-                                                         "Distance band (SAR)"    = "distance"
-                                                     ),
-                                                     selected = "queen"),
+                                                    "Neighbour Type",
+                                                    choices = c(
+                                                        "Queen contiguity (CAR)" = "queen",
+                                                        "Rook contiguity (CAR)"  = "rook",
+                                                        "K-nearest (SAR)"        = "knn",
+                                                        "Distance band (SAR)"    = "distance"
+                                                    ),
+                                                    selected = "queen"),
                                         selectInput("shp_style",
-                                                     "Matrix Style",
-                                                     choices = c(
-                                                         "Binary 0/1 (CAR)"             = "B",
-                                                         "Row-standardised (SAR)"        = "W"
-                                                     ),
-                                                     selected = "B"),
+                                                    "Matrix Style",
+                                                    choices = c(
+                                                        "Binary 0/1 (CAR)"             = "B",
+                                                        "Row-standardised (SAR)"        = "W"
+                                                    ),
+                                                    selected = "B"),
                                         conditionalPanel(
                                             condition = "input.shp_type == 'knn'",
                                             numericInput("shp_k", "k (neighbours)",
-                                                          value = 4, min = 1, step = 1)
+                                                         value = 4, min = 1, step = 1)
                                         ),
                                         conditionalPanel(
                                             condition = "input.shp_type == 'distance'",
                                             numericInput("shp_threshold", "Distance threshold",
-                                                          value = NA, min = 0)
+                                                         value = NA, min = 0)
                                         ),
                                         textInput("shp_id_col",
-                                                   "ID column (optional)",
-                                                   value = ""),
+                                                  "ID column (optional)",
+                                                  value = ""),
                                         actionButton("build_spatial_btn",
-                                                      textOutput("lbl_build_weight",
-                                                                  inline = TRUE),
-                                                      icon = icon("hammer"),
-                                                      class = "btn-primary")
+                                                     textOutput("lbl_build_weight",
+                                                                inline = TRUE),
+                                                     icon = icon("hammer"),
+                                                     class = "btn-primary")
                                     )
                                 )),
                                 column(6, conditionalPanel(
                                     condition = "input.sre_type != 'none'",
                                     uiOutput("spatial_weights_error"),
-                                    # v0.4.0: theoretical diagnostic on demand
+                                    # theoretical diagnostic on demand
                                     conditionalPanel(
                                         condition = "input.sre_type == 'car' || input.sre_type == 'sar'",
                                         actionButton("show_spatial_diag",
-                                                      textOutput("lbl_inspect_weight",
-                                                                  inline = TRUE),
-                                                      icon = icon("magnifying-glass-chart"),
-                                                      class = "btn-default btn-sm"),
+                                                     textOutput("lbl_inspect_weight",
+                                                                inline = TRUE),
+                                                     icon = icon("magnifying-glass-chart"),
+                                                     class = "btn-default btn-sm"),
                                         verbatimTextOutput("spatial_diag_output")
                                     )
                                 ))
@@ -520,84 +519,84 @@ ui <- shinydashboard::dashboardPage(
                                 collapsed   = TRUE,
                                 fluidRow(
                                     column(4,
-                                        selectInput(
-                                            inputId  = "prior_type",
-                                            label    = "Shrinkage Prior",
-                                            choices  = c(
-                                                "Default (brms defaults)" = "default",
-                                                "Horseshoe"               = "horseshoe",
-                                                "R2D2"                    = "r2d2"
-                                            ),
-                                            selected = "default"
-                                        ),
-                                        helpText(
-                                            tags$strong("Horseshoe:"), "promotes sparsity; allows a few large signals.",
-                                            tags$br(),
-                                            tags$strong("R2D2:"), "places a prior on total model R\u00b2."
-                                        )
+                                           selectInput(
+                                               inputId  = "prior_type",
+                                               label    = "Shrinkage Prior",
+                                               choices  = c(
+                                                   "Default (brms defaults)" = "default",
+                                                   "Horseshoe"               = "horseshoe",
+                                                   "R2D2"                    = "r2d2"
+                                               ),
+                                               selected = "default"
+                                           ),
+                                           helpText(
+                                               tags$strong("Horseshoe:"), "promotes sparsity; allows a few large signals.",
+                                               tags$br(),
+                                               tags$strong("R2D2:"), "places a prior on total model R\u00b2."
+                                           )
                                     ),
                                     # Horseshoe parameter controls
                                     column(8,
-                                        conditionalPanel(
-                                            condition = "input.prior_type == 'horseshoe'",
-                                            fluidRow(
-                                                column(4,
-                                                    numericInput("hs_df", "Local half-t df",
-                                                                 value = 1, min = 0.5, step = 0.5),
-                                                    helpText("df = 1 gives a half-Cauchy prior (recommended).")
-                                                ),
-                                                column(4,
-                                                    numericInput("hs_df_global", "Global half-t df",
-                                                                 value = 1, min = 0.5, step = 0.5)
-                                                ),
-                                                column(4,
-                                                    numericInput("hs_df_slab", "Slab df",
-                                                                 value = 4, min = 1, step = 1)
-                                                ),
-                                                column(4,
-                                                    numericInput("hs_scale_slab", "Slab scale",
-                                                                 value = 2, min = 0.1, step = 0.5)
-                                                ),
-                                                column(4,
-                                                    numericInput("hs_par_ratio",
-                                                                 label = "par_ratio (optional)",
-                                                                 value = NA, min = 0, step = 0.05),
-                                                    helpText("Expected proportion of non-zero coefficients.",
-                                                             "Leave blank for automatic.")
-                                                ),
-                                                column(4,
-                                                    numericInput("hs_scale_global",
-                                                                 label = "Global scale (optional)",
-                                                                 value = NA, min = 0, step = 0.1),
-                                                    helpText("Leave blank to let brms compute automatically.")
-                                                )
-                                            )
-                                        ),
-                                        # R2D2 parameter controls
-                                        conditionalPanel(
-                                            condition = "input.prior_type == 'r2d2'",
-                                            fluidRow(
-                                                column(4,
-                                                    sliderInput("r2d2_mean_R2",
-                                                                label = "Prior mean R\u00b2",
-                                                                min = 0.05, max = 0.95, value = 0.5, step = 0.05),
-                                                    helpText("Expected proportion of variance explained by the predictors.")
-                                                ),
-                                                column(4,
-                                                    numericInput("r2d2_prec_R2",
-                                                                 label = "Precision of R\u00b2",
-                                                                 value = 2, min = 0.5, step = 0.5),
-                                                    helpText("Higher values concentrate mass around the prior mean.")
-                                                ),
-                                                column(4,
-                                                    numericInput("r2d2_cons_D2",
-                                                                 label = "Dirichlet concentration D2 (optional)",
-                                                                 value = NA, min = 0.01, step = 0.1),
-                                                    helpText("NULL corresponds to 0.5 (uniform simplex).",
-                                                             "Leave blank for automatic.")
-                                                )
-                                            )
-                                        )
+                                           conditionalPanel(
+                                               condition = "input.prior_type == 'horseshoe'",
+                                               fluidRow(
+                                                   column(4,
+                                                          numericInput("hs_df", "Local half-t df",
+                                                                       value = 1, min = 0.5, step = 0.5),
+                                                          helpText("df = 1 gives a half-Cauchy prior (recommended).")
+                                                   ),
+                                                   column(4,
+                                                          numericInput("hs_df_global", "Global half-t df",
+                                                                       value = 1, min = 0.5, step = 0.5)
+                                                   ),
+                                                   column(4,
+                                                          numericInput("hs_df_slab", "Slab df",
+                                                                       value = 4, min = 1, step = 1)
+                                                   ),
+                                                   column(4,
+                                                          numericInput("hs_scale_slab", "Slab scale",
+                                                                       value = 2, min = 0.1, step = 0.5)
+                                                   ),
+                                                   column(4,
+                                                          numericInput("hs_par_ratio",
+                                                                       label = "par_ratio (optional)",
+                                                                       value = NA, min = 0, step = 0.05),
+                                                          helpText("Expected proportion of non-zero coefficients.",
+                                                                   "Leave blank for automatic.")
+                                                   ),
+                                                   column(4,
+                                                          numericInput("hs_scale_global",
+                                                                       label = "Global scale (optional)",
+                                                                       value = NA, min = 0, step = 0.1),
+                                                          helpText("Leave blank to let brms compute automatically.")
+                                                   )
+                                               )
+                                           ),
+                                           # R2D2 parameter controls
+                                           conditionalPanel(
+                                               condition = "input.prior_type == 'r2d2'",
+                                               fluidRow(
+                                                   column(4,
+                                                          sliderInput("r2d2_mean_R2",
+                                                                      label = "Prior mean R\u00b2",
+                                                                      min = 0.05, max = 0.95, value = 0.5, step = 0.05),
+                                                          helpText("Expected proportion of variance explained by the predictors.")
+                                                   ),
+                                                   column(4,
+                                                          numericInput("r2d2_prec_R2",
+                                                                       label = "Precision of R\u00b2",
+                                                                       value = 2, min = 0.5, step = 0.5),
+                                                          helpText("Higher values concentrate mass around the prior mean.")
+                                                   ),
+                                                   column(4,
+                                                          numericInput("r2d2_cons_D2",
+                                                                       label = "Dirichlet concentration D2 (optional)",
+                                                                       value = NA, min = 0.01, step = 0.1),
+                                                          helpText("NULL corresponds to 0.5 (uniform simplex).",
+                                                                   "Leave blank for automatic.")
+                                                   )
+                                               )
+                                           )
                                     )
                                 )
                             ),
@@ -689,8 +688,8 @@ ui <- shinydashboard::dashboardPage(
                     )
                 )
             ),
-
-            # -- SPATIAL SETUP TAB (v0.5.0) -----------------------------------
+            
+            # -- SPATIAL SETUP TAB -----------------------------------
             # Dedicated tab for configuring and exploring the spatial
             # neighbourhood structure used by CAR/SAR random effects.
             # Provides a Source / Map / Matrix / Diagnostic / Reference
@@ -700,7 +699,7 @@ ui <- shinydashboard::dashboardPage(
                 tabName = "spatial_setup",
                 uiOutput("spatial_setup_body")
             ),
-
+            
             # -- UPDATE TAB ----------------------------------------------------
             # Always present in the UI (so the sidebar tab tracking
             # works); the corresponding menu item is hidden until a
@@ -712,28 +711,28 @@ ui <- shinydashboard::dashboardPage(
                         title = "Update Model", width = 12,
                         solidHeader = TRUE, status = "primary",
                         fileInput("update_newdata",
-                                   "Upload New Data (optional):",
-                                   accept = c("text/csv", ".csv",
-                                              ".xlsx", ".xls",
-                                              ".rda", ".RData")),
+                                  "Upload New Data (optional):",
+                                  accept = c("text/csv", ".csv",
+                                             ".xlsx", ".xls",
+                                             ".rda", ".RData")),
                         numericInput("update_num_chains", "Chains",
-                                      value = 1,    min = 1),
+                                     value = 1,    min = 1),
                         numericInput("update_num_cores",  "Cores",
-                                      value = 1,    min = 1),
+                                     value = 1,    min = 1),
                         numericInput("update_num_iter",   "Iterations",
-                                      value = 4000, min = 1),
+                                     value = 4000, min = 1),
                         numericInput("update_num_warmup", "Warm-up",
-                                      value = 2000, min = 1),
+                                     value = 2000, min = 1),
                         sliderInput("update_adapt_delta", "Adapt Delta",
-                                     min = 0.8, max = 0.99,
-                                     value = 0.95),
+                                    min = 0.8, max = 0.99,
+                                    value = 0.95),
                         actionButton("update_run", "Run Model Update",
-                                      icon = icon("refresh"),
-                                      class = "btn-primary")
+                                     icon = icon("refresh"),
+                                     class = "btn-primary")
                     )
                 )
             ),
-
+            
             # -- RESULTS TAB ---------------------------------------------------
             shinydashboard::tabItem(
                 tabName = "results",
@@ -777,8 +776,8 @@ ui <- shinydashboard::dashboardPage(
                                                                   multiple = FALSE, selected = "trace")
                                     )),
                                     column(9,
-                                        uiOutput("plot_definition"),
-                                        plotOutput("diag_plots", height = "600px")
+                                           uiOutput("plot_definition"),
+                                           plotOutput("diag_plots", height = "600px")
                                     )
                                 )
                             )
@@ -799,8 +798,8 @@ ui <- shinydashboard::dashboardPage(
                                                      icon = icon("play"), class = "btn-primary")
                                     )),
                                     column(9,
-                                        uiOutput("metrics_definition_box"),
-                                        verbatimTextOutput("model_check_output")
+                                           uiOutput("metrics_definition_box"),
+                                           verbatimTextOutput("model_check_output")
                                     )
                                 )
                             ),
@@ -830,8 +829,8 @@ ui <- shinydashboard::dashboardPage(
                                         )
                                     )),
                                     column(9,
-                                        uiOutput("ppc_definition_box"),
-                                        plotOutput("model_check_plot_output", height = "600px")
+                                           uiOutput("ppc_definition_box"),
+                                           plotOutput("model_check_plot_output", height = "600px")
                                     )
                                 )
                             )
@@ -858,15 +857,15 @@ ui <- shinydashboard::dashboardPage(
                             ),
                             fluidRow(
                                 column(4,
-                                    selectizeInput("sensitivity_params_results",
-                                                   "Select Parameters for Sensitivity Analysis:",
-                                                   choices = NULL, multiple = TRUE, options = list(maxItems = 5)),
-                                    actionButton("run_sensitivity", "Run Sensitivity Analysis",
-                                                 icon = icon("play"), class = "btn-primary")
+                                       selectizeInput("sensitivity_params_results",
+                                                      "Select Parameters for Sensitivity Analysis:",
+                                                      choices = NULL, multiple = TRUE, options = list(maxItems = 5)),
+                                       actionButton("run_sensitivity", "Run Sensitivity Analysis",
+                                                    icon = icon("play"), class = "btn-primary")
                                 ),
                                 column(8,
-                                    verbatimTextOutput("prior_sensitivity_output_results"),
-                                    plotOutput("prior_sensitivity_plot_results", height = "400px")
+                                       verbatimTextOutput("prior_sensitivity_output_results"),
+                                       plotOutput("prior_sensitivity_plot_results", height = "400px")
                                 )
                             )
                         )
@@ -911,8 +910,8 @@ ui <- shinydashboard::dashboardPage(
                                 column(4, conditionalPanel(
                                     condition = "input.bm_method != 'raking'",
                                     numericInput("bm_target_single",
-                                                  "Benchmark Total",
-                                                  value = NA, min = 0)
+                                                 "Benchmark Total",
+                                                 value = NA, min = 0)
                                 )),
                                 column(4, selectInput(
                                     "bm_weights_var",
@@ -923,16 +922,16 @@ ui <- shinydashboard::dashboardPage(
                             conditionalPanel(
                                 condition = "input.bm_method == 'raking'",
                                 tags$div(class = "alert alert-info",
-                                    tags$strong("Multi-domain benchmarking. "),
-                                    "Use this when each predicted area belongs to a ",
-                                    "single higher-level domain and you have an ",
-                                    "official total for each domain. ",
-                                    tags$br(),
-                                    tags$em("Example: SAE per kecamatan, benchmark to ",
-                                            "kabupaten totals. The 'Group Variable' is ",
-                                            "the kabupaten ID column; 'Group Targets' is ",
-                                            "the vector of kabupaten totals in the same ",
-                                            "order as ", tags$code("levels(group_var)"), ".")),
+                                         tags$strong("Multi-domain benchmarking. "),
+                                         "Use this when each predicted area belongs to a ",
+                                         "single higher-level domain and you have an ",
+                                         "official total for each domain. ",
+                                         tags$br(),
+                                         tags$em("Example: SAE per kecamatan, benchmark to ",
+                                                 "kabupaten totals. The 'Group Variable' is ",
+                                                 "the kabupaten ID column; 'Group Targets' is ",
+                                                 "the vector of kabupaten totals in the same ",
+                                                 "order as ", tags$code("levels(group_var)"), ".")),
                                 fluidRow(
                                     column(6, selectInput(
                                         "bm_groups_var",
@@ -946,14 +945,14 @@ ui <- shinydashboard::dashboardPage(
                                 # Live preview of group levels + sums
                                 verbatimTextOutput("bm_group_preview"),
                                 actionButton("bm_template_targets",
-                                              "Auto-fill targets with current group sums",
-                                              icon = icon("magic"),
-                                              class = "btn-default btn-sm"),
+                                             "Auto-fill targets with current group sums",
+                                             icon = icon("magic"),
+                                             class = "btn-default btn-sm"),
                                 br(), br()
                             ),
                             actionButton("run_benchmark", "Apply Benchmark",
-                                          icon = icon("balance-scale"),
-                                          class = "btn-primary"),
+                                         icon = icon("balance-scale"),
+                                         class = "btn-primary"),
                             br(), br(),
                             verbatimTextOutput("benchmark_summary"),
                             DT::DTOutput("benchmark_table"),
@@ -961,7 +960,7 @@ ui <- shinydashboard::dashboardPage(
                             plotOutput("benchmark_plot", height = "400px"),
                             br(),
                             downloadButton("download_benchmark",
-                                            "Download Benchmarked Predictions (CSV)")
+                                           "Download Benchmarked Predictions (CSV)")
                         )
                     ),
                     tabPanel(
@@ -982,7 +981,7 @@ ui <- shinydashboard::dashboardPage(
 # SERVER
 # =============================================================================
 server <- function(input, output, session) {
-
+    
     # -- Dependency banner -----------------------------------------------------
     # Reads the missing-optional list set by run_sae_app() via getOption().
     # When the app is launched directly (e.g. shiny::runApp() instead of
@@ -990,7 +989,7 @@ server <- function(input, output, session) {
     output$dep_banner <- renderUI({
         miss <- getOption("hbsaems.shiny_missing_optional", default = NULL)
         if (is.null(miss) || length(miss) == 0L) return(NULL)
-
+        
         # Re-check live so a manual install during the session clears the
         # banner without needing to relaunch.
         still_missing <- miss[
@@ -1000,12 +999,12 @@ server <- function(input, output, session) {
             options(hbsaems.shiny_missing_optional = character(0L))
             return(NULL)
         }
-
+        
         cmd <- sprintf(
             'install.packages(c(%s))',
             paste(sprintf('"%s"', still_missing), collapse = ", ")
         )
-
+        
         div(
             class = "alert alert-warning",
             style = "margin: 10px 15px;",
@@ -1026,7 +1025,7 @@ server <- function(input, output, session) {
                     " again."))
         )
     })
-
+    
     # -- Reactive values -------------------------------------------------------
     data            <- reactiveVal()
     new_data        <- reactiveVal(NULL)
@@ -1037,8 +1036,8 @@ server <- function(input, output, session) {
     pred_data       <- reactiveVal(NULL)
     check_results   <- reactiveVal(NULL)
     ppc_result      <- reactiveVal(NULL)
-
-    # -- v0.5.0: Bilingual support (en / id) ------------------------------------
+    
+    # -- Bilingual support (en / id) ------------------------------------
     # Active language is read from the header dropdown.  Helper `t_()`
     # is a closure that wraps tr() with the current language so call
     # sites stay compact:   t_("menu_home")  ->  "Home" or "Beranda"
@@ -1047,10 +1046,10 @@ server <- function(input, output, session) {
         if (is.null(l) || !(l %in% hbsaems::tr_langs())) "en" else l
     })
     t_ <- function(key) hbsaems::tr(key, lang())
-
+    
     # App title (in header)
     output$ui_app_title <- renderText({ t_("app_title") })
-
+    
     # ------------------------------------------------------------------
     # Sidebar menu labels: re-injected via JavaScript whenever the
     # language toggle changes.  This avoids rebuilding menus on the
@@ -1063,8 +1062,8 @@ server <- function(input, output, session) {
             home             = t_("menu_home"),
             data_upload      = t_("box_data_upload"),
             data_exploration = t_("menu_data"),
-            modeling         = t_("menu_modeling"),
             spatial_setup    = t_("menu_spatial"),
+            modeling         = t_("menu_modeling"),
             update_model     = t_("menu_update"),
             results          = t_("menu_results")
         )
@@ -1073,7 +1072,7 @@ server <- function(input, output, session) {
         # minimal -- jsonlite is not in Imports.  Escape any quotes in
         # the labels to keep the JS string valid.
         esc <- function(x) gsub('"', '\\\\"',
-                                 gsub("\\\\", "\\\\\\\\", x))
+                                gsub("\\\\", "\\\\\\\\", x))
         pairs <- vapply(names(labels), function(k)
             sprintf('"%s":"%s"', k, esc(labels[[k]])),
             character(1L))
@@ -1092,17 +1091,17 @@ server <- function(input, output, session) {
             paste(pairs, collapse = ",")
         )
         shiny::insertUI(selector = "head", where = "beforeEnd",
-                         ui = shiny::tags$script(shiny::HTML(js)),
-                         immediate = TRUE)
+                        ui = shiny::tags$script(shiny::HTML(js)),
+                        immediate = TRUE)
     })
-
+    
     # Reactive labels for action buttons (used by textOutput inside
     # actionButton labels above)
     output$lbl_build_weight   <- renderText({ t_("btn_build_weight")   })
     output$lbl_inspect_weight <- renderText({ t_("btn_inspect_weight") })
-
+    
     # ==========================================================================
-    # SPATIAL SETUP TAB (v0.5.0)
+    # SPATIAL SETUP TAB
     # ==========================================================================
     # Three reactive outputs power this tab:
     #   * spatial_weights()       -- the W matrix (already exists, reused)
@@ -1110,17 +1109,17 @@ server <- function(input, output, session) {
     #   * spatial_neighbours()    -- spdep neighbour list (NEW, derived)
     # All visualisations and summaries read from these reactives, so the
     # tab stays consistent with whatever the user has built so far.
-
+    
     # Helper: derive a degree vector (#neighbours per area) from W
     .deg_from_W <- function(M) {
         if (is.null(M) || !is.matrix(M)) return(NULL)
         # Count nonzero off-diagonal entries per row
         rowSums(M != 0, na.rm = TRUE)
     }
-
+    
     # Main render: 4-tab layout
     output$spatial_setup_body <- renderUI({
-        # v0.5.0: Status indicator — adapts to whether source is shape/matrix/none
+        # Status indicator — adapts to whether source is shape/matrix/none
         status_box <- {
             shape <- spatial_shape_obj()
             M     <- spatial_weights()
@@ -1153,7 +1152,7 @@ server <- function(input, output, session) {
                 )
             }
         }
-
+        
         fluidRow(
             shinydashboard::box(
                 title = t_("spatial_intro_title"),
@@ -1163,241 +1162,241 @@ server <- function(input, output, session) {
             # Status indicator
             status_box,
             column(12,
-                shinydashboard::tabBox(
-                    width = 12,
-                    # --- Sub-tab 1: Source -----------------------------------
-                    tabPanel(
-                        title = t_("spatial_subtab_source"),
-                        icon  = icon("upload"),
-                        fluidRow(
-                            column(6,
-                                shinydashboard::box(
-                                    title = t_("spatial_box_upload"),
-                                    width = 12, solidHeader = TRUE,
-                                    status = "primary",
-                                    radioButtons(
-                                        "spatial_source_main",
-                                        label = NULL,
-                                        choices = setNames(
-                                            c("matrix", "shp"),
-                                            c("Upload pre-built matrix (.csv/.xlsx/.rda)",
-                                              "Build from shapefile (.shp via sf)")
-                                        ),
-                                        selected = "shp"
-                                    ),
-                                    conditionalPanel(
-                                        condition = "input.spatial_source_main == 'matrix'",
-                                        fileInput("spatial_weights_main",
-                                                   "Upload Weight Matrix",
-                                                   accept = c(".csv", ".xls", ".xlsx",
-                                                              ".rda", ".RData"))
-                                    ),
-                                    conditionalPanel(
-                                        condition = "input.spatial_source_main == 'shp'",
-                                        fileInput("shp_file_main",
-                                                   "Upload Shapefile (.shp + .shx + .dbf)",
-                                                   accept = c(".shp", ".shx", ".dbf",
-                                                              ".prj", ".cpg"),
-                                                   multiple = TRUE)
-                                    )
-                                )
-                            ),
-                            column(6,
-                                shinydashboard::box(
-                                    title = t_("spatial_box_params"),
-                                    width = 12, solidHeader = TRUE,
-                                    status = "primary",
-                                    conditionalPanel(
-                                        condition = "input.spatial_source_main == 'shp'",
-                                        selectInput("shp_type_main",
-                                                     "Neighbour Type",
-                                                     choices = c(
-                                                         "Queen contiguity (CAR)" = "queen",
-                                                         "Rook contiguity (CAR)"  = "rook",
-                                                         "K-nearest (SAR)"        = "knn",
-                                                         "Distance band (SAR)"    = "distance"
-                                                     ),
-                                                     selected = "queen"),
-                                        selectInput("shp_style_main",
-                                                     "Matrix Style",
-                                                     choices = c(
-                                                         "Binary 0/1 (CAR)"        = "B",
-                                                         "Row-standardised (SAR)"   = "W"
-                                                     ),
-                                                     selected = "B"),
-                                        conditionalPanel(
-                                            condition = "input.shp_type_main == 'knn'",
-                                            numericInput("shp_k_main",
-                                                          "k (neighbours)",
-                                                          value = 4, min = 1, step = 1)
-                                        ),
-                                        conditionalPanel(
-                                            condition = "input.shp_type_main == 'distance'",
-                                            numericInput("shp_threshold_main",
-                                                          "Distance threshold",
-                                                          value = NA, min = 0)
-                                        ),
-                                        textInput("shp_id_col_main",
-                                                   "ID column (optional)",
-                                                   value = "")
-                                    ),
-                                    actionButton("build_spatial_main",
-                                                  t_("btn_build_weight"),
-                                                  icon = icon("hammer"),
-                                                  class = "btn-primary"),
-                                    br(), br(),
-                                    div(class = "alert alert-info",
-                                        style = "padding: 8px; font-size: 90%;",
-                                        tags$strong("Recommended for:"),
-                                        tags$ul(style = "margin-bottom: 0;",
-                                            tags$li(tags$strong("CAR"),
-                                                " (Besag 1974): type = queen or rook, style = B"),
-                                            tags$li(tags$strong("SAR"),
-                                                " (Anselin 1988): type = knn or distance, style = W")
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    ),
-                    # --- Sub-tab 2: Map preview -------------------------------
-                    tabPanel(
-                        title = t_("spatial_subtab_map"),
-                        icon  = icon("map"),
-                        # v0.5.0: Adaptive content -- show map only when a
-                        # shapefile is loaded; show an informative banner
-                        # when the user has uploaded a pre-built matrix
-                        # (no geometry to display).
-                        fluidRow(
-                            column(12,
-                                if (is.null(spatial_shape_obj()) &&
-                                    !is.null(spatial_weights())) {
-                                    # Matrix source -- map not applicable
-                                    div(class = "alert alert-warning",
-                                        style = "margin-top: 10px;",
-                                        icon("triangle-exclamation"),
-                                        tags$strong(" Map preview unavailable. "),
-                                        t_("spatial_map_unavailable"))
-                                } else {
-                                    # Either shape loaded or nothing loaded:
-                                    # show the plot (which renders its own
-                                    # "no shape" fallback if needed).
-                                    shinydashboard::box(
-                                        title = t_("spatial_subtab_map"),
-                                        width = 12, solidHeader = TRUE,
-                                        status = "primary",
-                                        plotOutput("spatial_map_plot",
-                                                    height = "500px")
-                                    )
-                                }
-                            )
-                        )
-                    ),
-                    # --- Sub-tab 3: Weight matrix -----------------------------
-                    tabPanel(
-                        title = t_("spatial_subtab_matrix"),
-                        icon  = icon("th"),
-                        fluidRow(
-                            column(7,
-                                shinydashboard::box(
-                                    title = t_("spatial_box_heatmap"),
-                                    width = 12, solidHeader = TRUE,
-                                    status = "primary",
-                                    plotOutput("spatial_heatmap",
-                                                height = "450px")
-                                )
-                            ),
-                            column(5,
-                                shinydashboard::box(
-                                    title = t_("spatial_box_summary"),
-                                    width = 12, solidHeader = TRUE,
-                                    status = "info",
-                                    verbatimTextOutput("spatial_summary")
-                                ),
-                                shinydashboard::box(
-                                    title = t_("spatial_box_degree"),
-                                    width = 12, solidHeader = TRUE,
-                                    status = "primary",
-                                    plotOutput("spatial_degree_plot",
-                                                height = "200px")
-                                )
-                            )
-                        )
-                    ),
-                    # --- Sub-tab 4: Diagnostic --------------------------------
-                    tabPanel(
-                        title = t_("spatial_subtab_diagnostic"),
-                        icon  = icon("stethoscope"),
-                        fluidRow(
-                            column(6,
-                                shinydashboard::box(
-                                    title = t_("spatial_box_diag"),
-                                    width = 12, solidHeader = TRUE,
-                                    status = "primary",
-                                    verbatimTextOutput("spatial_diag_main")
-                                )
-                            ),
-                            column(6,
-                                shinydashboard::box(
-                                    title = t_("spatial_box_advisor"),
-                                    width = 12, solidHeader = TRUE,
-                                    status = "warning",
-                                    htmlOutput("spatial_advisor")
-                                )
-                            )
-                        )
-                    ),
-                    # --- Sub-tab 5: Reference ---------------------------------
-                    tabPanel(
-                        title = t_("spatial_subtab_reference"),
-                        icon  = icon("book"),
-                        shinydashboard::box(
-                            title = t_("spatial_box_reference"),
-                            width = 12, solidHeader = TRUE,
-                            status = "info",
-                            h4("CAR (Conditional Autoregressive)"),
-                            p(t_("spatial_ref_car")),
-                            tags$pre(style = "background-color: #f5f5f5;",
-                                "s ~ N(0, sigma^2 * (D - rho*W)^{-1})\n\n",
-                                "Requirements:\n",
-                                "  - W is square, symmetric, binary (0/1)\n",
-                                "  - Zero diagonal\n",
-                                "  - Connected graph (no isolated areas)\n"),
-                            h4("SAR (Simultaneous Autoregressive)"),
-                            p(t_("spatial_ref_sar")),
-                            tags$pre(style = "background-color: #f5f5f5;",
-                                "s = rho*W*s + epsilon, epsilon ~ N(0, sigma^2*I)\n\n",
-                                "Requirements:\n",
-                                "  - W is square, row-standardised (each row sums to 1)\n",
-                                "  - Zero diagonal\n",
-                                "  - Symmetry NOT required\n"),
-                            h4("References"),
-                            tags$ul(
-                                tags$li("Besag, J. (1974). Spatial Interaction and the Statistical Analysis of Lattice Systems. JRSS-B 36(2), 192-225."),
-                                tags$li("Whittle, P. (1954). On Stationary Processes in the Plane. Biometrika 41(3/4), 434-449."),
-                                tags$li("Anselin, L. (1988). Spatial Econometrics: Methods and Models. Kluwer."),
-                                tags$li("Morris, M. et al. (2019). Bayesian Hierarchical Spatial Models: Implementing the Besag York Mollie Model in Stan.")
-                            )
-                        )
-                    )
-                )
+                   shinydashboard::tabBox(
+                       width = 12,
+                       # --- Sub-tab 1: Source -----------------------------------
+                       tabPanel(
+                           title = t_("spatial_subtab_source"),
+                           icon  = icon("upload"),
+                           fluidRow(
+                               column(6,
+                                      shinydashboard::box(
+                                          title = t_("spatial_box_upload"),
+                                          width = 12, solidHeader = TRUE,
+                                          status = "primary",
+                                          radioButtons(
+                                              "spatial_source_main",
+                                              label = NULL,
+                                              choices = setNames(
+                                                  c("matrix", "shp"),
+                                                  c("Upload pre-built matrix (.csv/.xlsx/.rda)",
+                                                    "Build from shapefile (.shp via sf)")
+                                              ),
+                                              selected = "shp"
+                                          ),
+                                          conditionalPanel(
+                                              condition = "input.spatial_source_main == 'matrix'",
+                                              fileInput("spatial_weights_main",
+                                                        "Upload Weight Matrix",
+                                                        accept = c(".csv", ".xls", ".xlsx",
+                                                                   ".rda", ".RData"))
+                                          ),
+                                          conditionalPanel(
+                                              condition = "input.spatial_source_main == 'shp'",
+                                              fileInput("shp_file_main",
+                                                        "Upload Shapefile (.shp + .shx + .dbf)",
+                                                        accept = c(".shp", ".shx", ".dbf",
+                                                                   ".prj", ".cpg"),
+                                                        multiple = TRUE)
+                                          )
+                                      )
+                               ),
+                               column(6,
+                                      shinydashboard::box(
+                                          title = t_("spatial_box_params"),
+                                          width = 12, solidHeader = TRUE,
+                                          status = "primary",
+                                          conditionalPanel(
+                                              condition = "input.spatial_source_main == 'shp'",
+                                              selectInput("shp_type_main",
+                                                          "Neighbour Type",
+                                                          choices = c(
+                                                              "Queen contiguity (CAR)" = "queen",
+                                                              "Rook contiguity (CAR)"  = "rook",
+                                                              "K-nearest (SAR)"        = "knn",
+                                                              "Distance band (SAR)"    = "distance"
+                                                          ),
+                                                          selected = "queen"),
+                                              selectInput("shp_style_main",
+                                                          "Matrix Style",
+                                                          choices = c(
+                                                              "Binary 0/1 (CAR)"        = "B",
+                                                              "Row-standardised (SAR)"   = "W"
+                                                          ),
+                                                          selected = "B"),
+                                              conditionalPanel(
+                                                  condition = "input.shp_type_main == 'knn'",
+                                                  numericInput("shp_k_main",
+                                                               "k (neighbours)",
+                                                               value = 4, min = 1, step = 1)
+                                              ),
+                                              conditionalPanel(
+                                                  condition = "input.shp_type_main == 'distance'",
+                                                  numericInput("shp_threshold_main",
+                                                               "Distance threshold",
+                                                               value = NA, min = 0)
+                                              ),
+                                              textInput("shp_id_col_main",
+                                                        "ID column (optional)",
+                                                        value = "")
+                                          ),
+                                          actionButton("build_spatial_main",
+                                                       t_("btn_build_weight"),
+                                                       icon = icon("hammer"),
+                                                       class = "btn-primary"),
+                                          br(), br(),
+                                          div(class = "alert alert-info",
+                                              style = "padding: 8px; font-size: 90%;",
+                                              tags$strong("Recommended for:"),
+                                              tags$ul(style = "margin-bottom: 0;",
+                                                      tags$li(tags$strong("CAR"),
+                                                              " (Besag 1974): type = queen or rook, style = B"),
+                                                      tags$li(tags$strong("SAR"),
+                                                              " (Anselin 1988): type = knn or distance, style = W")
+                                              )
+                                          )
+                                      )
+                               )
+                           )
+                       ),
+                       # --- Sub-tab 2: Map preview -------------------------------
+                       tabPanel(
+                           title = t_("spatial_subtab_map"),
+                           icon  = icon("map"),
+                           # Adaptive content -- show map only when a
+                           # shapefile is loaded; show an informative banner
+                           # when the user has uploaded a pre-built matrix
+                           # (no geometry to display).
+                           fluidRow(
+                               column(12,
+                                      if (is.null(spatial_shape_obj()) &&
+                                          !is.null(spatial_weights())) {
+                                          # Matrix source -- map not applicable
+                                          div(class = "alert alert-warning",
+                                              style = "margin-top: 10px;",
+                                              icon("triangle-exclamation"),
+                                              tags$strong(" Map preview unavailable. "),
+                                              t_("spatial_map_unavailable"))
+                                      } else {
+                                          # Either shape loaded or nothing loaded:
+                                          # show the plot (which renders its own
+                                          # "no shape" fallback if needed).
+                                          shinydashboard::box(
+                                              title = t_("spatial_subtab_map"),
+                                              width = 12, solidHeader = TRUE,
+                                              status = "primary",
+                                              plotOutput("spatial_map_plot",
+                                                         height = "500px")
+                                          )
+                                      }
+                               )
+                           )
+                       ),
+                       # --- Sub-tab 3: Weight matrix -----------------------------
+                       tabPanel(
+                           title = t_("spatial_subtab_matrix"),
+                           icon  = icon("th"),
+                           fluidRow(
+                               column(7,
+                                      shinydashboard::box(
+                                          title = t_("spatial_box_heatmap"),
+                                          width = 12, solidHeader = TRUE,
+                                          status = "primary",
+                                          plotOutput("spatial_heatmap",
+                                                     height = "450px")
+                                      )
+                               ),
+                               column(5,
+                                      shinydashboard::box(
+                                          title = t_("spatial_box_summary"),
+                                          width = 12, solidHeader = TRUE,
+                                          status = "info",
+                                          verbatimTextOutput("spatial_summary")
+                                      ),
+                                      shinydashboard::box(
+                                          title = t_("spatial_box_degree"),
+                                          width = 12, solidHeader = TRUE,
+                                          status = "primary",
+                                          plotOutput("spatial_degree_plot",
+                                                     height = "200px")
+                                      )
+                               )
+                           )
+                       ),
+                       # --- Sub-tab 4: Diagnostic --------------------------------
+                       tabPanel(
+                           title = t_("spatial_subtab_diagnostic"),
+                           icon  = icon("stethoscope"),
+                           fluidRow(
+                               column(6,
+                                      shinydashboard::box(
+                                          title = t_("spatial_box_diag"),
+                                          width = 12, solidHeader = TRUE,
+                                          status = "primary",
+                                          verbatimTextOutput("spatial_diag_main")
+                                      )
+                               ),
+                               column(6,
+                                      shinydashboard::box(
+                                          title = t_("spatial_box_advisor"),
+                                          width = 12, solidHeader = TRUE,
+                                          status = "warning",
+                                          htmlOutput("spatial_advisor")
+                                      )
+                               )
+                           )
+                       ),
+                       # --- Sub-tab 5: Reference ---------------------------------
+                       tabPanel(
+                           title = t_("spatial_subtab_reference"),
+                           icon  = icon("book"),
+                           shinydashboard::box(
+                               title = t_("spatial_box_reference"),
+                               width = 12, solidHeader = TRUE,
+                               status = "info",
+                               h4("CAR (Conditional Autoregressive)"),
+                               p(t_("spatial_ref_car")),
+                               tags$pre(style = "background-color: #f5f5f5;",
+                                        "s ~ N(0, sigma^2 * (D - rho*W)^{-1})\n\n",
+                                        "Requirements:\n",
+                                        "  - W is square, symmetric, binary (0/1)\n",
+                                        "  - Zero diagonal\n",
+                                        "  - Connected graph (no isolated areas)\n"),
+                               h4("SAR (Simultaneous Autoregressive)"),
+                               p(t_("spatial_ref_sar")),
+                               tags$pre(style = "background-color: #f5f5f5;",
+                                        "s = rho*W*s + epsilon, epsilon ~ N(0, sigma^2*I)\n\n",
+                                        "Requirements:\n",
+                                        "  - W is square, row-standardised (each row sums to 1)\n",
+                                        "  - Zero diagonal\n",
+                                        "  - Symmetry NOT required\n"),
+                               h4("References"),
+                               tags$ul(
+                                   tags$li("Besag, J. (1974). Spatial Interaction and the Statistical Analysis of Lattice Systems. JRSS-B 36(2), 192-225."),
+                                   tags$li("Whittle, P. (1954). On Stationary Processes in the Plane. Biometrika 41(3/4), 434-449."),
+                                   tags$li("Anselin, L. (1988). Spatial Econometrics: Methods and Models. Kluwer."),
+                                   tags$li("Morris, M. et al. (2019). Bayesian Hierarchical Spatial Models: Implementing the Besag York Mollie Model in Stan.")
+                               )
+                           )
+                       )
+                   )
             )
         )
     })
-
+    
     # -- Spatial reactives: shapefile object + neighbours list ------------------
     # Triggered when user clicks "Build Weight Matrix" in the spatial tab.
     spatial_shape_obj <- reactiveVal(NULL)
-
+    
     observeEvent(input$build_spatial_main, {
         req(input$spatial_source_main)
         src <- input$spatial_source_main
-
+        
         if (src == "shp") {
             files <- input$shp_file_main
             if (is.null(files) || nrow(files) == 0L) {
                 showNotification("Please upload shapefile files first.",
-                                  type = "warning")
+                                 type = "warning")
                 return(invisible(NULL))
             }
             # Move files to a temp dir so sf can read the .shp
@@ -1407,21 +1406,21 @@ server <- function(input, output, session) {
                 file.copy(files$datapath[i],
                           file.path(tmp_dir, files$name[i]))
             shp_path <- list.files(tmp_dir, pattern = "\\.shp$",
-                                    full.names = TRUE)[1L]
+                                   full.names = TRUE)[1L]
             if (is.na(shp_path)) {
                 showNotification(".shp file not found in upload.",
-                                  type = "error")
+                                 type = "error")
                 return(invisible(NULL))
             }
             shape <- tryCatch(sf::st_read(shp_path, quiet = TRUE),
                               error = function(e) e)
             if (inherits(shape, "error")) {
                 showNotification(sprintf("Cannot read shapefile: %s",
-                                          shape$message), type = "error")
+                                         shape$message), type = "error")
                 return(invisible(NULL))
             }
             spatial_shape_obj(shape)
-
+            
             M <- tryCatch(
                 hbsaems::build_spatial_weight(
                     shp       = shape,
@@ -1429,35 +1428,35 @@ server <- function(input, output, session) {
                     style     = input$shp_style_main,
                     k         = input$shp_k_main %||% 4L,
                     threshold = if (is.na(input$shp_threshold_main))
-                                  NULL else input$shp_threshold_main,
+                        NULL else input$shp_threshold_main,
                     id_col    = if (nzchar(input$shp_id_col_main %||% ""))
-                                  input$shp_id_col_main else NULL,
+                        input$shp_id_col_main else NULL,
                     for_model = NULL
                 ),
                 error = function(e) e
             )
             if (inherits(M, "error")) {
                 showNotification(sprintf("build_spatial_weight failed: %s",
-                                          M$message), type = "error")
+                                         M$message), type = "error")
                 return(invisible(NULL))
             }
             spatial_weights(M)
             showNotification(sprintf("Weight matrix built (%d x %d).",
-                                      nrow(M), ncol(M)),
-                              type = "message")
+                                     nrow(M), ncol(M)),
+                             type = "message")
         } else {
             # Matrix upload via the main tab
             up <- input$spatial_weights_main
             if (is.null(up)) {
                 showNotification("Please upload a weight matrix file.",
-                                  type = "warning")
+                                 type = "warning")
                 return(invisible(NULL))
             }
             ext <- tolower(tools::file_ext(up$name))
             M <- tryCatch({
                 if (ext == "csv") {
                     as.matrix(utils::read.csv(up$datapath,
-                                                row.names = 1))
+                                              row.names = 1))
                 } else if (ext %in% c("xls", "xlsx")) {
                     as.matrix(readxl::read_excel(up$datapath))
                 } else if (ext %in% c("rda", "rdata")) {
@@ -1470,19 +1469,19 @@ server <- function(input, output, session) {
             }, error = function(e) e)
             if (inherits(M, "error")) {
                 showNotification(sprintf("Could not load matrix: %s",
-                                          M$message), type = "error")
+                                         M$message), type = "error")
                 return(invisible(NULL))
             }
             spatial_weights(M)
             spatial_shape_obj(NULL)
             showNotification(sprintf("Weight matrix loaded (%d x %d).",
-                                      nrow(M), ncol(M)),
-                              type = "message")
+                                     nrow(M), ncol(M)),
+                             type = "message")
         }
     })
-
+    
     # -- Visualisations ---------------------------------------------------------
-
+    
     output$spatial_map_plot <- renderPlot({
         shape <- spatial_shape_obj()
         if (is.null(shape)) {
@@ -1498,7 +1497,7 @@ server <- function(input, output, session) {
                 shape$.degree <- deg
                 p <- ggplot2::ggplot(shape) +
                     ggplot2::geom_sf(ggplot2::aes(fill = .data$.degree),
-                                      colour = "white", linewidth = 0.3) +
+                                     colour = "white", linewidth = 0.3) +
                     ggplot2::scale_fill_viridis_c(
                         name = "Neighbours", option = "C") +
                     ggplot2::theme_minimal() +
@@ -1511,11 +1510,11 @@ server <- function(input, output, session) {
         # Fallback: plain map without colour
         ggplot2::ggplot(shape) +
             ggplot2::geom_sf(fill = "lightblue", colour = "white",
-                              linewidth = 0.3) +
+                             linewidth = 0.3) +
             ggplot2::theme_minimal() +
             ggplot2::labs(title = "Polygon Map")
     })
-
+    
     output$spatial_heatmap <- renderPlot({
         M <- spatial_weights()
         if (is.null(M) || !is.matrix(M)) {
@@ -1533,18 +1532,18 @@ server <- function(input, output, session) {
         df <- expand.grid(i = seq_len(n), j = seq_len(n))
         df$w <- as.vector(M)
         ggplot2::ggplot(df, ggplot2::aes(.data$j, .data$i,
-                                          fill = .data$w)) +
+                                         fill = .data$w)) +
             ggplot2::geom_tile() +
             ggplot2::scale_fill_viridis_c(name = "W") +
             ggplot2::scale_y_reverse() +
             ggplot2::coord_fixed() +
             ggplot2::theme_minimal() +
             ggplot2::labs(x = NULL, y = NULL,
-                           title = sprintf("W matrix (%d x %d)",
-                                            nrow(spatial_weights()),
-                                            ncol(spatial_weights())))
+                          title = sprintf("W matrix (%d x %d)",
+                                          nrow(spatial_weights()),
+                                          ncol(spatial_weights())))
     })
-
+    
     output$spatial_degree_plot <- renderPlot({
         M <- spatial_weights()
         deg <- .deg_from_W(M)
@@ -1554,16 +1553,16 @@ server <- function(input, output, session) {
             return(invisible(NULL))
         }
         ggplot2::ggplot(data.frame(deg = deg),
-                         ggplot2::aes(x = .data$deg)) +
+                        ggplot2::aes(x = .data$deg)) +
             ggplot2::geom_histogram(
                 bins = max(5L, min(20L, length(unique(deg)))),
                 fill = "#3c8dbc", colour = "white") +
             ggplot2::theme_minimal() +
             ggplot2::labs(x = "Number of neighbours",
-                           y = "Count of areas",
-                           title = NULL)
+                          y = "Count of areas",
+                          title = NULL)
     })
-
+    
     output$spatial_summary <- renderPrint({
         M <- spatial_weights()
         if (is.null(M) || !is.matrix(M)) {
@@ -1585,13 +1584,13 @@ server <- function(input, output, session) {
         # Detected style
         is_binary <- all(M %in% c(0, 1), na.rm = TRUE)
         is_rownorm <- all(abs(rowSums(M, na.rm = TRUE) - 1) < 1e-8 |
-                            rowSums(M, na.rm = TRUE) == 0)
+                              rowSums(M, na.rm = TRUE) == 0)
         style_str <- if (is_binary) "B (binary)" else
-                     if (is_rownorm) "W (row-standardised)" else
-                     "Other"
+            if (is_rownorm) "W (row-standardised)" else
+                "Other"
         cat(t_("spatial_style_detected"), ":", style_str, "\n")
     })
-
+    
     output$spatial_diag_main <- renderPrint({
         M <- spatial_weights()
         if (is.null(M) || !is.matrix(M)) {
@@ -1605,7 +1604,7 @@ server <- function(input, output, session) {
         }
         chk <- tryCatch(
             hbsaems::check_spatial_weight(M, sre_type = sre_t,
-                                            verbose = FALSE),
+                                          verbose = FALSE),
             error = function(e) NULL
         )
         if (is.null(chk)) {
@@ -1614,7 +1613,7 @@ server <- function(input, output, session) {
         }
         print(chk)
     })
-
+    
     output$spatial_advisor <- renderUI({
         M <- spatial_weights()
         if (is.null(M) || !is.matrix(M)) {
@@ -1625,7 +1624,7 @@ server <- function(input, output, session) {
         is_binary    <- all(M %in% c(0, 1), na.rm = TRUE)
         rs           <- rowSums(M, na.rm = TRUE)
         is_rownorm   <- all(abs(rs - 1) < 1e-8 | rs == 0)
-
+        
         recommend <- if (is_symmetric && is_binary) {
             tags$strong(style = "color: green;",
                         "Compatible with CAR (Besag 1974)")
@@ -1636,7 +1635,7 @@ server <- function(input, output, session) {
             tags$strong(style = "color: orange;",
                         "Atypical structure -- check style manually")
         }
-
+        
         tagList(
             p("Based on the matrix properties:"),
             tags$ul(
@@ -1650,23 +1649,27 @@ server <- function(input, output, session) {
             recommend
         )
     })
-
+    
     # Home tab content -- re-renders when language changes
     output$home_content <- renderUI({
-        # v0.5.0: bilingual; falls back to English via tr() if a key missing.
+        # bilingual; falls back to English via tr() if a key missing.
         # Cache the current language in a local variable for clarity.
         intro_struct <- if (lang() == "id") list(
             home = "Beranda: Gambaran umum dan tujuan aplikasi.",
             up   = "Unggah Data: Unggah dan pratinjau dataset (CSV/Excel), deteksi missing values.",
+            exp  = "Eksplorasi Data: Visualisasi distribusi, korelasi, dan pola variabel.",
+            sp   = "Pengaturan Spasial: Bangun atau unggah matriks bobot spasial (CAR/SAR/BYM2).",
             mdl  = "Pemodelan: Spesifikasi struktur model, prior, pengaturan MCMC, dan fitting model.",
             res  = "Hasil: Review diagnostik model, ringkasan, dan output prediksi."
         ) else list(
             home = "Home: Overview and purpose of the application.",
             up   = "Data Upload: Upload and preview datasets (CSV/Excel), detect missing values.",
+            exp  = "Data Exploration: Visualise distributions, correlations, and variable patterns.",
+            sp   = "Spatial Setup: Build or upload a spatial weight matrix (CAR/SAR/BYM2).",
             mdl  = "Modeling: Specify model structure, priors, MCMC settings, and fit the model.",
             res  = "Results: Review model diagnostics, summaries, and prediction outputs."
         )
-
+        
         fluidRow(
             shinydashboard::box(
                 title = t_("box_intro"), width = 12,
@@ -1676,11 +1679,13 @@ server <- function(input, output, session) {
             ),
             shinydashboard::box(
                 title = if (lang() == "id") "Struktur Aplikasi"
-                        else                "App Structure",
+                else                "App Structure",
                 width = 12, solidHeader = TRUE, status = "primary",
                 tags$ul(
                     tags$li(intro_struct$home),
                     tags$li(intro_struct$up),
+                    tags$li(intro_struct$exp),
+                    tags$li(intro_struct$sp),
                     tags$li(intro_struct$mdl),
                     tags$li(intro_struct$res)
                 )
@@ -1707,26 +1712,26 @@ server <- function(input, output, session) {
         )
     })
     spatial_diag    <- reactiveVal(NULL)
-
-    # -- v0.4.0: Show registered families on Home tab ------------------------
+    
+    # -- Show registered families on Home tab ------------------------
     output$families_summary <- renderPrint({
         fams <- list_hbsae_models()
         cat("Registered families (", length(fams), "):\n", sep = "")
         for (k in fams) {
             spec <- get_hbsae_model(k)
             tag  <- if (isTRUE(spec$discrete))           "[discrete] "
-                    else                                 "[continuous]"
+            else                                 "[continuous]"
             mi   <- if (isTRUE(spec$supports_mi))        " mi=TRUE"
-                    else                                 " mi=FALSE"
+            else                                 " mi=FALSE"
             aux  <- if (is.function(spec$aux_param_hyperprior))
-                                                          " +aux"
-                    else                                 ""
+                " +aux"
+            else                                 ""
             cat(sprintf("  %-30s %s link=%-9s%s%s\n",
                         k, tag, spec$link %||% "?", mi, aux))
         }
     })
-
-    # -- v0.4.0: On-demand spatial diagnostic display ------------------------
+    
+    # -- On-demand spatial diagnostic display ------------------------
     # Triggered by [Inspect Weight Matrix] button under spatial weights UI.
     # Renders the full check_spatial_weight() output so users can verify
     # theoretical compatibility (CAR/Besag, SAR/Anselin) at a glance.
@@ -1751,7 +1756,7 @@ server <- function(input, output, session) {
         }
         spatial_diag(chk)
     })
-
+    
     output$spatial_diag_output <- renderPrint({
         d <- spatial_diag()
         if (is.null(d)) {
@@ -1878,8 +1883,8 @@ server <- function(input, output, session) {
     })
     observeEvent(input$sre_type, {
         updateSelectInput(session, "sre", selected = "none")
-
-        # v0.4.0+: auto-suggest shp_type / shp_style based on theory.
+        
+        # auto-suggest shp_type / shp_style based on theory.
         # User can still override afterwards (this only fires on sre_type change).
         if (isTRUE(input$sre_type == "car")) {
             updateSelectInput(session, "shp_type",  selected = "queen")
@@ -1928,11 +1933,11 @@ server <- function(input, output, session) {
             ggplot2::labs(title = paste("Histogram of", var), x = var, y = "Density") +
             ggplot2::theme_minimal()
         withCallingHandlers(print(p),
-            warning = function(w) {
-                showNotification(paste("Histogram warning:", conditionMessage(w)), type = "warning", duration = 10)
-                invokeRestart("muffleWarning")
-            },
-            message = function(m) { invokeRestart("muffleMessage") }
+                            warning = function(w) {
+                                showNotification(paste("Histogram warning:", conditionMessage(w)), type = "warning", duration = 10)
+                                invokeRestart("muffleWarning")
+                            },
+                            message = function(m) { invokeRestart("muffleMessage") }
         )
     })
     
@@ -1946,11 +1951,11 @@ server <- function(input, output, session) {
             ggplot2::theme_minimal() +
             ggplot2::coord_flip()
         withCallingHandlers(print(p),
-            warning = function(w) {
-                showNotification(paste("Boxplot warning:", conditionMessage(w)), type = "warning", duration = 10)
-                invokeRestart("muffleWarning")
-            },
-            message = function(m) { invokeRestart("muffleMessage") }
+                            warning = function(w) {
+                                showNotification(paste("Boxplot warning:", conditionMessage(w)), type = "warning", duration = 10)
+                                invokeRestart("muffleWarning")
+                            },
+                            message = function(m) { invokeRestart("muffleMessage") }
         )
     })
     
@@ -2022,11 +2027,11 @@ server <- function(input, output, session) {
             ggplot2::labs(title = paste("Scatter Plot:", s$y, "vs", s$x), x = s$x, y = s$y) +
             ggplot2::theme_minimal()
         withCallingHandlers(suppressMessages(print(p)),
-            warning = function(w) {
-                showNotification(paste("Scatter Plot warning:", conditionMessage(w)), type = "warning", duration = 10)
-                invokeRestart("muffleWarning")
-            },
-            message = function(m) { invokeRestart("muffleMessage") }
+                            warning = function(w) {
+                                showNotification(paste("Scatter Plot warning:", conditionMessage(w)), type = "warning", duration = 10)
+                                invokeRestart("muffleWarning")
+                            },
+                            message = function(m) { invokeRestart("muffleMessage") }
         )
     })
     
@@ -2139,30 +2144,30 @@ server <- function(input, output, session) {
                     response_has_na <- input$response_var %in% names(missing_info)
                     if (is.null(method) || method == "none") return(NULL)
                     switch(method,
-                        deleted  = div(class = "alert alert-info",
-                                       strong("Deletion (complete-case analysis):"),
-                                       " Rows where the response variable is missing are removed before
+                           deleted  = div(class = "alert alert-info",
+                                          strong("Deletion (complete-case analysis):"),
+                                          " Rows where the response variable is missing are removed before
                               model fitting. All predictor (X) variables must be complete; if
                               any predictor has missing values, please use 'Multiple' instead."),
-                        multiple = div(class = "alert alert-warning",
-                                       strong("Multiple Imputation \u2014 predictors (X) only:"),
-                                       " Multiple imputation via ", code("mice"), " is applied exclusively
+                           multiple = div(class = "alert alert-warning",
+                                          strong("Multiple Imputation \u2014 predictors (X) only:"),
+                                          " Multiple imputation via ", code("mice"), " is applied exclusively
                               to ", strong("auxiliary predictor variables"), ".",
-                                       if (response_has_na) tagList(
-                                           br(), strong("\u26a0 Warning: "),
-                                           " The response variable has missing values but will ",
-                                           strong("NOT"), " be imputed. In a Bayesian model, missing
+                                          if (response_has_na) tagList(
+                                              br(), strong("\u26a0 Warning: "),
+                                              " The response variable has missing values but will ",
+                                              strong("NOT"), " be imputed. In a Bayesian model, missing
                                       outcomes are naturally integrated out through the posterior
                                       predictive distribution. Imputing Y would introduce
                                       unjustified bias. Rows with missing Y will be excluded from
                                       model fitting but retained for prediction via sae_predict()."
-                                       )),
-                        model    = div(class = "alert alert-info",
-                                       strong("Model-based imputation (mi()):"),
-                                       " Missing values in predictors are estimated jointly with the model
+                                          )),
+                           model    = div(class = "alert alert-info",
+                                          strong("Model-based imputation (mi()):"),
+                                          " Missing values in predictors are estimated jointly with the model
                               parameters using the ", code("mi()"), " function from ",
-                                       code("brms"), ". Only available for continuous outcomes."),
-                        NULL
+                                          code("brms"), ". Only available for continuous outcomes."),
+                           NULL
                     )
                 })
                 
@@ -2358,7 +2363,7 @@ server <- function(input, output, session) {
             car_type       = if (input$sre_type == "car")  input$car_type else NULL,
             sar_type       = if (input$sre_type == "sar")  input$sar_type else NULL,
             M              = if (input$sre_type != "none" && !is.null(spatial_weights()))
-                               as.matrix(spatial_weights()) else NULL,
+                as.matrix(spatial_weights()) else NULL,
             control        = list(adapt_delta = input$adapt_delta),
             refresh        = 0L
         )
@@ -2460,7 +2465,7 @@ server <- function(input, output, session) {
                         ))
                         prior_fit(fit_prior)
                         # NOTE: rename local var to avoid shadowing prior_check()
-                        # function. v0.3.0 prior_check() requires the `data`
+                        # function. prior_check() requires the `data`
                         # argument explicitly (was implicit in hbpc()).
                         pc_result <- prior_check(
                             model        = fit_prior,
@@ -2470,12 +2475,12 @@ server <- function(input, output, session) {
                         showNotification("Prior check completed!", type = "message", duration = 10)
                         output$prior_predictive_plot <- renderPlot({
                             withCallingHandlers(print(pc_result$prior_predictive_plot),
-                                warning = function(w) {
-                                    showNotification(paste("Prior plot warning:", conditionMessage(w)),
-                                                     type = "warning", duration = 10)
-                                    invokeRestart("muffleWarning")
-                                },
-                                message = function(m) { invokeRestart("muffleMessage") }
+                                                warning = function(w) {
+                                                    showNotification(paste("Prior plot warning:", conditionMessage(w)),
+                                                                     type = "warning", duration = 10)
+                                                    invokeRestart("muffleWarning")
+                                                },
+                                                message = function(m) { invokeRestart("muffleMessage") }
                             )
                         })
                     },
@@ -2632,7 +2637,7 @@ server <- function(input, output, session) {
                 withCallingHandlers(
                     {
                         res <- model_compare(model_fit(), run_prior_sensitivity = TRUE,
-                                    sensitivity_vars = input$sensitivity_params_results)
+                                             sensitivity_vars = input$sensitivity_params_results)
                         prior_sens_result(res)
                         showNotification("Sensitivity analysis completed!", type = "message", duration = 10)
                     },
@@ -2908,7 +2913,7 @@ server <- function(input, output, session) {
                         {
                             grDevices::pdf(file, width = 10, height = 8)
                             res <- convergence_check(model_fit(), plot_types = c("trace", "dens", "acf",
-                                                                    "nuts_energy", "rhat", "neff"))
+                                                                                 "nuts_energy", "rhat", "neff"))
                             for (p in res$plots) if (!is.null(p)) print(p)
                             grDevices::dev.off()
                             showNotification("Plots exported!", type = "message", duration = 10)
@@ -2929,9 +2934,9 @@ server <- function(input, output, session) {
     )
     
     # =========================================================================
-    # NEW v0.3.0 FEATURES (Data Check / Spatial Weight Builder / Benchmarking)
+    # FEATURES (Data Check / Spatial Weight Builder / Benchmarking)
     # =========================================================================
-
+    
     # -- Update select inputs whenever data() changes --------------------------
     observe({
         d <- data()
@@ -2940,14 +2945,14 @@ server <- function(input, output, session) {
         updateSelectInput(session,    "dc_response",      choices = nm)
         updateSelectizeInput(session, "dc_predictors",    choices = nm)
         updateSelectInput(session,    "dc_sre",
-                           choices = c("(none)" = "", nm))
+                          choices = c("(none)" = "", nm))
         updateSelectInput(session,    "bm_groups_var",    choices = nm)
         # Restrict weights variable to numeric columns
         num_cols <- nm[vapply(d, is.numeric, logical(1L))]
         updateSelectInput(session,    "bm_weights_var",
-                           choices = c("Equal weights (1/n)" = "", num_cols))
+                          choices = c("Equal weights (1/n)" = "", num_cols))
     })
-
+    
     # -- DATA CHECK -----------------------------------------------------------
     observeEvent(input$run_data_check, {
         req(data(), input$dc_response, input$dc_predictors)
@@ -2976,7 +2981,7 @@ server <- function(input, output, session) {
                     div(class = "alert alert-warning",
                         tags$strong("Recommendation: "), msg,
                         if (!is.null(chk$non_sample_warning))
-                          tags$pre(chk$non_sample_warning)
+                            tags$pre(chk$non_sample_warning)
                         else NULL)
                 } else {
                     div(class = "alert alert-success",
@@ -2990,7 +2995,7 @@ server <- function(input, output, session) {
             output$data_check_recommendation <- renderUI(NULL)
         })
     })
-
+    
     # -- BUILD SPATIAL WEIGHT FROM SHAPEFILE ----------------------------------
     observeEvent(input$build_spatial_btn, {
         req(input$shp_file)
@@ -2999,24 +3004,24 @@ server <- function(input, output, session) {
             # Multi-file upload: shp + shx + dbf must coexist in same dir.
             shp_idx <- grep("\\.shp$", files$name, ignore.case = TRUE)
             if (length(shp_idx) == 0L)
-              stop("No .shp file found in upload (need .shp + .shx + .dbf).",
-                   call. = FALSE)
+                stop("No .shp file found in upload (need .shp + .shx + .dbf).",
+                     call. = FALSE)
             tmp_dir <- dirname(files$datapath[shp_idx[1L]])
             for (i in seq_len(nrow(files))) {
                 file.rename(files$datapath[i],
-                             file.path(tmp_dir, files$name[i]))
+                            file.path(tmp_dir, files$name[i]))
             }
             shp_path <- file.path(tmp_dir, files$name[shp_idx[1L]])
-
+            
             id_col <- if (nzchar(input$shp_id_col %||% ""))
-              input$shp_id_col else NULL
-
-            # v0.4.0+: derive for_model from current sre_type so type/style
+                input$shp_id_col else NULL
+            
+            # derive for_model from current sre_type so type/style
             # defaults match the model's theoretical requirements.
             for_model <- if (!is.null(input$sre_type) &&
-                              input$sre_type %in% c("car", "sar"))
-              input$sre_type else NULL
-
+                             input$sre_type %in% c("car", "sar"))
+                input$sre_type else NULL
+            
             M <- build_spatial_weight(
                 shp       = shp_path,
                 for_model = for_model,
@@ -3025,18 +3030,18 @@ server <- function(input, output, session) {
                 k         = input$shp_k         %||% 4L,
                 threshold = if (is.null(input$shp_threshold) ||
                                 is.na(input$shp_threshold))
-                              NULL else input$shp_threshold,
+                    NULL else input$shp_threshold,
                 id_col    = id_col,
                 validate  = TRUE
             )
             spatial_weights(M)
-
+            
             # Surface the validation diagnostics from the matrix attribute
             chk <- attr(M, "hbsae_check")
             warn_html <- if (!is.null(chk) && length(chk$warnings) > 0L)
-              tags$ul(lapply(chk$warnings, tags$li))
+                tags$ul(lapply(chk$warnings, tags$li))
             else NULL
-
+            
             output$spatial_weights_error <- renderUI(
                 tagList(
                     div(class = "alert alert-success",
@@ -3044,28 +3049,28 @@ server <- function(input, output, session) {
                             "Built %d x %d spatial weight matrix from ",
                             "shapefile (type = %s, style = %s)."
                         ), nrow(M), ncol(M),
-                          attr(M, "hbsae_type"),
-                          attr(M, "hbsae_style")),
+                        attr(M, "hbsae_type"),
+                        attr(M, "hbsae_style")),
                         if (!is.null(chk))
                             tags$div(
                                 tags$strong("Theoretical check: "),
                                 if (chk$compatible)
-                                  tags$span("compatible.",
+                                    tags$span("compatible.",
                                               style = "color: green;")
                                 else
-                                  tags$span("INCOMPATIBLE.",
+                                    tags$span("INCOMPATIBLE.",
                                               style = "color: red;"),
                                 tags$br(),
                                 sprintf(paste0(
-                                  "Symmetric: %s, zero-diagonal: %s, ",
-                                  "components: %s, isolated: %s"
+                                    "Symmetric: %s, zero-diagonal: %s, ",
+                                    "components: %s, isolated: %s"
                                 ), chk$is_symmetric, chk$has_zero_diag,
-                                  chk$n_components, chk$n_isolated)
+                                chk$n_components, chk$n_isolated)
                             )),
                     if (!is.null(warn_html))
-                      div(class = "alert alert-warning",
-                          tags$strong("Spatial-weight warnings:"),
-                          warn_html)
+                        div(class = "alert alert-warning",
+                            tags$strong("Spatial-weight warnings:"),
+                            warn_html)
                 )
             )
         }, error = function(e) {
@@ -3075,8 +3080,8 @@ server <- function(input, output, session) {
             )
         })
     })
-
-    # v0.4.0+: also validate user-uploaded matrices.  Fires after the
+    
+    # also validate user-uploaded matrices.  Fires after the
     # existing fileInput observer has populated spatial_weights().
     observe({
         M <- spatial_weights()
@@ -3086,13 +3091,13 @@ server <- function(input, output, session) {
         if (is.null(st) || !(st %in% c("car", "sar"))) return(invisible(NULL))
         # Skip if matrix already came from build_spatial_weight() (has attr)
         if (!is.null(attr(M, "hbsae_check"))) return(invisible(NULL))
-
+        
         chk <- tryCatch(
             check_spatial_weight(M, sre_type = st, verbose = FALSE),
             error = function(e) NULL
         )
         if (is.null(chk)) return(invisible(NULL))
-
+        
         if (!chk$compatible) {
             showNotification(
                 paste("Uploaded matrix is INCOMPATIBLE with sre_type = '",
@@ -3108,10 +3113,10 @@ server <- function(input, output, session) {
             )
         }
     })
-
+    
     # -- BENCHMARKING ---------------------------------------------------------
     benchmark_result <- reactiveVal(NULL)
-
+    
     # Live preview: how groups partition the kecamatan + what sums look like
     output$bm_group_preview <- renderPrint({
         d <- data()
@@ -3131,7 +3136,7 @@ server <- function(input, output, session) {
             preds <- tryCatch(sae_predict(model_fit()), error = function(e) NULL)
             if (!is.null(preds) && length(preds$pred) == length(g)) {
                 wts <- if (nzchar(input$bm_weights_var %||% ""))
-                  d[[input$bm_weights_var]][seq_along(preds$pred)]
+                    d[[input$bm_weights_var]][seq_along(preds$pred)]
                 else rep(1 / length(preds$pred), length(preds$pred))
                 grp_sums <- tapply(wts * preds$pred, g, sum)
                 cat("\nCurrent weighted sums per group (BEFORE benchmark):\n")
@@ -3139,7 +3144,7 @@ server <- function(input, output, session) {
             }
         }
     })
-
+    
     # Auto-fill targets text with current group sums (a sensible starting point)
     observeEvent(input$bm_template_targets, {
         req(model_fit(), input$bm_groups_var, data())
@@ -3148,31 +3153,31 @@ server <- function(input, output, session) {
         preds <- tryCatch(sae_predict(model_fit()), error = function(e) NULL)
         req(preds)
         wts <- if (nzchar(input$bm_weights_var %||% ""))
-          d[[input$bm_weights_var]][seq_along(preds$pred)]
+            d[[input$bm_weights_var]][seq_along(preds$pred)]
         else rep(1 / length(preds$pred), length(preds$pred))
         grp_sums <- tapply(wts * preds$pred, g, sum)
         updateTextInput(session, "bm_targets_multi",
-                         value = paste(round(grp_sums, 4), collapse = ", "))
+                        value = paste(round(grp_sums, 4), collapse = ", "))
         showNotification(
             "Targets pre-filled with current group sums. ",
             "Adjust to your official figures.",
             type = "message", duration = 8)
     })
-
+    
     observeEvent(input$run_benchmark, {
         req(model_fit())
         tryCatch({
             # 1. Get baseline SAE predictions
             preds <- sae_predict(model_fit())
-
+            
             # 2. Resolve weights
             wts <- if (nzchar(input$bm_weights_var %||% "")) {
                 w <- data()[[input$bm_weights_var]]
                 if (is.null(w))
-                  stop("Weights variable not found in data.", call. = FALSE)
+                    stop("Weights variable not found in data.", call. = FALSE)
                 w[seq_len(length(preds$pred))]
             } else NULL
-
+            
             # 3. Resolve target depending on method
             if (input$bm_method == "raking") {
                 req(input$bm_targets_multi, input$bm_groups_var)
@@ -3180,8 +3185,8 @@ server <- function(input, output, session) {
                     gsub("\\s+", "", input$bm_targets_multi), ","
                 )[[1L]])
                 if (anyNA(target_vec))
-                  stop("Could not parse 'Group Targets' as numeric vector.",
-                       call. = FALSE)
+                    stop("Could not parse 'Group Targets' as numeric vector.",
+                         call. = FALSE)
                 groups_vec <- data()[[input$bm_groups_var]]
                 bm <- sae_benchmark(
                     predictions = preds,
@@ -3199,31 +3204,31 @@ server <- function(input, output, session) {
                     method      = input$bm_method
                 )
             }
-
+            
             benchmark_result(list(original = preds, benchmarked = bm))
-
+            
             # 4. Render outputs
             output$benchmark_summary <- renderPrint({
                 cat(sprintf("Method            : %s\n", bm$benchmark_info$method))
                 if (length(bm$benchmark_info$target) == 1L)
-                  cat(sprintf("Target total      : %.4f\n",
-                              bm$benchmark_info$target))
+                    cat(sprintf("Target total      : %.4f\n",
+                                bm$benchmark_info$target))
                 else
-                  cat(sprintf("Target totals     : %s\n",
-                              paste(round(bm$benchmark_info$target, 4),
-                                    collapse = ", ")))
+                    cat(sprintf("Target totals     : %s\n",
+                                paste(round(bm$benchmark_info$target, 4),
+                                      collapse = ", ")))
                 if (!is.null(bm$benchmark_info$adjustment))
-                  cat(sprintf("Adjustment        : %.6f\n",
-                              bm$benchmark_info$adjustment))
+                    cat(sprintf("Adjustment        : %.6f\n",
+                                bm$benchmark_info$adjustment))
                 if (!is.na(bm$benchmark_info$converged))
-                  cat(sprintf("Converged         : %s\n",
-                              bm$benchmark_info$converged))
+                    cat(sprintf("Converged         : %s\n",
+                                bm$benchmark_info$converged))
                 cat(sprintf("Sum |delta|       : %.4f\n",
                             sum(abs(bm$pred - preds$pred))))
                 cat(sprintf("Mean |delta|      : %.4f\n",
                             mean(abs(bm$pred - preds$pred))))
             })
-
+            
             output$benchmark_table <- DT::renderDT({
                 df <- data.frame(
                     Area        = seq_along(preds$pred),
@@ -3233,9 +3238,9 @@ server <- function(input, output, session) {
                     RSE_pct     = round(bm$result_table$RSE_percent, 2)
                 )
                 DT::datatable(df, options = list(pageLength = 10),
-                               rownames = FALSE)
+                              rownames = FALSE)
             })
-
+            
             output$benchmark_plot <- renderPlot({
                 df <- data.frame(
                     Area        = seq_along(preds$pred),
@@ -3262,21 +3267,21 @@ server <- function(input, output, session) {
                                   x = "Area", y = "Estimate") +
                     ggplot2::scale_colour_manual(
                         values = c("Original" = "#185FA5",
-                                    "Benchmarked" = "#D85A30"))
+                                   "Benchmarked" = "#D85A30"))
             })
-
+            
             showNotification("Benchmark applied successfully.",
-                              type = "message", duration = 8)
-
+                             type = "message", duration = 8)
+            
         }, error = function(e) {
             showNotification(paste("Benchmark error:", e$message),
-                              type = "error", duration = 15)
+                             type = "error", duration = 15)
         })
     })
-
+    
     output$download_benchmark <- downloadHandler(
         filename = function()
-          paste0("sae_benchmarked_", Sys.Date(), ".csv"),
+            paste0("sae_benchmarked_", Sys.Date(), ".csv"),
         content  = function(file) {
             br <- benchmark_result()
             if (is.null(br)) return(invisible(NULL))
@@ -3289,7 +3294,7 @@ server <- function(input, output, session) {
             utils::write.csv(df, file, row.names = FALSE)
         }
     )
-
+    
 }   # end server
 
 

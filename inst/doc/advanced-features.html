@@ -48,8 +48,9 @@ overflow: visible;
 }
 </style>
 <style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -341,8 +342,8 @@ Custom Families, Smooth Terms</h1>
 
 
 
-<p>This vignette demonstrates the advanced features added in
-<strong>hbsaems v0.3.0 – v0.5.0</strong>, complementing the
+<p>This vignette demonstrates the advanced features available in
+<strong>hbsaems v1.0.0</strong>, complementing the
 <code>complete-workflow</code> vignette which focuses on the core
 fitting pipeline.</p>
 <p>Topics covered:</p>
@@ -498,8 +499,8 @@ consistent units. Two common pitfalls:</p>
 <hr />
 </div>
 </div>
-<div id="fully-bayesian-benchmarking-v0.5.0" class="section level2">
-<h2>4. Fully Bayesian benchmarking (v0.5.0)</h2>
+<div id="fully-bayesian-benchmarking-v1.0.0" class="section level2">
+<h2>4. Fully Bayesian benchmarking (v1.0.0)</h2>
 <p>The default <code>sae_benchmark()</code> mode applies the adjustment
 to the posterior <strong>mean</strong> only – the SD column is
 approximated as unchanged. <strong>This understates uncertainty for
@@ -513,7 +514,7 @@ correctly:</p>
 <span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">predictions =</span> estimates,</span>
 <span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">target      =</span> <span class="dv">1000</span>,</span>
 <span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">method      =</span> <span class="st">&quot;ratio&quot;</span>,</span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="at">posterior   =</span> <span class="cn">TRUE</span>,                <span class="co"># NEW in v0.5.0</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="at">posterior   =</span> <span class="cn">TRUE</span>,                <span class="co"># NEW in v1.0.0</span></span>
 <span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  <span class="at">probs       =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.5</span>, <span class="fl">0.975</span>)</span>
 <span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>)</span>
 <span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a></span>
@@ -691,7 +692,7 @@ the flexible factory <code>hbm_flex()</code>.</p>
 <span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>                            <span class="at">for_model =</span> <span class="st">&quot;car&quot;</span>,</span>
 <span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>                            <span class="at">id_col    =</span> <span class="st">&quot;kec_code&quot;</span>)</span>
 <span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a></span>
-<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="co"># 3. Configure with helpers (v0.4.1+); pass bundles directly to hbm()</span></span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="co"># 3. Configure with helpers (v1.0.0+); pass bundles directly to hbm()</span></span>
 <span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a>priors <span class="ot">&lt;-</span> <span class="fu">hbm_priors</span>(<span class="at">prior_type =</span> <span class="st">&quot;horseshoe&quot;</span>, <span class="at">hs_df_slab =</span> <span class="dv">4</span>)</span>
 <span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>nl     <span class="ot">&lt;-</span> <span class="fu">hbm_nonlinear</span>(<span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>), <span class="at">type =</span> <span class="st">&quot;spline&quot;</span>, <span class="at">k =</span> <span class="dv">5</span>)</span>
 <span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>ctrl   <span class="ot">&lt;-</span> <span class="fu">hbm_control</span>(<span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">cores =</span> <span class="dv">4</span>,</span>
