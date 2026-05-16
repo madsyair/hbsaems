@@ -49,13 +49,13 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/madsyair/hbsaems/blob/v1.0.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/madsyair/hbsaems/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.0" id="hbsaems-100">hbsaems 1.0.0<a class="anchor" aria-label="anchor" href="#hbsaems-100"></a></h2>
 <p>First stable release. <code>hbsaems</code> fits <strong>area-level</strong> Hierarchical Bayesian Small Area Estimation models following the methodological tradition of Rao and Molina (2015) <a href="doi:10.1002/9781118735855" class="uri">doi:10.1002/9781118735855</a>, with computational implementation adapted to the parameterisation and prior-specification conventions of the ‘brms’ package (Buerkner 2017 <a href="doi:10.18637/jss.v080.i01" class="uri">doi:10.18637/jss.v080.i01</a>) and Stan back-end. The package is designed to support the principled Bayesian workflow advocated by Gelman et al. (2020) <a href="doi:10.48550/arXiv.2011.01808" class="uri">doi:10.48550/arXiv.2011.01808</a> – prior predictive checks, MCMC convergence diagnostics, posterior predictive checks, leave-one-out cross-validation, Bayesian model comparison and averaging, prior sensitivity analysis, and design-consistent benchmarking are all part of the standard pipeline.</p>
-<p>This entry consolidates the changelog for every development cycle since the 0.1.2 maintenance release; the package now follows semantic versioning and the 1.0.0 line constitutes a frozen public API.</p>
+<p>This entry consolidates the changelog for every development cycle since the 0.1.2 maintenance release; the package now follows semantic versioning and the 1.0.0 line constitutes a stable user-facing function set whose signatures will not change before v2.0.0.</p>
 <div class="section level3">
 <h3 id="new-features-1-0-0">New features<a class="anchor" aria-label="anchor" href="#new-features-1-0-0"></a></h3>
 <ul><li>
@@ -82,7 +82,7 @@
 <strong>Benchmarking helpers</strong> (<code><a href="../reference/sae_benchmark.html">sae_benchmark()</a></code>, <code><a href="../reference/sae_predict.html">sae_predict()</a></code>). Pfeffermann-style design-consistent benchmarking and out-of-sample prediction for unsampled areas.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="api-changes-breaking-only-at-v200-1-0-0">API changes (breaking only at v2.0.0)<a class="anchor" aria-label="anchor" href="#api-changes-breaking-only-at-v200-1-0-0"></a></h3>
+<h3 id="naming-and-interface-changes-breaking-only-at-v200-1-0-0">Naming and interface changes (breaking only at v2.0.0)<a class="anchor" aria-label="anchor" href="#naming-and-interface-changes-breaking-only-at-v200-1-0-0"></a></h3>
 <ul><li>
 <strong>Argument rename: <code>predictors</code> -&gt; <code>auxiliary</code></strong>. The new name aligns with Small Area Estimation literature (Rao &amp; Molina 2015, Pfeffermann 2013). Old usage continues to work with a one-time soft-deprecation warning and is <strong>scheduled for removal in v2.0.0</strong>.</li>
 <li>

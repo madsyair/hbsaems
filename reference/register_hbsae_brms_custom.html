@@ -59,7 +59,7 @@ were a built-in family."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Register a brms Custom Family with the hbsaems Model Registry</h1>
-      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/v1.0.0/R/register-custom-brms.R" class="external-link"><code>R/register-custom-brms.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/main/R/register-custom-brms.R" class="external-link"><code>R/register-custom-brms.R</code></a></small>
       <div class="d-none name"><code>register_hbsae_brms_custom.Rd</code></div>
     </div>
 
@@ -171,7 +171,7 @@ any user-supplied <code>stanvars</code>.</p>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://madsyair.github.io/hbsaems/">hbsaems</a></span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/paul-buerkner/brms" class="external-link">brms</a></span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Loglogistic (built in to hbsaems v0.6.0; this just shows the API)</span></span></span>
+<span class="r-in"><span><span class="co"># Loglogistic (built in to hbsaems v0.6.0; this just shows the registration mechanism)</span></span></span>
 <span class="r-in"><span><span class="va">ll</span> <span class="op">&lt;-</span> <span class="fu"><a href="brms_custom_loglogistic.html">brms_custom_loglogistic</a></span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">register_hbsae_brms_custom</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  key             <span class="op">=</span> <span class="st">"loglogistic_user"</span>,</span></span>

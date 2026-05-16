@@ -66,7 +66,7 @@ al.\\ (2020), hbsaems provides:
 - **Out-of-sample prediction** for unsampled areas via
   [`sae_predict`](https://madsyair.github.io/hbsaems/reference/sae_predict.md).
 
-## Layered API
+## Layered Function Family
 
 Three layers of entry points, picked by how much customisation is
 needed:
@@ -197,9 +197,6 @@ Useful links:
 ([ORCID](https://orcid.org/0000-0001-7088-0646))
 
 Authors:
-
-- Achmad Syahrul Choir <madsyair@stis.ac.id>
-  ([ORCID](https://orcid.org/0000-0001-7088-0646))
 
 - Saniyyah Sri Nurhayati
 

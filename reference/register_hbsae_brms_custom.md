@@ -118,7 +118,7 @@ families](https://paulbuerkner.com/brms/articles/brms_customfamilies.html).
 library(hbsaems)
 library(brms)
 
-# Loglogistic (built in to hbsaems v0.6.0; this just shows the API)
+# Loglogistic (built in to hbsaems v0.6.0; this just shows the registration mechanism)
 ll <- brms_custom_loglogistic()
 register_hbsae_brms_custom(
   key             = "loglogistic_user",

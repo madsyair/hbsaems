@@ -1,7 +1,7 @@
 # Deprecated Functions
 
-These functions were the primary API in hbsaems \\\le\\ 0.2.x. They are
-retained for backwards compatibility but now call the new primary
+These functions were the main entry point in hbsaems \\\le\\ 0.2.x. They
+are retained for backwards compatibility but now call the new primary
 functions and emit a deprecation warning via
 [`.Deprecated`](https://rdrr.io/r/base/Deprecated.html). They will be
 removed in **v2.0.0**.

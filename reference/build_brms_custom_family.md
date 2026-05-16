@@ -52,11 +52,11 @@ build_brms_custom_family(
 
 - loop:
 
-  Logical. `FALSE` (default) selects the vectorised brms API (Stan
-  signatures take vectors of `y` and `mu`); `TRUE` selects scalar Stan
-  signatures. The default matches the neodistr convention. Whichever you
-  choose, the corresponding `.stan` file under `inst/stan/` must use the
-  same convention.
+  Logical. `FALSE` (default) selects the vectorised brms convention
+  (Stan signatures take vectors of `y` and `mu`); `TRUE` selects scalar
+  Stan signatures. The default matches the neodistr convention.
+  Whichever you choose, the corresponding `.stan` file under
+  `inst/stan/` must use the same convention.
 
 - log_lik:
 

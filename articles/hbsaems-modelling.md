@@ -52,7 +52,7 @@ This vignette is the high-level tour. The family-specific vignettes
 `hbsaems-binlogitnorm-model`, `hbsaems-spatial`,
 `hbsaems-handle-missing`) drill into each model class.
 
-## The three layers of the API
+## The three layers of the function family
 
                           LAYER 3:  hbm()
                           Universal: any brms family, full customisation

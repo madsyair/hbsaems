@@ -28,7 +28,7 @@ benchmarking are all part of the standard pipeline.
 - **Area-level SAE models**: Fay-Herriot normal, lognormal-lognormal,
   beta logit-normal, and binomial logit-normal — each adapted from Rao
   and Molina (2015) to the brms parameterisation
-- **SAE-idiomatic API**: arguments named after SAE concepts
+- **SAE-idiomatic argument naming**: arguments named after SAE concepts
   (`auxiliary`, `group`, `sampling_var`, `n`, `deff`)
 - **Survey-design-informed fixed parameters**:
   - Beta precision: $`\phi_i = n_i / \text{deff}_i - 1`$ pinned via
@@ -51,7 +51,7 @@ benchmarking are all part of the standard pipeline.
   `priorsense`, design-consistent benchmarking
 - **Shrinkage priors**: Horseshoe and R2D2 selectable via `prior_type`
 - **Nonlinear smooth terms**: thin-plate splines and Gaussian processes
-- **Interactive Shiny dashboard**: bilingual (English/Indonesian) GUI
+- **Interactive Shiny application**: bilingual (English/Indonesian) GUI
   via
   [`run_sae_app()`](https://madsyair.github.io/hbsaems/reference/run_sae_app.md)
 - **Ten comprehensive vignettes** covering every supported model and
@@ -63,8 +63,15 @@ You can install the development version from GitHub:
 
 ``` r
 
-# install.packages("remotes")
-remotes::install_github("madsyair/hbsaems")
+# install.packages("devtools")
+devtools::install_github("madsyair/hbsaems")
+```
+
+Or with vignettes:
+
+``` r
+
+devtools::install_github("madsyair/hbsaems", build_vignettes = TRUE)
 ```
 
 ## Dependencies
@@ -102,20 +109,18 @@ model <- hbm(
 summary(model)
 ```
 
-## The Three-Layer API
+## The Three-Layer Function Family
 
-``` R
-                      hbm()
-                      Universal: any brms family, full customisation
-                                       ▲
-                                       |
-                      hbm_flex()
-                      Family registry + auxiliary + fixed_params
-                                       ▲
-                                       |
-       hbm_lnln() / hbm_betalogitnorm() / hbm_binlogitnorm()
-       SAE-friendly wrappers: response, auxiliary, group, n/deff, ...
-```
+                          hbm()
+                          Universal: any brms family, full customisation
+                                           ▲
+                                           |
+                          hbm_flex()
+                          Family registry + auxiliary + fixed_params
+                                           ▲
+                                           |
+           hbm_lnln() / hbm_betalogitnorm() / hbm_binlogitnorm()
+           SAE-friendly wrappers: response, auxiliary, group, n/deff, ...
 
 Most users start with a wrapper. Step up to
 [`hbm_flex()`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md)
@@ -261,7 +266,7 @@ print(preds)
 
 ### Interactive Application
 
-#### `run_sae_app()` — Shiny Dashboard
+#### `run_sae_app()` — Shiny Application
 
 Launch an interactive bilingual (English/Indonesian) Shiny app for model
 building, diagnostics, and visualisation:
@@ -428,7 +433,7 @@ The package ships with **10 comprehensive vignettes**:
 | `hbsaems-binlogitnorm-model` | Binomial logit-normal |
 | `hbsaems-spatial` | CAR / SAR / BYM2 spatial random effects |
 | `hbsaems-handle-missing` | Missing data: deletion / multiple / model |
-| `hbsaems-run_sae_app` | Interactive Shiny dashboard |
+| `hbsaems-run_sae_app` | Interactive Shiny application |
 | `complete-workflow` | Complete workflow walkthrough |
 | `advanced-features` | Advanced features and customisation |
 | `migration-guide` | Migration guide for legacy v0.1.x users |
@@ -439,6 +444,31 @@ Browse them with:
 
 browseVignettes("hbsaems")
 ```
+
+### Comprehensive Examples Reference
+
+In addition to the topical vignettes above, the package ships an
+**all-in-one examples reference** at
+`inst/examples/hbsaems-examples.Rmd` covering every supported model
+family, every advanced feature, and every utility in one document.
+Locate it with:
+
+``` r
+
+system.file("examples", "hbsaems-examples.Rmd", package = "hbsaems")
+```
+
+You can render it locally with:
+
+``` r
+
+rmd_file <- system.file("examples", "hbsaems-examples.Rmd",
+                         package = "hbsaems")
+rmarkdown::render(rmd_file, output_dir = tempdir())
+```
+
+This is ideal as a quick reference card or as a JSS-style supplementary
+materials companion.
 
 ## Methodology
 
@@ -492,11 +522,9 @@ If you use this package in your research, please cite:
 citation("hbsaems")
 ```
 
-``` R
-Choir, A. S., Nurhayati, S. S., Zamzanah, S., & Siregar, A. L. O. (2026).
-hbsaems: Hierarchical Bayesian Area-Level Small Area Estimation Models.
-R package version 1.0.0. https://github.com/madsyair/hbsaems
-```
+    Choir, A. S., Nurhayati, S. S., Zamzanah, S., & Siregar, A. L. O. (2026).
+    hbsaems: Hierarchical Bayesian Area-Level Small Area Estimation Models.
+    R package version 1.0.0. https://github.com/madsyair/hbsaems
 
 ## References
 

@@ -14,7 +14,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/madsyair/hbsaems/blob/v1.0.0/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/madsyair/hbsaems/blob/main/DESCRIPTION)
 
 Choir A, Nurhayati S, Zamzanah S, Oktalia Siregar A (2026). *hbsaems:
 Hierarchical Bayesian Area-Level Small Area Estimation Models*. R

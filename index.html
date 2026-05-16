@@ -94,7 +94,7 @@
 <li>
 <strong>Area-level SAE models</strong>: Fay-Herriot normal, lognormal-lognormal, beta logit-normal, and binomial logit-normal — each adapted from Rao and Molina (2015) to the brms parameterisation</li>
 <li>
-<strong>SAE-idiomatic API</strong>: arguments named after SAE concepts (<code>auxiliary</code>, <code>group</code>, <code>sampling_var</code>, <code>n</code>, <code>deff</code>)</li>
+<strong>SAE-idiomatic argument naming</strong>: arguments named after SAE concepts (<code>auxiliary</code>, <code>group</code>, <code>sampling_var</code>, <code>n</code>, <code>deff</code>)</li>
 <li>
 <strong>Survey-design-informed fixed parameters</strong>:
 <ul>
@@ -118,7 +118,7 @@
 <li>
 <strong>Nonlinear smooth terms</strong>: thin-plate splines and Gaussian processes</li>
 <li>
-<strong>Interactive Shiny dashboard</strong>: bilingual (English/Indonesian) GUI via <code><a href="reference/run_sae_app.html">run_sae_app()</a></code>
+<strong>Interactive Shiny application</strong>: bilingual (English/Indonesian) GUI via <code><a href="reference/run_sae_app.html">run_sae_app()</a></code>
 </li>
 <li>
 <strong>Ten comprehensive vignettes</strong> covering every supported model and advanced topic</li>
@@ -129,8 +129,11 @@
 </h2>
 <p>You can install the development version from GitHub:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"madsyair/hbsaems"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"madsyair/hbsaems"</span><span class="op">)</span></span></code></pre></div>
+<p>Or with vignettes:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"madsyair/hbsaems"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="dependencies">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies"></a>
@@ -156,7 +159,7 @@
 <div class="section level2">
 <h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://madsyair.github.io/hbsaems/">hbsaems</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Load example data</span></span>
@@ -175,18 +178,18 @@
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="the-three-layer-api">The Three-Layer API<a class="anchor" aria-label="anchor" href="#the-three-layer-api"></a>
+<h2 id="the-three-layer-function-family">The Three-Layer Function Family<a class="anchor" aria-label="anchor" href="#the-three-layer-function-family"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>                      <span class="fu">hbm</span>()</span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>                      Universal<span class="sc">:</span> any brms family, full customisation</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>                                       ▲</span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>                                       <span class="sc">|</span></span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>                      <span class="fu">hbm_flex</span>()</span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>                      Family registry <span class="sc">+</span> auxiliary <span class="sc">+</span> fixed_params</span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>                                       ▲</span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>                                       <span class="sc">|</span></span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>       <span class="fu">hbm_lnln</span>() <span class="sc">/</span> <span class="fu">hbm_betalogitnorm</span>() <span class="sc">/</span> <span class="fu">hbm_binlogitnorm</span>()</span>
-<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>       SAE<span class="sc">-</span>friendly wrappers<span class="sc">:</span> response, auxiliary, group, n<span class="sc">/</span>deff, ...</span></code></pre></div>
+<pre><code>                      hbm()
+                      Universal: any brms family, full customisation
+                                       ▲
+                                       |
+                      hbm_flex()
+                      Family registry + auxiliary + fixed_params
+                                       ▲
+                                       |
+       hbm_lnln() / hbm_betalogitnorm() / hbm_binlogitnorm()
+       SAE-friendly wrappers: response, auxiliary, group, n/deff, ...</code></pre>
 <p>Most users start with a wrapper. Step up to <code><a href="reference/hbm_flex.html">hbm_flex()</a></code> when you need a custom family or the generic <code>fixed_params</code> interface; step up to <code><a href="reference/hbm.html">hbm()</a></code> when you need full brms control.</p>
 </div>
 <div class="section level2">
@@ -200,7 +203,7 @@
 <code>hbm()</code> — Universal Modeling Function<a class="anchor" aria-label="anchor" href="#hbm--universal-modeling-function"></a>
 </h4>
 <p>The fully customisable entry point for any brms family:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hbm.html">hbm</a></span><span class="op">(</span></span>
 <span>  formula     <span class="op">=</span> <span class="fu">bf</span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,  <span class="co"># brms formula</span></span>
 <span>  hb_sampling <span class="op">=</span> <span class="st">"gaussian"</span>,             <span class="co"># likelihood family</span></span>
@@ -216,7 +219,7 @@
 <h4 id="distribution-specific-wrappers">Distribution-Specific Wrappers<a class="anchor" aria-label="anchor" href="#distribution-specific-wrappers"></a>
 </h4>
 <p><strong>Beta logit-normal</strong> for proportions in (0, 1):</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_beta</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hbm_betalogitnorm.html">hbm_betalogitnorm</a></span><span class="op">(</span></span>
 <span>  response  <span class="op">=</span> <span class="st">"y"</span>,</span>
 <span>  auxiliary <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,</span>
@@ -227,7 +230,7 @@
 <span>  chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span>, warmup <span class="op">=</span> <span class="fl">2000</span>, cores <span class="op">=</span> <span class="fl">2</span>, seed <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><strong>Binomial logit-normal</strong> for successes out of trials:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_bin</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hbm_binlogitnorm.html">hbm_binlogitnorm</a></span><span class="op">(</span></span>
 <span>  response  <span class="op">=</span> <span class="st">"y"</span>,</span>
 <span>  trials    <span class="op">=</span> <span class="st">"n"</span>,</span>
@@ -237,7 +240,7 @@
 <span>  chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span>, warmup <span class="op">=</span> <span class="fl">2000</span>, cores <span class="op">=</span> <span class="fl">2</span>, seed <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><strong>Lognormal-lognormal</strong> (Fay-Herriot variant) for positive, right-skewed responses:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_lnln</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hbm_lnln.html">hbm_lnln</a></span><span class="op">(</span></span>
 <span>  response     <span class="op">=</span> <span class="st">"y_obs"</span>,</span>
 <span>  auxiliary    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,</span>
@@ -256,7 +259,7 @@
 <code>convergence_check()</code> — MCMC Convergence Diagnostics<a class="anchor" aria-label="anchor" href="#convergence_check--mcmc-convergence-diagnostics"></a>
 </h4>
 <p>Assess MCMC convergence (replaces the legacy <code><a href="reference/deprecated.html">hbcc()</a></code>):</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">diag</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/convergence_check.html">convergence_check</a></span><span class="op">(</span></span>
 <span>  <span class="va">model</span>,</span>
 <span>  diag_tests <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rhat"</span>, <span class="st">"geweke"</span>, <span class="st">"heidel"</span>, <span class="st">"raftery"</span><span class="op">)</span>,</span>
@@ -269,7 +272,7 @@
 <code>model_compare()</code> — Model Comparison and Checking<a class="anchor" aria-label="anchor" href="#model_compare--model-comparison-and-checking"></a>
 </h4>
 <p>Evaluate model fit and compare models (replaces the legacy <code><a href="reference/deprecated.html">hbmc()</a></code>):</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/model_compare.html">model_compare</a></span><span class="op">(</span></span>
 <span>  <span class="va">model</span>,</span>
 <span>  comparison_metrics    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"loo"</span>, <span class="st">"waic"</span>, <span class="st">"bf"</span><span class="op">)</span>,</span>
@@ -283,7 +286,7 @@
 <code>prior_check()</code> — Prior Predictive Checks<a class="anchor" aria-label="anchor" href="#prior_check--prior-predictive-checks"></a>
 </h4>
 <p>Validate prior assumptions before fitting (replaces the legacy <code><a href="reference/deprecated.html">hbpc()</a></code>):</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pcheck</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/prior_check.html">prior_check</a></span><span class="op">(</span></span>
 <span>  <span class="va">model</span>,             <span class="co"># fitted with sample_prior = "only"</span></span>
 <span>  data         <span class="op">=</span> <span class="va">data</span>,</span>
@@ -301,7 +304,7 @@
 <code>sae_predict()</code> — Small Area Estimation<a class="anchor" aria-label="anchor" href="#sae_predict--small-area-estimation"></a>
 </h4>
 <p>Generate predictions with proper uncertainty quantification, including for unsampled areas (replaces the legacy <code><a href="reference/deprecated.html">hbsae()</a></code>):</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">preds</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/sae_predict.html">sae_predict</a></span><span class="op">(</span></span>
 <span>  <span class="va">model</span>,</span>
 <span>  newdata          <span class="op">=</span> <span class="va">new_areas</span>,</span>
@@ -314,11 +317,11 @@
 <h3 id="interactive-application">Interactive Application<a class="anchor" aria-label="anchor" href="#interactive-application"></a>
 </h3>
 <div class="section level4">
-<h4 id="run_sae_app--shiny-dashboard">
-<code>run_sae_app()</code> — Shiny Dashboard<a class="anchor" aria-label="anchor" href="#run_sae_app--shiny-dashboard"></a>
+<h4 id="run_sae_app--shiny-application">
+<code>run_sae_app()</code> — Shiny Application<a class="anchor" aria-label="anchor" href="#run_sae_app--shiny-application"></a>
 </h4>
 <p>Launch an interactive bilingual (English/Indonesian) Shiny app for model building, diagnostics, and visualisation:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/run_sae_app.html">run_sae_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
@@ -330,7 +333,7 @@
 <h3 id="missing-data-handling">Missing Data Handling<a class="anchor" aria-label="anchor" href="#missing-data-handling"></a>
 </h3>
 <p>Three strategies, auto-selected when <code>handle_missing = NULL</code>:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_with_missing</span> <span class="op">&lt;-</span> <span class="va">data_fhnorm</span></span>
 <span><span class="va">data_with_missing</span><span class="op">$</span><span class="va">y</span><span class="op">[</span><span class="fl">3</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
 <span></span>
@@ -360,7 +363,7 @@
 <h3 id="spatial-modeling">Spatial Modeling<a class="anchor" aria-label="anchor" href="#spatial-modeling"></a>
 </h3>
 <p>CAR, SAR, and BYM2 spatial random effects:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># CAR (Conditional Autoregressive) - default ICAR</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"adjacency_matrix_car"</span><span class="op">)</span></span>
 <span><span class="va">model_car</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hbm.html">hbm</a></span><span class="op">(</span></span>
@@ -397,7 +400,7 @@
 <h3 id="custom-brms-families">Custom brms Families<a class="anchor" aria-label="anchor" href="#custom-brms-families"></a>
 </h3>
 <p>Two custom families are shipped (Loglogistic and Shifted Loglogistic) with full support for <code>loo()</code>, <code>posterior_predict()</code>, and <code>posterior_epred()</code>:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_ll</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/hbm_flex.html">hbm_flex</a></span><span class="op">(</span></span>
 <span>  family_key <span class="op">=</span> <span class="st">"loglogistic"</span>,</span>
 <span>  response   <span class="op">=</span> <span class="st">"y"</span>,</span>
@@ -410,7 +413,7 @@
 <div class="section level2">
 <h2 id="complete-workflow-example">Complete Workflow Example<a class="anchor" aria-label="anchor" href="#complete-workflow-example"></a>
 </h2>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://madsyair.github.io/hbsaems/">hbsaems</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 1. Load and explore data</span></span>
@@ -474,8 +477,8 @@
 <p>The package ships with <strong>10 comprehensive vignettes</strong>:</p>
 <table class="table">
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="58%">
+<col width="41%">
 </colgroup>
 <thead><tr>
 <th>Vignette</th>
@@ -510,7 +513,7 @@
 </tr>
 <tr>
 <td><code>hbsaems-run_sae_app</code></td>
-<td>Interactive Shiny dashboard</td>
+<td>Interactive Shiny application</td>
 </tr>
 <tr>
 <td><code>complete-workflow</code></td>
@@ -527,8 +530,21 @@
 </tbody>
 </table>
 <p>Browse them with:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/browseVignettes.html" class="external-link">browseVignettes</a></span><span class="op">(</span><span class="st">"hbsaems"</span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="comprehensive-examples-reference">Comprehensive Examples Reference<a class="anchor" aria-label="anchor" href="#comprehensive-examples-reference"></a>
+</h3>
+<p>In addition to the topical vignettes above, the package ships an <strong>all-in-one examples reference</strong> at <code>inst/examples/hbsaems-examples.Rmd</code> covering every supported model family, every advanced feature, and every utility in one document. Locate it with:</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"examples"</span>, <span class="st">"hbsaems-examples.Rmd"</span>, package <span class="op">=</span> <span class="st">"hbsaems"</span><span class="op">)</span></span></code></pre></div>
+<p>You can render it locally with:</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">rmd_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"examples"</span>, <span class="st">"hbsaems-examples.Rmd"</span>,</span>
+<span>                         package <span class="op">=</span> <span class="st">"hbsaems"</span><span class="op">)</span></span>
+<span><span class="fu">rmarkdown</span><span class="fu">::</span><span class="fu"><a href="https://pkgs.rstudio.com/rmarkdown/reference/render.html" class="external-link">render</a></span><span class="op">(</span><span class="va">rmd_file</span>, output_dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>This is ideal as a quick reference card or as a JSS-style supplementary materials companion.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="methodology">Methodology<a class="anchor" aria-label="anchor" href="#methodology"></a>
@@ -606,11 +622,11 @@
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
 </h2>
 <p>If you use this package in your research, please cite:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"hbsaems"</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb19"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>Choir, A. S., Nurhayati, S. S., Zamzanah, S., <span class="sc">&amp;</span> Siregar, A. L. <span class="fu">O.</span> (<span class="dv">2026</span>).</span>
-<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>hbsaems<span class="sc">:</span> Hierarchical Bayesian Area<span class="sc">-</span>Level Small Area Estimation Models.</span>
-<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>R package version <span class="dv">1</span>.<span class="dv">0</span>.<span class="fl">0.</span> https<span class="sc">:</span><span class="er">//</span>github.com<span class="sc">/</span>madsyair<span class="sc">/</span>hbsaems</span></code></pre></div>
+<pre><code>Choir, A. S., Nurhayati, S. S., Zamzanah, S., &amp; Siregar, A. L. O. (2026).
+hbsaems: Hierarchical Bayesian Area-Level Small Area Estimation Models.
+R package version 1.0.0. https://github.com/madsyair/hbsaems</code></pre>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>

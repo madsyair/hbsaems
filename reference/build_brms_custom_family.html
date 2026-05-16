@@ -59,7 +59,7 @@ an R string."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Build a brms Custom Family + Stanvars Pair from a Single Spec</h1>
-      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/v1.0.0/R/stan-helpers.R" class="external-link"><code>R/stan-helpers.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/main/R/stan-helpers.R" class="external-link"><code>R/stan-helpers.R</code></a></small>
       <div class="d-none name"><code>build_brms_custom_family.Rd</code></div>
     </div>
 
@@ -118,10 +118,11 @@ first MUST be <code>"mu"</code> (brms convention).</p></dd>
 
 <dt id="arg-loop">loop<a class="anchor" aria-label="anchor" href="#arg-loop"></a></dt>
 <dd><p>Logical.  <code>FALSE</code> (default) selects the vectorised brms
-API (Stan signatures take vectors of <code>y</code> and <code>mu</code>); <code>TRUE</code>
-selects scalar Stan signatures.  The default matches the neodistr
-convention.  Whichever you choose, the corresponding <code>.stan</code>
-file under <code>inst/stan/</code> must use the same convention.</p></dd>
+convention (Stan signatures take vectors of <code>y</code> and <code>mu</code>);
+<code>TRUE</code> selects scalar Stan signatures.  The default matches the
+neodistr convention.  Whichever you choose, the corresponding
+<code>.stan</code> file under <code>inst/stan/</code> must use the same
+convention.</p></dd>
 
 
 <dt id="arg-log-lik">log_lik<a class="anchor" aria-label="anchor" href="#arg-log-lik"></a></dt>
