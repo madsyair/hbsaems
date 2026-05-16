@@ -15,29 +15,17 @@ Authors@R: c(
     person("Arsyka Laila", "Oktalia Siregar",
            role  = "aut"))
 Maintainer: Achmad Syahrul Choir <madsyair@stis.ac.id>
-Description: Fits area-level Hierarchical Bayesian Small Area Estimation
-    (HBSAE) models. The methodological foundation follows the standard
-    SAE literature, primarily Rao and Molina (2015, ISBN: 9781118735787)
-    <doi:10.1002/9781118735855>, while computational implementation is
-    adapted to the parameterisation and prior-specification conventions
-    of the 'brms' package (Buerkner, 2017 <doi:10.18637/jss.v080.i01>),
-    which itself targets the Stan back-end. Supported area-level models
-    include the Fay-Herriot normal model, the lognormal-lognormal model,
-    the beta logit-normal model, and the binomial logit-normal model,
-    each with optional spatial random effects (CAR, SAR, BYM2) and
-    survey-design-informed fixed parameters (e.g. precision parameter
-    derived from sample size and design effect; sampling variance offsets
-    on the log scale). To support a principled Bayesian workflow as
-    advocated by Gelman et al. (2020) <doi:10.48550/arXiv.2011.01808>,
-    the package provides prior predictive checks, MCMC convergence
-    diagnostics, posterior predictive checks, leave-one-out cross-
-    validation, Bayesian model comparison and averaging, prior
-    sensitivity analysis via 'priorsense', design-consistent
-    benchmarking, and missing-data handling through listwise deletion,
-    multiple imputation ('mice'), or joint Bayesian imputation
-    (via 'brms::mi()'). A bilingual (English/Indonesian) 'shiny'
-    dashboard makes the full workflow accessible to non-programmer
-    analysts.
+Description: Fits area-level Hierarchical Bayesian Small Area 
+    Estimation (HBSAE) models, following Rao and Molina (2015) 
+    <doi:10.1002/9781118735855> with computational implementation 
+    adapted from 'brms' (Buerkner, 2017 <doi:10.18637/jss.v080.i01>). 
+    Supports area-level models with optional spatial random effects. 
+    Implements a principled Bayesian workflow as outlined by Gelman 
+    et al. (2020) <doi:10.48550/arXiv.2011.01808>, featuring model 
+    diagnostics, prior sensitivity analysis via 'priorsense', design-
+    consistent benchmarking, and various missing-data handling 
+    methods. Includes a bilingual (English/Indonesian) 'shiny' 
+    dashboard for non-programmer analysts.
 License: GPL (>= 3)
 URL: https://madsyair.github.io/hbsaems/,
         https://github.com/madsyair/hbsaems
@@ -47,14 +35,29 @@ LazyData: true
 Depends: R (>= 4.0.0)
 Imports: brms (>= 2.18.0), coda (>= 0.19-4), ggplot2 (>= 3.3.5), mice
         (>= 3.14.0), rstantools (>= 2.4.0), stats, utils
-Suggests: bayesplot, bridgesampling, DT, knitr (>= 1.40), mgcv,
-        mockery, posterior, priorsense, readxl, rmarkdown (>= 2.16),
-        rstan, sf, shiny, shinydashboard (>= 0.7.2), shinyWidgets,
-        shinytest2, spdep, spelling (>= 2.2), testthat (>= 3.0.0)
+Suggests: 
+    bayesplot,
+    bridgesampling,
+    DT,
+    knitr (>= 1.40),
+    mgcv,
+    mockery,
+    posterior,
+    priorsense,
+    readxl,
+    rmarkdown (>= 2.16),
+    rstan,
+    sf,
+    shiny,
+    shinydashboard (>= 0.7.2),
+    shinyWidgets,
+    shinytest2,
+    spdep,
+    spelling,
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Roxygen: list(markdown = FALSE)
-Language: en-US
 NeedsCompilation: no
 Packaged: 2026-05-16 03:11:47 UTC; root
 Author: Achmad Syahrul Choir [aut, cre]
