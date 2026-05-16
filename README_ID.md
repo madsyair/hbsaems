@@ -521,8 +521,7 @@ Paket ini dikembangkan di **Politeknik Statistika STIS, Jakarta** oleh:
 
 ## Lisensi
 
-GPL (\>= 3). Lihat
-[LICENSE.md](https://madsyair.github.io/hbsaems/LICENSE.md).
+GPL (\>= 3)
 
 ## Sitasi
 

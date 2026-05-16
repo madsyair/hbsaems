@@ -512,8 +512,7 @@ by:
 
 ## License
 
-GPL (\>= 3). See
-[LICENSE.md](https://madsyair.github.io/hbsaems/LICENSE.md).
+GPL (\>= 3).
 
 ## Citation
 
