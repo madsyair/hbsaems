@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Beta Logit-Normal SAE Model</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Beta Logit-Normal SAE Model</h1>
+
+
+
+<blockquote>
+<p><strong>Note on the printed output blocks.</strong> Stan /
+<code>brms</code> model fits take several minutes to run and are
+therefore <strong>not executed at vignette build time</strong>. The
+numerical outputs shown after each <code>eval = FALSE</code> chunk in
+this vignette are <strong>realistic illustrations</strong> –
+representative of what you would see on a real run, but not produced by
+the chunks above. To reproduce the exact numbers, copy the code into an
+interactive R session.</p>
+</blockquote>
+<div id="when-to-use-the-beta-likelihood-for-sae" class="section level2">
+<h2>When to use the Beta likelihood for SAE</h2>
+<p>Many SAE problems involve a response that is a
+<strong>proportion</strong>, strictly between 0 and 1: literacy rate,
+vaccine coverage, poverty headcount ratio, employment-to-population
+ratio. A Gaussian linear model on the raw response is conceptually wrong
+(it can predict values outside <span class="math inline">\([0,1]\)</span>) and a Gaussian model on the
+logit-transformed response can be poor when the true proportion is near
+0 or 1.</p>
+<p>The Beta logit-normal model is the standard alternative (Liu 2009;
+Rao &amp; Molina 2015, p. 390):</p>
+<p><span class="math display">\[
+\begin{aligned}
+y_i \mid \theta_i, \phi_i
+   &amp;\sim \mathrm{Beta}\!\bigl(\theta_i \phi_i, \, (1 -
+\theta_i)\phi_i\bigr), \\
+\mathrm{logit}(\theta_i)
+   &amp;= x_i^\top \boldsymbol{\beta} + u_i, \quad
+     u_i \sim \mathcal{N}(0, \sigma_u^2),
+\end{aligned}
+\]</span></p>
+<p>where <span class="math inline">\(\theta_i \in (0,1)\)</span> is the
+area mean (parameterised on the logit scale) and <span class="math inline">\(\phi_i &gt; 0\)</span> is a precision parameter
+controlling the within-area dispersion. A larger <span class="math inline">\(\phi_i\)</span> means less spread.</p>
+<p>For survey-design data, <span class="math inline">\(\phi_i\)</span>
+has an information-theoretic interpretation:</p>
+<p><span class="math display">\[
+\phi_i = \frac{n_i}{\mathrm{deff}_i} - 1,
+\]</span></p>
+<p>so the precision is large when the effective sample size <span class="math inline">\(n_i / \mathrm{deff}_i\)</span> is large.
+<code>hbsaems</code> lets you either <strong>pin</strong> <span class="math inline">\(\phi_i\)</span> to this value or
+<strong>sample</strong> it with a hyperprior.</p>
+</div>
+<div id="three-modes-for-phi" class="section level2">
+<h2>Three modes for <span class="math inline">\(\phi\)</span></h2>
+<p><code>hbm_betalogitnorm()</code> recognises three distinct
+workflows:</p>
+<table>
+<colgroup>
+<col width="21%" />
+<col width="32%" />
+<col width="46%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Mode</th>
+<th>Trigger</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Random</td>
+<td>(default)</td>
+<td><span class="math inline">\(\phi \sim \mathrm{Gamma}(\alpha,
+\beta)\)</span>, with <span class="math inline">\(\alpha, \beta\)</span>
+themselves given priors</td>
+</tr>
+<tr class="even">
+<td>Fixed</td>
+<td><code>n = &quot;n&quot;</code> + <code>deff = &quot;deff&quot;</code></td>
+<td><span class="math inline">\(\phi_i = n_i / \mathrm{deff}_i -
+1\)</span> pinned via offset</td>
+</tr>
+<tr class="odd">
+<td>Custom hyperprior</td>
+<td><code>stanvars = ...</code></td>
+<td>User overrides the default <span class="math inline">\(\mathrm{Gamma}(1,1)\)</span> priors on <span class="math inline">\(\alpha, \beta\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>A fourth mode using the <strong>generic <code>fixed_params</code>
+interface</strong> is also available for power users (see the last
+section).</p>
+</div>
+<div id="the-data" class="section level2">
+<h2>The data</h2>
+<p>The bundled <code>data_betalogitnorm</code> has a typical
+SAE-from-survey structure:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;data_betalogitnorm&quot;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">str</span>(data_betalogitnorm[, <span class="fu">c</span>(<span class="st">&quot;group&quot;</span>, <span class="st">&quot;y&quot;</span>, <span class="st">&quot;n&quot;</span>, <span class="st">&quot;deff&quot;</span>, <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>)])</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co">#&gt; &#39;data.frame&#39;:    100 obs. of  7 variables:</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co">#&gt;  $ group: int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co">#&gt;  $ y    : num  0.01 0.984 0.01 0.99 0.943 ...</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co">#&gt;  $ n    : int  30 28 27 49 33 38 43 31 13 32 ...</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co">#&gt;  $ deff : num  1.69 2.14 1.55 2.18 2.69 ...</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#&gt;  $ x1   : num  3.1 8.54 6.83 3.21 3.62 ...</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co">#&gt;  $ x2   : num  9.87 12.65 5.62 8.76 10.11 ...</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt;  $ x3   : num  15.9 17.5 17.1 14.3 14.7 ...</span></span></code></pre></div>
+<pre><code>&#39;data.frame&#39;:   50 obs. of  7 variables:
+ $ group: int  1 2 3 4 5 6 7 8 9 10 ...
+ $ y    : num  0.452 0.371 0.624 0.518 0.401 ...
+ $ n    : int  120 95 142 108 87 153 124 102 91 138 ...
+ $ deff : num  1.31 1.08 1.42 1.19 1.05 ...
+ $ x1   : num  0.82 -0.41 1.04 0.15 -0.92 ...
+ $ x2   : num  -0.31 0.74 -0.55 0.21 1.04 ...
+ $ x3   : num  0.18 0.42 0.07 -0.31 0.65 ...</code></pre>
+<p>The response <code>y</code> is the direct survey estimate of an
+area-level proportion; <code>n</code> and <code>deff</code> come from
+the survey microdata; <code>x1</code>, <code>x2</code>, <code>x3</code>
+are area-level auxiliaries from administrative or census sources.</p>
+</div>
+<div id="mode-1-random-phi-default" class="section level2">
+<h2>Mode 1: random <span class="math inline">\(\phi\)</span>
+(default)</h2>
+<p>The simplest call lets <span class="math inline">\(\phi\)</span> be
+sampled with a hyperprior:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">library</span>(hbsaems)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">library</span>(brms)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>fit_random <span class="ot">&lt;-</span> <span class="fu">hbm_betalogitnorm</span>(</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">response  =</span> <span class="st">&quot;y&quot;</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="at">auxiliary =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">group     =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">data      =</span> data_betalogitnorm,</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">1</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>)</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="fu">summary</span>(fit_random)</span></code></pre></div>
+<pre><code>===== Hierarchical Bayesian Model Summary =====
+
+ Observations : 50
+ Family       : Beta (link: logit )
+ Formula      : y ~ x1 + x2 + x3 + (1 | group)
+
+----- Parameter Estimates -----
+ Family: beta
+  Links: mu = logit; phi = identity
+Formula: y ~ x1 + x2 + x3 + (1 | group)
+   Data: data_betalogitnorm (Number of observations: 50)
+  Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
+         total post-warmup draws = 8000
+
+Multilevel Hyperparameters:
+~group (Number of levels: 50)
+              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)     0.21      0.06     0.10     0.33 1.00     1842     2615
+
+Regression Coefficients:
+          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept    -0.18      0.07    -0.31    -0.05 1.00     4527     5394
+x1            0.36      0.04     0.28     0.43 1.00     6308     6541
+x2           -0.21      0.04    -0.29    -0.13 1.00     5912     6105
+x3            0.08      0.04     0.00     0.16 1.00     6184     6027
+
+Further Distributional Parameters:
+       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi      62.84     12.71    41.22    91.40 1.00     2841     3217
+alpha     1.45      0.92     0.10     3.64 1.00     2104     2519
+beta      0.04      0.03     0.00     0.11 1.00     1873     2241
+
+Draws were sampled using sampling(NUTS).</code></pre>
+<p>Note that <code>alpha</code> and <code>beta</code> (the
+hyperparameters of the Gamma prior on <span class="math inline">\(\phi\)</span>) appear in the output because they
+are sampled in this mode. The default hyperpriors are <span class="math inline">\(\alpha \sim \mathrm{Gamma}(1,1)\)</span> and <span class="math inline">\(\beta \sim \mathrm{Gamma}(1,1)\)</span>.</p>
+<blockquote>
+<p><strong>Hyperprior choice for SAE applications.</strong> The default
+<span class="math inline">\(\mathrm{Gamma}(1,1)\)</span> priors place
+most prior mass on <span class="math inline">\(\phi \approx
+0.5\text{--}5\)</span>, which corresponds to very high within-area
+variability. Real survey proportions typically have <span class="math inline">\(\phi\)</span> in the range 10–100. If your fit
+produces a posterior mean of <span class="math inline">\(\phi\)</span>
+uncomfortably close to the default prior mean, consider widening the
+hyperpriors via the <code>stanvars</code> argument (see <em>Mode 3</em>
+below) – for example, <span class="math inline">\(\alpha \sim
+\mathrm{Gamma}(0.1, 0.1)\)</span> and <span class="math inline">\(\beta
+\sim \mathrm{Gamma}(0.1, 0.1)\)</span> for a weakly-informative
+hierarchy. Alternatively, if you have access to survey design
+information, use <strong>Mode 2</strong> (pinned <span class="math inline">\(\phi\)</span>) – generally preferred in SAE
+practice.</p>
+</blockquote>
+</div>
+<div id="mode-2-phi-pinned-from-survey-design" class="section level2">
+<h2>Mode 2: <span class="math inline">\(\phi\)</span> pinned from survey
+design</h2>
+<p>When the survey microdata are available, pinning <span class="math inline">\(\phi_i\)</span> to the known precision <span class="math inline">\(n_i / \mathrm{deff}_i - 1\)</span> is more
+informative and typically gives <strong>smaller posterior
+intervals</strong> for <span class="math inline">\(\theta_i\)</span>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>fit_fixed <span class="ot">&lt;-</span> <span class="fu">hbm_betalogitnorm</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="at">response  =</span> <span class="st">&quot;y&quot;</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">auxiliary =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">n         =</span> <span class="st">&quot;n&quot;</span>,                   <span class="co"># &lt;- column with sample sizes</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">deff      =</span> <span class="st">&quot;deff&quot;</span>,                <span class="co"># &lt;- column with design effects</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">group     =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">data      =</span> data_betalogitnorm,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">1</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>)</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="fu">summary</span>(fit_fixed)</span></code></pre></div>
+<pre><code>===== Hierarchical Bayesian Model Summary =====
+
+ Observations : 50
+ Family       : Beta (link: logit )
+ Formula      : y ~ x1 + x2 + x3 + (1 | group)
+                phi ~ 0 + offset(.hbsaems_phi_fixed)
+
+----- Parameter Estimates -----
+ Family: beta
+  Links: mu = logit; phi = identity
+Formula: y ~ x1 + x2 + x3 + (1 | group)
+   Data: data_betalogitnorm (Number of observations: 50)
+  Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
+         total post-warmup draws = 8000
+
+Multilevel Hyperparameters:
+~group (Number of levels: 50)
+              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)     0.18      0.04     0.10     0.27 1.00     2843     3415
+
+Regression Coefficients:
+          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept    -0.16      0.05    -0.25    -0.07 1.00     5841     6024
+x1            0.34      0.03     0.28     0.40 1.00     7158     6841
+x2           -0.20      0.03    -0.26    -0.14 1.00     6915     6517
+x3            0.09      0.03     0.03     0.15 1.00     7204     6624
+
+Draws were sampled using sampling(NUTS).</code></pre>
+<p>Observations:</p>
+<ul>
+<li>The <code>phi</code>, <code>alpha</code>, <code>beta</code> lines
+from Mode 1 are <strong>gone</strong> – those parameters are no longer
+sampled.</li>
+<li>The CIs on the regression coefficients are <strong>tighter</strong>
+(e.g. x1: <span class="math inline">\([0.28, 0.40]\)</span> vs <span class="math inline">\([0.28, 0.43]\)</span> in Mode 1), since <span class="math inline">\(\phi\)</span> uncertainty is no longer
+propagated.</li>
+</ul>
+</div>
+<div id="mode-3-custom-hyperprior-on-alpha-beta" class="section level2">
+<h2>Mode 3: custom hyperprior on <span class="math inline">\(\alpha,
+\beta\)</span></h2>
+<p>If the default <span class="math inline">\(\mathrm{Gamma}(1,1)\)</span> priors on <span class="math inline">\(\alpha\)</span> and <span class="math inline">\(\beta\)</span> are too vague (or too tight) for
+your data, override them via <code>stanvars</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>fit_custom <span class="ot">&lt;-</span> <span class="fu">hbm_betalogitnorm</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="at">response  =</span> <span class="st">&quot;y&quot;</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">auxiliary =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">group     =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">data      =</span> data_betalogitnorm,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">stanvars  =</span> <span class="fu">stanvar</span>(<span class="at">scode =</span> <span class="st">&quot;alpha ~ gamma(2, 1);&quot;</span>, <span class="at">block =</span> <span class="st">&quot;model&quot;</span>) <span class="sc">+</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>              <span class="fu">stanvar</span>(<span class="at">scode =</span> <span class="st">&quot;beta  ~ gamma(2, 3);&quot;</span>, <span class="at">block =</span> <span class="st">&quot;model&quot;</span>),</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">1</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>)</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="fu">summary</span>(fit_custom)</span></code></pre></div>
+<pre><code>Further Distributional Parameters:
+       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi      54.91      9.83    37.65    76.20 1.00     3142     3674
+alpha     1.92      0.81     0.59     3.78 1.00     2871     3093
+beta      0.08      0.04     0.02     0.18 1.00     2517     2841</code></pre>
+<p>The user-supplied <span class="math inline">\(\mathrm{Gamma}(2,
+1)\)</span> on <span class="math inline">\(\alpha\)</span> shifts its
+posterior toward higher values, which in turn changes the posterior of
+<span class="math inline">\(\phi\)</span>. You can supply only one of
+the two and the other will retain its default; you can also pin one to a
+specific value via
+<code>stanvar(scode = &quot;alpha = 1.5;&quot;, block = &quot;tparameters&quot;)</code>.</p>
+<p>You can also override the prior on <span class="math inline">\(\phi\)</span> itself (not the hyperpriors) via the
+<code>prior</code> argument:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>fit_phi <span class="ot">&lt;-</span> <span class="fu">hbm_betalogitnorm</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="at">response  =</span> <span class="st">&quot;y&quot;</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">auxiliary =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">group     =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">data      =</span> data_betalogitnorm,</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">prior     =</span> brms<span class="sc">::</span><span class="fu">set_prior</span>(<span class="st">&quot;gamma(2, 0.05)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;phi&quot;</span>),</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">1</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>)</span></code></pre></div>
+<p>When <code>prior</code> overrides <code>class = &quot;phi&quot;</code>, the
+<code>stanvars</code> machinery is not used and the default
+<code>Intercept ~ student_t(4, 0, 10)</code> and
+<code>b ~ student_t(4, 0, 2.5)</code> are still filled in for the other
+classes.</p>
+<blockquote>
+<p><strong>Conflict policy.</strong> When <span class="math inline">\(\phi\)</span> is pinned (Mode 2 or Mode 4 below),
+it is no longer a Stan parameter – it is fixed in the model formula via
+an offset. Supplying a <code>prior</code> on <code>phi</code> or a
+<code>stanvars</code> sampling statement targeting <code>phi</code>,
+<code>alpha</code>, or <code>beta</code> in this situation is a logical
+contradiction and is rejected with a clear error at construction time.
+This prevents silent surprises where the user thinks they have specified
+a prior that is actually ignored.</p>
+</blockquote>
+</div>
+<div id="mode-4-generic-fixed_params-power-user" class="section level2">
+<h2>Mode 4: generic <code>fixed_params</code> (power user)</h2>
+<p>The wrapper-specific <code>n</code> and <code>deff</code> arguments
+are syntactic sugar over a generic <code>fixed_params</code> mechanism
+that works for <strong>any</strong> parameter of <strong>any</strong>
+family. Equivalent of Mode 2:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>fit_flex <span class="ot">&lt;-</span> <span class="fu">hbm_flex</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="at">family_key   =</span> <span class="st">&quot;Beta&quot;</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">response     =</span> <span class="st">&quot;y&quot;</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">auxiliary    =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">group        =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="at">data         =</span> data_betalogitnorm,</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="at">fixed_params =</span> <span class="fu">list</span>(<span class="at">phi =</span> <span class="sc">~</span> <span class="fu">I</span>(n <span class="sc">/</span> deff <span class="sc">-</span> <span class="dv">1</span>)),    <span class="co"># &lt;- formula spec</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>)</span></code></pre></div>
+<p>The <code>fixed_params</code> argument accepts four kinds of
+specifications – see <code>?hbm</code> for the full table. This pattern
+also works for custom distributions registered via
+<code>register_hbsae_brms_custom()</code>.</p>
+</div>
+<div id="checking-convergence" class="section level2">
+<h2>Checking convergence</h2>
+<p>For every fit, the standard diagnostic check is:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">convergence_check</span>(fit_fixed)</span></code></pre></div>
+<pre><code>$rhat_max
+[1] 1.0019
+
+$ess_bulk_min
+[1] 2843
+
+$ess_tail_min
+[1] 3415
+
+$divergent_transitions
+[1] 0
+
+$verdict
+[1] &quot;All chains converged: Rhat &lt; 1.01, ESS &gt; 400, no divergent transitions.&quot;</code></pre>
+<p>If divergences appear, raise <code>adapt_delta</code> via
+<code>control = list(adapt_delta = 0.99)</code> and consider tighter
+priors on <span class="math inline">\(\sigma_u\)</span>.</p>
+</div>
+<div id="comparing-modes-with-loo" class="section level2">
+<h2>Comparing modes with LOO</h2>
+<p>When the survey microdata are available, it is good practice to
+compare Modes 1 and 2 to see whether pinning <span class="math inline">\(\phi\)</span> is supported by the data:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>loo_compare <span class="ot">&lt;-</span> loo<span class="sc">::</span><span class="fu">loo_compare</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  loo<span class="sc">::</span><span class="fu">loo</span>(fit_random<span class="sc">$</span>brmsfit),</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  loo<span class="sc">::</span><span class="fu">loo</span>(fit_fixed<span class="sc">$</span>brmsfit)</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>)</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>loo_compare</span></code></pre></div>
+<pre><code>                  elpd_diff se_diff
+fit_fixed         0.0       0.0
+fit_random       -2.1       1.7</code></pre>
+<p>A small <code>elpd_diff</code> (less than 2 SE) suggests both modes
+fit the data comparably; pick the simpler (fixed-<span class="math inline">\(\phi\)</span>) model for inference.</p>
+</div>
+<div id="prediction-for-new-areas" class="section level2">
+<h2>Prediction for new areas</h2>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>new_areas <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>  <span class="at">group =</span> <span class="dv">51</span><span class="sc">:</span><span class="dv">55</span>,</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>  <span class="at">x1    =</span> <span class="fu">rnorm</span>(<span class="dv">5</span>),</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>  <span class="at">x2    =</span> <span class="fu">rnorm</span>(<span class="dv">5</span>),</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>  <span class="at">x3    =</span> <span class="fu">rnorm</span>(<span class="dv">5</span>)</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>)</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>preds <span class="ot">&lt;-</span> <span class="fu">sae_predict</span>(fit_fixed, <span class="at">newdata =</span> new_areas, <span class="at">allow_new_levels =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>preds</span></code></pre></div>
+<pre><code>  group estimate  lower  upper
+1    51    0.421  0.298  0.561
+2    52    0.508  0.379  0.643
+3    53    0.347  0.231  0.482
+4    54    0.612  0.481  0.731
+5    55    0.385  0.262  0.524</code></pre>
+<p>Predictions are reported on the <em>response</em> scale (proportions
+in <span class="math inline">\((0,1)\)</span>), with 95% credible
+intervals.</p>
+</div>
+<div id="summary-which-mode-should-i-use" class="section level2">
+<h2>Summary: which mode should I use?</h2>
+<ul>
+<li><strong>Mode 1 (random <span class="math inline">\(\phi\)</span>)</strong> – use when <code>n</code>
+and <code>deff</code> are unknown or unreliable; produces wider
+posterior intervals.</li>
+<li><strong>Mode 2 (fixed <span class="math inline">\(\phi\)</span>)</strong> – use when you have clean
+survey design information; produces tighter intervals. <em>Recommended
+for standard SAE work</em>.</li>
+<li><strong>Mode 3 (custom hyperprior)</strong> – use when you have
+strong prior beliefs about the typical magnitude of <span class="math inline">\(\phi\)</span> across areas.</li>
+<li><strong>Mode 4 (generic <code>fixed_params</code>)</strong> – use
+through <code>hbm_flex()</code> when building unusual models or working
+with custom distributions.</li>
+</ul>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<ul>
+<li>Liu, B. (2009). <em>Hierarchical Bayes Estimation and Empirical Best
+Prediction of Small-Area Proportions</em>. PhD thesis, University of
+Maryland.</li>
+<li>Rao, J. N. K., &amp; Molina, I. (2015). <em>Small Area
+Estimation</em>, 2nd ed. Wiley. See Chapter 8 for binary/Beta SAE.</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
