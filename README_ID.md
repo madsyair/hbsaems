@@ -564,5 +564,4 @@ Untuk pertanyaan dan dukungan:
 - Tinjau dokumentasi dan vignette paket
 - Gunakan aplikasi Shiny interaktif (`run_sae_app()`) untuk pembangunan
   model dengan panduan
-- Situs referensi (ketika dipublikasi):
-  <https://madsyair.github.io/hbsaems/>
+- Situs referensi: <https://madsyair.github.io/hbsaems/>

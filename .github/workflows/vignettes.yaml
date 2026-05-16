@@ -1,0 +1,61 @@
+# vignettes.yaml -- targeted check that all vignettes build cleanly.
+#
+# This complements R-CMD-check.yaml: where the latter runs the full
+# package check on five OS/R combinations, this workflow only builds
+# the vignettes on Linux R-release, which is much faster and gives
+# tight feedback when a vignette breaks.
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'vignettes/**'
+      - 'R/**'
+      - 'DESCRIPTION'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'vignettes/**'
+      - 'R/**'
+      - 'DESCRIPTION'
+
+name: vignettes
+
+jobs:
+  vignettes:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::rmarkdown
+            any::knitr
+            local::.
+          needs: vignettes
+
+      - name: Build all vignettes
+        run: |
+          dir.create("vignettes_out", showWarnings = FALSE)
+          rmd_files <- list.files("vignettes", "\\.Rmd$", full.names = TRUE)
+          for (f in rmd_files) {
+            cat("=== Rendering:", basename(f), "===\n")
+            rmarkdown::render(f, output_dir = "vignettes_out", quiet = TRUE)
+          }
+          cat("All vignettes rendered successfully.\n")
+        shell: Rscript {0}
+
+      - name: Upload rendered HTML
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vignettes-html
+          path: vignettes_out/*.html
