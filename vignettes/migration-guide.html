@@ -12,7 +12,7 @@
 
 
 
-<title>Migration Guide: v0.2.x to v0.3.0</title>
+<title>Migration Guide: legacy v0.1.x names to v1.0.0</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -337,12 +337,13 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-<h1 class="title toc-ignore">Migration Guide: v0.2.x to v0.3.0</h1>
+<h1 class="title toc-ignore">Migration Guide: legacy v0.1.x names to
+v1.0.0</h1>
 
 
 
-<div id="what-changed-in-v0.3.0" class="section level2">
-<h2>What changed in v0.3.0</h2>
+<div id="what-changed-in-v1.0.0" class="section level2">
+<h2>What changed in v1.0.0</h2>
 <p>Function names have been modernised to follow the
 <strong>brms</strong> snake_case convention. The original short-form
 names (<code>hbcc</code>, <code>hbmc</code>, <code>hbpc</code>,
@@ -378,17 +379,17 @@ work but produce a warning once per session.</p>
 </tr>
 </tbody>
 </table>
-<p>The deprecated names will be <strong>removed in v1.0.0</strong>.</p>
+<p>The deprecated names will be <strong>removed in v2.0.0</strong>.</p>
 </div>
 <div id="quick-beforeafter" class="section level2">
 <h2>Quick before/after</h2>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># Before (v0.2.x)</span></span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># Before (legacy v0.1.x names)</span></span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>diag  <span class="ot">&lt;-</span> <span class="fu">hbcc</span>(model)</span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>comp  <span class="ot">&lt;-</span> <span class="fu">hbmc</span>(model, model2)</span>
 <span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>pc    <span class="ot">&lt;-</span> <span class="fu">hbpc</span>(model_prior, data, <span class="st">&quot;y&quot;</span>)</span>
 <span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>est   <span class="ot">&lt;-</span> <span class="fu">hbsae</span>(model)</span>
 <span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co"># After (v0.3.0)</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co"># After (v1.0.0 names)</span></span>
 <span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>diag  <span class="ot">&lt;-</span> <span class="fu">convergence_check</span>(model)</span>
 <span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>comp  <span class="ot">&lt;-</span> <span class="fu">model_compare</span>(model, model2)</span>
 <span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>pc    <span class="ot">&lt;-</span> <span class="fu">prior_check</span>(model_prior, <span class="at">data =</span> data, <span class="at">response_var =</span> <span class="st">&quot;y&quot;</span>)</span>
@@ -402,8 +403,8 @@ work but produce a warning once per session.</p>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">&quot;s/hbpc(/prior_check(/g&quot;</span>        <span class="pp">*</span>.R</span>
 <span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">&quot;s/hbsae(/sae_predict(/g&quot;</span>       <span class="pp">*</span>.R</span></code></pre></div>
 </div>
-<div id="new-functionality-in-v0.3.0" class="section level2">
-<h2>New functionality in v0.3.0</h2>
+<div id="new-functionality-in-v1.0.0" class="section level2">
+<h2>New functionality in v1.0.0</h2>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">library</span>(hbsaems)</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;data_fhnorm&quot;</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a></span>

@@ -85,7 +85,7 @@ knitr::opts_chunk$set(
 #   predictions = estimates,
 #   target      = 1000,
 #   method      = "ratio",
-#   posterior   = TRUE,                # NEW in v0.5.0
+#   posterior   = TRUE,                # NEW in v1.0.0
 #   probs       = c(0.025, 0.5, 0.975)
 # )
 # 
@@ -214,7 +214,7 @@ knitr::opts_chunk$set(
 #                             for_model = "car",
 #                             id_col    = "kec_code")
 # 
-# # 3. Configure with helpers (v0.4.1+); pass bundles directly to hbm()
+# # 3. Configure with helpers (v1.0.0+); pass bundles directly to hbm()
 # priors <- hbm_priors(prior_type = "horseshoe", hs_df_slab = 4)
 # nl     <- hbm_nonlinear(c("x1"), type = "spline", k = 5)
 # ctrl   <- hbm_control(chains = 4, iter = 4000, cores = 4,
