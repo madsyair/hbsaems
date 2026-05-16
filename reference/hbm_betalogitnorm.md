@@ -140,6 +140,25 @@ design effect (`n` + `deff`) or sampled with a hierarchical hyperprior
 (\\\phi \sim \mathrm{Gamma}(\alpha, \beta)\\, \\\alpha \sim
 \mathrm{Gamma}(1,1)\\, \\\beta \sim \mathrm{Gamma}(1,1)\\ by default).
 
+## Conflict policy
+
+When the precision parameter \\\phi\\ is pinned via `n` + `deff` (or via
+`fixed_params$phi`), the function refuses any additional specification
+that would also set \\\phi\\. Specifically, all of the following are
+rejected with an informative error at construction time:
+
+- `n` supplied without `deff`, or vice versa.
+
+- `n` + `deff` *and* `fixed_params$phi`.
+
+- `n` + `deff` *and* a user `prior` on `class = "phi"`.
+
+- `n` + `deff` *and* a `stanvars` hyperprior on `alpha` or `beta` (the
+  \\\mathrm{Gamma}(\alpha, \beta)\\ hyperparameters used in
+  random-\\\phi\\ mode).
+
+- `auxiliary` *and* the deprecated `predictors` in the same call.
+
 ## References
 
 Liu, B. (2009). *Hierarchical Bayes Estimation and Empirical Best

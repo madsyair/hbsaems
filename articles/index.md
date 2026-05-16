@@ -17,7 +17,7 @@
 - [Modelling Workflow Overview with
   hbsaems](https://madsyair.github.io/hbsaems/articles/hbsaems-modelling.md):
 - [Interactive Modelling with the SAE Shiny
-  Dashboard](https://madsyair.github.io/hbsaems/articles/hbsaems-run_sae_app.md):
+  Application](https://madsyair.github.io/hbsaems/articles/hbsaems-run_sae_app.md):
 - [Spatial SAE Models: CAR, SAR,
   BYM2](https://madsyair.github.io/hbsaems/articles/hbsaems-spatial.md):
 - [Migration Guide: v0.2.x to

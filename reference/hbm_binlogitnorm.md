@@ -70,6 +70,14 @@ trials. The model is \$\$y_i \mid p_i, n_i \sim \mathrm{Binomial}(n_i,
 p_i),\$\$ \$\$\mathrm{logit}(p_i) = x_i^\top \boldsymbol{\beta} + u_i,
 \quad u_i \sim \mathcal{N}(0, \sigma_v^2).\$\$
 
+## Conflict policy
+
+- `auxiliary` *and* the deprecated `predictors` in the same call are
+  rejected with an informative error.
+
+- `handle_missing = "model"` is not supported (binomial is a discrete
+  family; see *Notes on missing data*).
+
 ## Notes on missing data
 
 The binomial family does not support `handle_missing = "model"` (joint

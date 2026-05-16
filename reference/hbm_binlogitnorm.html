@@ -131,6 +131,15 @@ $$\mathrm{logit}(p_i) = x_i^\top \boldsymbol{\beta} + u_i,
        \quad u_i \sim \mathcal{N}(0, \sigma_v^2).$$</p>
     </div>
     <div class="section level2">
+    <h2 id="conflict-policy">Conflict policy<a class="anchor" aria-label="anchor" href="#conflict-policy"></a></h2>
+
+
+<ul><li><p><code>auxiliary</code> <em>and</em> the deprecated <code>predictors</code>
+        in the same call are rejected with an informative error.</p></li>
+<li><p><code>handle_missing = "model"</code> is not supported (binomial is a
+        discrete family; see <em>Notes on missing data</em>).</p></li>
+</ul></div>
+    <div class="section level2">
     <h2 id="notes-on-missing-data">Notes on missing data<a class="anchor" aria-label="anchor" href="#notes-on-missing-data"></a></h2>
 
 

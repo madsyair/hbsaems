@@ -63,15 +63,8 @@ You can install the development version from GitHub:
 
 ``` r
 
-# install.packages("devtools")
-devtools::install_github("madsyair/hbsaems")
-```
-
-Or with vignettes:
-
-``` r
-
-devtools::install_github("madsyair/hbsaems", build_vignettes = TRUE)
+# install.packages("remotes")
+remotes::install_github("madsyair/hbsaems")
 ```
 
 ## Dependencies
@@ -111,16 +104,18 @@ summary(model)
 
 ## The Three-Layer API
 
-                          hbm()
-                          Universal: any brms family, full customisation
-                                           ▲
-                                           |
-                          hbm_flex()
-                          Family registry + auxiliary + fixed_params
-                                           ▲
-                                           |
-           hbm_lnln() / hbm_betalogitnorm() / hbm_binlogitnorm()
-           SAE-friendly wrappers: response, auxiliary, group, n/deff, ...
+``` R
+                      hbm()
+                      Universal: any brms family, full customisation
+                                       ▲
+                                       |
+                      hbm_flex()
+                      Family registry + auxiliary + fixed_params
+                                       ▲
+                                       |
+       hbm_lnln() / hbm_betalogitnorm() / hbm_binlogitnorm()
+       SAE-friendly wrappers: response, auxiliary, group, n/deff, ...
+```
 
 Most users start with a wrapper. Step up to
 [`hbm_flex()`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md)
@@ -445,31 +440,6 @@ Browse them with:
 browseVignettes("hbsaems")
 ```
 
-### Comprehensive Examples Reference
-
-In addition to the topical vignettes above, the package ships an
-**all-in-one examples reference** at
-`inst/examples/hbsaems-examples.Rmd` covering every supported model
-family, every advanced feature, and every utility in one document.
-Locate it with:
-
-``` r
-
-system.file("examples", "hbsaems-examples.Rmd", package = "hbsaems")
-```
-
-You can render it locally with:
-
-``` r
-
-rmd_file <- system.file("examples", "hbsaems-examples.Rmd",
-                         package = "hbsaems")
-rmarkdown::render(rmd_file, output_dir = tempdir())
-```
-
-This is ideal as a quick reference card or as a JSS-style supplementary
-materials companion.
-
 ## Methodology
 
 The package implements area-level hierarchical Bayesian SAE following
@@ -522,9 +492,11 @@ If you use this package in your research, please cite:
 citation("hbsaems")
 ```
 
-    Choir, A. S., Nurhayati, S. S., Zamzanah, S., & Siregar, A. L. O. (2026).
-    hbsaems: Hierarchical Bayesian Area-Level Small Area Estimation Models.
-    R package version 1.0.0. https://github.com/madsyair/hbsaems
+``` R
+Choir, A. S., Nurhayati, S. S., Zamzanah, S., & Siregar, A. L. O. (2026).
+hbsaems: Hierarchical Bayesian Area-Level Small Area Estimation Models.
+R package version 1.0.0. https://github.com/madsyair/hbsaems
+```
 
 ## References
 
@@ -758,7 +730,7 @@ Helpers for checking input data consistency.
 Launch the interactive bilingual SAE GUI.
 
 - [`run_sae_app()`](https://madsyair.github.io/hbsaems/reference/run_sae_app.md)
-  : run_sae_app: Interactive Small Area Estimation Dashboard
+  : run_sae_app: Interactive Small Area Estimation Application
 - [`check_shiny_deps()`](https://madsyair.github.io/hbsaems/reference/check_shiny_deps.md)
   : Check Shiny App Dependencies
 - [`tr()`](https://madsyair.github.io/hbsaems/reference/tr.md) :
@@ -816,7 +788,7 @@ Retained for backward compatibility; scheduled for removal in v2.0.0.
 - [Modelling Workflow Overview with
   hbsaems](https://madsyair.github.io/hbsaems/articles/hbsaems-modelling.md):
 - [Interactive Modelling with the SAE Shiny
-  Dashboard](https://madsyair.github.io/hbsaems/articles/hbsaems-run_sae_app.md):
+  Application](https://madsyair.github.io/hbsaems/articles/hbsaems-run_sae_app.md):
 - [Spatial SAE Models: CAR, SAR,
   BYM2](https://madsyair.github.io/hbsaems/articles/hbsaems-spatial.md):
 - [Migration Guide: v0.2.x to

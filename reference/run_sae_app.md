@@ -1,6 +1,6 @@
-# run_sae_app: Interactive Small Area Estimation Dashboard
+# run_sae_app: Interactive Small Area Estimation Application
 
-Opens the interactive HBSAE dashboard in the default web browser. The
+Opens the interactive HBSAE application in the default web browser. The
 application provides a graphical interface for data upload, exploratory
 analysis, model specification, fitting, and result visualisation,
 covering all modelling functions in hbsaems.

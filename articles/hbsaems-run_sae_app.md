@@ -1,4 +1,4 @@
-# Interactive Modelling with the SAE Shiny Dashboard
+# Interactive Modelling with the SAE Shiny Application
 
 > **Note.** This vignette describes the interactive **Shiny
 > application** bundled with `hbsaems`. Because Shiny apps are stateful
@@ -9,7 +9,7 @@
 
 ## When to use the Shiny app
 
-The bundled Shiny dashboard, launched by
+The bundled Shiny application, launched by
 [`run_sae_app()`](https://madsyair.github.io/hbsaems/reference/run_sae_app.md),
 is intended for two audiences:
 
@@ -39,7 +39,7 @@ The app calls
 at startup; if the required Shiny packages are missing it prints an
 actionable install message:
 
-    The Shiny dashboard requires the following packages:
+    The Shiny application requires the following packages:
       - shiny (>= 1.7.0)
       - shinydashboard
       - DT
@@ -50,7 +50,7 @@ actionable install message:
 
 ## Layout overview
 
-The dashboard is organised into six sidebar sections:
+The application is organised into six sidebar sections:
 
     +------------------------+-----------------------------------------------+
     |  Sidebar               |  Main panel (sub-tabs)                        |

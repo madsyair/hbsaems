@@ -10,7 +10,7 @@ The custom likelihood is then available throughout the package – in
 [`run_sae_app`](https://madsyair.github.io/hbsaems/reference/run_sae_app.md),
 in
 [`sae_predict`](https://madsyair.github.io/hbsaems/reference/sae_predict.md),
-in the Shiny dashboard, and so on – as if it were a built-in family.
+in the Shiny application, and so on – as if it were a built-in family.
 
 ## Usage
 

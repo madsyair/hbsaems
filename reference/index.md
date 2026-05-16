@@ -171,7 +171,7 @@ Helpers for checking input data consistency.
 Launch the interactive bilingual SAE GUI.
 
 - [`run_sae_app()`](https://madsyair.github.io/hbsaems/reference/run_sae_app.md)
-  : run_sae_app: Interactive Small Area Estimation Dashboard
+  : run_sae_app: Interactive Small Area Estimation Application
 - [`check_shiny_deps()`](https://madsyair.github.io/hbsaems/reference/check_shiny_deps.md)
   : Check Shiny App Dependencies
 - [`tr()`](https://madsyair.github.io/hbsaems/reference/tr.md) :

@@ -201,6 +201,25 @@ hyperprior (\(\phi \sim \mathrm{Gamma}(\alpha, \beta)\),
 by default).</p>
     </div>
     <div class="section level2">
+    <h2 id="conflict-policy">Conflict policy<a class="anchor" aria-label="anchor" href="#conflict-policy"></a></h2>
+
+
+<p>When the precision parameter \(\phi\) is pinned via <code>n</code> +
+<code>deff</code> (or via <code>fixed_params$phi</code>), the function refuses
+any additional specification that would also set \(\phi\).
+Specifically, all of the following are rejected with an informative
+error at construction time:</p><ul><li><p><code>n</code> supplied without <code>deff</code>, or vice versa.</p></li>
+<li><p><code>n</code> + <code>deff</code> <em>and</em> <code>fixed_params$phi</code>.</p></li>
+<li><p><code>n</code> + <code>deff</code> <em>and</em> a user <code>prior</code> on
+        <code>class = "phi"</code>.</p></li>
+<li><p><code>n</code> + <code>deff</code> <em>and</em> a <code>stanvars</code>
+        hyperprior on <code>alpha</code> or <code>beta</code> (the
+        \(\mathrm{Gamma}(\alpha, \beta)\) hyperparameters used in
+        random-\(\phi\) mode).</p></li>
+<li><p><code>auxiliary</code> <em>and</em> the deprecated <code>predictors</code>
+        in the same call.</p></li>
+</ul></div>
+    <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
     <p>Liu, B. (2009). <em>Hierarchical Bayes Estimation and Empirical Best
 Prediction of Small-Area Proportions</em>. University of Maryland.</p>

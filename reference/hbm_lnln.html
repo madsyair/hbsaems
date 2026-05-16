@@ -146,6 +146,23 @@ the Fay-Herriot-style lognormal model in which residual variability is
 fully determined by the survey design.</p>
     </div>
     <div class="section level2">
+    <h2 id="conflict-policy">Conflict policy<a class="anchor" aria-label="anchor" href="#conflict-policy"></a></h2>
+
+
+<p>When the residual standard deviation \(\sigma_i = \sqrt{\psi_i}\)
+is pinned via <code>sampling_var</code> (or via
+<code>fixed_params$sigma</code>), the function refuses any additional
+specification that would also set \(\sigma\).  Specifically, all
+of the following are rejected with an informative error at
+construction time:</p><ul><li><p><code>sampling_var</code> <em>and</em> <code>fixed_params$sigma</code>.</p></li>
+<li><p><code>sampling_var</code> <em>and</em> a user <code>prior</code> on
+        <code>class = "sigma"</code>.</p></li>
+<li><p><code>sampling_var</code> <em>and</em> a <code>stanvars</code> sampling
+        statement involving <code>sigma</code>.</p></li>
+<li><p><code>auxiliary</code> <em>and</em> the deprecated <code>predictors</code>
+        in the same call.</p></li>
+</ul></div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="hbm_flex.html">hbm_flex</a></code>, <code><a href="hbm.html">hbm</a></code></p></div>
     </div>

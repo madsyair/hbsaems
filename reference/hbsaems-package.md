@@ -116,7 +116,7 @@ See
 
 ## Interactive use
 
-A bilingual (English / Indonesian) shiny dashboard, launched via
+A bilingual (English / Indonesian) shiny application, launched via
 [`run_sae_app`](https://madsyair.github.io/hbsaems/reference/run_sae_app.md),
 exposes the same workflow to non-programmer analysts.
 

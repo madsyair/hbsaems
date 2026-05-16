@@ -94,10 +94,92 @@ the chunks above. To reproduce the exact numbers, copy the code into an
 interactive R session.</p>
 </blockquote>
 <div class="section level2">
-<h2 id="missing-data-in-sae">Missing data in SAE<a class="anchor" aria-label="anchor" href="#missing-data-in-sae"></a>
+<h2 id="the-bayesian-principle-response-variables-are-never-imputed">The Bayesian principle: response variables are never imputed<a class="anchor" aria-label="anchor" href="#the-bayesian-principle-response-variables-are-never-imputed"></a>
 </h2>
-<p>Missingness is the rule rather than the exception in small area work.
-Three patterns are most common:</p>
+<p>A core design rule in <code>hbsaems</code> is that <strong>multiple
+imputation only ever imputes auxiliary (predictor) variables, never the
+response</strong>. This is not a limitation – it is the statistically
+correct Bayesian treatment:</p>
+<ul>
+<li>For a Bayesian hierarchical model with response
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>,
+the posterior for the parameters
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
+marginalises the missing outcomes
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mtext mathvariant="normal">mis</mtext></msub><annotation encoding="application/x-tex">Y_{\text{mis}}</annotation></semantics></math>:
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo stretchy="false" form="prefix">(</mo><mi>θ</mi><mo>∣</mo><msub><mi>Y</mi><mtext mathvariant="normal">obs</mtext></msub><mo>,</mo><mi>X</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mo>∫</mo><mi>p</mi><mo stretchy="false" form="prefix">(</mo><mi>θ</mi><mo>∣</mo><msub><mi>Y</mi><mtext mathvariant="normal">obs</mtext></msub><mo>,</mo><msub><mi>Y</mi><mtext mathvariant="normal">mis</mtext></msub><mo>,</mo><mi>X</mi><mo stretchy="false" form="postfix">)</mo><mspace width="0.167em"></mspace><mi>p</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>Y</mi><mtext mathvariant="normal">mis</mtext></msub><mo>∣</mo><msub><mi>Y</mi><mtext mathvariant="normal">obs</mtext></msub><mo>,</mo><mi>X</mi><mo>,</mo><mi>θ</mi><mo stretchy="false" form="postfix">)</mo><mspace width="0.167em"></mspace><mi mathvariant="normal">d</mi><msub><mi>Y</mi><mtext mathvariant="normal">mis</mtext></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+p(\theta \mid Y_{\text{obs}}, X) = \int p(\theta \mid Y_{\text{obs}},
+  Y_{\text{mis}}, X) \, p(Y_{\text{mis}} \mid Y_{\text{obs}}, X, \theta)
+  \, \mathrm{d}Y_{\text{mis}}.
+</annotation></semantics></math>
+</li>
+<li>Plugging in a mice-imputed value for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
+would replace this integral with a single point substitute, deflate the
+posterior uncertainty, and bias estimates if the imputation model is
+misspecified.</li>
+<li>The correct way to “fill in” missing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
+values is <strong>joint Bayesian imputation</strong> via
+<code><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">brms::mi()</a></code>, which samples
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Y</mi><mtext mathvariant="normal">mis</mtext></msub><annotation encoding="application/x-tex">Y_{\text{mis}}</annotation></semantics></math>
+alongside
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>.
+This is the <code>handle_missing = "model"</code> strategy described
+below.</li>
+</ul>
+<p>The three strategies thus have <strong>different scopes</strong>:</p>
+<table class="table">
+<colgroup>
+<col width="14%">
+<col width="56%">
+<col width="29%">
+</colgroup>
+<thead><tr class="header">
+<th>Strategy</th>
+<th>What it imputes</th>
+<th>Required completeness</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>"deleted"</code></td>
+<td>Nothing – drops rows with missing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
+</td>
+<td>Auxiliary
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+must be complete</td>
+</tr>
+<tr class="even">
+<td><code>"multiple"</code></td>
+<td>
+<strong>Only auxiliary
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math></strong>
+via <code>mice</code>
+</td>
+<td>Any
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
+missingness handled separately (see below)</td>
+</tr>
+<tr class="odd">
+<td><code>"model"</code></td>
+<td>**<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
+jointly via <code><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">brms::mi()</a></code>
+</td>
+<td>Continuous outcomes only</td>
+</tr>
+</tbody>
+</table>
+<p>When <code>handle_missing = NULL</code> (default), the package
+<strong>auto-selects</strong> a strategy based on the family’s
+<code>supports_mi</code> flag.</p>
+</div>
+<div class="section level2">
+<h2 id="missing-data-patterns-in-sae">Missing-data patterns in SAE<a class="anchor" aria-label="anchor" href="#missing-data-patterns-in-sae"></a>
+</h2>
+<p>Three patterns are common:</p>
 <ol style="list-style-type: decimal">
 <li>
 <strong>Missing response, complete covariates</strong> – some areas
@@ -109,55 +191,31 @@ reached every area, but a census variable is missing for some.</li>
 <li>
 <strong>Missing in both</strong> – a mix of the above.</li>
 </ol>
-<p><code>hbsaems</code> exposes three strategies through a single
-<code>handle_missing</code> argument:</p>
-<table class="table">
-<colgroup>
-<col width="30%">
-<col width="27%">
-<col width="42%">
-</colgroup>
-<thead><tr class="header">
-<th>Strategy</th>
-<th>Trigger</th>
-<th>What it does</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td><code>"deleted"</code></td>
-<td>Listwise deletion</td>
-<td>Drops rows with any missing variable</td>
-</tr>
-<tr class="even">
-<td><code>"multiple"</code></td>
-<td>
-<code>mice</code> multiple imputation</td>
-<td>Imputes covariates
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math>
-times, fits each, pools</td>
-</tr>
-<tr class="odd">
-<td><code>"model"</code></td>
-<td>Joint Bayesian imputation via <code><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">brms::mi()</a></code>
-</td>
-<td>Treats missing values as parameters</td>
-</tr>
-</tbody>
-</table>
-<p>When <code>handle_missing = NULL</code> (default), the package
-<strong>auto-selects</strong> a strategy based on the pattern detected
-and the family’s capabilities.</p>
+<p>The package’s reaction to each pattern depends on which
+<code>handle_missing</code> strategy is in effect. The next three
+sections walk through each strategy and the patterns it handles.</p>
 </div>
 <div class="section level2">
-<h2 id="strategy-1-deletion-listwise">Strategy 1: deletion (listwise)<a class="anchor" aria-label="anchor" href="#strategy-1-deletion-listwise"></a>
+<h2 id="strategy-1-deleted-listwise-deletion-on-y-only">Strategy 1: <code>"deleted"</code> (listwise deletion on Y
+only)<a class="anchor" aria-label="anchor" href="#strategy-1-deleted-listwise-deletion-on-y-only"></a>
 </h2>
-<p>The simplest approach: drop any row with <code>NA</code> in
-<code>response</code> or <code>auxiliary</code>. Appropriate when the
-proportion missing is small and missingness is plausibly MCAR (missing
-completely at random):</p>
+<p>When <code>handle_missing = "deleted"</code>:</p>
+<ul>
+<li>Rows where the <strong>response
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
+is missing</strong> are dropped before model fitting.</li>
+<li>If any <strong>auxiliary</strong> is missing, the function
+<strong>refuses with an informative error</strong> – listwise deletion
+of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+would discard information that more principled strategies can
+recover.</li>
+</ul>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://madsyair.github.io/hbsaems/">hbsaems</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"data_fhnorm"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Pattern 1: missing Y only, X complete</span></span>
 <span><span class="va">data_miss_y</span>      <span class="op">&lt;-</span> <span class="va">data_fhnorm</span></span>
 <span><span class="va">data_miss_y</span><span class="op">$</span><span class="va">y</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">14</span>, <span class="fl">27</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
 <span></span>
@@ -170,17 +228,39 @@ completely at random):</p>
 <span><span class="op">)</span></span></code></pre></div>
 <pre><code>handle_missing = 'deleted': 3 row(s) with missing response variable removed
 from model fitting.</code></pre>
-<p>The dropped rows are listed in <code>fit_deleted$missing_info</code>.
-Predictions for these areas can still be obtained via
-<code><a href="../reference/sae_predict.html">sae_predict()</a></code> with their auxiliary values.</p>
+<p>If you pass data with missing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+to <code>"deleted"</code>, the call is rejected:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">data_miss_x</span> <span class="op">&lt;-</span> <span class="va">data_fhnorm</span></span>
+<span><span class="va">data_miss_x</span><span class="op">$</span><span class="va">x1</span><span class="op">[</span><span class="fl">6</span><span class="op">:</span><span class="fl">8</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span><span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span>
+<span>    data           <span class="op">=</span> <span class="va">data_miss_x</span>,</span>
+<span>    handle_missing <span class="op">=</span> <span class="st">"deleted"</span><span class="op">)</span></span></code></pre></div>
+<pre><code>Error: Option `handle_missing = 'deleted'` requires all auxiliary (predictor)
+variables to be complete. Missing values were detected in: x1. Consider
+`handle_missing = 'multiple'` to impute missing predictors.</code></pre>
+<p>The dropped rows (under the legitimate Y-only case) are retained in
+<code>fit_deleted$data</code> so that <code><a href="../reference/sae_predict.html">sae_predict()</a></code> can
+still produce predictions for those areas using their auxiliary
+values.</p>
 </div>
 <div class="section level2">
-<h2 id="strategy-2-multiple-imputation-mice">Strategy 2: multiple imputation (mice)<a class="anchor" aria-label="anchor" href="#strategy-2-multiple-imputation-mice"></a>
+<h2 id="strategy-2-multiple-mice-on-x-only">Strategy 2: <code>"multiple"</code> (mice on X only)<a class="anchor" aria-label="anchor" href="#strategy-2-multiple-mice-on-x-only"></a>
 </h2>
-<p>For covariates that are missing in some areas but observable in
-principle from a census or register, multiple imputation with
-<code>mice</code> is the workhorse:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<p>When <code>handle_missing = "multiple"</code>, <code>mice</code>
+imputes the missing <strong>auxiliary variables</strong>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math>
+times, fits the brms model on each imputed dataset, and pools the
+posterior draws via Rubin’s rules (via
+<code><a href="https://paulbuerkner.com/brms/reference/brm_multiple.html" class="external-link">brms::brm_multiple</a></code>).</p>
+<p>The response is <strong>never imputed by mice</strong>. How the
+package handles each pattern:</p>
+<div class="section level3">
+<h3 id="pattern-2a-missing-x-only-normal-mice-workflow">Pattern 2a: Missing X only – normal mice workflow<a class="anchor" aria-label="anchor" href="#pattern-2a-missing-x-only-normal-mice-workflow"></a>
+</h3>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_miss_x</span>         <span class="op">&lt;-</span> <span class="va">data_fhnorm</span></span>
 <span><span class="va">data_miss_x</span><span class="op">$</span><span class="va">x1</span><span class="op">[</span><span class="fl">6</span><span class="op">:</span><span class="fl">8</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
 <span></span>
@@ -199,9 +279,6 @@ Compiling the C++ model
 Fitting imputed model 1
 Start sampling
 ...
-Fitting imputed model 2
-Start sampling
-...
 Fitting imputed model 5
 Start sampling
 ...
@@ -211,8 +288,87 @@ Start sampling
 interface. Diagnostics are <em>per-imputation</em>; the global Rhat /
 ESS view is not informative for pooled chains – see
 <code><a href="https://paulbuerkner.com/brms/reference/brm_multiple.html" class="external-link">?brm_multiple</a></code> for details.</p>
-<p>You can control mice via <code>mice_args</code>:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+</div>
+<div class="section level3">
+<h3 id="pattern-2b-missing-x-and-y-or-only-y-response-not-imputed">Pattern 2b: Missing X <em>and</em> Y (or only Y) – response not
+imputed<a class="anchor" aria-label="anchor" href="#pattern-2b-missing-x-and-y-or-only-y-response-not-imputed"></a>
+</h3>
+<p>If
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
+also has missing values, the package issues a warning explaining that
+<strong>mice will not impute
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math></strong>
+and the rows with missing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
+are excluded from fitting but retained in the returned object:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">data_miss_both</span> <span class="op">&lt;-</span> <span class="va">data_fhnorm</span></span>
+<span><span class="va">data_miss_both</span><span class="op">$</span><span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">:</span><span class="fl">3</span><span class="op">]</span>   <span class="op">&lt;-</span> <span class="cn">NA</span>           <span class="co"># missing Y</span></span>
+<span><span class="va">data_miss_both</span><span class="op">$</span><span class="va">x1</span><span class="op">[</span><span class="fl">6</span><span class="op">:</span><span class="fl">8</span><span class="op">]</span>  <span class="op">&lt;-</span> <span class="cn">NA</span>           <span class="co"># missing X</span></span>
+<span></span>
+<span><span class="va">fit_mi_both</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span></span>
+<span>  formula        <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span>
+<span>  re             <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">group</span><span class="op">)</span>,</span>
+<span>  data           <span class="op">=</span> <span class="va">data_miss_both</span>,</span>
+<span>  handle_missing <span class="op">=</span> <span class="st">"multiple"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<pre><code>Warning: Missing values detected in response variable(s): y.
+Multiple imputation via `mice` applies ONLY to auxiliary predictor
+variables (X). Response variable(s) are NEVER imputed inside a
+Bayesian model -- missing Y rows will be excluded from model fitting
+but are retained in the returned object for prediction via hbsae().
+If you wish to model missingness in Y jointly with the parameters,
+consider `handle_missing = 'model'` (continuous outcomes only).
+
+Missing predictor variable(s): x1. Applying multiple imputation (mice)
+with m = 5 imputations.</code></pre>
+</div>
+<div class="section level3">
+<h3 id="pattern-2c-missing-y-only-auto-conversion">Pattern 2c: Missing Y only – auto-conversion<a class="anchor" aria-label="anchor" href="#pattern-2c-missing-y-only-auto-conversion"></a>
+</h3>
+<p>If <code>handle_missing = "multiple"</code> is given but <strong>only
+Y</strong> is missing
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+is complete), there is nothing for mice to impute. The package then
+auto-converts to a more appropriate strategy:</p>
+<ul>
+<li>
+<strong>Continuous family</strong> (e.g. <code>gaussian</code>,
+<code>lognormal</code>): auto-converts to
+<code>handle_missing = "model"</code> and adds <code>| mi()</code> to
+the formula LHS so that missing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
+values are jointly sampled with the parameters (the correct Bayesian
+approach).</li>
+<li>
+<strong>Discrete family</strong> (e.g. <code>binomial</code>,
+<code>poisson</code>): <code><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi()</a></code> is not supported – falls back
+to <code>handle_missing = "deleted"</code>, dropping the rows with
+missing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>.</li>
+</ul>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">data_miss_y_only</span> <span class="op">&lt;-</span> <span class="va">data_fhnorm</span></span>
+<span><span class="va">data_miss_y_only</span><span class="op">$</span><span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">:</span><span class="fl">3</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span>           <span class="co"># only Y missing</span></span>
+<span></span>
+<span><span class="co"># Gaussian family -&gt; auto-converts to "model" with | mi() on LHS</span></span>
+<span><span class="va">fit_auto1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span></span>
+<span>  formula        <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span>
+<span>  re             <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">group</span><span class="op">)</span>,</span>
+<span>  data           <span class="op">=</span> <span class="va">data_miss_y_only</span>,</span>
+<span>  handle_missing <span class="op">=</span> <span class="st">"multiple"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<pre><code>handle_missing = 'multiple' was specified but only the response variable
+(Y) is missing and X is complete. mice imputes predictor variables only and
+cannot impute Y. Automatically converting to handle_missing = 'model':
+'| mi()' will be added to the formula LHS so that brms jointly estimates
+missing Y with the model parameters (the correct Bayesian approach).</code></pre>
+</div>
+<div class="section level3">
+<h3 id="controlling-mice">Controlling mice<a class="anchor" aria-label="anchor" href="#controlling-mice"></a>
+</h3>
+<p>Pass options through <code>mice_args</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_mi2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span></span>
 <span>  formula        <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span>
 <span>  re             <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">group</span><span class="op">)</span>,</span>
@@ -223,42 +379,62 @@ ESS view is not informative for pooled chains – see
 <span>  chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span>, warmup <span class="op">=</span> <span class="fl">2000</span>, cores <span class="op">=</span> <span class="fl">4</span>, seed <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
+</div>
 <div class="section level2">
-<h2 id="strategy-3-model-based-joint-bayesian-imputation">Strategy 3: model-based (joint Bayesian) imputation<a class="anchor" aria-label="anchor" href="#strategy-3-model-based-joint-bayesian-imputation"></a>
+<h2 id="strategy-3-model-joint-bayesian-imputation">Strategy 3: <code>"model"</code> (joint Bayesian imputation)<a class="anchor" aria-label="anchor" href="#strategy-3-model-joint-bayesian-imputation"></a>
 </h2>
-<p>When the missingness is suspected MAR or MNAR and you have a good
-model for the missing variable, joint Bayesian imputation via
-<code><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">brms::mi()</a></code> is more principled:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fit_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span></span>
+<p>When <code>handle_missing = "model"</code>, missing values in both
+response and auxiliary variables are sampled jointly with the model
+parameters via <code><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">brms::mi()</a></code>. The user must specify imputation
+sub-models explicitly in the formula:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">data_miss_both</span> <span class="op">&lt;-</span> <span class="va">data_fhnorm</span></span>
+<span><span class="va">data_miss_both</span><span class="op">$</span><span class="va">y</span><span class="op">[</span><span class="fl">2</span><span class="op">:</span><span class="fl">3</span><span class="op">]</span>   <span class="op">&lt;-</span> <span class="cn">NA</span></span>
+<span><span class="va">data_miss_both</span><span class="op">$</span><span class="va">x1</span><span class="op">[</span><span class="fl">6</span><span class="op">:</span><span class="fl">8</span><span class="op">]</span>  <span class="op">&lt;-</span> <span class="cn">NA</span></span>
+<span></span>
+<span><span class="va">fit_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span></span>
 <span>  formula        <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span>  <span class="op">|</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi</a></span><span class="op">(</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi</a></span><span class="op">(</span><span class="va">x1</span><span class="op">)</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span> <span class="op">+</span></span>
 <span>                   <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">x1</span> <span class="op">|</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi</a></span><span class="op">(</span><span class="op">)</span> <span class="op">~</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span>
 <span>  re             <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">group</span><span class="op">)</span>,</span>
-<span>  data           <span class="op">=</span> <span class="va">data_miss_x</span>,</span>
+<span>  data           <span class="op">=</span> <span class="va">data_miss_both</span>,</span>
 <span>  handle_missing <span class="op">=</span> <span class="st">"model"</span>,</span>
 <span>  chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span>, warmup <span class="op">=</span> <span class="fl">2000</span>, cores <span class="op">=</span> <span class="fl">4</span>, seed <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<pre><code>handle_missing = 'model': using mi() specification for joint model-based
-imputation.
-
-Setting 'rescor' to FALSE by default for this model.
-
-Compiling Stan program...
+<pre><code>Compiling Stan program...
 Start sampling...</code></pre>
-<p>This fits a <strong>multivariate</strong> brms model where missing
-values of <code>y</code> and <code>x1</code> are sampled alongside the
-regression coefficients. Posterior uncertainty in the imputations is
-automatically propagated.</p>
-<p>Not every family supports <code><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi()</a></code> – check
-<code>spec$supports_mi</code> in the model registry
-(<code><a href="../reference/list_hbsae_models.html">?list_hbsae_models</a></code>).</p>
+<ul>
+<li>
+<code>y | mi() ~ ...</code> tells brms to treat missing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
+values as parameters to be sampled.</li>
+<li>
+<code>mi(x1)</code> on the RHS tells brms to use the imputed
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>x</mi><mn>1</mn></msub><annotation encoding="application/x-tex">x_1</annotation></semantics></math>
+(also sampled) as a predictor.</li>
+<li>The second <code>bf(x1 | mi() ~ x2 + x3)</code> is the imputation
+sub-model for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>x</mi><mn>1</mn></msub><annotation encoding="application/x-tex">x_1</annotation></semantics></math>.</li>
+</ul>
+<p>The result is a <strong>multivariate brms model</strong> in which all
+missing values are sampled alongside the regression coefficients;
+posterior uncertainty in the imputations is automatically
+propagated.</p>
+<p><strong>Restriction</strong>: <code>handle_missing = "model"</code>
+only works for <strong>continuous distributions</strong> (the
+<code>supports_mi</code> flag in the family registry). For discrete
+families (binomial, Poisson, …), <code><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">brms::mi()</a></code> is not
+supported – use <code>"multiple"</code> for missing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
+and accept listwise deletion for missing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>.</p>
 </div>
 <div class="section level2">
-<h2 id="auto-selection">Auto-selection<a class="anchor" aria-label="anchor" href="#auto-selection"></a>
+<h2 id="auto-selection-when-handle_missing-null">Auto-selection (when <code>handle_missing = NULL</code>)<a class="anchor" aria-label="anchor" href="#auto-selection-when-handle_missing-null"></a>
 </h2>
-<p>If you omit <code>handle_missing</code>, the wrappers will look at
-the missing pattern and choose:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<p>If you omit <code>handle_missing</code>, the package looks at whether
+<strong>any</strong> missingness exists and selects based on the
+family’s <code>supports_mi</code> flag:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_auto</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm_lnln.html">hbm_lnln</a></span><span class="op">(</span></span>
 <span>  response  <span class="op">=</span> <span class="st">"y_obs"</span>,</span>
 <span>  auxiliary <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,</span>
@@ -269,21 +445,27 @@ the missing pattern and choose:</p>
 <span><span class="op">)</span></span></code></pre></div>
 <pre><code>Missing values detected. Auto-selecting handle_missing = 'multiple'
 (family 'lognormal', supports_mi = FALSE).</code></pre>
-<p>The decision tree is:</p>
-<pre><code>Missing response only           -&gt;  "deleted"
-Missing covariates only,
-   family supports mi()          -&gt;  "model"
-Missing covariates only,
-   family does NOT support mi()  -&gt;  "multiple"
-Missing in both                  -&gt;  "model" if supported, else "multiple"</code></pre>
-<p>You can always override this with an explicit
+<p>The actual decision rule used in the code is:</p>
+<pre><code>Any NA detected in response or auxiliary?
+  └── family.supports_mi == TRUE?   -&gt;  "model"   (joint mi(); user must
+  │                                                supply mi() formula
+  │                                                terms when missing X)
+  └── otherwise                      -&gt;  "multiple" (mice on X only;
+                                                     missing Y handled
+                                                     per Strategy 2 logic)</code></pre>
+<p>The auto-selection is intentionally simple and does
+<strong>not</strong> branch on “Y-only” vs “X-only” patterns: those
+subtleties are handled inside the chosen strategy (see Pattern 2c above
+for the case where <code>"multiple"</code> detects Y-only missingness
+and auto-converts to <code>"model"</code> for continuous families or to
+<code>"deleted"</code> for discrete families).</p>
+<p>You can always override by passing an explicit
 <code>handle_missing = "..."</code>.</p>
 </div>
 <div class="section level2">
-<h2 id="comparing-strategies">Comparing strategies<a class="anchor" aria-label="anchor" href="#comparing-strategies"></a>
+<h2 id="comparing-strategies-when-fitting-all-three-is-feasible">Comparing strategies (when fitting all three is feasible)<a class="anchor" aria-label="anchor" href="#comparing-strategies-when-fitting-all-three-is-feasible"></a>
 </h2>
-<p>When time permits, compare strategies’ predictive performance:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">loo_compare</span> <span class="op">&lt;-</span> <span class="fu">loo</span><span class="fu">::</span><span class="fu"><a href="https://mc-stan.org/loo/reference/loo_compare.html" class="external-link">loo_compare</a></span><span class="op">(</span></span>
 <span>  <span class="fu">loo</span><span class="fu">::</span><span class="fu"><a href="https://mc-stan.org/loo/reference/loo.html" class="external-link">loo</a></span><span class="op">(</span><span class="va">fit_deleted</span><span class="op">$</span><span class="va">brmsfit</span><span class="op">)</span>,</span>
 <span>  <span class="fu">loo</span><span class="fu">::</span><span class="fu"><a href="https://mc-stan.org/loo/reference/loo.html" class="external-link">loo</a></span><span class="op">(</span><span class="va">fit_mi</span><span class="op">$</span><span class="va">brmsfit</span><span class="op">)</span>,</span>
@@ -294,28 +476,33 @@ Missing in both                  -&gt;  "model" if supported, else "multiple"</c
 fit_model         0.0       0.0
 fit_mi           -2.1       2.4
 fit_deleted     -10.7       3.8</code></pre>
-<p>Deletion’s poor performance here is typical: throwing away 3 of 100
-informative rows costs predictive accuracy.</p>
+<p>Note that <code>fit_deleted</code> and <code>fit_mi</code> here refer
+to fits on the same pattern (missing Y only, missing X only
+respectively), so the comparison is over comparable likelihood
+scales.</p>
 </div>
 <div class="section level2">
 <h2 id="practical-guidance">Practical guidance<a class="anchor" aria-label="anchor" href="#practical-guidance"></a>
 </h2>
 <ul>
 <li>
-<strong>Small fraction missing (&lt; 5%) and likely MCAR</strong> –
-deletion is fine.</li>
+<strong>Small fraction missing (&lt; 5%) and likely MCAR, missing in
+Y only</strong> – <code>"deleted"</code> is fine.</li>
 <li>
-<strong>Larger fraction or non-MCAR</strong> – prefer multiple
-imputation or model-based.</li>
+<strong>Missing in X (with or without missing Y)</strong>:
+<ul>
+<li>Continuous family – prefer <code>"model"</code> (joint Bayesian
+imputation, most principled).</li>
+<li>Discrete family – use <code>"multiple"</code> (mice on X; rows with
+missing Y are dropped from fitting but retained in the result for
+prediction).</li>
+</ul>
+</li>
 <li>
-<strong>Missing in response only and you have administrative
-auxiliaries for those areas</strong> – prefer deletion + post-fit
-prediction via <code><a href="../reference/sae_predict.html">sae_predict()</a></code> (this is more transparent than
-imputing the response).</li>
-<li>
-<strong>Missing in covariates only</strong> – model-based imputation
-is most principled if the family supports it; mice is a robust
-fallback.</li>
+<strong>Missing in response only, you have administrative
+auxiliaries for those areas</strong> – prefer <code>"deleted"</code>
+plus <code><a href="../reference/sae_predict.html">sae_predict()</a></code> (this is more transparent than imputing
+the response).</li>
 <li>
 <strong>Reproducibility</strong> – set <code>seed</code> for both
 the wrapper call and (if using mice) within <code>mice_args</code> to
@@ -330,9 +517,12 @@ make imputations reproducible.</li>
 Surveys</em>. Wiley.</li>
 <li>van Buuren, S. (2018). <em>Flexible Imputation of Missing Data</em>.
 CRC Press.</li>
-<li>Buerkner, P.-C. (2017). brms: An R Package for Bayesian Multilevel
+<li>Bürkner, P.-C. (2017). brms: An R Package for Bayesian Multilevel
 Models Using Stan. <em>Journal of Statistical Software</em>, 80(1),
 1-28. Section on <code><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi()</a></code>.</li>
+<li>Gelman, A., &amp; Hill, J. (2006). <em>Data Analysis Using
+Regression and Multilevel/Hierarchical Models</em>. Cambridge University
+Press, Chapter 25.</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

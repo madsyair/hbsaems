@@ -83,6 +83,23 @@ known per-area sampling variance \\\psi_i\\), \\\sigma_i =
 Fay-Herriot-style lognormal model in which residual variability is fully
 determined by the survey design.
 
+## Conflict policy
+
+When the residual standard deviation \\\sigma_i = \sqrt{\psi_i}\\ is
+pinned via `sampling_var` (or via `fixed_params$sigma`), the function
+refuses any additional specification that would also set \\\sigma\\.
+Specifically, all of the following are rejected with an informative
+error at construction time:
+
+- `sampling_var` *and* `fixed_params$sigma`.
+
+- `sampling_var` *and* a user `prior` on `class = "sigma"`.
+
+- `sampling_var` *and* a `stanvars` sampling statement involving
+  `sigma`.
+
+- `auxiliary` *and* the deprecated `predictors` in the same call.
+
 ## See also
 
 [`hbm_flex`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md),

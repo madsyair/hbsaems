@@ -8,10 +8,43 @@
 > by the chunks above. To reproduce the exact numbers, copy the code
 > into an interactive R session.
 
-## Missing data in SAE
+## The Bayesian principle: response variables are never imputed
 
-Missingness is the rule rather than the exception in small area work.
-Three patterns are most common:
+A core design rule in `hbsaems` is that **multiple imputation only ever
+imputes auxiliary (predictor) variables, never the response**. This is
+not a limitation – it is the statistically correct Bayesian treatment:
+
+- For a Bayesian hierarchical model with response $`Y`$, the posterior
+  for the parameters $`\theta`$ marginalises the missing outcomes
+  $`Y_{\text{mis}}`$:
+  ``` math
+  p(\theta \mid Y_{\text{obs}}, X) = \int p(\theta \mid Y_{\text{obs}},
+    Y_{\text{mis}}, X) \, p(Y_{\text{mis}} \mid Y_{\text{obs}}, X, \theta)
+    \, \mathrm{d}Y_{\text{mis}}.
+  ```
+- Plugging in a mice-imputed value for $`Y`$ would replace this integral
+  with a single point substitute, deflate the posterior uncertainty, and
+  bias estimates if the imputation model is misspecified.
+- The correct way to “fill in” missing $`Y`$ values is **joint Bayesian
+  imputation** via
+  [`brms::mi()`](https://paulbuerkner.com/brms/reference/mi.html), which
+  samples $`Y_{\text{mis}}`$ alongside $`\theta`$. This is the
+  `handle_missing = "model"` strategy described below.
+
+The three strategies thus have **different scopes**:
+
+| Strategy | What it imputes | Required completeness |
+|----|----|----|
+| `"deleted"` | Nothing – drops rows with missing $`Y`$ | Auxiliary $`X`$ must be complete |
+| `"multiple"` | **Only auxiliary $`X`$** via `mice` | Any $`Y`$ missingness handled separately (see below) |
+| `"model"` | \*\*$`X`$ and $`Y`$ jointly via [`brms::mi()`](https://paulbuerkner.com/brms/reference/mi.html) | Continuous outcomes only |
+
+When `handle_missing = NULL` (default), the package **auto-selects** a
+strategy based on the family’s `supports_mi` flag.
+
+## Missing-data patterns in SAE
+
+Three patterns are common:
 
 1.  **Missing response, complete covariates** – some areas were not
     sampled at all, but you have administrative auxiliaries for them.
@@ -19,28 +52,26 @@ Three patterns are most common:
     area, but a census variable is missing for some.
 3.  **Missing in both** – a mix of the above.
 
-`hbsaems` exposes three strategies through a single `handle_missing`
-argument:
+The package’s reaction to each pattern depends on which `handle_missing`
+strategy is in effect. The next three sections walk through each
+strategy and the patterns it handles.
 
-| Strategy | Trigger | What it does |
-|----|----|----|
-| `"deleted"` | Listwise deletion | Drops rows with any missing variable |
-| `"multiple"` | `mice` multiple imputation | Imputes covariates $`m`$ times, fits each, pools |
-| `"model"` | Joint Bayesian imputation via [`brms::mi()`](https://paulbuerkner.com/brms/reference/mi.html) | Treats missing values as parameters |
+## Strategy 1: `"deleted"` (listwise deletion on Y only)
 
-When `handle_missing = NULL` (default), the package **auto-selects** a
-strategy based on the pattern detected and the family’s capabilities.
+When `handle_missing = "deleted"`:
 
-## Strategy 1: deletion (listwise)
-
-The simplest approach: drop any row with `NA` in `response` or
-`auxiliary`. Appropriate when the proportion missing is small and
-missingness is plausibly MCAR (missing completely at random):
+- Rows where the **response $`Y`$ is missing** are dropped before model
+  fitting.
+- If any **auxiliary** is missing, the function **refuses with an
+  informative error** – listwise deletion of $`X`$ would discard
+  information that more principled strategies can recover.
 
 ``` r
 
 library(hbsaems)
 data("data_fhnorm")
+
+# Pattern 1: missing Y only, X complete
 data_miss_y      <- data_fhnorm
 data_miss_y$y[c(3, 14, 27)] <- NA
 
@@ -56,16 +87,40 @@ fit_deleted <- hbm(
     handle_missing = 'deleted': 3 row(s) with missing response variable removed
     from model fitting.
 
-The dropped rows are listed in `fit_deleted$missing_info`. Predictions
-for these areas can still be obtained via
+If you pass data with missing $`X`$ to `"deleted"`, the call is
+rejected:
+
+``` r
+
+data_miss_x <- data_fhnorm
+data_miss_x$x1[6:8] <- NA
+
+hbm(brms::bf(y ~ x1 + x2 + x3),
+    data           = data_miss_x,
+    handle_missing = "deleted")
+```
+
+    Error: Option `handle_missing = 'deleted'` requires all auxiliary (predictor)
+    variables to be complete. Missing values were detected in: x1. Consider
+    `handle_missing = 'multiple'` to impute missing predictors.
+
+The dropped rows (under the legitimate Y-only case) are retained in
+`fit_deleted$data` so that
 [`sae_predict()`](https://madsyair.github.io/hbsaems/reference/sae_predict.md)
-with their auxiliary values.
+can still produce predictions for those areas using their auxiliary
+values.
 
-## Strategy 2: multiple imputation (mice)
+## Strategy 2: `"multiple"` (mice on X only)
 
-For covariates that are missing in some areas but observable in
-principle from a census or register, multiple imputation with `mice` is
-the workhorse:
+When `handle_missing = "multiple"`, `mice` imputes the missing
+**auxiliary variables** $`m`$ times, fits the brms model on each imputed
+dataset, and pools the posterior draws via Rubin’s rules (via
+[`brms::brm_multiple`](https://paulbuerkner.com/brms/reference/brm_multiple.html)).
+
+The response is **never imputed by mice**. How the package handles each
+pattern:
+
+### Pattern 2a: Missing X only – normal mice workflow
 
 ``` r
 
@@ -89,9 +144,6 @@ fit_mi <- hbm(
     Fitting imputed model 1
     Start sampling
     ...
-    Fitting imputed model 2
-    Start sampling
-    ...
     Fitting imputed model 5
     Start sampling
     ...
@@ -104,7 +156,75 @@ informative for pooled chains – see
 [`?brm_multiple`](https://paulbuerkner.com/brms/reference/brm_multiple.html)
 for details.
 
-You can control mice via `mice_args`:
+### Pattern 2b: Missing X *and* Y (or only Y) – response not imputed
+
+If $`Y`$ also has missing values, the package issues a warning
+explaining that **mice will not impute $`Y`$** and the rows with missing
+$`Y`$ are excluded from fitting but retained in the returned object:
+
+``` r
+
+data_miss_both <- data_fhnorm
+data_miss_both$y[2:3]   <- NA           # missing Y
+data_miss_both$x1[6:8]  <- NA           # missing X
+
+fit_mi_both <- hbm(
+  formula        = brms::bf(y ~ x1 + x2 + x3),
+  re             = ~ (1 | group),
+  data           = data_miss_both,
+  handle_missing = "multiple"
+)
+```
+
+    Warning: Missing values detected in response variable(s): y.
+    Multiple imputation via `mice` applies ONLY to auxiliary predictor
+    variables (X). Response variable(s) are NEVER imputed inside a
+    Bayesian model -- missing Y rows will be excluded from model fitting
+    but are retained in the returned object for prediction via hbsae().
+    If you wish to model missingness in Y jointly with the parameters,
+    consider `handle_missing = 'model'` (continuous outcomes only).
+
+    Missing predictor variable(s): x1. Applying multiple imputation (mice)
+    with m = 5 imputations.
+
+### Pattern 2c: Missing Y only – auto-conversion
+
+If `handle_missing = "multiple"` is given but **only Y** is missing
+($`X`$ is complete), there is nothing for mice to impute. The package
+then auto-converts to a more appropriate strategy:
+
+- **Continuous family** (e.g. `gaussian`, `lognormal`): auto-converts to
+  `handle_missing = "model"` and adds `| mi()` to the formula LHS so
+  that missing $`Y`$ values are jointly sampled with the parameters (the
+  correct Bayesian approach).
+- **Discrete family** (e.g. `binomial`, `poisson`):
+  [`mi()`](https://paulbuerkner.com/brms/reference/mi.html) is not
+  supported – falls back to `handle_missing = "deleted"`, dropping the
+  rows with missing $`Y`$.
+
+``` r
+
+data_miss_y_only <- data_fhnorm
+data_miss_y_only$y[2:3] <- NA           # only Y missing
+
+# Gaussian family -> auto-converts to "model" with | mi() on LHS
+fit_auto1 <- hbm(
+  formula        = brms::bf(y ~ x1 + x2 + x3),
+  re             = ~ (1 | group),
+  data           = data_miss_y_only,
+  handle_missing = "multiple"
+)
+```
+
+    handle_missing = 'multiple' was specified but only the response variable
+    (Y) is missing and X is complete. mice imputes predictor variables only and
+    cannot impute Y. Automatically converting to handle_missing = 'model':
+    '| mi()' will be added to the formula LHS so that brms jointly estimates
+    missing Y with the model parameters (the correct Bayesian approach).
+
+### Controlling mice
+
+Pass options through `mice_args`:
 
 ``` r
 
@@ -119,46 +239,54 @@ fit_mi2 <- hbm(
 )
 ```
 
-## Strategy 3: model-based (joint Bayesian) imputation
+## Strategy 3: `"model"` (joint Bayesian imputation)
 
-When the missingness is suspected MAR or MNAR and you have a good model
-for the missing variable, joint Bayesian imputation via
-[`brms::mi()`](https://paulbuerkner.com/brms/reference/mi.html) is more
-principled:
+When `handle_missing = "model"`, missing values in both response and
+auxiliary variables are sampled jointly with the model parameters via
+[`brms::mi()`](https://paulbuerkner.com/brms/reference/mi.html). The
+user must specify imputation sub-models explicitly in the formula:
 
 ``` r
+
+data_miss_both <- data_fhnorm
+data_miss_both$y[2:3]   <- NA
+data_miss_both$x1[6:8]  <- NA
 
 fit_model <- hbm(
   formula        = brms::bf(y  | mi() ~ mi(x1) + x2 + x3) +
                    brms::bf(x1 | mi() ~ x2 + x3),
   re             = ~ (1 | group),
-  data           = data_miss_x,
+  data           = data_miss_both,
   handle_missing = "model",
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
 ```
 
-    handle_missing = 'model': using mi() specification for joint model-based
-    imputation.
-
-    Setting 'rescor' to FALSE by default for this model.
-
     Compiling Stan program...
     Start sampling...
 
-This fits a **multivariate** brms model where missing values of `y` and
-`x1` are sampled alongside the regression coefficients. Posterior
-uncertainty in the imputations is automatically propagated.
+- `y | mi() ~ ...` tells brms to treat missing $`Y`$ values as
+  parameters to be sampled.
+- `mi(x1)` on the RHS tells brms to use the imputed $`x_1`$ (also
+  sampled) as a predictor.
+- The second `bf(x1 | mi() ~ x2 + x3)` is the imputation sub-model for
+  $`x_1`$.
 
-Not every family supports
-[`mi()`](https://paulbuerkner.com/brms/reference/mi.html) – check
-`spec$supports_mi` in the model registry
-([`?list_hbsae_models`](https://madsyair.github.io/hbsaems/reference/list_hbsae_models.md)).
+The result is a **multivariate brms model** in which all missing values
+are sampled alongside the regression coefficients; posterior uncertainty
+in the imputations is automatically propagated.
 
-## Auto-selection
+**Restriction**: `handle_missing = "model"` only works for **continuous
+distributions** (the `supports_mi` flag in the family registry). For
+discrete families (binomial, Poisson, …),
+[`brms::mi()`](https://paulbuerkner.com/brms/reference/mi.html) is not
+supported – use `"multiple"` for missing $`X`$ and accept listwise
+deletion for missing $`Y`$.
 
-If you omit `handle_missing`, the wrappers will look at the missing
-pattern and choose:
+## Auto-selection (when `handle_missing = NULL`)
+
+If you omit `handle_missing`, the package looks at whether **any**
+missingness exists and selects based on the family’s `supports_mi` flag:
 
 ``` r
 
@@ -175,20 +303,25 @@ fit_auto <- hbm_lnln(
     Missing values detected. Auto-selecting handle_missing = 'multiple'
     (family 'lognormal', supports_mi = FALSE).
 
-The decision tree is:
+The actual decision rule used in the code is:
 
-    Missing response only           ->  "deleted"
-    Missing covariates only,
-       family supports mi()          ->  "model"
-    Missing covariates only,
-       family does NOT support mi()  ->  "multiple"
-    Missing in both                  ->  "model" if supported, else "multiple"
+    Any NA detected in response or auxiliary?
+      └── family.supports_mi == TRUE?   ->  "model"   (joint mi(); user must
+      │                                                supply mi() formula
+      │                                                terms when missing X)
+      └── otherwise                      ->  "multiple" (mice on X only;
+                                                         missing Y handled
+                                                         per Strategy 2 logic)
 
-You can always override this with an explicit `handle_missing = "..."`.
+The auto-selection is intentionally simple and does **not** branch on
+“Y-only” vs “X-only” patterns: those subtleties are handled inside the
+chosen strategy (see Pattern 2c above for the case where `"multiple"`
+detects Y-only missingness and auto-converts to `"model"` for continuous
+families or to `"deleted"` for discrete families).
 
-## Comparing strategies
+You can always override by passing an explicit `handle_missing = "..."`.
 
-When time permits, compare strategies’ predictive performance:
+## Comparing strategies (when fitting all three is feasible)
 
 ``` r
 
@@ -205,20 +338,23 @@ loo_compare
     fit_mi           -2.1       2.4
     fit_deleted     -10.7       3.8
 
-Deletion’s poor performance here is typical: throwing away 3 of 100
-informative rows costs predictive accuracy.
+Note that `fit_deleted` and `fit_mi` here refer to fits on the same
+pattern (missing Y only, missing X only respectively), so the comparison
+is over comparable likelihood scales.
 
 ## Practical guidance
 
-- **Small fraction missing (\< 5%) and likely MCAR** – deletion is fine.
-- **Larger fraction or non-MCAR** – prefer multiple imputation or
-  model-based.
-- **Missing in response only and you have administrative auxiliaries for
-  those areas** – prefer deletion + post-fit prediction via
+- **Small fraction missing (\< 5%) and likely MCAR, missing in Y only**
+  – `"deleted"` is fine.
+- **Missing in X (with or without missing Y)**:
+  - Continuous family – prefer `"model"` (joint Bayesian imputation,
+    most principled).
+  - Discrete family – use `"multiple"` (mice on X; rows with missing Y
+    are dropped from fitting but retained in the result for prediction).
+- **Missing in response only, you have administrative auxiliaries for
+  those areas** – prefer `"deleted"` plus
   [`sae_predict()`](https://madsyair.github.io/hbsaems/reference/sae_predict.md)
   (this is more transparent than imputing the response).
-- **Missing in covariates only** – model-based imputation is most
-  principled if the family supports it; mice is a robust fallback.
 - **Reproducibility** – set `seed` for both the wrapper call and (if
   using mice) within `mice_args` to make imputations reproducible.
 
@@ -228,6 +364,9 @@ informative rows costs predictive accuracy.
   Wiley.
 - van Buuren, S. (2018). *Flexible Imputation of Missing Data*. CRC
   Press.
-- Buerkner, P.-C. (2017). brms: An R Package for Bayesian Multilevel
+- Bürkner, P.-C. (2017). brms: An R Package for Bayesian Multilevel
   Models Using Stan. *Journal of Statistical Software*, 80(1), 1-28.
   Section on [`mi()`](https://paulbuerkner.com/brms/reference/mi.html).
+- Gelman, A., & Hill, J. (2006). *Data Analysis Using Regression and
+  Multilevel/Hierarchical Models*. Cambridge University Press, Chapter
+  25.
