@@ -1,6 +1,6 @@
 # R/convergence-check.R
 # =============================================================================
-# Primary convergence diagnostics API for hbsaems v0.3.0+.
+# Primary convergence diagnostics function for hbsaems v0.3.0+.
 # This file replaces the body of the deprecated `hbcc()` function.
 # =============================================================================
 

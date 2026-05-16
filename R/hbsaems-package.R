@@ -56,7 +56,7 @@
 #'         \code{\link{sae_predict}}.
 #' }
 #'
-#' @section Layered API:
+#' @section Layered Function Family:
 #' Three layers of entry points, picked by how much customisation is
 #' needed:
 #' \enumerate{

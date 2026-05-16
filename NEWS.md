@@ -16,7 +16,7 @@ of the standard pipeline.
 
 This entry consolidates the changelog for every development cycle
 since the 0.1.2 maintenance release; the package now follows semantic
-versioning and the 1.0.0 line constitutes a frozen public API.
+versioning and the 1.0.0 line constitutes a stable user-facing function set whose signatures will not change before v2.0.0.
 
 ## New features
 
@@ -61,7 +61,7 @@ versioning and the 1.0.0 line constitutes a frozen public API.
   `sae_predict()`).  Pfeffermann-style design-consistent benchmarking
   and out-of-sample prediction for unsampled areas.
 
-## API changes (breaking only at v2.0.0)
+## Naming and interface changes (breaking only at v2.0.0)
 
 * **Argument rename: `predictors` -> `auxiliary`**.  The new name
   aligns with Small Area Estimation literature (Rao & Molina 2015,

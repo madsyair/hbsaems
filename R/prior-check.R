@@ -1,6 +1,6 @@
 # R/prior-check.R
 # =============================================================================
-# Primary prior-predictive-check API for hbsaems v0.3.0+.
+# Primary prior-predictive-check function for hbsaems v0.3.0+.
 # Replaces the body of the deprecated hbpc().
 # =============================================================================
 

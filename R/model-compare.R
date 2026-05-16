@@ -1,6 +1,6 @@
 # R/model-compare.R
 # =============================================================================
-# Primary model-comparison API for hbsaems v0.3.0+.
+# Primary model-comparison function for hbsaems v0.3.0+.
 #
 #   model_compare()      -- 1 or 2 models  (replaces deprecated hbmc())
 #   model_compare_all()  -- N models (analogous to brms::loo_compare)

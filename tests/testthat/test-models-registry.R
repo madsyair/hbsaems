@@ -1,6 +1,6 @@
 # tests/testthat/test-families-registry.R
 # =============================================================================
-# Unit tests for the family registry + register_hbsae_model() public API.
+# Unit tests for the family registry + register_hbsae_model() public function set.
 # All CRAN-safe (no Stan).
 # =============================================================================
 

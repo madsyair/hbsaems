@@ -1,6 +1,6 @@
 # R/sae-predict.R
 # =============================================================================
-# Primary small-area-estimation prediction API for hbsaems v0.3.0+.
+# Primary small-area-estimation prediction function for hbsaems v0.3.0+.
 #
 #   sae_predict()   -- area-level posterior predictive (replaces hbsae())
 #   sae_aggregate() -- combine multiple hbsae_results
@@ -78,7 +78,7 @@ sae_predict.brmsfit <- function(model, newdata = NULL, ...) {
 
 # Internal worker shared by the S3 dispatch above and the deprecated hbsae().
 #
-# Kept private so that the public API stays small.  Edit ONCE here, both the
+# Kept private so that the public function set stays small.  Edit ONCE here, both the
 # new and deprecated entry points pick up the change.
 .sae_predict_impl <- function(model, newdata = NULL, ...) {
   brms_model <- model$model

@@ -88,10 +88,11 @@ read_stan_function <- function(name) {
 #' @param lb,ub Numeric vectors of lower / upper bounds; \code{NA} for none.
 #' @param type \code{"real"} (continuous) or \code{"int"} (discrete).
 #' @param loop Logical.  \code{FALSE} (default) selects the vectorised brms
-#'   API (Stan signatures take vectors of \code{y} and \code{mu}); \code{TRUE}
-#'   selects scalar Stan signatures.  The default matches the neodistr
-#'   convention.  Whichever you choose, the corresponding \code{.stan}
-#'   file under \code{inst/stan/} must use the same convention.
+#'   convention (Stan signatures take vectors of \code{y} and \code{mu});
+#'   \code{TRUE} selects scalar Stan signatures.  The default matches the
+#'   neodistr convention.  Whichever you choose, the corresponding
+#'   \code{.stan} file under \code{inst/stan/} must use the same
+#'   convention.
 #' @param log_lik Optional function for computing observation-level
 #'   log-likelihoods (used by \code{loo()}, \code{waic()}).  Signature
 #'   must be \code{function(i, prep)}.  See the brms vignette

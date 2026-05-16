@@ -52,7 +52,7 @@ hbsae(model, newdata = NULL, ...)
 Identical to the corresponding replacement function.
 }
 \description{
-These functions were the primary API in \pkg{hbsaems} \eqn{\le} 0.2.x.
+These functions were the main entry point in \pkg{hbsaems} \eqn{\le} 0.2.x.
 They are retained for backwards compatibility but now call the new
 primary functions and emit a deprecation warning via
 \code{\link[base]{.Deprecated}}.  They will be removed in

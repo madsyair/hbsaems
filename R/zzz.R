@@ -60,7 +60,7 @@
   v <- utils::packageVersion("hbsaems")
   packageStartupMessage(
     "hbsaems ", v, "\n",
-    "  Primary API : convergence_check() | model_compare() | ",
+    "  Main functions : convergence_check() | model_compare() | ",
     "sae_predict() | prior_check()\n",
     "  Custom dist : loglogistic, shifted_loglogistic (brms custom families)\n",
     "  Deprecated  : hbcc() | hbmc() | hbpc() | hbsae() ",

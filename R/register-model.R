@@ -1,6 +1,6 @@
 # R/register-model.R
 # =============================================================================
-# Public API for extending hbsaems with custom HBSAE model types.
+# Public Function Set for extending hbsaems with custom HBSAE model types.
 #
 # Downstream packages, plugins, and end-users can call
 # register_hbsae_model() at startup (e.g. in their .onLoad) to add a new

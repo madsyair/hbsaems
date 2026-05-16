@@ -60,7 +60,7 @@ Gelman et al.\ (2020), \pkg{hbsaems} provides:
 }
 }
 
-\section{Layered API}{
+\section{Layered Function Family}{
 
 Three layers of entry points, picked by how much customisation is
 needed:
@@ -178,7 +178,6 @@ Useful links:
 
 Authors:
 \itemize{
-  \item Achmad Syahrul Choir \email{madsyair@stis.ac.id} (\href{https://orcid.org/0000-0001-7088-0646}{ORCID})
   \item Saniyyah Sri Nurhayati
   \item Sofi Zamzanah
   \item Arsyka Laila Oktalia Siregar

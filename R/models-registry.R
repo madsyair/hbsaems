@@ -28,7 +28,7 @@
 # matches brms terminology -- $family stores the brms family name), the
 # spec as a whole describes a *model* type: family + link + addition term +
 # missing-data behaviour + auxiliary-parameter hyperprior callback, etc.
-# Hence the user-facing API uses "model" wording (register/list/get).
+# Hence the user-facing functions uses "model" wording (register/list/get).
 #
 # The registry lives in a package-internal environment so it can be
 # extended at runtime via register_hbsae_model() without touching
