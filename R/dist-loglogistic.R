@@ -234,7 +234,7 @@ brms_custom_loglogistic <- function() {
   build_brms_custom_family(
     name              = "loglogistic",
     dpars             = c("mu", "beta"),
-    links             = c("log", "log"),
+    links             = c("identity", "log"),
     lb                = c(0,    0),
     ub                = c(NA,   NA),
     type              = "real",
