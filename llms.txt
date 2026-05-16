@@ -63,8 +63,15 @@ You can install the development version from GitHub:
 
 ``` r
 
-# install.packages("remotes")
-remotes::install_github("madsyair/hbsaems")
+# install.packages("devtools")
+devtools::install_github("madsyair/hbsaems")
+```
+
+Or with vignettes:
+
+``` r
+
+devtools::install_github("madsyair/hbsaems", build_vignettes = TRUE)
 ```
 
 ## Dependencies
@@ -104,18 +111,16 @@ summary(model)
 
 ## The Three-Layer API
 
-``` R
-                      hbm()
-                      Universal: any brms family, full customisation
-                                       ▲
-                                       |
-                      hbm_flex()
-                      Family registry + auxiliary + fixed_params
-                                       ▲
-                                       |
-       hbm_lnln() / hbm_betalogitnorm() / hbm_binlogitnorm()
-       SAE-friendly wrappers: response, auxiliary, group, n/deff, ...
-```
+                          hbm()
+                          Universal: any brms family, full customisation
+                                           ▲
+                                           |
+                          hbm_flex()
+                          Family registry + auxiliary + fixed_params
+                                           ▲
+                                           |
+           hbm_lnln() / hbm_betalogitnorm() / hbm_binlogitnorm()
+           SAE-friendly wrappers: response, auxiliary, group, n/deff, ...
 
 Most users start with a wrapper. Step up to
 [`hbm_flex()`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md)
@@ -440,6 +445,31 @@ Browse them with:
 browseVignettes("hbsaems")
 ```
 
+### Comprehensive Examples Reference
+
+In addition to the topical vignettes above, the package ships an
+**all-in-one examples reference** at
+`inst/examples/hbsaems-examples.Rmd` covering every supported model
+family, every advanced feature, and every utility in one document.
+Locate it with:
+
+``` r
+
+system.file("examples", "hbsaems-examples.Rmd", package = "hbsaems")
+```
+
+You can render it locally with:
+
+``` r
+
+rmd_file <- system.file("examples", "hbsaems-examples.Rmd",
+                         package = "hbsaems")
+rmarkdown::render(rmd_file, output_dir = tempdir())
+```
+
+This is ideal as a quick reference card or as a JSS-style supplementary
+materials companion.
+
 ## Methodology
 
 The package implements area-level hierarchical Bayesian SAE following
@@ -492,11 +522,9 @@ If you use this package in your research, please cite:
 citation("hbsaems")
 ```
 
-``` R
-Choir, A. S., Nurhayati, S. S., Zamzanah, S., & Siregar, A. L. O. (2026).
-hbsaems: Hierarchical Bayesian Area-Level Small Area Estimation Models.
-R package version 1.0.0. https://github.com/madsyair/hbsaems
-```
+    Choir, A. S., Nurhayati, S. S., Zamzanah, S., & Siregar, A. L. O. (2026).
+    hbsaems: Hierarchical Bayesian Area-Level Small Area Estimation Models.
+    R package version 1.0.0. https://github.com/madsyair/hbsaems
 
 ## References
 
@@ -711,11 +739,11 @@ Tools for extracting draws and summaries from fitted models.
 
 - [`posterior_draws()`](https://madsyair.github.io/hbsaems/reference/posterior_draws.md)
   : Extract Posterior Draws as a Matrix
-- [`posterior_interval()`](https://madsyair.github.io/hbsaems/reference/posterior_interval.md)
-  : Compute Credible Intervals
+- [`posterior_interval(`*`<hbmfit>`*`)`](https://madsyair.github.io/hbsaems/reference/posterior_interval.md)
+  : Compute Credible Intervals for an hbmfit Object
 - [`posterior_summary_hbm()`](https://madsyair.github.io/hbsaems/reference/posterior_summary_hbm.md)
   : Comprehensive Posterior Summary
-- [`prior_draws()`](https://madsyair.github.io/hbsaems/reference/prior_draws.md)
+- [`prior_draws(`*`<hbmfit>`*`)`](https://madsyair.github.io/hbsaems/reference/prior_draws.md)
   : Extract Prior Draws
 
 ## Data validation

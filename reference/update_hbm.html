@@ -123,6 +123,18 @@ retyping the full <code><a href="hbm.html">hbm</a></code> call.</p>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An updated <code>hbmfit</code> object.</p>
     </div>
+    <div class="section level2">
+    <h2 id="auto-fallback-for-new-formula-terms">Auto-fallback for new formula terms<a class="anchor" aria-label="anchor" href="#auto-fallback-for-new-formula-terms"></a></h2>
+
+
+<p>When you supply a new <code>formula.</code> that references variables not in
+the original model frame, <span class="pkg">brms</span>'s default <code>update.brmsfit</code>
+refuses with <em>"New variables found ...; supply data again via
+newdata"</em>.  <code>update_hbm</code> catches this specific error and
+automatically retries with <code>newdata = object$data</code> (the data
+frame stored on the original <code>hbmfit</code>).  Pass an explicit
+<code>newdata</code> to override this behaviour.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -137,11 +149,12 @@ retyping the full <code><a href="hbm.html">hbm</a></code> call.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Re-run with more iterations</span></span></span>
+<span class="r-in"><span><span class="co"># Re-run with more iterations (no data change needed)</span></span></span>
 <span class="r-in"><span><span class="va">model2</span> <span class="op">&lt;-</span> <span class="fu">update_hbm</span><span class="op">(</span><span class="va">model</span>, iter <span class="op">=</span> <span class="fl">4000</span>, warmup <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span></span></span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model' not found</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Add a predictor</span></span></span>
+<span class="r-in"><span><span class="co"># Add a predictor: the auto-fallback transparently retries with the</span></span></span>
+<span class="r-in"><span><span class="co"># stored data frame.  Equivalent to passing newdata = data_fhnorm.</span></span></span>
 <span class="r-in"><span><span class="va">model3</span> <span class="op">&lt;-</span> <span class="fu">update_hbm</span><span class="op">(</span><span class="va">model</span>, formula. <span class="op">=</span> <span class="va">.</span> <span class="op">~</span> <span class="va">.</span> <span class="op">+</span> <span class="va">x2</span><span class="op">)</span></span></span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model' not found</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>

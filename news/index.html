@@ -98,6 +98,11 @@
 <strong>Three retained vignettes</strong>: <code>complete-workflow</code>, <code>advanced-features</code>, <code>migration-guide</code>.</li>
 </ul></div>
 <div class="section level3">
+<h3 id="bug-fixes-1-0-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-0"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/posterior_interval.html">posterior_interval()</a></code> and <code><a href="../reference/prior_draws.html">prior_draws()</a></code> now re-export the upstream generics</strong> from  and  respectively, rather than defining new generics with conflicting signatures. This fixes a name-collision crash that occurred when  was attached together with  and the user called  on an  object: the error message  no longer occurs. The fix follows the standard R package design pattern used by  itself.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="internal-1-0-0">Internal<a class="anchor" aria-label="anchor" href="#internal-1-0-0"></a></h3>
 <ul><li>All exported functions documented with full <code>roxygen2</code> blocks including <code>@param</code>, <code>@return</code>, <code>@examples</code>, and references where appropriate.</li>
 <li>Custom-distribution Stan code stored as separate <code>.stan</code> files in <code>inst/stan/</code> (one source of truth, syntax highlighting, no string-escaping noise).</li>

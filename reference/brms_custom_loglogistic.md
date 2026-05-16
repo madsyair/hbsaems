@@ -55,9 +55,6 @@ library(brms)
 #> to the package is available through vignette('brms_overview').
 #> 
 #> Attaching package: ‘brms’
-#> The following objects are masked from ‘package:hbsaems’:
-#> 
-#>     posterior_interval, prior_draws
 #> The following object is masked from ‘package:stats’:
 #> 
 #>     ar

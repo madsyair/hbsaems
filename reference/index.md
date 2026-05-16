@@ -152,11 +152,11 @@ Tools for extracting draws and summaries from fitted models.
 
 - [`posterior_draws()`](https://madsyair.github.io/hbsaems/reference/posterior_draws.md)
   : Extract Posterior Draws as a Matrix
-- [`posterior_interval()`](https://madsyair.github.io/hbsaems/reference/posterior_interval.md)
-  : Compute Credible Intervals
+- [`posterior_interval(`*`<hbmfit>`*`)`](https://madsyair.github.io/hbsaems/reference/posterior_interval.md)
+  : Compute Credible Intervals for an hbmfit Object
 - [`posterior_summary_hbm()`](https://madsyair.github.io/hbsaems/reference/posterior_summary_hbm.md)
   : Comprehensive Posterior Summary
-- [`prior_draws()`](https://madsyair.github.io/hbsaems/reference/prior_draws.md)
+- [`prior_draws(`*`<hbmfit>`*`)`](https://madsyair.github.io/hbsaems/reference/prior_draws.md)
   : Extract Prior Draws
 
 ## Data validation

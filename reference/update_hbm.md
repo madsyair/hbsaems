@@ -66,6 +66,15 @@ update_hbm(
 
 An updated `hbmfit` object.
 
+## Auto-fallback for new formula terms
+
+When you supply a new `formula.` that references variables not in the
+original model frame, brms's default `update.brmsfit` refuses with *"New
+variables found ...; supply data again via newdata"*. `update_hbm`
+catches this specific error and automatically retries with
+`newdata = object$data` (the data frame stored on the original
+`hbmfit`). Pass an explicit `newdata` to override this behaviour.
+
 ## Examples
 
 ``` r
@@ -80,11 +89,12 @@ model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
-# Re-run with more iterations
+# Re-run with more iterations (no data change needed)
 model2 <- update_hbm(model, iter = 4000, warmup = 2000)
 #> Error: object 'model' not found
 
-# Add a predictor
+# Add a predictor: the auto-fallback transparently retries with the
+# stored data frame.  Equivalent to passing newdata = data_fhnorm.
 model3 <- update_hbm(model, formula. = . ~ . + x2)
 #> Error: object 'model' not found
 # }

@@ -76,10 +76,16 @@ priors are likely too tight or in the wrong location.
 library(hbsaems)
 library(brms)
 data("data_fhnorm")
+# `sample_prior = "only"` requires all coefficients to have a proper
+# prior; supply explicit priors on the regression class.
 model_prior <- hbm(
   formula      = brms::bf(y ~ x1 + x2 + x3),
   data         = data_fhnorm,
   sample_prior = "only",
+  prior        = c(
+    brms::prior(normal(0, 1), class = "b"),
+    brms::prior(normal(0, 5), class = "Intercept")
+  ),
   chains = 2, iter = 1000, warmup = 500, cores = 1,
   seed = 42, refresh = 0
 )
@@ -90,7 +96,8 @@ model_prior <- hbm(
 #>     sre = 'area_id', sre_type = 'car', M = W       # CAR spatial RE
 #>     sre = 'area_id', sre_type = 'sar', M = W       # SAR spatial RE
 #>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.
-#> Error in stan_prior(prior, class = "b", coef = fixef, type = b_type, px = px,     suffix = p, header_type = "vector", comment = "regression coefficients",     normalize = normalize): Sampling from priors is not possible as some parameters have no proper priors. Error occurred for parameter 'b'.
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 pc <- prior_check(model_prior,
                   data         = data_fhnorm,
                   response_var = "y")

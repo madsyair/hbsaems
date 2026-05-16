@@ -109,7 +109,7 @@ and (ii) merges the family's stanvars with any user-supplied `stanvars`.
 [`brms_custom_loglogistic`](https://madsyair.github.io/hbsaems/reference/brms_custom_loglogistic.md),
 [`brms_custom_shifted_loglogistic`](https://madsyair.github.io/hbsaems/reference/brms_custom_shifted_loglogistic.md),
 [brms vignette on custom
-families](https://cran.r-project.org/web/packages/brms/vignettes/brms_customfamilies.html).
+families](https://paulbuerkner.com/brms/articles/brms_customfamilies.html).
 
 ## Examples
 

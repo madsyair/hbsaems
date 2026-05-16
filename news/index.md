@@ -108,6 +108,17 @@ versioning and the 1.0.0 line constitutes a frozen public API.
 - **Three retained vignettes**: `complete-workflow`,
   `advanced-features`, `migration-guide`.
 
+### Bug fixes
+
+- **[`posterior_interval()`](https://madsyair.github.io/hbsaems/reference/posterior_interval.md)
+  and
+  [`prior_draws()`](https://madsyair.github.io/hbsaems/reference/prior_draws.md)
+  now re-export the upstream generics** from and respectively, rather
+  than defining new generics with conflicting signatures. This fixes a
+  name-collision crash that occurred when was attached together with and
+  the user called on an object: the error message no longer occurs. The
+  fix follows the standard R package design pattern used by itself.
+
 ### Internal
 
 - All exported functions documented with full `roxygen2` blocks

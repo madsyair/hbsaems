@@ -1,17 +1,21 @@
 # Extract Prior Draws
 
-Requires the model to have been fit with `sample_prior = "yes"` or
-`sample_prior = "only"`.
+The
+[`prior_draws`](https://paulbuerkner.com/brms/reference/prior_draws.brmsfit.html)
+generic is re-exported from brms and an S3 method is provided that
+dispatches on `hbmfit` objects. Requires the model to have been fit with
+`sample_prior = "yes"` or `sample_prior = "only"`.
 
 ## Usage
 
 ``` r
-prior_draws(model, ...)
+# S3 method for class 'hbmfit'
+prior_draws(x, ...)
 ```
 
 ## Arguments
 
-- model:
+- x:
 
   An `hbmfit` object.
 
@@ -25,6 +29,10 @@ prior_draws(model, ...)
 A `data.frame` of prior draws or `NULL` if no prior samples were stored
 in the model.
 
+## See also
+
+[`prior_draws`](https://paulbuerkner.com/brms/reference/prior_draws.brmsfit.html)
+
 ## Examples
 
 ``` r
@@ -32,9 +40,15 @@ in the model.
 library(hbsaems)
 library(brms)
 data("data_fhnorm")
+# `sample_prior = "yes"` works best when all coefficients have a
+# proper prior; supply explicit priors on the regression class.
 model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
              re = ~ (1 | group),    # area-level random effect
              sample_prior = "yes",
+             prior        = c(
+               brms::prior(normal(0, 1), class = "b"),
+               brms::prior(normal(0, 5), class = "Intercept")
+             ),
              chains = 2, iter = 1000, warmup = 500,
              cores = 1, seed = 1, refresh = 0)
 #> Compiling Stan program...

@@ -1,34 +1,48 @@
-# Compute Credible Intervals
+# Compute Credible Intervals for an hbmfit Object
 
-Compute Credible Intervals
+The
+[`posterior_interval`](https://mc-stan.org/rstantools/reference/posterior_interval.html)
+generic is re-exported from rstantools and an S3 method is provided that
+dispatches on `hbmfit` objects. This lets users call
+`posterior_interval(fit)` on the return value of
+[`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md) just as
+they would on a `brmsfit`.
 
 ## Usage
 
 ``` r
-posterior_interval(model, params = NULL, prob = 0.95, ...)
+# S3 method for class 'hbmfit'
+posterior_interval(object, prob = 0.95, params = NULL, ...)
 ```
 
 ## Arguments
 
-- model:
+- object:
 
   An `hbmfit` object.
 
-- params:
-
-  Optional character vector of parameter names.
-
 - prob:
 
-  Coverage probability in \\(0, 1)\\ (default `0.95`).
+  Coverage probability in \\(0, 1)\\ (default `0.95`; note that
+  [`rstantools::posterior_interval`](https://mc-stan.org/rstantools/reference/posterior_interval.html)'s
+  own default is `0.9`).
+
+- params:
+
+  Optional character vector of parameter names to keep.
 
 - ...:
 
-  Additional arguments forwarded to `posterior_draws`.
+  Additional arguments forwarded to
+  [`posterior_draws`](https://madsyair.github.io/hbsaems/reference/posterior_draws.md).
 
 ## Value
 
 A matrix with two rows giving lower and upper bounds.
+
+## See also
+
+[`posterior_interval`](https://mc-stan.org/rstantools/reference/posterior_interval.html)
 
 ## Examples
 
