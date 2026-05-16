@@ -48,7 +48,7 @@
     menu_spatial     = "Spatial Setup",
     menu_update      = "Update Model",
 
-    # ---- Spatial setup tab (v0.5.0) ----
+    # ---- Spatial setup tab (v1.0.0) ----
     spatial_intro_title    = "About Spatial Setup",
     spatial_intro_text     = paste0(
       "Configure the spatial neighbourhood structure used by CAR and ",
@@ -198,7 +198,7 @@
       "specify the model, run diagnostics, and benchmark the results."
     ),
     text_families_help = paste0(
-      "hbsaems v0.5.0 ships with a registry of distributions usable ",
+      "hbsaems v1.0.0 ships with a registry of distributions usable ",
       "via the hbm() family argument or the convenience wrappers ",
       "(hbm_lnln, hbm_binlogitnorm, hbm_betalogitnorm)."
     ),
@@ -237,7 +237,7 @@
     menu_spatial     = "Pengaturan Spasial",
     menu_update      = "Perbarui Model",
 
-    # ---- Spatial setup tab (v0.5.0) ----
+    # ---- Spatial setup tab (v1.0.0) ----
     spatial_intro_title    = "Tentang Pengaturan Spasial",
     spatial_intro_text     = paste0(
       "Konfigurasi struktur ketetanggaan spasial yang digunakan oleh ",
@@ -387,7 +387,7 @@
       "model, jalankan diagnostik, dan benchmark hasil."
     ),
     text_families_help = paste0(
-      "hbsaems v0.5.0 menyediakan registry distribusi yang dapat digunakan ",
+      "hbsaems v1.0.0 menyediakan registry distribusi yang dapat digunakan ",
       "melalui argumen family dari hbm() atau wrapper khusus ",
       "(hbm_lnln, hbm_binlogitnorm, hbm_betalogitnorm)."
     ),
