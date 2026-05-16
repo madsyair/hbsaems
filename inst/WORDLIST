@@ -1,5 +1,9 @@
+2a
+2b
+2c
 Achmad
 Anselin
+Anthropic
 Arsyka
 BPS
 BYM
@@ -74,7 +78,6 @@ NGO
 NMAR
 NUTS
 Naughton
-Neighbour
 Nonresponse
 Nurhayati
 ORCID
@@ -110,10 +113,8 @@ Sorbye
 Springer
 Sri
 Stan
-Standardise
 Stanvars
 Statistika
-Subclasses
 Syahrul
 Sørbye
 Traceplot
@@ -203,10 +204,12 @@ lognormal
 loo
 lpdf
 marginalised
+marginalises
 mathcal
 mathrm
 mice
 microdata
+mis
 misspecified
 modelled
 modelling
@@ -221,6 +224,7 @@ neighbouring
 neighbours
 neodistr
 neq
+newdata
 normalisation
 normalised
 organised

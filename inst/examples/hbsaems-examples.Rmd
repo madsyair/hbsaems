@@ -48,7 +48,7 @@ advanced feature, and every utility in the Bayesian workflow.
 The package fits **area-level** Hierarchical Bayesian Small Area
 Estimation (HBSAE) models following the methodological tradition of
 Rao and Molina (2015), adapted to the parameterisation and
-prior-specification conventions of the [brms](https://paul-buerkner.github.io/brms/)
+prior-specification conventions of the [brms](https://paulbuerkner.com/brms/)
 package (Bürkner, 2017), which targets the Stan back-end.
 
 For a topical tour, see the dedicated vignettes:

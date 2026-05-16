@@ -1079,7 +1079,7 @@ server <- function(input, output, session) {
             # Status indicator
             status_box,
             column(12,
-                tabBox(
+                shinydashboard::tabBox(
                     width = 12,
                     # --- Sub-tab 1: Source -----------------------------------
                     tabPanel(
