@@ -17,8 +17,8 @@ Authors@R: c(
 Maintainer: Achmad Syahrul Choir <madsyair@stis.ac.id>
 Description: Fits area-level Hierarchical Bayesian Small Area Estimation
     models. The methodological foundation follows the standard area-level
-    Small Area Estimation literature, primarily Rao and Molina (2015,
-    ISBN: 9781118735787) <doi:10.1002/9781118735855>, while computational
+    Small Area Estimation literature, primarily Rao and Molina (2015)
+    <doi:10.1002/9781118735855>, while computational
     implementation is adapted to the parameterisation and
     prior-specification conventions of the 'brms' package
     (Buerkner, 2017 <doi:10.18637/jss.v080.i01>), which targets the
