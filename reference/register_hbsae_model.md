@@ -119,7 +119,7 @@ After registering, you can fit a model directly with
     fit <- hbm_flex(
       family_key = "gamma_log",
       response   = "expenditure",
-      predictors = c("x1", "x2"),
+      auxiliary  = c("x1", "x2"),
       data       = my_data
     )
 

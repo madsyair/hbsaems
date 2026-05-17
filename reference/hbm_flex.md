@@ -23,9 +23,9 @@ hbm_flex(
   auxiliary = NULL,
   data,
   addition_var = NULL,
-  group = NULL,
-  sre = NULL,
-  sre_type = NULL,
+  area_var = NULL,
+  spatial_var = NULL,
+  spatial_model = NULL,
   car_type = NULL,
   sar_type = NULL,
   M = NULL,
@@ -38,12 +38,18 @@ hbm_flex(
   hs_scale_global = NULL,
   hs_scale_slab = 2,
   hs_par_ratio = NULL,
+  hs_autoscale = TRUE,
   r2d2_mean_R2 = 0.5,
   r2d2_prec_R2 = 2,
   r2d2_cons_D2 = NULL,
+  r2d2_autoscale = TRUE,
   nonlinear = NULL,
   nonlinear_type = "spline",
   spline_k = -1L,
+  spline_bs = "tp",
+  gp_k = NA_integer_,
+  gp_cov = "exp_quad",
+  gp_c = NULL,
   gp_scale = NULL,
   handle_missing = NULL,
   m = 5L,
@@ -58,6 +64,9 @@ hbm_flex(
   aux_args = NULL,
   stanvars = NULL,
   predictors = NULL,
+  group = NULL,
+  sre = NULL,
+  sre_type = NULL,
   ...
 )
 ```
@@ -88,16 +97,30 @@ hbm_flex(
   for binomial). Required when the family spec has
   `has_addition_term = TRUE`.
 
-- group, sre, sre_type, car_type, sar_type, M:
+- area_var:
 
-  Random/spatial effect arguments forwarded to
-  [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md).
+  Character or `NULL`. Name of the column in `data` identifying the
+  areas; if supplied, adds `(1 | area_var)` as an IID random intercept
+  (Fay-Herriot).
+
+- spatial_var, spatial_model, car_type, sar_type, M:
+
+  Spatial random-effect arguments forwarded to
+  [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md). See
+  [`?hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md) for a
+  full description.
 
 - prior, prior_type, hs_df, hs_df_global, hs_df_slab, hs_scale_global,
-  hs_scale_slab, hs_par_ratio, r2d2_mean_R2, r2d2_prec_R2, r2d2_cons_D2:
+  hs_scale_slab, hs_par_ratio, hs_autoscale, r2d2_mean_R2, r2d2_prec_R2,
+  r2d2_cons_D2, r2d2_autoscale:
 
   Shrinkage prior arguments forwarded to
-  [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md).
+  [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md). When the
+  formula contains
+  [`s()`](https://paulbuerkner.com/brms/reference/s.html) or
+  [`gp()`](https://paulbuerkner.com/brms/reference/gp.html) terms, the
+  prior is automatically cascaded to the corresponding parameter classes
+  (`"sds"`, `"sdgp"`) via the brms `main = TRUE` pattern.
 
 - fixed_params:
 
@@ -106,10 +129,57 @@ hbm_flex(
   the spec format. Allows power-user access to the generic
   fixed-parameter machinery (works with custom families too).
 
-- nonlinear, nonlinear_type, spline_k, gp_scale:
+- nonlinear:
 
-  Nonlinear-term arguments forwarded to
-  [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md).
+  Character vector of variable names to include as smooth/nonlinear
+  terms (rather than linear). Variables listed here that also appear in
+  `auxiliary` are modelled nonlinearly only.
+
+- nonlinear_type:
+
+  Character. `"spline"` (penalised regression spline via mgcv, default)
+  or `"gp"` (Gaussian process via brms).
+
+- spline_k:
+
+  Integer. Spline basis dimension passed to `mgcv::s(..., k = ...)`.
+  `-1` (default) lets mgcv choose automatically. For SAE typically
+  `k = 8` to `15`.
+
+- spline_bs:
+
+  Character. Spline basis type passed to `mgcv::s(..., bs = ...)`.
+  Defaults to `"tp"` (thin-plate regression spline). Set `"cr"` (cubic
+  regression) for better numerical stability with correlated auxiliary
+  variables. Other choices: `"cs"` (cubic with shrinkage), `"ps"`
+  (P-splines).
+
+- gp_k:
+
+  Integer or `NA`. Number of basis functions for the Hilbert-space
+  approximate GP (Riutort-Mayol et al.\\ 2020). `NA` (default) = exact
+  GP, scales \\O(n^3)\\ and is **not recommended for** \\n \> 100\\
+  areas. Integer `gp_k = 10`–`25` is typical for SAE applications and
+  dramatically improves convergence and runtime.
+
+- gp_cov:
+
+  Character. Covariance function: `"exp_quad"` (squared exponential /
+  RBF, default), `"matern15"` (Matern 3/2), `"matern25"` (Matern 5/2,
+  often more numerically stable than RBF), `"exponential"`.
+
+- gp_c:
+
+  Numeric. Hilbert-space GP boundary-scale factor passed to
+  `brms::gp(c = ...)`. Default brms value is 5/4 (= 1.25); increase if
+  the GP appears truncated at domain boundaries. Only relevant when
+  `gp_k` is set.
+
+- gp_scale:
+
+  **Deprecated.** Use `gp_c` instead. The old name suggested a
+  length-scale interpretation but actually mapped to the boundary-scale
+  factor.
 
 - handle_missing, m, mice_args:
 
@@ -141,6 +211,18 @@ hbm_flex(
 
   **Deprecated.** Use `auxiliary` instead. Kept for backward
   compatibility; will be removed in v2.0.0.
+
+- group:
+
+  **Deprecated.** Use `area_var` instead.
+
+- sre:
+
+  **Deprecated.** Use `spatial_var` instead.
+
+- sre_type:
+
+  **Deprecated.** Use `spatial_model` instead.
 
 - ...:
 
@@ -190,7 +272,7 @@ fit <- hbm_flex(
   family_key = "lognormal",
   response   = "y_obs",
   auxiliary  = c("x1", "x2", "x3"),
-  group      = "group",            # area-level random effect: (1 | group)
+  area_var   = "district",         # area-level random effect: (1 | district)
   data       = data_lnln,
   chains = 2, iter = 1000, refresh = 0
 )

@@ -1,7 +1,8 @@
 # Simulated Binomial Logit-Normal Data
 
-A simulated dataset for 100 areas under a Binomial logit-normal model.
-Each area provides a number of successes (`y`) out of `n` trials.
+A simulated dataset for 100 districts under a Binomial logit-normal
+model. Each district provides a number of successes (`y`) out of `n`
+trials.
 
 ## Usage
 
@@ -15,7 +16,7 @@ A data frame with 100 rows and 14 variables:
 
 - `n`:
 
-  Number of trials in the area.
+  Number of trials in the district.
 
 - `y`:
 
@@ -49,13 +50,14 @@ A data frame with 100 rows and 14 variables:
 
   Observed (direct) values.
 
-- `group`:
+- `district`:
 
-  Area identifier (1-100).
+  District identifier (`"district_001"` .. `"district_100"`).
 
-- `sre`:
+- `regency`:
 
-  Spatial-random-effect grouping variable.
+  Regency identifier (`"regency_01"` .. `"regency_05"`) – spatial
+  cluster level. Pair with `adjacency_matrix_car_regency`.
 
 ## Source
 

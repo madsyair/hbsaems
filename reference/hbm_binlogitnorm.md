@@ -14,8 +14,17 @@ hbm_binlogitnorm(
   trials,
   auxiliary = NULL,
   data,
+  area_var = NULL,
+  spatial_var = NULL,
+  spatial_model = NULL,
+  car_type = NULL,
+  sar_type = NULL,
+  M = NULL,
   fixed_params = NULL,
   predictors = NULL,
+  group = NULL,
+  sre = NULL,
+  sre_type = NULL,
   ...
 )
 ```
@@ -41,6 +50,38 @@ hbm_binlogitnorm(
 
   A `data.frame`.
 
+- area_var:
+
+  Optional character. Name of the column in `data` identifying the small
+  area / domain. When supplied, an IID area-level random effect
+  `(1 | area_var)` is added to the linear predictor. Default: `NULL`.
+
+- spatial_var:
+
+  Optional character. Name of a column identifying the spatial cluster.
+  Must be supplied together with `spatial_model` and `M`. Default:
+  `NULL`.
+
+- spatial_model:
+
+  Optional character. Spatial dependence: `"car"` (default
+  `car_type = "icar"`) or `"sar"` (default `sar_type = "lag"`). Default:
+  `NULL`.
+
+- car_type:
+
+  Optional character. CAR sub-type passed to brms: `"escar"`,
+  `"esicar"`, `"icar"`, or `"bym2"`.
+
+- sar_type:
+
+  Optional character. SAR sub-type: `"lag"` or `"error"`.
+
+- M:
+
+  Optional numeric matrix. Spatial weight matrix. Required when
+  `spatial_model` is supplied.
+
 - fixed_params:
 
   Optional named list pinning distributional parameters to known values.
@@ -52,12 +93,23 @@ hbm_binlogitnorm(
   **Deprecated.** Use `auxiliary` instead. Kept for backward
   compatibility; will be removed in v2.0.0.
 
+- group:
+
+  **Deprecated.** Use `area_var` instead.
+
+- sre:
+
+  **Deprecated.** Use `spatial_var` instead.
+
+- sre_type:
+
+  **Deprecated.** Use `spatial_model` instead.
+
 - ...:
 
   Additional arguments forwarded to
-  [`hbm_flex`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md).
-  See
-  [`?hbm_flex`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md).
+  [`hbm_flex`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md)
+  (e.g.\\ `prior_type`, `handle_missing`, sampler controls).
 
 ## Value
 
@@ -105,7 +157,7 @@ fit <- hbm_binlogitnorm(
   response   = "y",
   trials     = "n",
   auxiliary  = c("x1", "x2", "x3"),
-  group      = "group",            # area-level random effect
+  area_var   = "district",        # area-level random effect (1 | district)
   data       = data_binlogitnorm,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
@@ -113,15 +165,15 @@ fit <- hbm_binlogitnorm(
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 # -- 2. With spatial CAR random effect -------------------------------------
-data("adjacency_matrix_car")
+data("adjacency_matrix_car_regency")
 fit_car <- hbm_binlogitnorm(
-  response   = "y",
-  trials     = "n",
-  auxiliary  = c("x1", "x2", "x3"),
-  sre        = "sre",
-  sre_type   = "car",
-  M          = adjacency_matrix_car,
-  data       = data_binlogitnorm,
+  response      = "y",
+  trials        = "n",
+  auxiliary     = c("x1", "x2", "x3"),
+  spatial_var   = "regency",
+  spatial_model = "car",
+  M             = adjacency_matrix_car_regency,
+  data          = data_binlogitnorm,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
 #> Compiling Stan program...

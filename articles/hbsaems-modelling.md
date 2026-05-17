@@ -37,7 +37,7 @@ direct estimates toward a regression-based prediction.
 
 - a small set of **convenience wrappers** (`hbm_lnln`,
   `hbm_betalogitnorm`, `hbm_binlogitnorm`) with arguments named after
-  SAE concepts (`auxiliary`, `sampling_var`, `n` + `deff`);
+  SAE concepts (`auxiliary`, `sampling_variance`, `n` + `deff`);
 - a **generic factory**
   [`hbm_flex()`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md)
   that handles any registered likelihood;
@@ -63,7 +63,7 @@ This vignette is the high-level tour. The family-specific vignettes
                                            ▲
                                            |
             LAYER 1:  Wrappers (hbm_lnln, hbm_betalogitnorm, hbm_binlogitnorm)
-            SAE-friendly: response, auxiliary, group, n/deff, sampling_var
+            SAE-friendly: response, auxiliary, area_var, n/deff, sampling_variance
 
 Most users start in **Layer 1**: pick the wrapper that matches your
 response distribution, plug in your data, get a fit. When a need arises
@@ -80,18 +80,18 @@ identifier `group`.
 ``` r
 
 data("data_lnln")
-str(data_lnln[, c("group", "y_obs", "psi_i", "x1", "x2", "x3")])
+str(data_lnln[, c("district", "y_obs", "psi_i", "x1", "x2", "x3")])
 #> 'data.frame':    100 obs. of  6 variables:
-#>  $ group: int  1 2 3 4 5 6 7 8 9 10 ...
-#>  $ y_obs: num  4.5 2.98 2.5 1.97 2.04 ...
-#>  $ psi_i: num  0.1222 0.0725 0.046 0.1003 0.0943 ...
-#>  $ x1   : num  -0.5605 -0.2302 1.5587 0.0705 0.1293 ...
-#>  $ x2   : num  0.2896 1.2569 0.7533 0.6525 0.0484 ...
-#>  $ x3   : num  1.199 0.312 -1.265 -0.457 -1.414 ...
+#>  $ district: chr  "district_001" "district_002" "district_003" "district_004" ...
+#>  $ y_obs   : num  4.5 2.98 2.5 1.97 2.04 ...
+#>  $ psi_i   : num  0.1222 0.0725 0.046 0.1003 0.0943 ...
+#>  $ x1      : num  -0.5605 -0.2302 1.5587 0.0705 0.1293 ...
+#>  $ x2      : num  0.2896 1.2569 0.7533 0.6525 0.0484 ...
+#>  $ x3      : num  1.199 0.312 -1.265 -0.457 -1.414 ...
 ```
 
     'data.frame':   100 obs. of  6 variables:
-     $ group: int  1 2 3 4 5 6 7 8 9 10 ...
+     $ district: chr  "district_001" "district_002" "district_003" "district_004" ...
      $ y_obs: num  4.21 3.18 6.55 5.04 7.12 ...
      $ psi_i: num  0.058 0.071 0.044 0.089 0.062 ...
      $ x1   : num  1.34 -0.42 0.51 -1.07 0.89 ...
@@ -106,7 +106,7 @@ library(hbsaems)
 fit <- hbm_lnln(
   response  = "y_obs",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "district",
   data      = data_lnln,
   chains    = 4, iter = 4000, warmup = 2000, cores = 4,
   seed      = 1
@@ -121,8 +121,8 @@ variance `psi_i`:
 fit_fh <- hbm_lnln(
   response     = "y_obs",
   auxiliary    = c("x1", "x2", "x3"),
-  group        = "group",
-  sampling_var = "psi_i",     # <- pins sigma_i = sqrt(psi_i)
+  area_var   = "district",
+  sampling_variance = "psi_i",     # <- pins sigma_i = sqrt(psi_i)
   data         = data_lnln,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
@@ -140,12 +140,12 @@ summary(fit_fh)
 
      Observations : 100
      Family       : lognormal (link: identity )
-     Formula      : y_obs ~ x1 + x2 + x3 + (1 | group)
+     Formula      : y_obs ~ x1 + x2 + x3 + (1 | district)
 
     ----- Parameter Estimates -----
      Family: lognormal
       Links: mu = identity; sigma = log
-    Formula: y_obs ~ x1 + x2 + x3 + (1 | group)
+    Formula: y_obs ~ x1 + x2 + x3 + (1 | district)
        Data: data_lnln (Number of observations: 100)
       Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
              total post-warmup draws = 8000
@@ -262,7 +262,7 @@ include, with or without spatial structure):
 fit_no_x3 <- hbm_lnln(
   response  = "y_obs",
   auxiliary = c("x1", "x2"),         # drop x3
-  group     = "group",
+  area_var   = "district",
   data      = data_lnln,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
@@ -328,9 +328,9 @@ Use [`hbm()`](https://madsyair.github.io/hbsaems/reference/hbm.md) when:
 - you need control over every brms argument.
 
 The three layers share a consistent interface (`auxiliary`, `group`,
-`sre`, `M`, `fixed_params`, `prior`, `stanvars`), so moving down the
-hierarchy is mostly additive – you keep the arguments you already had
-and gain extras.
+`spatial_var`, `M`, `fixed_params`, `prior`, `stanvars`), so moving down
+the hierarchy is mostly additive – you keep the arguments you already
+had and gain extras.
 
 ## Next steps
 

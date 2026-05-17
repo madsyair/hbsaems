@@ -16,6 +16,7 @@
 <url><loc>https://madsyair.github.io/hbsaems/index.html</loc></url>
 <url><loc>https://madsyair.github.io/hbsaems/news/index.html</loc></url>
 <url><loc>https://madsyair.github.io/hbsaems/reference/adjacency_matrix_car.html</loc></url>
+<url><loc>https://madsyair.github.io/hbsaems/reference/adjacency_matrix_car_regency.html</loc></url>
 <url><loc>https://madsyair.github.io/hbsaems/reference/brms_custom_loglogistic.html</loc></url>
 <url><loc>https://madsyair.github.io/hbsaems/reference/brms_custom_shifted_loglogistic.html</loc></url>
 <url><loc>https://madsyair.github.io/hbsaems/reference/build_brms_custom_family.html</loc></url>
@@ -67,6 +68,7 @@
 <url><loc>https://madsyair.github.io/hbsaems/reference/posterior_summary_hbm.html</loc></url>
 <url><loc>https://madsyair.github.io/hbsaems/reference/prior_check.html</loc></url>
 <url><loc>https://madsyair.github.io/hbsaems/reference/prior_draws.html</loc></url>
+<url><loc>https://madsyair.github.io/hbsaems/reference/prior_sensitivity.html</loc></url>
 <url><loc>https://madsyair.github.io/hbsaems/reference/read_stan_function.html</loc></url>
 <url><loc>https://madsyair.github.io/hbsaems/reference/register_hbsae_brms_custom.html</loc></url>
 <url><loc>https://madsyair.github.io/hbsaems/reference/register_hbsae_model.html</loc></url>

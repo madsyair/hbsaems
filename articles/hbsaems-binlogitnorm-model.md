@@ -33,19 +33,19 @@ proportion estimates with a known design effect.
 ``` r
 
 data("data_binlogitnorm")
-str(data_binlogitnorm[, c("group", "y", "n", "p", "x1", "x2", "x3")])
+str(data_binlogitnorm[, c("district", "y", "n", "p", "x1", "x2", "x3")])
 #> 'data.frame':    100 obs. of  7 variables:
-#>  $ group: int  1 2 3 4 5 6 7 8 9 10 ...
-#>  $ y    : int  25 27 69 27 16 47 4 27 59 42 ...
-#>  $ n    : int  136 171 183 120 53 130 57 116 157 177 ...
-#>  $ p    : num  0.184 0.158 0.377 0.225 0.302 ...
-#>  $ x1   : num  -0.5605 -0.2302 1.5587 0.0705 0.1293 ...
-#>  $ x2   : num  0.2896 1.2569 0.7533 0.6525 0.0484 ...
-#>  $ x3   : num  1.199 0.312 -1.265 -0.457 -1.414 ...
+#>  $ district: chr  "district_001" "district_002" "district_003" "district_004" ...
+#>  $ y       : int  25 27 69 27 16 47 4 27 59 42 ...
+#>  $ n       : int  136 171 183 120 53 130 57 116 157 177 ...
+#>  $ p       : num  0.184 0.158 0.377 0.225 0.302 ...
+#>  $ x1      : num  -0.5605 -0.2302 1.5587 0.0705 0.1293 ...
+#>  $ x2      : num  0.2896 1.2569 0.7533 0.6525 0.0484 ...
+#>  $ x3      : num  1.199 0.312 -1.265 -0.457 -1.414 ...
 ```
 
     'data.frame':   100 obs. of  7 variables:
-     $ group: int  1 2 3 4 5 6 7 8 9 10 ...
+     $ district: chr  "district_001" "district_002" "district_003" "district_004" ...
      $ y    : int  62 41 78 53 39 84 67 49 41 76 ...
      $ n    : int  120 95 142 108 87 153 124 102 91 138 ...
      $ p    : num  0.517 0.432 0.549 0.491 0.448 ...
@@ -67,7 +67,7 @@ fit <- hbm_binlogitnorm(
   response  = "y",
   trials    = "n",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "district",
   data      = data_binlogitnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4,
   seed = 1
@@ -79,12 +79,12 @@ summary(fit)
 
      Observations : 100
      Family       : binomial (link: logit )
-     Formula      : y | trials(n) ~ x1 + x2 + x3 + (1 | group)
+     Formula      : y | trials(n) ~ x1 + x2 + x3 + (1 | district)
 
     ----- Parameter Estimates -----
      Family: binomial
       Links: mu = logit
-    Formula: y | trials(n) ~ x1 + x2 + x3 + (1 | group)
+    Formula: y | trials(n) ~ x1 + x2 + x3 + (1 | district)
        Data: data_binlogitnorm (Number of observations: 100)
       Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
              total post-warmup draws = 8000
@@ -110,8 +110,8 @@ trials column.
 ## With CAR spatial random effect
 
 For spatially autocorrelated areas (e.g. neighbouring districts sharing
-characteristics), replace the IID `(1 | group)` random effect with a CAR
-spatial random effect:
+characteristics), replace the IID `(1 | district)` random effect with a
+CAR spatial random effect:
 
 ``` r
 
@@ -120,8 +120,8 @@ fit_car <- hbm_binlogitnorm(
   response  = "y",
   trials    = "n",
   auxiliary = c("x1", "x2", "x3"),
-  sre       = "sre",                       # spatial-RE column
-  sre_type  = "car",                       # CAR structure
+  spatial_var = "regency",                       # spatial-RE column
+  spatial_model  = "car",                       # CAR structure
   M         = adjacency_matrix_car,        # neighbour weight matrix
   data      = data_binlogitnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4,
@@ -160,7 +160,7 @@ fit_prior <- hbm_binlogitnorm(
   response  = "y",
   trials    = "n",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "district",
   data      = data_binlogitnorm,
   prior     = brms::set_prior("normal(0, 0.1)", class = "b", coef = "x3"),
   chains = 4, iter = 4000, warmup = 2000, cores = 4,
@@ -186,7 +186,7 @@ fit_miss <- hbm_binlogitnorm(
   response  = "y",
   trials    = "n",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "district",
   data      = data_with_na,
   # handle_missing not given -> auto-select "multiple" (mice)
   chains = 4, iter = 4000, warmup = 2000, cores = 4,
@@ -250,8 +250,8 @@ intercept.
   **[`hbm_betalogitnorm()`](https://madsyair.github.io/hbsaems/reference/hbm_betalogitnorm.md)**
   instead when you have *direct proportion estimates with a design
   effect*.
-- Add spatial structure via `sre`, `sre_type`, and `M` – see the spatial
-  vignette.
+- Add spatial structure via `spatial_var`, `spatial_model`, and `M` –
+  see the spatial vignette.
 - Missing data is auto-handled with multiple imputation (mice).
 
 ## References

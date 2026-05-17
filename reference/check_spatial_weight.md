@@ -7,7 +7,12 @@ chosen model class. Returns a structured object summarising the results.
 ## Usage
 
 ``` r
-check_spatial_weight(M, sre_type = c("car", "sar"), verbose = TRUE)
+check_spatial_weight(
+  M,
+  spatial_model = c("car", "sar"),
+  verbose = TRUE,
+  sre_type = NULL
+)
 ```
 
 ## Arguments
@@ -16,7 +21,7 @@ check_spatial_weight(M, sre_type = c("car", "sar"), verbose = TRUE)
 
   A square numeric matrix.
 
-- sre_type:
+- spatial_model:
 
   Character. `"car"` or `"sar"` – the model class the matrix is intended
   for.
@@ -24,6 +29,11 @@ check_spatial_weight(M, sre_type = c("car", "sar"), verbose = TRUE)
 - verbose:
 
   Logical. When `TRUE` (default), prints a formatted diagnostic report.
+
+- sre_type:
+
+  **Deprecated.** Use `spatial_model` instead. Kept for backward
+  compatibility; will be removed in v2.0.0.
 
 ## Value
 
@@ -63,7 +73,8 @@ Invisibly, an object of class `hbsaems_spatial_check` with components:
 
 - `compatible`:
 
-  Logical: TRUE if matrix is theoretically compatible with `sre_type`.
+  Logical: TRUE if matrix is theoretically compatible with
+  `spatial_model`.
 
 ## Details
 
@@ -104,7 +115,7 @@ M <- matrix(c(0, 1, 1, 0,
               1, 0, 0, 1,
               1, 0, 0, 1,
               0, 1, 1, 0), 4, 4)
-check_spatial_weight(M, sre_type = "car")
+check_spatial_weight(M, spatial_model = "car")
 #> 
 #> Spatial Weight Matrix Diagnostic
 #> ---------------------------------
@@ -120,6 +131,6 @@ check_spatial_weight(M, sre_type = "car")
 
 # An asymmetric matrix flagged for CAR
 M2 <- M; M2[1, 2] <- 2
-check_spatial_weight(M2, sre_type = "car", verbose = FALSE)$issues
+check_spatial_weight(M2, spatial_model = "car", verbose = FALSE)$issues
 #> [1] "CAR requires a symmetric weight matrix (Besag 1974). Detected asymmetry. Consider symmetrising via M <- (M + t(M)) / 2 or rebuild with build_spatial_weight(...)."
 ```

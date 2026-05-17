@@ -76,7 +76,7 @@ needed:
     [`hbm_betalogitnorm`](https://madsyair.github.io/hbsaems/reference/hbm_betalogitnorm.md),
     [`hbm_binlogitnorm`](https://madsyair.github.io/hbsaems/reference/hbm_binlogitnorm.md).
     SAE-friendly arguments (`auxiliary`, `group`, `n` + `deff`,
-    `sampling_var`).
+    `sampling_variance`).
 
 2.  **Flexible factory** –
     [`hbm_flex`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md).
@@ -197,9 +197,6 @@ Useful links:
 ([ORCID](https://orcid.org/0000-0001-7088-0646))
 
 Authors:
-
-- Achmad Syahrul Choir <madsyair@stis.ac.id>
-  ([ORCID](https://orcid.org/0000-0001-7088-0646))
 
 - Saniyyah Sri Nurhayati
 

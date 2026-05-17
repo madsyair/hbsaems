@@ -13,9 +13,19 @@ hbm_lnln(
   response,
   auxiliary = NULL,
   data,
-  sampling_var = NULL,
+  area_var = NULL,
+  spatial_var = NULL,
+  spatial_model = NULL,
+  car_type = NULL,
+  sar_type = NULL,
+  M = NULL,
+  sampling_variance = NULL,
   fixed_params = NULL,
   predictors = NULL,
+  sampling_var = NULL,
+  group = NULL,
+  sre = NULL,
+  sre_type = NULL,
   ...
 )
 ```
@@ -36,7 +46,41 @@ hbm_lnln(
 
   A `data.frame`.
 
-- sampling_var:
+- area_var:
+
+  Optional character. Name of a column in `data` identifying the small
+  area / domain. When supplied, an IID area-level random effect
+  `(1 | area_var)` is added to the formula. Default: `NULL`.
+
+- spatial_var:
+
+  Optional character. Name of a column in `data` identifying the spatial
+  cluster (e.g. province). Must be supplied together with
+  `spatial_model` and `M`. Default: `NULL`.
+
+- spatial_model:
+
+  Optional character. Type of spatial dependence: `"car"` (conditional
+  autoregressive) or `"sar"` (simultaneous autoregressive). Default:
+  `NULL`.
+
+- car_type:
+
+  Optional character. CAR sub-type passed to brms: `"escar"`,
+  `"esicar"`, `"icar"` (intrinsic CAR; default when
+  `spatial_model = "car"`), or `"bym2"`.
+
+- sar_type:
+
+  Optional character. SAR sub-type: `"lag"` (spatial-lag, default when
+  `spatial_model = "sar"`) or `"error"` (spatial-error).
+
+- M:
+
+  Optional numeric matrix. Spatial weight matrix. Required when
+  `spatial_model` is supplied.
+
+- sampling_variance:
 
   Optional character. Name of a column in `data` containing the known
   per-area sampling variance \\\psi_i\\ on the **log scale**, i.e.\\ the
@@ -52,19 +96,36 @@ hbm_lnln(
   Optional named list pinning distributional parameters to known values.
   See [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md) for
   the spec format. Allows power-user access to the same machinery used
-  by `sampling_var`.
+  by `sampling_variance`.
 
 - predictors:
 
   **Deprecated.** Use `auxiliary` instead. Kept for backward
   compatibility; will be removed in v2.0.0.
 
+- sampling_var:
+
+  **Deprecated.** Use `sampling_variance` instead. Kept for backward
+  compatibility; will be removed in v2.0.0.
+
+- group:
+
+  **Deprecated.** Use `area_var` instead.
+
+- sre:
+
+  **Deprecated.** Use `spatial_var` instead.
+
+- sre_type:
+
+  **Deprecated.** Use `spatial_model` instead.
+
 - ...:
 
   Additional arguments forwarded to
   [`hbm_flex`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md)
-  (e.g. `group`, `sre`, `prior_type`, `nonlinear`, `handle_missing`,
-  sampler controls).
+  (e.g.\\ `prior_type`, `nonlinear`, `handle_missing`, sampler controls
+  such as `chains`, `iter`, `cores`, `seed`).
 
 ## Value
 
@@ -77,8 +138,8 @@ The response \\y_i\\ in area \\i\\ is assumed to follow \$\$y_i \mid
 log-mean linked to auxiliary variables via \$\$\log(\theta_i) = x_i^\top
 \boldsymbol{\beta} + u_i, \quad u_i \sim \mathcal{N}(0, \sigma_v^2).\$\$
 
-When the user supplies `sampling_var = "psi_i"` (the column name of the
-known per-area sampling variance \\\psi_i\\), \\\sigma_i =
+When the user supplies `sampling_variance = "psi_i"` (the column name of
+the known per-area sampling variance \\\psi_i\\), \\\sigma_i =
 \sqrt{\psi_i}\\ is pinned for each area via an offset. This recovers the
 Fay-Herriot-style lognormal model in which residual variability is fully
 determined by the survey design.
@@ -86,16 +147,16 @@ determined by the survey design.
 ## Conflict policy
 
 When the residual standard deviation \\\sigma_i = \sqrt{\psi_i}\\ is
-pinned via `sampling_var` (or via `fixed_params$sigma`), the function
-refuses any additional specification that would also set \\\sigma\\.
-Specifically, all of the following are rejected with an informative
-error at construction time:
+pinned via `sampling_variance` (or via `fixed_params$sigma`), the
+function refuses any additional specification that would also set
+\\\sigma\\. Specifically, all of the following are rejected with an
+informative error at construction time:
 
-- `sampling_var` *and* `fixed_params$sigma`.
+- `sampling_variance` *and* `fixed_params$sigma`.
 
-- `sampling_var` *and* a user `prior` on `class = "sigma"`.
+- `sampling_variance` *and* a user `prior` on `class = "sigma"`.
 
-- `sampling_var` *and* a `stanvars` sampling statement involving
+- `sampling_variance` *and* a `stanvars` sampling statement involving
   `sigma`.
 
 - `auxiliary` *and* the deprecated `predictors` in the same call.
@@ -116,7 +177,7 @@ data("data_lnln")
 fit1 <- hbm_lnln(
   response   = "y_obs",
   auxiliary  = c("x1", "x2", "x3"),
-  group      = "group",
+  area_var   = "district",
   data       = data_lnln,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
@@ -128,8 +189,8 @@ fit1 <- hbm_lnln(
 fit2 <- hbm_lnln(
   response     = "y_obs",
   auxiliary    = c("x1", "x2", "x3"),
-  group        = "group",
-  sampling_var = "psi_i",
+  area_var     = "district",
+  sampling_variance = "psi_i",
   data         = data_lnln,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )

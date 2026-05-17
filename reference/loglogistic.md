@@ -1,8 +1,8 @@
 # Loglogistic Distribution Functions
 
 Density, distribution function, quantile function, and random generation
-for the loglogistic distribution with scale parameter `mu > 0` and shape
-parameter `beta > 0`.
+for the loglogistic (Fisk) distribution with scale parameter `mu > 0`
+and shape parameter `beta > 0`.
 
 ## Usage
 
@@ -51,12 +51,41 @@ rloglogistic(n, mu = 1, beta = 1)
 
 Numeric vector of the same length as the input.
 
-## Details
+## Parameterisation
 
-The probability density function is \$\$f(y) = (\beta/\mu)
-(y/\mu)^{\beta - 1} \\1 + (y/\mu)^{\beta}\\^{-2}, \quad y \> 0,\$\$ with
-cumulative distribution function \$\$F(y) = \\1 +
-(y/\mu)^{-\beta}\\^{-1}.\$\$
+This implementation follows the canonical Wikipedia / flexsurv / eha
+parameterisation (Jackson 2016; Bennett 1983): \$\$Y \sim
+\mathrm{LogLogistic}(\mu, \beta), \quad \mu \> 0, \quad \beta \> 0,\$\$
+with probability density function \$\$f(y \mid \mu, \beta) =
+\frac{(\beta/\mu)(y/\mu)^{\beta - 1}}{\\1 + (y/\mu)^{\beta}\\^{2}},
+\quad y \> 0,\$\$ cumulative distribution function \$\$F(y \mid \mu,
+\beta) = \\1 + (y/\mu)^{-\beta}\\^{-1},\$\$ median \\\mu\\, and mean
+\\E\[Y\] = \mu \pi / \[\beta \sin(\pi / \beta)\]\\ when \\\beta \> 1\\.
+Equivalently, \\\log(Y) \sim \mathrm{Logistic}(\log\mu, \\ 1/\beta)\\.
+
+**Why not match the brms `lognormal` convention?** The
+[`brms::lognormal()`](https://paulbuerkner.com/brms/reference/brmsfamily.html)
+family parameterises \\\mu\\ on the log scale (so \\\mu\\ is
+unconstrained and uses an identity link). Doing the same for the
+log-logistic would require redefining \\\mu = \log(\mathrm{median}(Y))\\
+– which deviates from every standard R reference (flexsurv, eha,
+Wolfram, scipy, Stata). We deliberately follow the survival-analysis
+convention instead: \\\mu\\ is the median (positive, log link), keeping
+interpretation simple and posterior summaries comparable with the rest
+of the R survival ecosystem.
+
+## References
+
+Bennett, S. (1983). Log-logistic regression models for survival data.
+*Journal of the Royal Statistical Society, Series C*, 32(2), 165-171.
+[doi:10.2307/2347295](https://doi.org/10.2307/2347295)
+
+Jackson, C. H. (2016). flexsurv: A platform for parametric survival
+modelling in R. *Journal of Statistical Software*, 70(8), 1-33.
+[doi:10.18637/jss.v070.i08](https://doi.org/10.18637/jss.v070.i08)
+
+Kleiber, C., & Kotz, S. (2003). *Statistical Size Distributions in
+Economics and Actuarial Sciences*. Wiley.
 
 ## Examples
 

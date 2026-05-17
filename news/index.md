@@ -34,7 +34,7 @@ set whose signatures will not change before v2.0.0.
   user-overridable hyperprior on $`\alpha,\beta`$ via `stanvars`; and
   generic `fixed_params` for power users. Default priors filled in
   automatically and follow Liu (2009).
-- **`hbm_lnln(sampling_var = ...)`** for the Fay–Herriot lognormal
+- **`hbm_lnln(sampling_variance = ...)`** for the Fay–Herriot lognormal
   model. Pins $`\sigma_i = \sqrt{\psi_i}`$ from a known per-area
   sampling variance.
 - **Custom brms response distributions.** Built-in support for
@@ -51,8 +51,8 @@ set whose signatures will not change before v2.0.0.
   [`posterior_epred()`](https://mc-stan.org/rstantools/reference/posterior_epred.html)
   work out of the box.
 - **Spatial random effects.** CAR (ICAR / proper / BYM2) and SAR (lag /
-  error) via `sre`, `sre_type`, `car_type`, `sar_type`, and `M`. Weight
-  matrices can be constructed with the bundled
+  error) via `spatial_var`, `spatial_model`, `car_type`, `sar_type`, and
+  `M`. Weight matrices can be constructed with the bundled
   [`build_spatial_weight()`](https://madsyair.github.io/hbsaems/reference/build_spatial_weight.md)
   from a shapefile or coordinates.
 - **Missing-data handling.** Three strategies (`deleted`, `multiple` via
@@ -61,8 +61,18 @@ set whose signatures will not change before v2.0.0.
   auto-selection when `handle_missing = NULL`.
 - **Shrinkage priors.** Horseshoe (regularised, Piironen & Vehtari
   2017. and R2D2 (Zhang et al. 2022) selectable via `prior_type`.
-- **Nonlinear smooth terms.** Thin-plate splines and Gaussian processes
-  via the `nonlinear`/`nonlinear_type` arguments.
+- **Nonlinear smooth terms with full brms-canonical API.** Penalised
+  regression splines via and Gaussian processes via :
+  - Splines: `spline_k` (basis dim) and `spline_bs` (basis type: `"tp"`,
+    `"cr"`, `"cs"`, `"ps"`).
+  - GP: `gp_k` (Hilbert-space approximate GP basis dimension –
+    Riutort-Mayol et al. 2023), `gp_cov` (covariance function:
+    `"exp_quad"`, `"matern15"`, `"matern25"`, `"exponential"`), `gp_c`
+    (boundary-scale factor).
+  - Automatic warning when an exact GP (slow, $`O(n^3)`$) is requested
+    for more than 100 areas, with the recommended `gp_k` value.
+  - `gp_scale` deprecated in favour of `gp_c`; removal scheduled for
+    v2.0.0.
 - **Bilingual Shiny dashboard**
   ([`run_sae_app()`](https://madsyair.github.io/hbsaems/reference/run_sae_app.md)).
   English / Indonesian, dedicated spatial setup tab, in-app code
@@ -73,6 +83,18 @@ set whose signatures will not change before v2.0.0.
   [`sae_predict()`](https://madsyair.github.io/hbsaems/reference/sae_predict.md)).
   Pfeffermann-style design-consistent benchmarking and out-of-sample
   prediction for unsampled areas.
+- **Bayesian model averaging with LOO weights.**
+  [`model_average()`](https://madsyair.github.io/hbsaems/reference/model_average.md)
+  now accepts a `method` argument: `"manual"` (default, user weights),
+  `"stacking"`, or `"pseudobma"` (both via
+  [`loo::loo_model_weights`](https://mc-stan.org/loo/reference/loo_model_weights.html),
+  the canonical Bayesian stacking / pseudo-BMA+ of Yao et al. 2018).
+- **Power-scale prior sensitivity diagnostics** via
+  [`prior_sensitivity()`](https://madsyair.github.io/hbsaems/reference/prior_sensitivity.md):
+  thin wrapper around
+  [`priorsense::powerscale_sensitivity()`](https://n-kall.github.io/priorsense/reference/powerscale-sensitivity.html)
+  (Kallioinen et al. 2024) for detecting prior-data conflict and weak
+  likelihood in fitted models.
 
 ### Naming and interface changes (breaking only at v2.0.0)
 

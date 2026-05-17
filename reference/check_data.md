@@ -12,12 +12,15 @@ the distribution-specific wrappers.
 check_data(
   data,
   response,
-  predictors,
-  group = NULL,
-  sre = NULL,
+  auxiliary = NULL,
+  area_var = NULL,
+  spatial_var = NULL,
   M = NULL,
   trials = NULL,
-  n_var = NULL
+  n_var = NULL,
+  predictors = NULL,
+  group = NULL,
+  sre = NULL
 )
 ```
 
@@ -31,17 +34,20 @@ check_data(
 
   Character. Name of the response variable in `data`.
 
-- predictors:
+- auxiliary:
 
-  Character vector. Names of the predictor (auxiliary) variables.
+  Character vector. Names of the auxiliary variables (the SAE 'X'
+  covariates).
 
-- group:
+- area_var:
 
-  Optional character. Name of the random-effect grouping variable.
+  Optional character. Name of the area (random-effect grouping)
+  variable.
 
-- sre:
+- spatial_var:
 
-  Optional character. Name of the spatial-grouping variable.
+  Optional character. Name of the spatial-grouping variable (column in
+  `data` that indexes rows of the spatial weight matrix `M`).
 
 - M:
 
@@ -55,6 +61,18 @@ check_data(
 
   Optional character. Name of the sample-size variable (beta / lognormal
   direct-estimator models).
+
+- predictors:
+
+  **Deprecated.** Use `auxiliary` instead.
+
+- group:
+
+  **Deprecated.** Use `area_var` instead.
+
+- sre:
+
+  **Deprecated.** Use `spatial_var` instead.
 
 ## Value
 
@@ -98,9 +116,9 @@ An object of class `hbsaems_data_check` with components:
 
 ### 1. Variable presence
 
-Verifies that `response`, every name in `predictors`, and the optional
-`group`/`sre`/`trials`/`n_var` columns exist in `data`. Missing
-variables are reported in `$issues`.
+Verifies that `response`, every name in `auxiliary`, and the optional
+`area_var` / `spatial_var` / `trials` / `n_var` columns exist in `data`.
+Missing variables are reported in `$issues`.
 
 ### 2. Missing-value pattern
 
@@ -116,7 +134,7 @@ The pattern is one of:
 
 - `"x_only"`:
 
-  Only the predictors have NAs.
+  Only the auxiliary variables have NAs.
 
 - `"both"`:
 
@@ -150,8 +168,8 @@ Based on the pattern, a strategy is recommended:
 ### 3. Dimension check
 
 When `M` is supplied, verifies that it is square and that `nrow(M)`
-matches the number of *distinct* levels in `data[[sre]]` (or
-`nrow(data)` when `sre` is `NULL`).
+matches the number of *distinct* levels in `data[[spatial_var]]` (or
+`nrow(data)` when `spatial_var` is `NULL`).
 
 ## See also
 
@@ -166,7 +184,7 @@ data("data_fhnorm")
 # 1. Complete data -> no warnings, no recommendation
 chk <- check_data(data_fhnorm,
                   response   = "y",
-                  predictors = c("x1", "x2", "x3"))
+                  auxiliary  = c("x1", "x2", "x3"))
 print(chk)
 #> 
 #> HBSAE Data Check  [hbsaems_data_check]
@@ -184,7 +202,7 @@ print(chk)
 d <- data_fhnorm
 d$y[1:5] <- NA
 chk2 <- check_data(d, response = "y",
-                      predictors = c("x1", "x2", "x3"))
+                      auxiliary  = c("x1", "x2", "x3"))
 summary(chk2)
 #> 
 #> ===== HBSAE Data Check Summary =====
@@ -219,7 +237,7 @@ summary(chk2)
 d2 <- data_fhnorm
 d2$x1[10:15] <- NA
 chk3 <- check_data(d2, response = "y",
-                      predictors = c("x1", "x2", "x3"))
+                      auxiliary  = c("x1", "x2", "x3"))
 chk3$recommended_method
 #> [1] "multiple"
 
@@ -227,7 +245,7 @@ chk3$recommended_method
 data("adjacency_matrix_car")
 chk4 <- check_data(data_fhnorm[1:5, ],
                    response   = "y",
-                   predictors = c("x1", "x2", "x3"),
+                   auxiliary  = c("x1", "x2", "x3"),
                    M          = adjacency_matrix_car)
 chk4$dimension_check
 #> $n_areas_data

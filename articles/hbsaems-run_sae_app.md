@@ -123,7 +123,7 @@ Step-by-step:
 4.  **Group (random intercept)**: dropdown of integer/character columns.
 5.  **Spatial random effect**: toggle on/off; if on, choose CAR or SAR.
 6.  **Pinned parameters**: toggle on/off for $`\phi`$ from `n`+`deff`
-    (Beta) or $`\sigma`$ from `sampling_var` (lnln).
+    (Beta) or $`\sigma`$ from `sampling_variance` (lnln).
 7.  **Priors**: a table of priors with reasonable defaults that the user
     can edit. Distribution preview (PDF/CDF plots) is shown for the
     currently-selected class.
@@ -137,8 +137,8 @@ equivalent R code in a code block, which can be copied for scripted use:
 hbm_lnln(
   response     = "y_obs",
   auxiliary    = c("x1", "x2", "x3"),
-  group        = "group",
-  sampling_var = "psi_i",
+  area_var   = "regency",
+  sampling_variance = "psi_i",
   data         = my_data,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )

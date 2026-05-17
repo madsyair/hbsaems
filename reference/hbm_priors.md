@@ -17,9 +17,11 @@ hbm_priors(
   hs_scale_global = NULL,
   hs_scale_slab = 2,
   hs_par_ratio = NULL,
+  hs_autoscale = TRUE,
   r2d2_mean_R2 = 0.5,
   r2d2_prec_R2 = 2,
-  r2d2_cons_D2 = NULL
+  r2d2_cons_D2 = NULL,
+  r2d2_autoscale = TRUE
 )
 ```
 
@@ -35,12 +37,12 @@ hbm_priors(
   default.
 
 - hs_df, hs_df_global, hs_df_slab, hs_scale_global, hs_scale_slab,
-  hs_par_ratio:
+  hs_par_ratio, hs_autoscale:
 
   Horseshoe-prior hyperparameters; see
   [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md).
 
-- r2d2_mean_R2, r2d2_prec_R2, r2d2_cons_D2:
+- r2d2_mean_R2, r2d2_prec_R2, r2d2_cons_D2, r2d2_autoscale:
 
   R2D2-prior hyperparameters; see
   [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md).

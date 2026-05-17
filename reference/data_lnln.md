@@ -1,6 +1,6 @@
 # Simulated Lognormal-Lognormal Data
 
-A simulated dataset for 100 areas under a Lognormal-Lognormal model.
+A simulated dataset for 100 districts under a Lognormal-Lognormal model.
 Suitable for strictly positive, right-skewed outcomes.
 
 ## Usage
@@ -13,9 +13,9 @@ data_lnln
 
 A data frame with 100 rows and 13 variables:
 
-- `group`:
+- `district`:
 
-  Area identifier (1-100).
+  District identifier (`"district_001"` .. `"district_100"`).
 
 - `x1`, `x2`, `x3`:
 
@@ -53,9 +53,10 @@ A data frame with 100 rows and 13 variables:
 
   Sampling variance on the log scale.
 
-- `sre`:
+- `regency`:
 
-  Spatial-random-effect grouping variable.
+  Regency identifier (`"regency_01"` .. `"regency_05"`) – spatial
+  cluster level. Pair with `adjacency_matrix_car_regency`.
 
 ## Source
 

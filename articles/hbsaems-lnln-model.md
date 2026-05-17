@@ -39,18 +39,18 @@ sampling variance from the survey design.
 ``` r
 
 data("data_lnln")
-str(data_lnln[, c("group", "y_obs", "psi_i", "x1", "x2", "x3")])
+str(data_lnln[, c("district", "y_obs", "psi_i", "x1", "x2", "x3")])
 #> 'data.frame':    100 obs. of  6 variables:
-#>  $ group: int  1 2 3 4 5 6 7 8 9 10 ...
-#>  $ y_obs: num  4.5 2.98 2.5 1.97 2.04 ...
-#>  $ psi_i: num  0.1222 0.0725 0.046 0.1003 0.0943 ...
-#>  $ x1   : num  -0.5605 -0.2302 1.5587 0.0705 0.1293 ...
-#>  $ x2   : num  0.2896 1.2569 0.7533 0.6525 0.0484 ...
-#>  $ x3   : num  1.199 0.312 -1.265 -0.457 -1.414 ...
+#>  $ district: chr  "district_001" "district_002" "district_003" "district_004" ...
+#>  $ y_obs   : num  4.5 2.98 2.5 1.97 2.04 ...
+#>  $ psi_i   : num  0.1222 0.0725 0.046 0.1003 0.0943 ...
+#>  $ x1      : num  -0.5605 -0.2302 1.5587 0.0705 0.1293 ...
+#>  $ x2      : num  0.2896 1.2569 0.7533 0.6525 0.0484 ...
+#>  $ x3      : num  1.199 0.312 -1.265 -0.457 -1.414 ...
 ```
 
     'data.frame':   100 obs. of  6 variables:
-     $ group: int  1 2 3 4 5 6 7 8 9 10 ...
+     $ district: chr  "district_001" "district_002" "district_003" "district_004" ...
      $ y_obs: num  4.21 3.18 6.55 5.04 7.12 ...
      $ psi_i: num  0.058 0.071 0.044 0.089 0.062 ...
      $ x1   : num  1.34 -0.42 0.51 -1.07 0.89 ...
@@ -75,7 +75,7 @@ library(hbsaems)
 fit <- hbm_lnln(
   response  = "y_obs",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "district",
   data      = data_lnln,
   chains = 4, iter = 4000, warmup = 2000, cores = 4,
   seed = 1
@@ -87,12 +87,12 @@ summary(fit)
 
      Observations : 100
      Family       : lognormal (link: identity )
-     Formula      : y_obs ~ x1 + x2 + x3 + (1 | group)
+     Formula      : y_obs ~ x1 + x2 + x3 + (1 | district)
 
     ----- Parameter Estimates -----
      Family: lognormal
       Links: mu = identity; sigma = log
-    Formula: y_obs ~ x1 + x2 + x3 + (1 | group)
+    Formula: y_obs ~ x1 + x2 + x3 + (1 | district)
        Data: data_lnln (Number of observations: 100)
       Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
              total post-warmup draws = 8000
@@ -122,15 +122,15 @@ being sampled.
 
 When you know the per-area sampling variance $`\psi_i`$ from the survey
 design (the classic Fay-Herriot situation on the log scale), pass
-`sampling_var`:
+`sampling_variance`:
 
 ``` r
 
 fit_fh <- hbm_lnln(
   response     = "y_obs",
   auxiliary    = c("x1", "x2", "x3"),
-  group        = "group",
-  sampling_var = "psi_i",     # <- pins sigma_i = sqrt(psi_i)
+  area_var   = "district",
+  sampling_variance = "psi_i",     # <- pins sigma_i = sqrt(psi_i)
   data         = data_lnln,
   chains = 4, iter = 4000, warmup = 2000, cores = 4,
   seed = 1
@@ -142,7 +142,7 @@ summary(fit_fh)
 
      Observations : 100
      Family       : lognormal (link: identity )
-     Formula      : y_obs ~ x1 + x2 + x3 + (1 | group)
+     Formula      : y_obs ~ x1 + x2 + x3 + (1 | district)
                     sigma ~ 0 + offset(.hbsaems_sigma_fixed)
 
     Multilevel Hyperparameters:
@@ -176,7 +176,7 @@ brms’s default:
 fit_custom <- hbm_lnln(
   response  = "y_obs",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "district",
   data      = data_lnln,
   prior     = brms::set_prior("normal(0.3, 0.05)", class = "sigma"),
   chains = 4, iter = 4000, warmup = 2000, cores = 4,
@@ -197,7 +197,7 @@ fit_flex <- hbm_flex(
   family_key   = "lognormal",
   response     = "y_obs",
   auxiliary    = c("x1", "x2", "x3"),
-  group        = "group",
+  area_var   = "district",
   fixed_params = list(sigma = ~ sqrt(psi_i)),
   data         = data_lnln,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -214,18 +214,18 @@ Suppose `x1` has a non-linear effect. Add a thin-plate spline:
 ``` r
 
 fit_spline <- hbm_lnln(
-  response       = "y_obs",
-  auxiliary      = c("x1", "x2", "x3"),
-  group          = "group",
-  sampling_var   = "psi_i",
-  data           = data_lnln,
-  nonlinear      = "x1",
-  nonlinear_type = "spline",
+  response          = "y_obs",
+  auxiliary         = c("x1", "x2", "x3"),
+  area_var          = "district",
+  sampling_variance = "psi_i",
+  data              = data_lnln,
+  nonlinear         = "x1",
+  nonlinear_type    = "spline",
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
 ```
 
-The formula becomes `y_obs ~ s(x1) + x2 + x3 + (1 | group)`. See
+The formula becomes `y_obs ~ s(x1) + x2 + x3 + (1 | district)`. See
 [`vignette("advanced-features")`](https://madsyair.github.io/hbsaems/articles/advanced-features.md)
 for full coverage of nonlinear terms.
 
@@ -304,8 +304,9 @@ density on left-out areas.
 - [`hbm_lnln()`](https://madsyair.github.io/hbsaems/reference/hbm_lnln.md)
   covers positive right-skewed survey responses with a lognormal
   likelihood.
-- Pin $`\sigma`$ via `sampling_var = "psi_i"` to get the Fay-Herriot
-  variant – usually preferred when survey design info is reliable.
+- Pin $`\sigma`$ via `sampling_variance = "psi_i"` to get the
+  Fay-Herriot variant – usually preferred when survey design info is
+  reliable.
 - Use the `prior` argument to tune $`\sigma`$ or any other class.
 - Nonlinear smooths via `nonlinear` and `nonlinear_type`.
 

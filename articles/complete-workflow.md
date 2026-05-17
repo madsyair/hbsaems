@@ -1,11 +1,11 @@
-# Complete Workflow with hbsaems v0.3.0
+# Complete Workflow with hbsaems 1.0.0
 
 ``` r
 
 library(hbsaems)
 ```
 
-A typical Bayesian SAE workflow with `hbsaems` v0.3.0 follows seven
+A typical Bayesian SAE workflow with `hbsaems` v1.0.0 follows seven
 steps, each backed by a single primary function.
 
 ## 1. Prior predictive check
@@ -16,7 +16,12 @@ data("data_fhnorm")
 model_prior <- hbm(
   formula      = brms::bf(y ~ x1 + x2 + x3),
   data         = data_fhnorm,
+  re           = ~ (1 | regency),       # area-level random effect (Fay-Herriot)
   sample_prior = "only",
+  prior        = c(
+    brms::prior(normal(0, 1), class = "b"),
+    brms::prior(normal(0, 5), class = "Intercept")
+  ),
   chains = 2, iter = 1000
 )
 pc <- prior_check(model_prior,
@@ -32,6 +37,7 @@ plot(pc)
 model <- hbm(
   formula = brms::bf(y ~ x1 + x2 + x3),
   data    = data_fhnorm,
+  re      = ~ (1 | regency),              # area-level random effect (Fay-Herriot)
   chains  = 4, iter = 4000, warmup = 2000, cores = 2
 )
 summary(model)
@@ -62,8 +68,10 @@ plot(gof, type = "pp_check")
 ``` r
 
 model2 <- hbm(brms::bf(y ~ x1 + x2), data = data_fhnorm,
+              re = ~ (1 | regency),
               chains = 4, iter = 4000)
 model3 <- hbm(brms::bf(y ~ x1),      data = data_fhnorm,
+              re = ~ (1 | regency),
               chains = 4, iter = 4000)
 
 model_compare(model, model2)

@@ -1,6 +1,6 @@
 # Simulated Fay-Herriot Normal Data
 
-A simulated dataset for 100 areas under the Fay-Herriot Normal
+A simulated dataset for 100 regencies under the Fay-Herriot Normal
 small-area model. Used as the running example throughout the package
 documentation and vignettes.
 
@@ -34,13 +34,17 @@ A data frame with 100 rows and 9 variables:
 
   True area-level random effect.
 
-- `group`:
+- `regency`:
 
-  Area identifier (1-100) for random-effect grouping.
+  Regency identifier (`"regency_001"` .. `"regency_100"`) used as the
+  IID random-effect grouping variable. Use with `re = ~ (1 | regency)`
+  or as `area_var = "regency"` in the wrapper functions.
 
-- `sre`:
+- `province`:
 
-  Spatial-random-effect grouping variable.
+  Province identifier (`"province_01"` .. `"province_05"`) used as the
+  spatial random-effect grouping variable for CAR or SAR models. Use
+  with `spatial_var = "province"` and `M = adjacency_matrix_car`.
 
 ## Source
 

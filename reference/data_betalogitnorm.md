@@ -1,7 +1,7 @@
 # Simulated Beta Logit-Normal Data
 
-A simulated dataset for 100 areas under a Beta logit-normal model. The
-response `y` is a proportion in \\(0, 1)\\.
+A simulated dataset for 100 regencies under a Beta logit-normal model.
+The response `y` is a proportion in \\(0, 1)\\.
 
 ## Usage
 
@@ -33,13 +33,14 @@ A data frame with 100 rows and 9 variables:
 
   Design effect.
 
-- `group`:
+- `regency`:
 
-  Area identifier (1-100).
+  Regency identifier (`"regency_001"` .. `"regency_100"`).
 
-- `sre`:
+- `province`:
 
-  Spatial-random-effect grouping variable.
+  Province identifier (`"province_01"` .. `"province_05"`) – spatial
+  cluster level for CAR / SAR.
 
 ## Source
 

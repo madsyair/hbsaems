@@ -5,7 +5,7 @@
 - [Advanced Features: Spatial, Benchmarking, Custom Families, Smooth
   Terms](https://madsyair.github.io/hbsaems/articles/advanced-features.md):
 - [Complete Workflow with hbsaems
-  v0.3.0](https://madsyair.github.io/hbsaems/articles/complete-workflow.md):
+  1.0.0](https://madsyair.github.io/hbsaems/articles/complete-workflow.md):
 - [Beta Logit-Normal SAE
   Model](https://madsyair.github.io/hbsaems/articles/hbsaems-betalogitnorm-model.md):
 - [Binomial Logit-Normal SAE

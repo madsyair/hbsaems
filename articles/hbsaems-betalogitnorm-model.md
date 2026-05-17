@@ -67,19 +67,19 @@ structure:
 ``` r
 
 data("data_betalogitnorm")
-str(data_betalogitnorm[, c("group", "y", "n", "deff", "x1", "x2", "x3")])
+str(data_betalogitnorm[, c("regency", "y", "n", "deff", "x1", "x2", "x3")])
 #> 'data.frame':    100 obs. of  7 variables:
-#>  $ group: int  1 2 3 4 5 6 7 8 9 10 ...
-#>  $ y    : num  0.01 0.984 0.01 0.99 0.943 ...
-#>  $ n    : int  30 28 27 49 33 38 43 31 13 32 ...
-#>  $ deff : num  1.69 2.14 1.55 2.18 2.69 ...
-#>  $ x1   : num  3.1 8.54 6.83 3.21 3.62 ...
-#>  $ x2   : num  9.87 12.65 5.62 8.76 10.11 ...
-#>  $ x3   : num  15.9 17.5 17.1 14.3 14.7 ...
+#>  $ regency: chr  "regency_001" "regency_002" "regency_003" "regency_004" ...
+#>  $ y      : num  0.01 0.984 0.01 0.99 0.943 ...
+#>  $ n      : int  30 28 27 49 33 38 43 31 13 32 ...
+#>  $ deff   : num  1.69 2.14 1.55 2.18 2.69 ...
+#>  $ x1     : num  3.1 8.54 6.83 3.21 3.62 ...
+#>  $ x2     : num  9.87 12.65 5.62 8.76 10.11 ...
+#>  $ x3     : num  15.9 17.5 17.1 14.3 14.7 ...
 ```
 
     'data.frame':   50 obs. of  7 variables:
-     $ group: int  1 2 3 4 5 6 7 8 9 10 ...
+     $ regency: chr  "regency_001" "regency_002" "regency_003" "regency_004" ...
      $ y    : num  0.452 0.371 0.624 0.518 0.401 ...
      $ n    : int  120 95 142 108 87 153 124 102 91 138 ...
      $ deff : num  1.31 1.08 1.42 1.19 1.05 ...
@@ -103,7 +103,7 @@ library(brms)
 fit_random <- hbm_betalogitnorm(
   response  = "y",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "regency",
   data      = data_betalogitnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4,
   seed = 1
@@ -115,12 +115,12 @@ summary(fit_random)
 
      Observations : 50
      Family       : Beta (link: logit )
-     Formula      : y ~ x1 + x2 + x3 + (1 | group)
+     Formula      : y ~ x1 + x2 + x3 + (1 | regency)
 
     ----- Parameter Estimates -----
      Family: beta
       Links: mu = logit; phi = identity
-    Formula: y ~ x1 + x2 + x3 + (1 | group)
+    Formula: y ~ x1 + x2 + x3 + (1 | regency)
        Data: data_betalogitnorm (Number of observations: 50)
       Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
              total post-warmup draws = 8000
@@ -176,7 +176,7 @@ fit_fixed <- hbm_betalogitnorm(
   auxiliary = c("x1", "x2", "x3"),
   n         = "n",                   # <- column with sample sizes
   deff      = "deff",                # <- column with design effects
-  group     = "group",
+  area_var   = "regency",
   data      = data_betalogitnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4,
   seed = 1
@@ -188,13 +188,13 @@ summary(fit_fixed)
 
      Observations : 50
      Family       : Beta (link: logit )
-     Formula      : y ~ x1 + x2 + x3 + (1 | group)
+     Formula      : y ~ x1 + x2 + x3 + (1 | regency)
                     phi ~ 0 + offset(.hbsaems_phi_fixed)
 
     ----- Parameter Estimates -----
      Family: beta
       Links: mu = logit; phi = identity
-    Formula: y ~ x1 + x2 + x3 + (1 | group)
+    Formula: y ~ x1 + x2 + x3 + (1 | regency)
        Data: data_betalogitnorm (Number of observations: 50)
       Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
              total post-warmup draws = 8000
@@ -232,7 +232,7 @@ $`\beta`$ are too vague (or too tight) for your data, override them via
 fit_custom <- hbm_betalogitnorm(
   response  = "y",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "regency",
   data      = data_betalogitnorm,
   stanvars  = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
               stanvar(scode = "beta  ~ gamma(2, 3);", block = "model"),
@@ -262,7 +262,7 @@ via the `prior` argument:
 fit_phi <- hbm_betalogitnorm(
   response  = "y",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "regency",
   data      = data_betalogitnorm,
   prior     = brms::set_prior("gamma(2, 0.05)", class = "phi"),
   chains = 4, iter = 4000, warmup = 2000, cores = 4,
@@ -294,7 +294,7 @@ fit_flex <- hbm_flex(
   family_key   = "Beta",
   response     = "y",
   auxiliary    = c("x1", "x2", "x3"),
-  group        = "group",
+  area_var   = "regency",
   data         = data_betalogitnorm,
   fixed_params = list(phi = ~ I(n / deff - 1)),    # <- formula spec
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1

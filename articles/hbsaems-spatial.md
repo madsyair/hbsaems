@@ -30,7 +30,7 @@ three standard choices through one consistent interface:
 |----|----|----|
 | **ICAR** (default for `car`) | `car(M, type = "icar")` | Smooth spatial patterns over many areas |
 | **CAR (proper)** | `car_type = "escar"` | Smaller area count; control over mixing parameter |
-| **SAR (simultaneous AR)** | `sre_type = "sar"` | Long-range spillovers; lag or error variant |
+| **SAR (simultaneous AR)** | `spatial_model = "sar"` | Long-range spillovers; lag or error variant |
 | **BYM2** | `car_type = "bym2"` | When you also have unstructured noise; modern parameterisation |
 
 ## The weight matrix `M`
@@ -73,11 +73,43 @@ See
 [`?build_spatial_weight`](https://madsyair.github.io/hbsaems/reference/build_spatial_weight.md)
 for KNN, distance-band, and contiguity methods.
 
+## Choosing between `re`, `spatial_var`, or both
+
+`hbsaems` exposes two distinct argument families for area-level random
+effects:
+
+- `re = ~ (1 | area)` – a standard IID area random effect, i.e. the
+  classical Fay-Herriot $`u_i \sim \mathcal{N}(0, \sigma_u^2)`$.
+- `spatial_var = "area"` with `spatial_model = "car"` or `"sar"` – a
+  spatially structured random effect that uses the adjacency / weight
+  matrix $`M`$.
+
+Either one alone is sufficient for a valid SAE model. Use whichever
+matches your scientific assumption about how neighbouring areas relate:
+
+| Setup | Specification | When to use |
+|----|----|----|
+| **IID Fay-Herriot** | `re = ~ (1 \| area)` | No spatial signal; areas exchangeable |
+| **ICAR / proper CAR / SAR** | `spatial_var = "area"`, `spatial_model = "car"` (or `"sar"`), `M = W` | Pure spatial smoothing; no extra IID noise |
+| **BYM2** (modern best practice) | `spatial_var = "area"`, `spatial_model = "car"`, `car_type = "bym2"`, `M = W` | Spatial signal **plus** unstructured heterogeneity |
+| **Parallel BYM** (legacy / advisory) | `re = ~ (1 \| area)` **and** `spatial_var = "area"` + CAR | Mathematically valid but weakly identified – prefer BYM2 |
+| **None** | Neither `re` nor `spatial_model` | Fixed-effects regression – not SAE; `hbsaems` warns |
+
+Key rule of thumb:
+
+- **BYM2 already includes the IID component internally**, so when you
+  set `car_type = "bym2"` you do **not** need to add `re` separately.
+  Providing both fits the older parallel BYM specification instead;
+  `hbsaems` prints an advisory message recommending BYM2.
+- For **plain CAR / SAR** (without BYM2), the spatial effect typically
+  carries the entire area-level variance. Adding an IID `re` on the same
+  grouping is unusual.
+
 ## ICAR (default CAR)
 
-The simplest specification: pass `sre`, `sre_type = "car"`, and `M`. The
-intrinsic CAR (ICAR) is used by default because it has one fewer
-parameter and is computationally cheaper:
+The simplest specification: pass `spatial_var`, `spatial_model = "car"`,
+and `M`. The intrinsic CAR (ICAR) is used by default because it has one
+fewer parameter and is computationally cheaper:
 
 ``` r
 
@@ -88,8 +120,8 @@ data("adjacency_matrix_car")
 fit_icar <- hbm(
   formula  = brms::bf(y ~ x1 + x2 + x3),
   hb_sampling = "gaussian",
-  sre      = "sre",
-  sre_type = "car",
+  spatial_var = "province",
+  spatial_model = "car",
   M        = adjacency_matrix_car,
   data     = data_fhnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4,
@@ -102,7 +134,7 @@ summary(fit_icar)
 
      Observations : 100
      Family       : gaussian (link: identity )
-     Formula      : y ~ x1 + x2 + x3 + car(M, gr = sre, type = "icar")
+     Formula      : y ~ x1 + x2 + x3 + car(M, gr = province, type = "icar")
 
     ----- Parameter Estimates -----
     Correlation Structures:
@@ -129,8 +161,8 @@ factor against a non-spatial alternative – use `car_type = "escar"`:
 
 fit_escar <- hbm(
   formula  = brms::bf(y ~ x1 + x2 + x3),
-  sre      = "sre",
-  sre_type = "car",
+  spatial_var = "province",
+  spatial_model = "car",
   car_type = "escar",
   M        = adjacency_matrix_car,
   data     = data_fhnorm,
@@ -159,18 +191,21 @@ principled prior for $`\rho`$.
 
 fit_bym2 <- hbm(
   formula  = brms::bf(y ~ x1 + x2 + x3),
-  re       = ~ (1 | sre),                    # IID counterpart
-  sre      = "sre",
-  sre_type = "car",
-  car_type = "bym2",
+  spatial_var = "province",
+  spatial_model = "car",
+  car_type = "bym2",                          # BYM2 already includes IID + CAR
   M        = adjacency_matrix_car,
   data     = data_fhnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
 ```
 
-`hbsaems` will print an advisory message reminding you that combining
-`re = ~(1 | sre)` with `sre_type = "car"` is the BYM2 setup.
+The BYM2 reparameterisation **internally** combines an IID effect and an
+ICAR effect via the mixing weight $`\rho`$. You therefore do **not**
+need to add `re = ~ (1 | province)` separately – doing so fits a
+different (less identifiable) parallel BYM specification. If you do
+supply both, `hbsaems` prints an advisory message pointing you to the
+BYM2 parameterisation as the preferred alternative.
 
 ## SAR
 
@@ -181,15 +216,15 @@ u = \rho_s W u + \varepsilon,
 ```
 
 i.e. each $`u_i`$ is a linear combination of its neighbours’ effects
-plus an iid shock. Use `sre_type = "sar"`:
+plus an iid shock. Use `spatial_model = "sar"`:
 
 ``` r
 
 data("spatial_weight_sar")
 fit_sar <- hbm(
   formula  = brms::bf(y ~ x1 + x2 + x3),
-  sre      = "sre",
-  sre_type = "sar",
+  spatial_var = "province",
+  spatial_model = "sar",
   M        = spatial_weight_sar,
   data     = data_fhnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -200,7 +235,7 @@ summary(fit_sar)
     ===== Hierarchical Bayesian Model Summary =====
 
      Family       : gaussian (link: identity )
-     Formula      : y ~ x1 + x2 + x3 + sar(M, gr = sre, type = "lag")
+     Formula      : y ~ x1 + x2 + x3 + sar(M, gr = province, type = "lag")
 
     Correlation Structures:
            Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
@@ -213,7 +248,8 @@ for the SAR error model.
 
 ## Spatial structure in wrappers
 
-The same `sre`, `sre_type`, `M` arguments work with all wrappers:
+The same `spatial_var`, `spatial_model`, `M` arguments work with all
+wrappers:
 
 ``` r
 
@@ -221,7 +257,7 @@ The same `sre`, `sre_type`, `M` arguments work with all wrappers:
 fit_beta_car <- hbm_betalogitnorm(
   response  = "y", auxiliary = c("x1", "x2", "x3"),
   n         = "n", deff = "deff",
-  sre       = "sre", sre_type = "car", M = adjacency_matrix_car,
+  spatial_var = "province", spatial_model = "car", M = adjacency_matrix_car,
   data      = data_betalogitnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
@@ -230,8 +266,7 @@ fit_beta_car <- hbm_betalogitnorm(
 fit_bin_bym2 <- hbm_binlogitnorm(
   response  = "y", trials = "n",
   auxiliary = c("x1", "x2", "x3"),
-  re        = ~ (1 | group),     # IID counterpart
-  sre       = "sre", sre_type = "car", car_type = "bym2",
+  spatial_var = "province", spatial_model = "car", car_type = "bym2",
   M         = adjacency_matrix_car,
   data      = data_binlogitnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -271,7 +306,7 @@ tiny diagonal or merge isolates with a nearby area.
 ``` r
 
 fit_iid <- hbm(formula = brms::bf(y ~ x1 + x2 + x3),
-               re = ~ (1 | sre), data = data_fhnorm,
+               re = ~ (1 | province), data = data_fhnorm,
                chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1)
 
 loo_compare <- loo::loo_compare(
@@ -293,12 +328,14 @@ baseline.
 
 ## Summary
 
-- Use `sre_type = "car"` (default ICAR) as the SAE workhorse spatial
-  prior.
-- Use `car_type = "bym2"` together with `re = ~(1 | sre)` for the modern
-  Riebler et al. parameterisation.
-- SAR (`sre_type = "sar"`) is appropriate when the spatial mechanism is
-  regression-like (current area depends on neighbours’ levels).
+- Use `spatial_model = "car"` (default ICAR) as the SAE workhorse
+  spatial prior.
+- Use `car_type = "bym2"` (alone, without a separate `re` term) for the
+  modern Riebler et al. parameterisation, which internally combines IID
+  and CAR via a single mixing weight.
+- SAR (`spatial_model = "sar"`) is appropriate when the spatial
+  mechanism is regression-like (current area depends on neighbours’
+  levels).
 - Always validate your weight matrix before fitting.
 
 ## References

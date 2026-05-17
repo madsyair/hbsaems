@@ -92,9 +92,9 @@ model_prior <- hbm(
 #> Warning: Model fitted without any area-level random effects.
 #>   This is unusual for Small Area Estimation: the standard Fay-Herriot model assumes u_i ~ N(0, sigma_u^2) per area, so estimates from a purely fixed-effects model will not borrow strength across areas.
 #>   Consider one of:
-#>     re = ~ (1 | area_id)                          # IID area RE
-#>     sre = 'area_id', sre_type = 'car', M = W       # CAR spatial RE
-#>     sre = 'area_id', sre_type = 'sar', M = W       # SAR spatial RE
+#>     re = ~ (1 | area_id)                                     # IID area RE
+#>     spatial_var = 'area_id', spatial_model = 'car', M = W    # CAR spatial RE
+#>     spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE
 #>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')

@@ -70,7 +70,7 @@ sae_benchmark(
 
   `NULL` or `FALSE` (default)
 
-  :   Point-estimate mode – same behaviour as v0.4.x.
+  :   Point-estimate mode – same behaviour as v1.0.0.
 
   `TRUE`
 

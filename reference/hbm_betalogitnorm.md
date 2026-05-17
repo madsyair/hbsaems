@@ -16,9 +16,9 @@ hbm_betalogitnorm(
   data,
   n = NULL,
   deff = NULL,
-  group = NULL,
-  sre = NULL,
-  sre_type = NULL,
+  area_var = NULL,
+  spatial_var = NULL,
+  spatial_model = NULL,
   car_type = NULL,
   sar_type = NULL,
   M = NULL,
@@ -35,6 +35,9 @@ hbm_betalogitnorm(
   sample_prior = "no",
   fixed_params = NULL,
   predictors = NULL,
+  group = NULL,
+  sre = NULL,
+  sre_type = NULL,
   ...
 )
 ```
@@ -69,12 +72,12 @@ hbm_betalogitnorm(
   Character or `NULL`. Name of the design-effect column. Required when
   `n` is supplied (and vice versa).
 
-- group:
+- area_var:
 
-  Character or `NULL`. Name of the area-grouping variable; if supplied,
-  adds `(1 | group)` as a random intercept.
+  Character or `NULL`. Name of the area-grouping column; if supplied,
+  adds `(1 | area_var)` as a random intercept.
 
-- sre, sre_type, car_type, sar_type, M:
+- spatial_var, spatial_model, car_type, sar_type, M:
 
   Spatial random-effect arguments, forwarded to
   [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md).
@@ -128,6 +131,18 @@ hbm_betalogitnorm(
 
   **Deprecated.** Use `auxiliary` instead. Kept for backward
   compatibility; will be removed in v2.0.0.
+
+- group:
+
+  **Deprecated.** Use `area_var` instead.
+
+- sre:
+
+  **Deprecated.** Use `spatial_var` instead.
+
+- sre_type:
+
+  **Deprecated.** Use `spatial_model` instead.
 
 ## Value
 
@@ -185,7 +200,7 @@ data <- data_betalogitnorm
 model1 <- hbm_betalogitnorm(
   response   = "y",
   auxiliary  = c("x1", "x2", "x3"),
-  group      = "group",
+  area_var   = "regency",
   data       = data,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
@@ -200,7 +215,7 @@ model2 <- hbm_betalogitnorm(
   auxiliary  = c("x1", "x2", "x3"),
   n          = "n",
   deff       = "deff",
-  group      = "group",
+  area_var   = "regency",
   data       = data,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
@@ -213,7 +228,7 @@ summary(model2)
 model3 <- hbm_betalogitnorm(
   response   = "y",
   auxiliary  = c("x1", "x2", "x3"),
-  group      = "group",
+  area_var   = "regency",
   data       = data,
   stanvars   = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
                stanvar(scode = "beta  ~ gamma(2, 3);", block = "model"),
@@ -229,8 +244,8 @@ model4 <- hbm_betalogitnorm(
   auxiliary  = c("x1", "x2", "x3"),
   n          = "n",
   deff       = "deff",
-  sre        = "sre",
-  sre_type   = "car",
+  spatial_var = "province",
+  spatial_model   = "car",
   M          = adjacency_matrix_car,
   data       = data,
   chains = 1, iter = 500, warmup = 250, refresh = 0

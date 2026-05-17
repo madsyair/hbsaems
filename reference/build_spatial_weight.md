@@ -95,8 +95,8 @@ build_spatial_weight(
 
 A square numeric matrix with row/column names taken from `id_col` (if
 supplied) or sequential integers, plus the following attributes:
-`"hbsae_type"`, `"hbsae_style"`, `"hbsae_for_model"`, `"hbsae_check"`
-(the result of `check_spatial_weight`).
+`"hbsaems_type"`, `"hbsaems_style"`, `"hbsaems_for_model"`,
+`"hbsaems_check"` (the result of `check_spatial_weight`).
 
 ## Details
 
@@ -164,33 +164,33 @@ Data Analysis with R* (2nd ed.). Springer.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Recommended for CAR: queen contiguity + binary style
-M_car <- build_spatial_weight(
-  shp        = "areas.shp",
-  for_model  = "car",      # implies type = "queen", style = "B"
-  id_col     = "area_id"
-)
+# Inspect a pre-built CAR adjacency matrix shipped with the package
+data("adjacency_matrix_car")
+dim(adjacency_matrix_car)
+#> [1] 5 5
+check_spatial_weight(adjacency_matrix_car, spatial_model = "car",
+                      verbose = FALSE)$compatible
+#> [1] TRUE
 
-# Recommended for SAR: 4 nearest neighbours + row-standardised
-M_sar <- build_spatial_weight(
-  shp        = "areas.shp",
-  for_model  = "sar",      # implies type = "knn", style = "W"
-  k          = 4
-)
-
-# Explicit override
-M_explicit <- build_spatial_weight(
-  shp   = my_sf,
-  type  = "rook",
-  style = "B"
-)
-
-# Pass to hbm()
-fit <- hbm(brms::bf(y ~ x1 + x2),
-           data = my_data,
-           sre = "area_id",
-           sre_type = "car",
-           M = M_car)
-} # }
+# \donttest{
+# Build a CAR matrix from an sf object (requires sf + spdep)
+if (requireNamespace("sf", quietly = TRUE) &&
+    requireNamespace("spdep", quietly = TRUE)) {
+  library(sf)
+  # A small 2x2 grid of polygons
+  g <- st_sf(
+    id = LETTERS[1:4],
+    geometry = st_sfc(
+      st_polygon(list(rbind(c(0,0), c(1,0), c(1,1), c(0,1), c(0,0)))),
+      st_polygon(list(rbind(c(1,0), c(2,0), c(2,1), c(1,1), c(1,0)))),
+      st_polygon(list(rbind(c(0,1), c(1,1), c(1,2), c(0,2), c(0,1)))),
+      st_polygon(list(rbind(c(1,1), c(2,1), c(2,2), c(1,2), c(1,1))))
+    )
+  )
+  M_car <- build_spatial_weight(g, for_model = "car")
+  M_sar <- build_spatial_weight(g, for_model = "sar", k = 2L)
+}
+#> Linking to GEOS 3.12.1, GDAL 3.8.4, PROJ 9.4.0; sf_use_s2() is TRUE
+#> Warning: k greater than one-third of the number of data points
+# }
 ```
