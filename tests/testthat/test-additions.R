@@ -162,12 +162,12 @@ test_that("hbm_priors picks the right hyperparameters", {
   expect_equal(p_hs$prior_type, "horseshoe")
   expect_equal(p_hs$hs_df, 3)
   expect_null(p_hs$r2d2_mean_R2)   # not included for HS
-
+  
   p_r <- hbm_priors(prior_type = "r2d2", r2d2_mean_R2 = 0.6)
   expect_equal(p_r$prior_type, "r2d2")
   expect_equal(p_r$r2d2_mean_R2, 0.6)
   expect_null(p_r$hs_df)            # not included for R2D2
-
+  
   p_def <- hbm_priors()             # default
   expect_equal(p_def$prior_type, "default")
 })
@@ -184,7 +184,7 @@ test_that("hbm_nonlinear builds expected list (spline)", {
   expect_equal(nl$spline_k,       5L)
   expect_null(nl$gp_k)
   expect_null(nl$gp_c)
-
+  
   # With custom basis type
   nl_cr <- hbm_nonlinear("x1", type = "spline", k = 8, spline_bs = "cr")
   expect_equal(nl_cr$spline_bs, "cr")
@@ -198,7 +198,7 @@ test_that("hbm_nonlinear builds expected list (gp)", {
   expect_equal(nl_gp$gp_cov, "matern25")
   # Use [[ to avoid $ partial matching (gp_c <-> gp_cov)
   expect_null(nl_gp[["gp_c"]])
-
+  
   # Exact GP (NA basis)
   nl_exact <- hbm_nonlinear("x1", type = "gp", k = NA)
   expect_true(is.na(nl_exact$gp_k))
@@ -222,32 +222,32 @@ test_that("hbm_nonlinear: both gp_c and gp_scale = error", {
 test_that(".build_nonlinear_term produces brms-canonical strings", {
   # Splines
   expect_equal(hbsaems:::.build_nonlinear_term("x", "spline"),
-                "s(x)")
+               "s(x)")
   expect_equal(hbsaems:::.build_nonlinear_term("x", "spline", spline_k = 8L),
-                "s(x, k = 8)")
+               "s(x, k = 8)")
   expect_equal(hbsaems:::.build_nonlinear_term("x", "spline",
-                                                  spline_bs = "cr"),
-                "s(x, bs = \"cr\")")
+                                               spline_bs = "cr"),
+               "s(x, bs = \"cr\")")
   expect_equal(hbsaems:::.build_nonlinear_term("x", "spline",
-                                                  spline_k  = 10L,
-                                                  spline_bs = "cs"),
-                "s(x, k = 10, bs = \"cs\")")
-
+                                               spline_k  = 10L,
+                                               spline_bs = "cs"),
+               "s(x, k = 10, bs = \"cs\")")
+  
   # GP
   expect_equal(hbsaems:::.build_nonlinear_term("x", "gp"),
-                "gp(x)")
+               "gp(x)")
   # When gp_k is set, c is auto-supplied (brms requirement: HSGP needs c)
   expect_equal(hbsaems:::.build_nonlinear_term("x", "gp", gp_k = 25L),
-                "gp(x, k = 25, c = 1.25)")
+               "gp(x, k = 25, c = 1.25)")
   expect_equal(hbsaems:::.build_nonlinear_term("x", "gp",
-                                                  gp_k   = 20L,
-                                                  gp_cov = "matern25"),
-                "gp(x, k = 20, cov = \"matern25\", c = 1.25)")
+                                               gp_k   = 20L,
+                                               gp_cov = "matern25"),
+               "gp(x, k = 20, cov = \"matern25\", c = 1.25)")
   # User-supplied c is respected
   expect_equal(hbsaems:::.build_nonlinear_term("x", "gp",
-                                                  gp_k = 15L, gp_c = 2),
-                "gp(x, k = 15, c = 2)")
-
+                                               gp_k = 15L, gp_c = 2),
+               "gp(x, k = 15, c = 2)")
+  
   # Invalid cov
   expect_error(hbsaems:::.build_nonlinear_term("x", "gp", gp_cov = "bogus"),
                "must be one of")
@@ -259,11 +259,11 @@ test_that("config bundles splice correctly when passed to hbm() (logic mirror)",
   # behaviour without invoking Stan.
   ctrl   <- hbm_control(chains = 4, iter = 4000)
   priors <- hbm_priors(prior_type = "horseshoe", hs_df = 2)
-
+  
   # Manual splice mirroring hbm()'s internal logic
   merged <- utils::modifyList(utils::modifyList(list(), ctrl), priors)
   merged <- utils::modifyList(merged, list(cores = 2))
-
+  
   expect_equal(merged$chains, 4L)
   expect_equal(merged$iter,   4000L)
   expect_equal(merged$prior_type, "horseshoe")
@@ -349,10 +349,10 @@ test_that("HSGP gp() with gp_k auto-supplies c (brms requirement)", {
   # brms errors if k is set without c.  We should auto-supply 5/4.
   fml_str <- hbsaems:::.build_nonlinear_term("x", "gp", gp_k = 10L)
   expect_match(fml_str, "c = 1.25")
-
+  
   # User-supplied c respected
   fml_str2 <- hbsaems:::.build_nonlinear_term("x", "gp",
-                                                 gp_k = 10L, gp_c = 2)
+                                              gp_k = 10L, gp_c = 2)
   expect_match(fml_str2, "c = 2")
   expect_false(grepl("c = 1.25", fml_str2))
 })
@@ -409,14 +409,14 @@ test_that("removed v1.0.0 aliases are no longer exported", {
 test_that("check_spatial_weight returns the required component set", {
   M <- matrix(c(0,1,1,0, 1,0,0,1, 1,0,0,1, 0,1,1,0), 4, 4)
   chk <- check_spatial_weight(M, spatial_model = "car", verbose = FALSE)
-
+  
   required <- c("is_square", "has_zero_diag", "is_symmetric",
                 "detected_style", "n_isolated", "n_components",
                 "issues", "warnings", "compatible")
   expect_true(all(required %in% names(chk)),
               info = paste("Missing:",
-                            paste(setdiff(required, names(chk)),
-                                  collapse = ", ")))
+                           paste(setdiff(required, names(chk)),
+                                 collapse = ", ")))
 })
 
 
@@ -428,13 +428,13 @@ test_that("model_average: method='manual' validates weights vector", {
   # Without actually fitting models, test the argument validation
   fake_model <- structure(list(), class = c("hbmfit", "list"))
   fake_model$model <- structure(list(), class = "brmsfit")
-
+  
   # Manual: wrong-length weights → error
   expect_error(
     model_average(fake_model, fake_model, weights = c(1, 2, 3)),
     "length\\(weights\\)"
   )
-
+  
   # Stacking: passing weights when method != manual → error
   expect_error(
     model_average(fake_model, fake_model,
@@ -466,18 +466,18 @@ test_that("prior_sensitivity: validates input type", {
 
 test_that("prior_sensitivity: dispatches correctly based on priorsense availability", {
   fake <- structure(list(model = structure(list(), class = "brmsfit")),
-                     class = c("hbmfit", "list"))
-
+                    class = c("hbmfit", "list"))
+  
   if (requireNamespace("priorsense", quietly = TRUE)) {
     # Path A: priorsense available --- function should forward to it
     # (stub via mockery so we don't need a real fitted brmsfit)
     skip_if_not_installed("mockery")
     sentinel <- structure(data.frame(variable   = "test",
-                                       prior      = 0.01,
-                                       likelihood = 0.5,
-                                       diagnosis  = "-"),
-                           class = c("powerscale_sensitivity_summary",
-                                      "data.frame"))
+                                     prior      = 0.01,
+                                     likelihood = 0.5,
+                                     diagnosis  = "-"),
+                          class = c("powerscale_sensitivity_summary",
+                                    "data.frame"))
     mockery::stub(prior_sensitivity, "priorsense::powerscale_sensitivity",
                   function(...) sentinel)
     out <- prior_sensitivity(fake)
@@ -509,10 +509,10 @@ test_that(".merge_prior_type: user global prior on class='b' wins, warns", {
 test_that(".merge_prior_type: cascade — user prior on 'sds' drops only sds entry", {
   # Construct a cascade prior (b + sds + sdgp)
   type_p <- brms::set_prior("horseshoe(1, main = TRUE)", class = "b") +
-            brms::set_prior("horseshoe(1)",              class = "sds") +
-            brms::set_prior("horseshoe(1)",              class = "sdgp")
+    brms::set_prior("horseshoe(1)",              class = "sds") +
+    brms::set_prior("horseshoe(1)",              class = "sdgp")
   user_p <- brms::set_prior("student_t(3, 0, 1)", class = "sds")
-
+  
   expect_warning(merged <- hbsaems:::.merge_prior_type(user_p, type_p),
                  "class = 'sds'")
   # b + sdgp from type_p preserved; sds from user_p wins
@@ -523,11 +523,11 @@ test_that(".merge_prior_type: cascade — user prior on 'sds' drops only sds ent
 
 test_that(".merge_prior_type: cascade — user priors on b and sds, only sdgp left", {
   type_p <- brms::set_prior("horseshoe(1, main = TRUE)", class = "b") +
-            brms::set_prior("horseshoe(1)",              class = "sds") +
-            brms::set_prior("horseshoe(1)",              class = "sdgp")
+    brms::set_prior("horseshoe(1)",              class = "sds") +
+    brms::set_prior("horseshoe(1)",              class = "sdgp")
   user_p <- brms::set_prior("normal(0, 1)",        class = "b") +
-            brms::set_prior("student_t(3, 0, 1)",  class = "sds")
-
+    brms::set_prior("student_t(3, 0, 1)",  class = "sds")
+  
   expect_warning(merged <- hbsaems:::.merge_prior_type(user_p, type_p),
                  "class = 'b', 'sds'")
   # Both user entries + sdgp from type_p
