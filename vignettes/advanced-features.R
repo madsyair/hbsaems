@@ -190,7 +190,7 @@ knitr::opts_chunk$set(
 
 ## -----------------------------------------------------------------------------
 # list_hbsae_models()
-# #> [1] "bernoulli" "Beta" "beta-binomial" "binomial" ...
+# #> [1] "Beta" "beta-binomial" "binomial" "categorical" ...
 # 
 # get_hbsae_model("beta")
 # #> $family             : "Beta"

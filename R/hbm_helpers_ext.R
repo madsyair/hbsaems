@@ -60,27 +60,27 @@
 #' @return A \code{brmsprior} object or NULL.
 #' @noRd
 .build_prior_type <- function(prior_type      = "default",
-                              hs_df           = 1,
-                              hs_df_global    = 1,
-                              hs_df_slab      = 4,
-                              hs_scale_global = NULL,
-                              hs_scale_slab   = 2,
-                              hs_par_ratio    = NULL,
-                              hs_autoscale    = TRUE,
-                              r2d2_mean_R2    = 0.5,
-                              r2d2_prec_R2    = 2,
-                              r2d2_cons_D2    = NULL,
-                              r2d2_autoscale  = TRUE,
-                              main            = FALSE,
-                              class           = "b") {
-  
+                               hs_df           = 1,
+                               hs_df_global    = 1,
+                               hs_df_slab      = 4,
+                               hs_scale_global = NULL,
+                               hs_scale_slab   = 2,
+                               hs_par_ratio    = NULL,
+                               hs_autoscale    = TRUE,
+                               r2d2_mean_R2    = 0.5,
+                               r2d2_prec_R2    = 2,
+                               r2d2_cons_D2    = NULL,
+                               r2d2_autoscale  = TRUE,
+                               main            = FALSE,
+                               class           = "b") {
+
   if (is.null(prior_type) || prior_type == "default") return(NULL)
-  
+
   prior_type <- match.arg(prior_type, c("default", "horseshoe", "r2d2"))
-  
+
   # ---- Horseshoe (Piironen & Vehtari 2017) ----------------------------------
   if (prior_type == "horseshoe") {
-    
+
     if (!is.numeric(hs_df)        || hs_df <= 0)
       stop("'hs_df' must be a positive number.", call. = FALSE)
     if (!is.numeric(hs_df_global) || hs_df_global <= 0)
@@ -99,7 +99,7 @@
       stop("'hs_autoscale' must be a single logical.", call. = FALSE)
     if (!is.logical(main) || length(main) != 1L)
       stop("'main' must be a single logical.", call. = FALSE)
-    
+
     args <- paste0(
       "df = ",        hs_df,
       ", df_global = ", hs_df_global,
@@ -114,13 +114,13 @@
       args <- paste0(args, ", autoscale = FALSE")
     if (isTRUE(main))
       args <- paste0(args, ", main = TRUE")
-    
+
     return(brms::set_prior(paste0("horseshoe(", args, ")"), class = class))
   }
-  
+
   # ---- R2D2 (Zhang et al. 2022) ---------------------------------------------
   if (prior_type == "r2d2") {
-    
+
     if (!is.numeric(r2d2_mean_R2) || r2d2_mean_R2 <= 0 || r2d2_mean_R2 >= 1)
       stop("'r2d2_mean_R2' must be strictly in (0, 1).", call. = FALSE)
     if (!is.numeric(r2d2_prec_R2) || r2d2_prec_R2 <= 0)
@@ -132,7 +132,7 @@
       stop("'r2d2_autoscale' must be a single logical.", call. = FALSE)
     if (!is.logical(main) || length(main) != 1L)
       stop("'main' must be a single logical.", call. = FALSE)
-    
+
     args <- paste0(
       "mean_R2 = ", r2d2_mean_R2,
       ", prec_R2 = ", r2d2_prec_R2
@@ -143,7 +143,7 @@
       args <- paste0(args, ", autoscale = FALSE")
     if (isTRUE(main))
       args <- paste0(args, ", main = TRUE")
-    
+
     return(brms::set_prior(paste0("R2D2(", args, ")"), class = class))
   }
 }
@@ -171,9 +171,9 @@
 #' @param ...     Forwarded to \code{.build_prior_type()}.
 #' @noRd
 .build_shrinkage_priors_full <- function(formula, prior_type, ...) {
-  
+
   if (is.null(prior_type) || prior_type == "default") return(NULL)
-  
+
   # Detect smooth / GP terms in the formula
   rhs_str <- if (inherits(formula, "brmsformula")) {
     deparse(formula$formula)
@@ -185,31 +185,31 @@
   rhs_str <- paste(rhs_str, collapse = " ")
   has_s   <- grepl("\\bs\\s*\\(",  rhs_str)
   has_gp  <- grepl("\\bgp\\s*\\(", rhs_str)
-  
+
   # Main prior on coefficients (class = "b")
   main_flag <- has_s || has_gp
   prior_b <- .build_prior_type(prior_type = prior_type,
-                               main       = main_flag,
-                               class      = "b",
-                               ...)
-  
+                                main       = main_flag,
+                                class      = "b",
+                                ...)
+
   # Companion priors on smooth / GP SD classes
   out <- prior_b
   if (has_s) {
     prior_sds <- .build_prior_type(prior_type = prior_type,
-                                   main       = FALSE,
-                                   class      = "sds",
-                                   ...)
+                                    main       = FALSE,
+                                    class      = "sds",
+                                    ...)
     out <- if (is.null(out)) prior_sds else out + prior_sds
   }
   if (has_gp) {
     prior_sdgp <- .build_prior_type(prior_type = prior_type,
-                                    main       = FALSE,
-                                    class      = "sdgp",
-                                    ...)
+                                     main       = FALSE,
+                                     class      = "sdgp",
+                                     ...)
     out <- if (is.null(out)) prior_sdgp else out + prior_sdgp
   }
-  
+
   out
 }
 
@@ -235,15 +235,15 @@
 #' @return A \code{brmsprior} object or NULL.
 #' @noRd
 .merge_prior_type <- function(user_prior, type_prior) {
-  
+
   if (is.null(type_prior)) return(user_prior)
   if (is.null(user_prior)) return(type_prior)
-  
+
   # For each class that the user has supplied a GLOBAL entry (no coef name),
   # remove the corresponding row(s) from type_prior so the user's prior wins.
   cascade_classes <- c("b", "sds", "sdgp")
   conflict_classes <- character(0L)
-  
+
   for (cls in cascade_classes) {
     user_has_global <- any(
       user_prior$class == cls &
@@ -252,24 +252,24 @@
     if (user_has_global)
       conflict_classes <- c(conflict_classes, cls)
   }
-  
+
   if (length(conflict_classes) > 0L) {
     warning(
       "A global prior for class = ",
       paste(shQuote(conflict_classes), collapse = ", "),
       " is already present in 'prior'.  The 'prior_type' shrinkage prior ",
       "is IGNORED for ", if (length(conflict_classes) > 1L) "those classes."
-      else "that class.",
+                          else "that class.",
       "  Remove the corresponding entry from 'prior' if you want ",
       "'prior_type' to apply uniformly.",
       call. = FALSE
     )
     # Drop conflicting rows from type_prior
     type_prior <- type_prior[!type_prior$class %in% conflict_classes, ,
-                             drop = FALSE]
+                              drop = FALSE]
     if (nrow(type_prior) == 0L) return(user_prior)
   }
-  
+
   # Combine: shrinkage prior covers its remaining classes; user_prior handles
   # the conflicting classes and any other coefficient-specific overrides.
   c(type_prior, user_prior)
@@ -302,18 +302,18 @@
 #'   \code{"gp(x1, k = 25, cov = 'matern25')"}.
 #' @noRd
 .build_nonlinear_term <- function(var,
-                                  type      = c("spline", "gp"),
-                                  spline_k  = -1L,
-                                  spline_bs = "tp",
-                                  gp_k      = NA_integer_,
-                                  gp_cov    = "exp_quad",
-                                  gp_c      = NULL) {
+                                   type      = c("spline", "gp"),
+                                   spline_k  = -1L,
+                                   spline_bs = "tp",
+                                   gp_k      = NA_integer_,
+                                   gp_cov    = "exp_quad",
+                                   gp_c      = NULL) {
   type <- match.arg(type)
-  
+
   # ---- Spline branch ------------------------------------------------------
   if (type == "spline") {
     bs_arg <- if (!is.null(spline_bs) && spline_bs != "tp")
-      paste0(", bs = \"", spline_bs, "\"") else ""
+                paste0(", bs = \"", spline_bs, "\"") else ""
     if (isTRUE(spline_k == -1L) || is.null(spline_k))
       return(paste0("s(", var, bs_arg, ")"))
     k <- as.integer(spline_k)
@@ -321,13 +321,13 @@
       stop("'spline_k' must be >= 3 (or -1 for automatic).", call. = FALSE)
     return(paste0("s(", var, ", k = ", k, bs_arg, ")"))
   }
-  
+
   # ---- Gaussian process branch -------------------------------------------
   valid_cov <- c("exp_quad", "matern15", "matern25", "exponential")
   if (!is.null(gp_cov) && !gp_cov %in% valid_cov)
     stop("`gp_cov` must be one of: ",
          paste(shQuote(valid_cov), collapse = ", "), ".", call. = FALSE)
-  
+
   parts <- character(0L)
   if (!is.na(gp_k)) {
     k_int <- as.integer(gp_k)
@@ -363,12 +363,12 @@
 #' @param data      A data.frame.
 #' @noRd
 .validate_nonlinear <- function(nonlinear, aux_vars, data) {
-  
+
   if (is.null(nonlinear) || length(nonlinear) == 0L) return(invisible(NULL))
-  
+
   if (!is.character(nonlinear))
     stop("'nonlinear' must be a character vector of column names.", call. = FALSE)
-  
+
   # Every nonlinear variable must exist in data
   absent <- setdiff(nonlinear, names(data))
   if (length(absent) > 0L)
@@ -377,7 +377,7 @@
       paste(absent, collapse = ", "),
       call. = FALSE
     )
-  
+
   # Warn about overlap: the variable will be treated as nonlinear only
   if (!is.null(aux_vars)) {
     overlap <- intersect(nonlinear, aux_vars)
@@ -390,7 +390,7 @@
         call. = FALSE
       )
   }
-  
+
   invisible(NULL)
 }
 
@@ -413,26 +413,26 @@
 #' @return The modified \code{brmsformula}.
 #' @noRd
 .apply_nonlinear_to_formula <- function(formula,
-                                        nonlinear,
-                                        nonlinear_type = "spline",
-                                        spline_k       = -1L,
-                                        spline_bs      = "tp",
-                                        gp_k           = NA_integer_,
-                                        gp_cov         = "exp_quad",
-                                        gp_c           = NULL) {
-  
+                                         nonlinear,
+                                         nonlinear_type = "spline",
+                                         spline_k       = -1L,
+                                         spline_bs      = "tp",
+                                         gp_k           = NA_integer_,
+                                         gp_cov         = "exp_quad",
+                                         gp_c           = NULL) {
+
   if (is.null(nonlinear) || length(nonlinear) == 0L) return(formula)
-  
+
   is_bform <- length(class(formula)) > 1L && class(formula)[2L] == "bform"
-  
+
   args <- list(nonlinear      = nonlinear,
-               nonlinear_type = nonlinear_type,
-               spline_k       = spline_k,
-               spline_bs      = spline_bs,
-               gp_k           = gp_k,
-               gp_cov         = gp_cov,
-               gp_c           = gp_c)
-  
+                nonlinear_type = nonlinear_type,
+                spline_k       = spline_k,
+                spline_bs      = spline_bs,
+                gp_k           = gp_k,
+                gp_cov         = gp_cov,
+                gp_c           = gp_c)
+
   if (is_bform) {
     if (!is.null(formula$forms)) {
       formula$forms[[1L]]$formula <- do.call(
@@ -447,13 +447,13 @@
     }
     return(formula)
   }
-  
+
   if (inherits(formula, "formula")) {
     new_f <- do.call(.replace_nl_in_formula,
-                     c(list(fml = formula), args))
+                      c(list(fml = formula), args))
     return(brms::bf(new_f))
   }
-  
+
   formula   # fallback: return unchanged
 }
 
@@ -465,25 +465,25 @@
 #'
 #' @noRd
 .replace_nl_in_formula <- function(fml, nonlinear, nonlinear_type,
-                                   spline_k  = -1L,
-                                   spline_bs = "tp",
-                                   gp_k      = NA_integer_,
-                                   gp_cov    = "exp_quad",
-                                   gp_c      = NULL) {
-  
+                                    spline_k  = -1L,
+                                    spline_bs = "tp",
+                                    gp_k      = NA_integer_,
+                                    gp_cov    = "exp_quad",
+                                    gp_c      = NULL) {
+
   fml_str   <- paste(deparse(fml), collapse = " ")
   tilde_pos <- regexpr("~", fml_str, fixed = TRUE)
   lhs       <- substr(fml_str, 1L, tilde_pos - 1L)
   rhs       <- substr(fml_str, tilde_pos + 1L, nchar(fml_str))
-  
+
   for (var in nonlinear) {
     nl_term <- .build_nonlinear_term(var, nonlinear_type, spline_k,
-                                     spline_bs, gp_k, gp_cov, gp_c)
+                                       spline_bs, gp_k, gp_cov, gp_c)
     # Word-boundary replacement in RHS only to avoid touching LHS or mi() terms
     pattern <- paste0("(?<![a-zA-Z0-9_.])", var, "(?![a-zA-Z0-9_.])")
     rhs     <- gsub(pattern, nl_term, rhs, perl = TRUE)
   }
-  
+
   stats::as.formula(paste(trimws(lhs), "~", trimws(rhs)))
 }
 
@@ -506,32 +506,32 @@
 #' @return A single character string, e.g. \code{"x2 + x3 + s(x1, k = 8)"}.
 #' @noRd
 .build_wrapper_rhs <- function(auxiliary      = NULL,
-                               nonlinear      = NULL,
-                               nonlinear_type = "spline",
-                               spline_k       = -1L,
-                               spline_bs      = "tp",
-                               gp_k           = NA_integer_,
-                               gp_cov         = "exp_quad",
-                               gp_c           = NULL) {
-  
+                                nonlinear      = NULL,
+                                nonlinear_type = "spline",
+                                spline_k       = -1L,
+                                spline_bs      = "tp",
+                                gp_k           = NA_integer_,
+                                gp_cov         = "exp_quad",
+                                gp_c           = NULL) {
+
   # Remove from the linear set any variable also listed as nonlinear
   linear_vars <- setdiff(auxiliary, nonlinear)
-  
+
   parts <- character(0L)
-  
+
   if (length(linear_vars) > 0L)
     parts <- c(parts, paste(linear_vars, collapse = " + "))
-  
+
   if (!is.null(nonlinear) && length(nonlinear) > 0L) {
     nl_terms <- vapply(
       nonlinear,
       function(v) .build_nonlinear_term(v, nonlinear_type, spline_k,
-                                        spline_bs, gp_k, gp_cov, gp_c),
+                                          spline_bs, gp_k, gp_cov, gp_c),
       character(1L)
     )
     parts <- c(parts, nl_terms)
   }
-  
+
   if (length(parts) == 0L) "1"            # intercept-only model
   else paste(parts, collapse = " + ")
 }
@@ -569,9 +569,9 @@
   if (is.null(M))
     stop("Spatial matrix `M` must be provided when `spatial_model` is specified.",
          call. = FALSE)
-  
+
   spat_chk <- check_spatial_weight(M, spatial_model = spatial_model,
-                                   verbose = FALSE)
+                                    verbose = FALSE)
   if (!spat_chk$compatible)
     stop(
       "Spatial weight matrix is incompatible with spatial_model = '",
@@ -611,7 +611,7 @@
     stop("Formula must be specified as formula() or bf()/brmsformula().",
          call. = FALSE)
   }
-  
+
   list(
     main_formula   = main_formula,
     all_formulas   = all_formulas,

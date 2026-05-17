@@ -4,10 +4,19 @@
 \alias{list_hbsae_models}
 \title{List Registered HBSAE Models}
 \usage{
-list_hbsae_models()
+list_hbsae_models(verbose = FALSE)
+}
+\arguments{
+\item{verbose}{Logical.  If \code{TRUE}, return a data.frame summarising
+each registered model: family name, default brms link function,
+whether the family is discrete, and whether brms-canonical
+\code{mi()} imputation is supported.  Default \code{FALSE} returns a
+plain character vector of keys (backward compatible).}
 }
 \value{
-Character vector of model keys.
+Character vector of model keys, or a \code{data.frame} with
+  columns \code{key, family, link, discrete, supports_mi} when
+  \code{verbose = TRUE}.
 }
 \description{
 Returns the keys of all model specs currently registered in the
@@ -17,6 +26,7 @@ included; user-registered models appear in addition.
 }
 \examples{
 list_hbsae_models()
+list_hbsae_models(verbose = TRUE)
 
 }
 \seealso{

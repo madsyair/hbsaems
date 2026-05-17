@@ -11,15 +11,33 @@ get_hbsae_model(key)
 \code{\link{list_hbsae_models}}.}
 }
 \value{
-The named list spec, or \code{NULL} if not found.
+The named list spec, or \code{NULL} if not found.  Useful
+  fields include:
+  \itemize{
+    \item \code{family}      -- brms family name passed to
+                                \code{\link[brms]{brmsfamily}}.
+    \item \code{link}        -- default link function used by the family
+                                (\code{"identity"}, \code{"logit"},
+                                \code{"log"}, ...).  See
+                                \code{\link[brms]{brmsfamily}} for the
+                                complete set of supported links per
+                                family.
+    \item \code{discrete}    -- whether the response is discrete.
+    \item \code{supports_mi} -- whether brms-canonical \code{mi()}
+                                imputation is allowed for this family
+                                (FALSE for all discrete responses).
+  }
 }
 \description{
 Inspect a Registered HBSAE Model Specification
 }
 \examples{
 get_hbsae_model("lognormal")
+get_hbsae_model("beta")$link  # "logit"
 
 }
 \seealso{
-\code{\link{register_hbsae_model}}
+\code{\link{register_hbsae_model}},
+  \code{\link[brms]{brmsfamily}} for the canonical brms family /
+  link reference.
 }

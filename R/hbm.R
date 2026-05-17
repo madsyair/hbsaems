@@ -650,7 +650,7 @@ hbm <- function(formula,
                 sre_type       = NULL,
                 stanvars       = NULL,
                 ...) {
-  
+
   # -- Intercept hbm_config bundles in ... ----------------------------
   # If the user passed any hbm_control()/hbm_priors()/hbm_nonlinear() bundles
   # via `...`, splice them into the explicit argument list and recurse.
@@ -669,17 +669,17 @@ hbm <- function(formula,
     extra <- dots[!is_bundle]
     # Final precedence: explicit args > extra ... > bundles.
     final_args <- utils::modifyList(merged,
-                                    utils::modifyList(extra,
-                                                      lapply(explicit, eval, envir = parent.frame())))
+                     utils::modifyList(extra,
+                       lapply(explicit, eval, envir = parent.frame())))
     return(do.call(hbm, final_args))
   }
-  
+
   # -- 0. Input validation and coercion ----------------------------------------
   # Delegated to internal helper for testability and clarity.
   data  <- .validate_hbm_data(data)
   n     <- nrow(data)
   data2 <- NULL
-  
+
   # -- 0a. Argument deprecation (v1.0.0): sre -> spatial_var, sre_type -> spatial_model
   # Old names continue to work for one release cycle; users see a single
   # informative warning per call.  Removal scheduled for v2.0.0.
@@ -713,7 +713,7 @@ hbm <- function(formula,
     )
     spatial_model <- sre_type
   }
-  
+
   # -- 0b. Process fixed_params -----------------------------------------
   # Resolve user-specified pinned parameters (column name / scalar / vector /
   # formula) to numeric vectors and attach them as columns of `data` named
@@ -722,7 +722,7 @@ hbm <- function(formula,
   if (length(.fixed_params_processed$resolved) > 0L) {
     data <- .attach_fixed_columns(data, .fixed_params_processed)
   }
-  
+
   # -- 1. Formula parsing -------------------------------------------------------
   # Delegated to .parse_hbm_formula() helper (v1.0.0).
   parsed <- .parse_hbm_formula(formula)
@@ -730,13 +730,13 @@ hbm <- function(formula,
   all_formulas   <- parsed$all_formulas
   response_var   <- parsed$response_var
   auxiliary_vars <- parsed$auxiliary_vars
-  
+
   # -- 1b. Apply nonlinear smooth terms (Feature 2) -----------------------------
   # Replace listed predictor variables in the formula RHS with s(var) (spline)
   # or gp(var) (Gaussian process) terms.  This must happen before the
   # handle_missing block so that mi() wrappers added by .add_mi_to_lhs() operate
   # on a formula that already contains the correct smooth-term syntax.
-  
+
   # Deprecated `gp_scale` alias (v1.0.0) -- handle before the nonlinear block
   # so the value is available regardless of whether nonlinear terms are used.
   if (!is.null(gp_scale)) {
@@ -746,19 +746,19 @@ hbm <- function(formula,
     .deprecate_arg("gp_scale", "gp_c", "v2.0.0")
     gp_c <- gp_scale
   }
-  
+
   if (!is.null(nonlinear) && length(nonlinear) > 0L) {
     nonlinear_type <- match.arg(nonlinear_type, c("spline", "gp"))
-    
+
     .validate_nonlinear(nonlinear, auxiliary_vars, data)
-    
+
     if (nonlinear_type == "spline" && !requireNamespace("mgcv", quietly = TRUE))
       stop(
         "Package 'mgcv' is required for nonlinear_type = 'spline'. ",
         "Install it with: install.packages('mgcv')",
         call. = FALSE
       )
-    
+
     # Warn against exact GP for n > 100 (common SAE pitfall)
     n_obs <- nrow(data)
     if (nonlinear_type == "gp" && is.na(gp_k) && n_obs > 100L) {
@@ -771,7 +771,7 @@ hbm <- function(formula,
         call. = FALSE, immediate. = TRUE
       )
     }
-    
+
     all_formulas <- .apply_nonlinear_to_formula(
       formula        = all_formulas,
       nonlinear      = nonlinear,
@@ -783,12 +783,12 @@ hbm <- function(formula,
       gp_c           = gp_c
     )
   }
-  
+
   # -- 2. Detect missing values -------------------------------------------------
   missing_info <- .detect_missing(data, response_var, auxiliary_vars)
   missing_y    <- missing_info$missing_y   # NULL or character vector
   missing_x    <- missing_info$missing_x   # NULL or character vector
-  
+
   # -- 3. Discrete-family flag ---------------------------------------------------
   # lookup the family registry instead of using a hardcoded list.
   # Falls back to a static list for the few brms families not (yet)
@@ -796,10 +796,10 @@ hbm <- function(formula,
   # not been touched.
   is_discrete <- isTRUE(.model_is_discrete(hb_sampling)) ||
     hb_sampling %in% c("cumulative", "cratio", "sratio", "acat")
-  
+
   # -- 4. Validate handle_missing -----------------------------------------------
   has_any_missing <- !is.null(missing_y) || !is.null(missing_x)
-  
+
   if (has_any_missing) {
     if (is.null(handle_missing)) {
       stop(
@@ -817,17 +817,17 @@ hbm <- function(formula,
       )
     }
   }
-  
+
   # -- 5. Initial state ---------------------------------------------------------
   # data_complete always stores the ORIGINAL data (all rows, all columns).
   # It is returned unchanged so that hbsae() can generate predictions for
   # every small area, including those with missing Y.
   data_complete <- data
   multiple      <- FALSE   # flag: use brm_multiple() instead of brm()
-  
+
   # -- 6. Missing data handling -------------------------------------------------
   if (has_any_missing) {
-    
+
     # -- 6a. DELETED -------------------------------------------------------------
     if (handle_missing == "deleted") {
       if (!is.null(missing_x)) {
@@ -853,11 +853,11 @@ hbm <- function(formula,
         n_before - n,
         " row(s) with missing response variable removed from model fitting."
       )
-      
-      # -- 6b. MULTIPLE IMPUTATION --------------------------------------------------
+
+    # -- 6b. MULTIPLE IMPUTATION --------------------------------------------------
     } else if (handle_missing == "multiple") {
       multiple <- TRUE
-      
+
       # ----- KEY FIX -----------------------------------------------------------
       # mice MUST NOT impute the response variable Y.
       #
@@ -891,7 +891,7 @@ hbm <- function(formula,
           call. = FALSE
         )
       }
-      
+
       if (!is.null(missing_x)) {
         message(
           "Missing predictor variable(s): ",
@@ -905,7 +905,7 @@ hbm <- function(formula,
         # Bayesian likelihood.  Adopt the statistically correct strategy
         # depending on the distribution family.
         multiple <- FALSE
-        
+
         if (is_discrete) {
           # Discrete families (binomial, Poisson, ...) do not support
           # model-based imputation via mi().  Fall back to complete-case
@@ -923,7 +923,7 @@ hbm <- function(formula,
             , drop = FALSE
           ]
           n <- nrow(data)
-          
+
         } else {
           # Continuous distribution: the correct Bayesian treatment is to
           # jointly estimate Y_mis with the model parameters via brms::mi().
@@ -951,8 +951,8 @@ hbm <- function(formula,
           all_formulas   <- .add_mi_to_lhs(all_formulas, response_var)
         }
       }
-      
-      # -- 6c. MODEL-BASED IMPUTATION -----------------------------------------------
+
+    # -- 6c. MODEL-BASED IMPUTATION -----------------------------------------------
     } else if (handle_missing == "model") {
       if (is.null(formula)) {
         stop(
@@ -962,10 +962,10 @@ hbm <- function(formula,
           call. = FALSE
         )
       }
-      
+
       # Validate that every missing variable has the correct mi() specification.
       all_missing_vars <- unique(c(missing_y, missing_x))
-      
+
       formula_strs <- if (!is.null(formula$forms)) {
         sapply(
           all_formulas$forms,
@@ -974,12 +974,12 @@ hbm <- function(formula,
       } else {
         paste(deparse(all_formulas$formula), collapse = " ")
       }
-      
+
       # Response variables need "var | mi()" on the LHS.
       incomplete_responses <- all_missing_vars[!vapply(all_missing_vars, function(var) {
         any(grepl(paste0("\\b", var, " \\| mi\\("), formula_strs))
       }, logical(1L))]
-      
+
       # Predictor variables need "mi(var)" on the RHS.
       incomplete_predictors <- if (!is.null(missing_x)) {
         missing_x[!vapply(missing_x, function(var) {
@@ -988,7 +988,7 @@ hbm <- function(formula,
       } else {
         character(0L)
       }
-      
+
       if (length(incomplete_responses) > 0L || length(incomplete_predictors) > 0L) {
         stop(
           "Formula is incomplete for `handle_missing = 'model'`.\n",
@@ -1011,7 +1011,7 @@ hbm <- function(formula,
       )
     }
   } # end if (has_any_missing)
-  
+
   # -- 7. Prior validation -------------------------------------------------------
   if (!is.null(prior) && !inherits(prior, "brmsprior")) {
     stop(
@@ -1020,7 +1020,7 @@ hbm <- function(formula,
       call. = FALSE
     )
   }
-  
+
   # -- 7b. Build and merge shrinkage prior (Feature 1) -------------------------
   # When prior_type != "default", build a global-local shrinkage prior for
   # class = "b" and merge it with any user-supplied priors.
@@ -1028,7 +1028,7 @@ hbm <- function(formula,
   # already supplied a global class = "b" prior.
   if (!is.null(prior_type) && prior_type != "default") {
     prior_type <- match.arg(prior_type, c("default", "horseshoe", "r2d2"))
-    
+
     # Use the full-cascade helper which detects splines / GP terms in the
     # formula and adds matching priors on classes "sds" and "sdgp" with
     # the brms-canonical `main = TRUE` pattern (Buerkner 2024).
@@ -1047,10 +1047,10 @@ hbm <- function(formula,
       r2d2_cons_D2    = r2d2_cons_D2,
       r2d2_autoscale  = r2d2_autoscale
     )
-    
+
     prior <- .merge_prior_type(prior, type_prior)
   }
-  
+
   # -- 8. Random effects --------------------------------------------------------
   if (!is.null(re)) {
     re_str       <- as.character(re)
@@ -1077,7 +1077,7 @@ hbm <- function(formula,
       )
     }
   }
-  
+
   # -- 8b. Consistency check: spatial_var and spatial_model must agree --------
   # Spatial random effects require BOTH `spatial_var` (the area grouping
   # column) and `spatial_model` ("car" or "sar") plus `M` (the weight matrix).
@@ -1116,7 +1116,7 @@ hbm <- function(formula,
       )
     }
   }
-  
+
   # -- 8b-ii. Consistency check: car_type / sar_type need matching spatial_model
   # `car_type` is meaningful only with `spatial_model = "car"`; `sar_type`
   # only with `spatial_model = "sar"`.  Silently ignoring these would mask a
@@ -1145,7 +1145,7 @@ hbm <- function(formula,
       call. = FALSE
     )
   }
-  
+
   # -- 8c. Soft warning: BYM-style decomposition recommended -----------------
   # When the user manually specifies BOTH an IID random effect on a column
   # AND a CAR spatial random effect on the SAME column, the resulting model
@@ -1184,23 +1184,23 @@ hbm <- function(formula,
       }
     }
   }
-  
+
   # -- 9. Spatial random effects ------------------------------------------------
   if (!is.null(spatial_model)) {
     M <- .validate_spatial_matrix(M, spatial_model)
     data2 <- list(M = M)
-    
+
     if (spatial_model == "car") {
       car_t        <- if (is.null(car_type)) "icar" else car_type
       spatial_term <- paste0("car(M, gr = ", spatial_var,
-                             ", type = '", car_t, "')")
+                              ", type = '", car_t, "')")
     } else if (spatial_model == "sar") {
       sar_t        <- if (is.null(sar_type)) "lag" else sar_type
       spatial_term <- paste0("sar(M, type = '", sar_t, "')")
     } else {
       stop("Invalid `spatial_model`. Choose 'car' or 'sar'.", call. = FALSE)
     }
-    
+
     if (!is.null(all_formulas$forms)) {
       all_formulas$forms <- lapply(all_formulas$forms, function(f) {
         f$formula <- stats::update(f$formula, paste(". ~ . +", spatial_term))
@@ -1212,7 +1212,7 @@ hbm <- function(formula,
       )
     }
   }
-  
+
   # -- 9b. Sanity check: warn if NO area-level random structure is present ----
   # The Fay-Herriot SAE framework assumes u_i ~ N(0, sigma_u^2) per area.
   # Forgetting both `re` and `spatial_model` reduces hbm() to a
@@ -1236,7 +1236,7 @@ hbm <- function(formula,
       call. = FALSE
     )
   }
-  
+
   # -- 10. Attach distribution family -------------------------------------------
   # hb_sampling can now be either:
   #   (a) a character key for a brms-native family (e.g. "gaussian", "Beta")
@@ -1246,7 +1246,7 @@ hbm <- function(formula,
   # We resolve the appropriate family object and merge any required
   # stanvars (only relevant for custom families).
   family_obj <- NULL
-  
+
   if (inherits(hb_sampling, "customfamily")) {
     # Case (c): direct customfamily object
     family_obj <- hb_sampling
@@ -1264,19 +1264,19 @@ hbm <- function(formula,
       }
     }
   }
-  
+
   if (is.null(family_obj)) {
     # Case (a): fall back to brms-native family lookup
     family_obj <- brms::brmsfamily(hb_sampling, hb_link,
-                                   link_phi = link_phi)
+                                    link_phi = link_phi)
   }
-  
+
   if (!is.null(all_formulas$forms)) {
     all_formulas$forms[[1L]]$family <- family_obj
   } else {
     all_formulas$family <- family_obj
   }
-  
+
   # -- 10b. Attach fixed-parameter pforms -------------------------------
   # For each pinned distributional parameter, append
   #   <par> ~ 0 + offset(.hbsaems_<par>_fixed)
@@ -1290,7 +1290,7 @@ hbm <- function(formula,
   # All such conflicts are caught here with informative errors.
   if (length(.fixed_params_processed$resolved) > 0L) {
     pinned_pars <- names(.fixed_params_processed$resolved)
-    
+
     # 10b.i  No explicit prior on a pinned dpar.
     if (!is.null(prior) && inherits(prior, "brmsprior")) {
       conflict <- intersect(prior$class, pinned_pars)
@@ -1305,7 +1305,7 @@ hbm <- function(formula,
         )
       }
     }
-    
+
     # 10b.ii  No sampling statement in stanvars for a pinned dpar.
     # E.g. user pins phi via fixed_params and also writes
     # `stanvars = stanvar("phi ~ gamma(1,1);", block = "model")`.
@@ -1324,11 +1324,11 @@ hbm <- function(formula,
         )
       }
     }
-    
+
     all_formulas <- .add_fixed_pforms(all_formulas,
-                                      .fixed_params_processed)
+                                       .fixed_params_processed)
   }
-  
+
   # -- 11. Check all required variables exist in data ---------------------------
   all_model_vars  <- setdiff(c(response_var, auxiliary_vars), "M")
   missing_in_data <- setdiff(all_model_vars, names(data))
@@ -1339,7 +1339,7 @@ hbm <- function(formula,
       call. = FALSE
     )
   }
-  
+
   # -- 12. Model fitting --------------------------------------------------------
   common_brm_args <- list(
     formula      = all_formulas,
@@ -1354,7 +1354,7 @@ hbm <- function(formula,
     save_pars    = brms::save_pars(all = TRUE),
     stanvars     = stanvars   # NULL by default; used by hbm_betalogitnorm()
   )
-  
+
   if (multiple) {
     # -- 12a. Multiple imputation path ------------------------------------------
     # .mice_impute_x_only() guarantees Y is excluded from imputation and
@@ -1366,7 +1366,7 @@ hbm <- function(formula,
       m              = m,
       mice_args      = mice_args
     )
-    
+
     if (!imp_result$any_x_imputed) {
       # Edge case: all X were complete -- no imputation was needed.
       # Downgrade to a single brm() call on the training data.
@@ -1401,7 +1401,7 @@ hbm <- function(formula,
         c(list(data = imp_result$mids), common_brm_args, list(...))
       )
     }
-    
+
   } else {
     # -- 12b. Single model path -------------------------------------------------
     model <- do.call(
@@ -1409,7 +1409,7 @@ hbm <- function(formula,
       c(list(data = data), common_brm_args, list(...))
     )
   }
-  
+
   # -- 13. Return hbmfit object -------------------------------------------------
   # $data is always the ORIGINAL data (before any deletion or imputation)
   # so that downstream functions (sae_predict, convergence_check, etc.) have

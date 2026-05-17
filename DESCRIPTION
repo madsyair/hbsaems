@@ -17,13 +17,13 @@ Authors@R: c(
 Maintainer: Achmad Syahrul Choir <madsyair@stis.ac.id>
 Description: Fits area-level Hierarchical Bayesian Small Area Estimation
     models. The methodological foundation follows the standard area-level
-    Small Area Estimation literature, primarily Rao and Molina (2015)
-    <doi:10.1002/9781118735855>, while computational
+    Small Area Estimation literature, primarily Rao and Molina (2015,
+    ISBN: 9781118735787) <doi:10.1002/9781118735855>, while computational
     implementation is adapted to the parameterisation and
     prior-specification conventions of the 'brms' package
-    (Buerkner, 2017 <doi:10.18637/jss.v080.i01>), which targets the
-    Stan back-end. Supports a principled Bayesian workflow following
-    Gelman et al. (2020) <doi:10.48550/arXiv.2011.01808>, with prior
+    <doi:10.18637/jss.v080.i01>, which targets the
+    Stan back-end. Supports a principled Bayesian workflow
+    <doi:10.48550/arXiv.2011.01808>, with prior
     predictive checks, convergence diagnostics, model comparison,
     spatial random effects, custom distributions, missing-data
     handling, and a bilingual 'shiny' application for non-programmer
@@ -46,7 +46,7 @@ Config/testthat/edition: 3
 Roxygen: list(markdown = FALSE)
 Language: en-US
 NeedsCompilation: no
-Packaged: 2026-05-17 07:42:49 UTC; root
+Packaged: 2026-05-17 11:20:11 UTC; root
 Author: Achmad Syahrul Choir [aut, cre]
     (<https://orcid.org/0000-0001-7088-0646>),
   Saniyyah Sri Nurhayati [aut],

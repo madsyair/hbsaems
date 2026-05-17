@@ -149,14 +149,58 @@ register_hbsae_model <- function(key,
 #' \code{"beta"}, \code{"binomial"}, \code{"lognormal"}, etc.) are always
 #' included; user-registered models appear in addition.
 #'
-#' @return Character vector of model keys.
+#' @param verbose Logical.  If \code{TRUE}, return a data.frame summarising
+#'   each registered model: family name, default brms link function,
+#'   whether the family is discrete, and whether brms-canonical
+#'   \code{mi()} imputation is supported.  Default \code{FALSE} returns a
+#'   plain character vector of keys (backward compatible).
+#' @return Character vector of model keys, or a \code{data.frame} with
+#'   columns \code{key, family, link, discrete, supports_mi} when
+#'   \code{verbose = TRUE}.
 #' @examples
 #' list_hbsae_models()
+#' list_hbsae_models(verbose = TRUE)
 #'
 #' @seealso \code{\link{register_hbsae_model}}, \code{\link{hbm_flex}}
 #' @export
-list_hbsae_models <- function() {
-  sort(.list_models())
+list_hbsae_models <- function(verbose = FALSE) {
+  keys <- sort(.list_models())
+  if (!isTRUE(verbose)) return(keys)
+
+  # Helper: extract a clean family name from spec$family which may be
+  # a character or a brms (custom)family object.
+  .family_string <- function(f, fallback_key = NA_character_) {
+    if (is.null(f))             return(NA_character_)
+    if (is.character(f))        return(f)
+    # brms customfamily objects: prefer the `name` element if set;
+    # otherwise the generic family slot (which is just "custom").
+    if (inherits(f, "customfamily") && !is.null(f$name) && nzchar(f$name))
+      return(f$name)
+    if (inherits(f, "family"))  return(f$family %||% NA_character_)
+    NA_character_
+  }
+  .link_string <- function(spec) {
+    # Prefer the explicit `link` field; fall back to the link element of
+    # the brms family object when needed.
+    if (!is.null(spec$link)) return(as.character(spec$link))
+    if (inherits(spec$family, "family"))
+      return(spec$family$link %||% NA_character_)
+    NA_character_
+  }
+
+  # Build summary data.frame
+  rows <- lapply(keys, function(k) {
+    spec <- .get_model(k)
+    data.frame(
+      key         = k,
+      family      = .family_string(spec$family),
+      link        = .link_string(spec),
+      discrete    = if (is.null(spec$discrete))    NA else isTRUE(spec$discrete),
+      supports_mi = if (is.null(spec$supports_mi)) NA else isTRUE(spec$supports_mi),
+      stringsAsFactors = FALSE
+    )
+  })
+  do.call(rbind, rows)
 }
 
 
@@ -164,12 +208,30 @@ list_hbsae_models <- function() {
 #'
 #' @param key Character.  A model key returned by
 #'   \code{\link{list_hbsae_models}}.
-#' @return The named list spec, or \code{NULL} if not found.
+#' @return The named list spec, or \code{NULL} if not found.  Useful
+#'   fields include:
+#'   \itemize{
+#'     \item \code{family}      -- brms family name passed to
+#'                                 \code{\link[brms]{brmsfamily}}.
+#'     \item \code{link}        -- default link function used by the family
+#'                                 (\code{"identity"}, \code{"logit"},
+#'                                 \code{"log"}, ...).  See
+#'                                 \code{\link[brms]{brmsfamily}} for the
+#'                                 complete set of supported links per
+#'                                 family.
+#'     \item \code{discrete}    -- whether the response is discrete.
+#'     \item \code{supports_mi} -- whether brms-canonical \code{mi()}
+#'                                 imputation is allowed for this family
+#'                                 (FALSE for all discrete responses).
+#'   }
 #'
 #' @examples
 #' get_hbsae_model("lognormal")
+#' get_hbsae_model("beta")$link  # "logit"
 #'
-#' @seealso \code{\link{register_hbsae_model}}
+#' @seealso \code{\link{register_hbsae_model}},
+#'   \code{\link[brms]{brmsfamily}} for the canonical brms family /
+#'   link reference.
 #' @export
 get_hbsae_model <- function(key) {
   spec <- .get_model(key)
