@@ -198,10 +198,11 @@ fit_lnln <- hbm_lnln(
 | `convergence_check()` | Diagnostik konvergensi MCMC: $\hat R$, ESS, Geweke, Heidelberger, Raftery | `hbcc()` |
 | `model_compare()` | Perbandingan model LOO/WAIC/Bayes-factor dan posterior predictive checks | `hbmc()` |
 | `model_compare_all()` | Pemeringkatan multi-model analog dengan `loo_compare` | – |
-| `model_average()` | Rata-rata model Bayesian | – |
+| `model_average()` | Rata-rata model Bayesian (bobot manual, stacking, atau pseudo-BMA+ via `loo`) | – |
 | `prior_check()` | Prior predictive checks | `hbpc()` |
+| `prior_sensitivity()` | Diagnostik sensitivitas prior dengan power-scaling (`priorsense`) | – |
 | `sae_predict()` | Prediksi SAE in-sample dan out-of-sample | `hbsae()` |
-| `benchmark_*()` | Benchmarking design-consistent | – |
+| `sae_benchmark()` | Benchmarking design-consistent | – |
 
 ### Fungsi pendukung
 
