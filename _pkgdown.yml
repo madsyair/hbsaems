@@ -108,6 +108,7 @@ reference:
   - convergence_check
   - is_converged
   - diagnostic_summary
+  - model-compare
   - model_compare
   - model_compare_all
   - model_average
@@ -167,6 +168,7 @@ reference:
   - validate_hbmfit
   - hbmfit-class
   - hbm_data
+  - hbm-info
   - hbm_info
   - hbm_warnings
   - is-hbsaems
