@@ -26,7 +26,7 @@
 #'
 #' \describe{
 #'   \item{\strong{CAR (Conditional Autoregressive; Besag 1974)}}{
-#'     Specified by \code{sre_type = "car"}.  The joint distribution of the
+#'     Specified by \code{spatial_model = "car"}.  The joint distribution of the
 #'     spatial effects is
 #'     \deqn{u \sim \mathcal{N}\bigl(0,\, \sigma_u^2 (D - \rho W)^{-1}\bigr),}
 #'     where \eqn{W} is a binary adjacency matrix (1 if neighbour, 0
@@ -37,7 +37,7 @@
 #'     Riebler et al.\ 2016, recommended for disconnected graphs).
 #'   }
 #'   \item{\strong{SAR (Simultaneous Autoregressive; Whittle 1954, Anselin 1988)}}{
-#'     Specified by \code{sre_type = "sar"}.  The model is
+#'     Specified by \code{spatial_model = "sar"}.  The model is
 #'     \deqn{u = \rho W u + \varepsilon,
 #'        \quad \varepsilon \sim \mathcal{N}(0, \sigma_\varepsilon^2 I),}
 #'     where \eqn{W} is row-standardised so that
@@ -114,30 +114,39 @@
 #' @param re An optional one-sided \code{formula} specifying group-level
 #'   (random) effects, e.g. \code{~(1|area)}.  Must follow standard
 #'   \code{lme4}-style syntax: \code{~ (1|group1) + (1|group2)}.  If
-#'   \code{NULL} (default) \emph{and} \code{sre_type} is also \code{NULL},
-#'   the function emits a warning recommending an area-level random
-#'   effect, since a Fay-Herriot SAE model with neither IID nor spatial
-#'   area effects degenerates to fixed-effects regression and does not
-#'   borrow strength across areas.  The warning can be silenced with
+#'   \code{NULL} (default) \emph{and} \code{spatial_model} is also
+#'   \code{NULL}, the function emits a warning recommending an area-level
+#'   random effect, since a Fay-Herriot SAE model with neither IID nor
+#'   spatial area effects degenerates to fixed-effects regression and does
+#'   not borrow strength across areas.  The warning can be silenced with
 #'   \code{suppressWarnings()} if a fixed-effects-only baseline is
 #'   intentional.
-#' @param sre Character.  Name of the grouping variable used for spatial
-#'   random effects.  Must be supplied \emph{together with} \code{sre_type}
-#'   and \code{M}; providing only one of them is an error.
-#' @param sre_type Character.  Type of spatial model: \code{"car"}
+#' @param spatial_var Character.  Name of the column in \code{data} that
+#'   identifies the spatial areas (e.g. \code{"regency"} or
+#'   \code{"province"}).  Must be supplied \emph{together with}
+#'   \code{spatial_model} and \code{M}; providing only one of them is an
+#'   error.  Distinct from \code{re}: \code{re} is a formula for IID
+#'   random effects, whereas \code{spatial_var} is a column name (string)
+#'   for the spatially-structured random effect.
+#' @param spatial_model Character.  Type of spatial model: \code{"car"}
 #'   (Conditional Autoregressive) or \code{"sar"} (Simultaneous
-#'   Autoregressive).  Must be supplied \emph{together with} \code{sre}
-#'   and \code{M}; providing only one of them is an error.
+#'   Autoregressive).  Must be supplied \emph{together with}
+#'   \code{spatial_var} and \code{M}; providing only one of them is an
+#'   error.
 #' @param car_type Character.  CAR subtype passed to \code{brms}: one of
 #'   \code{"escar"} (exact sparse CAR), \code{"esicar"} (exact sparse
 #'   intrinsic CAR), \code{"icar"} (intrinsic CAR), or \code{"bym2"}.
-#'   Defaults to \code{"icar"} when \code{sre_type = "car"}.
+#'   Defaults to \code{"icar"} when \code{spatial_model = "car"}.
 #' @param sar_type Character.  SAR subtype: \code{"lag"} (SAR of the response
 #'   values) or \code{"error"} (SAR of the residuals).  Defaults to
-#'   \code{"lag"} when \code{sre_type = "sar"}.
+#'   \code{"lag"} when \code{spatial_model = "sar"}.
 #' @param M Spatial matrix supplied as \code{data2} to \code{brms}.  For CAR
 #'   this must be a binary adjacency matrix; for SAR a spatial weight matrix.
-#'   Row names must match the levels of the spatial grouping variable.
+#'   Row names must match the levels of \code{spatial_var}.
+#' @param sre \strong{Deprecated.}  Use \code{spatial_var} instead.  Kept
+#'   for backward compatibility; will be removed in v2.0.0.
+#' @param sre_type \strong{Deprecated.}  Use \code{spatial_model} instead.
+#'   Kept for backward compatibility; will be removed in v2.0.0.
 #' @param data A data frame containing all variables referenced in
 #'   \code{formula}.
 #' @param prior Priors specified via \code{\link[brms]{prior}} or a list
@@ -172,14 +181,25 @@
 #'       (Piironen & Vehtari 2017).  Encourages exact sparsity while allowing
 #'       large signals through.  Controlled by \code{hs_df},
 #'       \code{hs_df_global}, \code{hs_df_slab}, \code{hs_scale_global},
-#'       \code{hs_scale_slab}, and \code{hs_par_ratio}.}
+#'       \code{hs_scale_slab}, \code{hs_par_ratio}, and \code{hs_autoscale}.}
 #'     \item{\code{"r2d2"}}{R2D2 prior (Zhang et al. 2022).  Places a prior
 #'       directly on the model \eqn{R^2} and distributes explained variance
 #'       across predictors via a Dirichlet decomposition.  Controlled by
-#'       \code{r2d2_mean_R2}, \code{r2d2_prec_R2}, and \code{r2d2_cons_D2}.}
+#'       \code{r2d2_mean_R2}, \code{r2d2_prec_R2}, \code{r2d2_cons_D2},
+#'       and \code{r2d2_autoscale}.}
 #'   }
 #'   If \code{prior} already contains a global \code{class = "b"} entry,
 #'   \code{prior_type} is ignored and a warning is issued.
+#'
+#'   \strong{Cascading to smooth and GP terms.}  When the formula
+#'   contains \code{s()} or \code{gp()} terms, the shrinkage prior is
+#'   automatically extended to the corresponding parameter classes
+#'   \code{"sds"} (spline SDs) and/or \code{"sdgp"} (GP SDs) using the
+#'   brms-canonical \code{main = TRUE} pattern.  The resulting prior
+#'   regularises ALL components jointly -- linear coefficients,
+#'   nonlinear smooth wiggliness, and GP marginal variance -- which is
+#'   the principled approach to global-local shrinkage in models that
+#'   combine parametric and nonparametric components.
 #' @param hs_df Numeric \eqn{> 0}.  Local half-\eqn{t} degrees of freedom for
 #'   the horseshoe prior (default \code{1} = half-Cauchy).
 #' @param hs_df_global Numeric \eqn{> 0}.  Global half-\eqn{t} degrees of
@@ -188,20 +208,28 @@
 #'   freedom (default \code{4}).
 #' @param hs_scale_global Numeric \eqn{> 0} or \code{NULL}.  Scale for the
 #'   global half-\eqn{t} prior.  \code{NULL} (default) lets \code{brms}
-#'   compute it automatically from the number of predictors.
+#'   compute it automatically from the number of predictors via
+#'   \code{hs_autoscale}.
 #' @param hs_scale_slab Numeric \eqn{> 0}.  Scale for the slab component
 #'   (default \code{2}).
 #' @param hs_par_ratio Numeric \eqn{> 0} or \code{NULL}.  Expected ratio of
 #'   non-zero to total coefficients.  \code{NULL} (default) treats all
 #'   coefficients as potentially non-zero.
+#' @param hs_autoscale Logical.  Whether \code{brms} should auto-scale the
+#'   horseshoe prior using the residual SD \eqn{\sigma}.  Default
+#'   \code{TRUE}; set to \code{FALSE} for non-continuous responses
+#'   (binomial, Poisson, ...) where \eqn{\sigma} is not defined.
 #' @param r2d2_mean_R2 Numeric in \eqn{(0, 1)}.  Prior mean of the model
 #'   \eqn{R^2} (default \code{0.5}).
 #' @param r2d2_prec_R2 Numeric \eqn{> 0}.  Prior precision of \eqn{R^2}
 #'   (default \code{2}).  Higher values concentrate mass around
 #'   \code{r2d2_mean_R2}.
 #' @param r2d2_cons_D2 Numeric \eqn{> 0} or \code{NULL}.  Dirichlet
-#'   concentration for the D2 component.  \code{NULL} (default) corresponds to
-#'   \code{0.5}, yielding a uniform distribution over the simplex.
+#'   concentration for the D2 component.  \code{NULL} (default) uses the
+#'   \code{brms} default \code{0.5}.
+#' @param r2d2_autoscale Logical.  Whether \code{brms} should auto-scale
+#'   the R2D2 prior using \eqn{\sigma}.  Default \code{TRUE}; set to
+#'   \code{FALSE} for non-continuous responses.
 #'
 #' @param nonlinear Character vector or \code{NULL}.  Names of predictor
 #'   variables to model with a smooth nonlinear term.  Each listed variable
@@ -211,17 +239,41 @@
 #'   argument -- the modification is applied automatically.  Default \code{NULL}
 #'   (all predictors remain linear).
 #' @param nonlinear_type Character.  Smooth term family to use.  One of
-#'   \code{"spline"} (default, thin-plate regression spline via
+#'   \code{"spline"} (default, penalised regression spline via
 #'   \code{mgcv::s()}) or \code{"gp"} (Gaussian process via
 #'   \code{brms::gp()}).
-#' @param spline_k Integer.  Spline basis dimension (number of knots).
-#'   \code{-1L} (default) lets \pkg{mgcv} choose automatically.  Values
-#'   \eqn{\geq 3} are also accepted.  Ignored when
-#'   \code{nonlinear_type = "gp"}.
-#' @param gp_scale Numeric \eqn{> 0} or \code{NULL}.  Length-scale
-#'   hyperparameter (\code{c} in \code{brms::gp()}).  \code{NULL} (default)
-#'   uses the \code{brms} default.  Ignored when
-#'   \code{nonlinear_type = "spline"}.
+#' @param spline_k Integer.  Spline basis dimension (number of knots)
+#'   passed to \code{mgcv::s(..., k = ...)}.  \code{-1L} (default) lets
+#'   \pkg{mgcv} choose automatically.  For SAE typically \code{k = 8} to
+#'   \code{15}.  Ignored when \code{nonlinear_type = "gp"}.
+#' @param spline_bs Character.  Spline basis type passed to
+#'   \code{mgcv::s(..., bs = ...)}.  Default \code{"tp"} (thin-plate
+#'   regression spline, the \pkg{mgcv} default).  Common alternatives:
+#'   \code{"cr"} (cubic regression spline; often more stable for SAE
+#'   with correlated auxiliary variables), \code{"cs"} (cubic with
+#'   shrinkage; allows variable selection), \code{"ps"} (P-splines).
+#'   Ignored when \code{nonlinear_type = "gp"}.
+#' @param gp_k Integer or \code{NA}.  Number of basis functions for the
+#'   Hilbert-space approximate GP (Riutort-Mayol et al.\ 2020), passed
+#'   to \code{brms::gp(..., k = ...)}.  \code{NA} (default) = exact GP
+#'   which scales \eqn{O(n^3)} and is \strong{not recommended for}
+#'   \eqn{n > 100} areas; an immediate warning is emitted in that case
+#'   pointing to this argument.  Integer values \code{10}--\code{25}
+#'   are typical for SAE and dramatically improve convergence and
+#'   runtime.  Ignored when \code{nonlinear_type = "spline"}.
+#' @param gp_cov Character.  GP covariance function passed to
+#'   \code{brms::gp(..., cov = ...)}: \code{"exp_quad"} (squared
+#'   exponential / RBF, default), \code{"matern15"} (Matern 3/2),
+#'   \code{"matern25"} (Matern 5/2; often more numerically stable for
+#'   SAE than RBF), or \code{"exponential"}.
+#' @param gp_c Numeric \eqn{> 0} or \code{NULL}.  Hilbert-space GP
+#'   boundary-scale factor passed to \code{brms::gp(..., c = ...)}.
+#'   Default brms value is \eqn{5/4} (= 1.25); increase if the GP
+#'   appears truncated at the domain boundaries.  Only relevant when
+#'   \code{gp_k} is supplied.
+#' @param gp_scale \strong{Deprecated.}  Use \code{gp_c} instead.  The
+#'   old name suggested a length-scale interpretation but actually
+#'   mapped to the HSGP boundary-scale factor.  Will be removed in v2.0.0.
 #'
 #' @param handle_missing Character or \code{NULL}.  Strategy for missing data.
 #'   One of \code{"deleted"}, \code{"multiple"}, or \code{"model"} (see
@@ -273,12 +325,140 @@
 #'
 #' @author Achmad Syahrul Choir, Saniyyah Sri Nurhayati, and Sofi Zamzanah
 #'
+#' @section Conflict resolution between prior, prior_type, fixed_params, and stanvars:
+#' \code{hbm()} provides four orthogonal mechanisms to influence the
+#' prior / parameter specification of the underlying \pkg{brms} model:
+#' \enumerate{
+#'   \item \code{prior}        -- explicit \code{brmsprior} object(s).
+#'   \item \code{prior_type}   -- global-local shrinkage prior on the
+#'                                 regression coefficients (cascades to
+#'                                 \code{"sds"} / \code{"sdgp"} when
+#'                                 splines or GPs are present).
+#'   \item \code{fixed_params} -- pin distributional parameters to known
+#'                                 values via the offset trick.
+#'   \item \code{stanvars}     -- inject custom Stan code blocks.
+#' }
+#' Combining these without rules in mind can produce unidentified models
+#' or compile-time errors.  \code{hbm()} therefore enforces the
+#' following precedence and conflict policy:
+#' \itemize{
+#'   \item \strong{\code{prior} vs \code{prior_type}.}  If the user
+#'         supplies a \emph{global} (no \code{coef =}) prior on
+#'         \code{class = "b"}, \code{"sds"}, or \code{"sdgp"},
+#'         \code{prior_type} is silently dropped for that class and a
+#'         warning is emitted.  Coefficient-specific user priors
+#'         (\code{coef = "x1"}) are kept alongside the shrinkage prior
+#'         without warning.
+#'   \item \strong{\code{fixed_params} vs \code{prior}.}  A pinned
+#'         parameter is removed from the sampler; supplying a prior on
+#'         that same parameter therefore has no effect and is treated
+#'         as a user error -- an informative \code{stop()} is issued.
+#'   \item \strong{\code{fixed_params} vs \code{stanvars}.}  Same logic
+#'         as above: a sampling statement in \code{stanvars} that
+#'         targets a pinned parameter would fail at Stan compile time;
+#'         \code{hbm()} catches this and stops with a clear message.
+#'   \item \strong{Wrapper sugar (e.g. \code{sampling_variance} in
+#'         \code{hbm_lnln}).}  Wrappers translate their domain-specific
+#'         arguments into \code{fixed_params} entries before delegating
+#'         to \code{hbm()}, so the same conflict policy applies
+#'         transitively.  Supplying both \code{sampling_variance =
+#'         "psi"} and a user prior on \code{class = "sigma"} therefore
+#'         also errors.
+#' }
+#' The intent is to fail fast and explicitly rather than silently
+#' producing an unidentified or mis-specified model.
+#'
+#' @section Convergence advice for SAE practitioners:
+#' Common convergence pathologies in hierarchical Bayesian SAE models
+#' and how to address them.  Run \code{\link{convergence_check}()} after
+#' fitting to inspect \eqn{\hat R}, effective sample size (ESS), and
+#' divergent transitions.
+#'
+#' \strong{1. Default sampler settings (recommended starting point).}
+#' \itemize{
+#'   \item \code{chains = 4}, \code{iter = 4000}, \code{warmup = 2000}
+#'   \item \code{control = list(adapt_delta = 0.95, max_treedepth = 12)}
+#'   \item \code{cores = parallel::detectCores() - 1}
+#' }
+#'
+#' \strong{2. Divergent transitions.}  Most common cause is the
+#' \emph{funnel} geometry of hierarchical variance parameters.
+#' \itemize{
+#'   \item First-line: increase \code{adapt_delta} to \code{0.99}.
+#'   \item If still diverging, increase \code{warmup} and consider a
+#'         tighter prior on the area-level standard deviation
+#'         (\code{sd} class), e.g.\ \code{set_prior("normal(0, 0.5)",
+#'         class = "sd")}.
+#'   \item For Beta/Binomial logit-normal models, prior on the random
+#'         intercept SD should also be on the logit scale.
+#' }
+#'
+#' \strong{3. Low effective sample size (ESS < 1000).}
+#' \itemize{
+#'   \item Increase \code{iter} (e.g.\ to \code{6000}); this is the
+#'         single most reliable fix.
+#'   \item Centre and scale the auxiliary variables before fitting.
+#'   \item Check for prior--data conflict via \pkg{priorsense}; see
+#'         \code{?prior_check}.
+#' }
+#'
+#' \strong{4. Gaussian processes.}
+#' \itemize{
+#'   \item \strong{Exact GP scales \eqn{O(n^3)}.}  For \eqn{n > 100}
+#'         areas, set \code{gp_k} to use the Hilbert-space approximate
+#'         GP (Riutort-Mayol et al.\ 2020).  A heuristic is
+#'         \code{gp_k = ceiling(min(n / 5, 25))}.
+#'   \item Try \code{gp_cov = "matern25"} (Matern 5/2) if the default
+#'         squared-exponential covariance is numerically unstable.
+#'   \item The boundary-scale factor \code{gp_c} (brms default 1.25)
+#'         may need increasing if the posterior GP is truncated at
+#'         the domain edges.
+#' }
+#'
+#' \strong{5. Splines.}
+#' \itemize{
+#'   \item Start with \code{spline_k = -1} (auto).  Increase only if
+#'         the residual diagnostics suggest under-smoothing.
+#'   \item For strongly correlated auxiliary variables, try
+#'         \code{spline_bs = "cr"} (cubic regression spline) for
+#'         better numerical stability than the default thin-plate.
+#'   \item For variable selection, use \code{spline_bs = "cs"} (cubic
+#'         with shrinkage); coefficients on irrelevant smooths shrink
+#'         toward zero.
+#' }
+#'
+#' \strong{6. Spatial models.}
+#' \itemize{
+#'   \item For CAR, \code{car_type = "bym2"} (Riebler et al.\ 2016) is
+#'         the modern recommendation; it stabilises the
+#'         spatial/IID decomposition via a single mixing parameter.
+#'   \item Verify the weight matrix with
+#'         \code{\link{check_spatial_weight}()}; isolated areas or
+#'         multiple disconnected components cause non-identifiability.
+#' }
+#'
+#' \strong{7. Prior predictive check first.}  Always call
+#' \code{\link{prior_check}()} (\code{sample_prior = "only"}) before
+#' the full posterior run.  Implausible prior predictives are the
+#' single most common cause of slow / divergent sampling.
+#'
 #' @references
 #' Rao, J. N. K., & Molina, I. (2015). \emph{Small Area Estimation}.
 #' John Wiley & Sons.
 #'
 #' Burkner, P. C. (2017). brms: An R package for Bayesian multilevel models
 #' using Stan. \emph{Journal of Statistical Software}, 80(1), 1--28.
+#'
+#' Riutort-Mayol, G., Burkner, P.-C., Andersen, M. R., Solin, A., &
+#' Vehtari, A. (2023).  Practical Hilbert space approximate Bayesian
+#' Gaussian processes for probabilistic programming.
+#' \emph{Statistics and Computing}, 33, 17.
+#' \doi{10.1007/s11222-022-10167-2}
+#'
+#' Riebler, A., Sorbye, S. H., Simpson, D., & Rue, H. (2016).  An
+#' intuitive Bayesian spatial model for disease mapping that accounts
+#' for scaling.  \emph{Statistical Methods in Medical Research},
+#' 25(4), 1145--1165.
 #'
 #' van Buuren, S., & Groothuis-Oudshoorn, K. (2011). mice: Multivariate
 #' imputation by chained equations in R. \emph{Journal of Statistical
@@ -301,7 +481,7 @@
 #'   list(formula     = bf(y ~ x1 + x2 + x3),
 #'        hb_sampling = "gaussian",
 #'        hb_link     = "identity",
-#'        re          = ~(1 | group),
+#'        re          = ~(1 | regency),
 #'        data        = data),
 #'   FAST
 #' ))
@@ -310,7 +490,7 @@
 #' # -- Horseshoe prior (sparse coefficients) ------------------------------------
 #' model_hs <- do.call(hbm, c(
 #'   list(formula     = bf(y ~ x1 + x2 + x3),
-#'        re          = ~(1 | group),
+#'        re          = ~(1 | regency),
 #'        data        = data,
 #'        prior_type  = "horseshoe",
 #'        hs_df       = 1),
@@ -321,7 +501,7 @@
 #' # -- R2D2 prior (prior on model R-squared) -------------------------------------
 #' model_r2 <- do.call(hbm, c(
 #'   list(formula      = bf(y ~ x1 + x2 + x3),
-#'        re           = ~(1 | group),
+#'        re           = ~(1 | regency),
 #'        data         = data,
 #'        prior_type   = "r2d2",
 #'        r2d2_mean_R2 = 0.5,
@@ -334,7 +514,7 @@
 #' # x1 is modelled with s(x1); x2 and x3 remain linear.
 #' model_spline <- do.call(hbm, c(
 #'   list(formula        = bf(y ~ x1 + x2 + x3),
-#'        re             = ~(1 | group),
+#'        re             = ~(1 | regency),
 #'        data           = data,
 #'        nonlinear      = "x1",
 #'        nonlinear_type = "spline"),
@@ -345,7 +525,7 @@
 #' # -- Gaussian process for x2 (nonlinear) --------------------------------------
 #' model_gp <- do.call(hbm, c(
 #'   list(formula        = bf(y ~ x1 + x2 + x3),
-#'        re             = ~(1 | group),
+#'        re             = ~(1 | regency),
 #'        data           = data,
 #'        nonlinear      = "x2",
 #'        nonlinear_type = "gp"),
@@ -359,7 +539,7 @@
 #'
 #' model_deleted <- do.call(hbm, c(
 #'   list(formula        = bf(y ~ x1 + x2 + x3),
-#'        re             = ~(1 | group),
+#'        re             = ~(1 | regency),
 #'        data           = data_miss_y,
 #'        handle_missing = "deleted"),
 #'   FAST
@@ -372,7 +552,7 @@
 #'
 #' model_multiple <- do.call(hbm, c(
 #'   list(formula        = bf(y ~ x1 + x2 + x3),
-#'        re             = ~(1 | group),
+#'        re             = ~(1 | regency),
 #'        data           = data_miss_x,
 #'        handle_missing = "multiple",
 #'        m              = 5),
@@ -387,7 +567,7 @@
 #' model_model <- do.call(hbm, c(
 #'   list(formula        = bf(y | mi() ~ mi(x1) + x2 + x3) +
 #'                         bf(x1 | mi() ~ x2 + x3),
-#'        re             = ~(1 | group),
+#'        re             = ~(1 | regency),
 #'        data           = data_miss_x2,
 #'        handle_missing = "model"),
 #'   FAST
@@ -399,8 +579,8 @@
 #' model_car <- do.call(hbm, c(
 #'   list(formula     = bf(y ~ x1 + x2 + x3),
 #'        data        = data,
-#'        sre         = "sre",
-#'        sre_type    = "car",
+#'        spatial_var = "province",
+#'        spatial_model    = "car",
 #'        M           = adjacency_matrix_car),
 #'   FAST
 #' ))
@@ -411,8 +591,8 @@
 #' model_sar <- do.call(hbm, c(
 #'   list(formula     = bf(y ~ x1 + x2 + x3),
 #'        data        = data,
-#'        sre         = "sre",
-#'        sre_type    = "sar",
+#'        spatial_var = "province",
+#'        spatial_model    = "sar",
 #'        M           = spatial_weight_sar),
 #'   FAST
 #' ))
@@ -423,14 +603,14 @@ hbm <- function(formula,
                 hb_link        = "identity",
                 link_phi       = "log",
                 re             = NULL,
-                sre            = NULL,
-                sre_type       = NULL,
+                spatial_var    = NULL,
+                spatial_model  = NULL,
                 car_type       = NULL,
                 sar_type       = NULL,
                 M              = NULL,
                 data,
                 prior          = NULL,
-                # -- v0.6.1: Fixed-value distributional parameters ------------
+                # -- Fixed-value distributional parameters ------------
                 fixed_params   = NULL,
                 # -- Shrinkage priors (Feature 1) -----------------------------
                 prior_type      = "default",
@@ -440,14 +620,21 @@ hbm <- function(formula,
                 hs_scale_global = NULL,
                 hs_scale_slab   = 2,
                 hs_par_ratio    = NULL,
+                hs_autoscale    = TRUE,
+                # R2D2-prior arguments
                 r2d2_mean_R2    = 0.5,
                 r2d2_prec_R2    = 2,
                 r2d2_cons_D2    = NULL,
+                r2d2_autoscale  = TRUE,
                 # -- Nonlinear smooth terms (Feature 2) -----------------------
                 nonlinear       = NULL,
                 nonlinear_type  = "spline",
                 spline_k        = -1L,
-                gp_scale        = NULL,
+                spline_bs       = "tp",
+                gp_k            = NA_integer_,
+                gp_cov          = "exp_quad",
+                gp_c            = NULL,
+                gp_scale        = NULL,   # deprecated alias for gp_c
                 # -- Missing data ---------------------------------------------
                 handle_missing = NULL,
                 m              = 5L,
@@ -458,10 +645,13 @@ hbm <- function(formula,
                 warmup         = floor(iter / 2),
                 cores          = 1L,
                 sample_prior   = "no",
+                # -- Deprecated argument aliases (v1.0.0) ---------------------
+                sre            = NULL,
+                sre_type       = NULL,
                 stanvars       = NULL,
                 ...) {
 
-  # -- v0.5.0: Intercept hbm_config bundles in ... ----------------------------
+  # -- Intercept hbm_config bundles in ... ----------------------------
   # If the user passed any hbm_control()/hbm_priors()/hbm_nonlinear() bundles
   # via `...`, splice them into the explicit argument list and recurse.
   # This mirrors the brm() pattern where extra configuration travels in `...`.
@@ -490,7 +680,41 @@ hbm <- function(formula,
   n     <- nrow(data)
   data2 <- NULL
 
-  # -- 0b. v0.6.1: Process fixed_params -----------------------------------------
+  # -- 0a. Argument deprecation (v1.0.0): sre -> spatial_var, sre_type -> spatial_model
+  # Old names continue to work for one release cycle; users see a single
+  # informative warning per call.  Removal scheduled for v2.0.0.
+  if (!is.null(sre)) {
+    if (!is.null(spatial_var)) {
+      stop(
+        "Both `spatial_var` and the deprecated alias `sre` were supplied.\n",
+        "  Use `spatial_var` only.",
+        call. = FALSE
+      )
+    }
+    warning(
+      "Argument `sre` is deprecated as of hbsaems 1.0.0 -- use ",
+      "`spatial_var` instead.  Scheduled for removal in v2.0.0.",
+      call. = FALSE
+    )
+    spatial_var <- sre
+  }
+  if (!is.null(sre_type)) {
+    if (!is.null(spatial_model)) {
+      stop(
+        "Both `spatial_model` and the deprecated alias `sre_type` were ",
+        "supplied.\n  Use `spatial_model` only.",
+        call. = FALSE
+      )
+    }
+    warning(
+      "Argument `sre_type` is deprecated as of hbsaems 1.0.0 -- use ",
+      "`spatial_model` instead.  Scheduled for removal in v2.0.0.",
+      call. = FALSE
+    )
+    spatial_model <- sre_type
+  }
+
+  # -- 0b. Process fixed_params -----------------------------------------
   # Resolve user-specified pinned parameters (column name / scalar / vector /
   # formula) to numeric vectors and attach them as columns of `data` named
   # .hbsaems_<par>_fixed.  Conflict / type / NA checks fail loudly here.
@@ -500,7 +724,7 @@ hbm <- function(formula,
   }
 
   # -- 1. Formula parsing -------------------------------------------------------
-  # Delegated to .parse_hbm_formula() helper (v0.5.0).
+  # Delegated to .parse_hbm_formula() helper (v1.0.0).
   parsed <- .parse_hbm_formula(formula)
   main_formula   <- parsed$main_formula
   all_formulas   <- parsed$all_formulas
@@ -512,6 +736,17 @@ hbm <- function(formula,
   # or gp(var) (Gaussian process) terms.  This must happen before the
   # handle_missing block so that mi() wrappers added by .add_mi_to_lhs() operate
   # on a formula that already contains the correct smooth-term syntax.
+
+  # Deprecated `gp_scale` alias (v1.0.0) -- handle before the nonlinear block
+  # so the value is available regardless of whether nonlinear terms are used.
+  if (!is.null(gp_scale)) {
+    if (!is.null(gp_c))
+      stop("Pass either `gp_c` (preferred) or `gp_scale` (deprecated), ",
+           "but not both.", call. = FALSE)
+    .deprecate_arg("gp_scale", "gp_c", "v2.0.0")
+    gp_c <- gp_scale
+  }
+
   if (!is.null(nonlinear) && length(nonlinear) > 0L) {
     nonlinear_type <- match.arg(nonlinear_type, c("spline", "gp"))
 
@@ -524,12 +759,28 @@ hbm <- function(formula,
         call. = FALSE
       )
 
+    # Warn against exact GP for n > 100 (common SAE pitfall)
+    n_obs <- nrow(data)
+    if (nonlinear_type == "gp" && is.na(gp_k) && n_obs > 100L) {
+      warning(
+        "Exact GP requested for n = ", n_obs, " observations. ",
+        "Exact GP scales O(n^3) and typically diverges or hits ",
+        "max_treedepth above ~100 areas. Consider setting `gp_k` to ",
+        "use the Hilbert-space approximate GP (Riutort-Mayol et al. 2020), ",
+        "e.g. gp_k = ", min(25L, ceiling(n_obs / 5)), ".",
+        call. = FALSE, immediate. = TRUE
+      )
+    }
+
     all_formulas <- .apply_nonlinear_to_formula(
       formula        = all_formulas,
       nonlinear      = nonlinear,
       nonlinear_type = nonlinear_type,
       spline_k       = spline_k,
-      gp_scale       = gp_scale
+      spline_bs      = spline_bs,
+      gp_k           = gp_k,
+      gp_cov         = gp_cov,
+      gp_c           = gp_c
     )
   }
 
@@ -539,9 +790,9 @@ hbm <- function(formula,
   missing_x    <- missing_info$missing_x   # NULL or character vector
 
   # -- 3. Discrete-family flag ---------------------------------------------------
-  # v0.4.0: lookup the family registry instead of using a hardcoded list.
+  # lookup the family registry instead of using a hardcoded list.
   # Falls back to a static list for the few brms families not (yet)
-  # registered, so behaviour matches v0.3.0 exactly when the registry has
+  # registered, so behaviour matches v1.0.0 exactly when the registry has
   # not been touched.
   is_discrete <- isTRUE(.model_is_discrete(hb_sampling)) ||
     hb_sampling %in% c("cumulative", "cratio", "sratio", "acat")
@@ -679,9 +930,10 @@ hbm <- function(formula,
           # Automatically convert to handle_missing = "model" and patch the
           # formula LHS.
           #
-          # Note: re and sre terms are added to the formula LATER in this
-          # function, so .add_mi_to_lhs() only needs to handle the base
-          # formula structure -- it will not interfere with those terms.
+          # Note: re and spatial terms are added to the formula LATER in
+          # this function, so .add_mi_to_lhs() only needs to handle the
+          # base formula structure -- it will not interfere with those
+          # terms.
           message(
             "handle_missing = 'multiple' was specified but only the response ",
             "variable (Y) is missing and X is complete. ",
@@ -777,7 +1029,11 @@ hbm <- function(formula,
   if (!is.null(prior_type) && prior_type != "default") {
     prior_type <- match.arg(prior_type, c("default", "horseshoe", "r2d2"))
 
-    type_prior <- .build_prior_type(
+    # Use the full-cascade helper which detects splines / GP terms in the
+    # formula and adds matching priors on classes "sds" and "sdgp" with
+    # the brms-canonical `main = TRUE` pattern (Buerkner 2024).
+    type_prior <- .build_shrinkage_priors_full(
+      formula         = all_formulas,
       prior_type      = prior_type,
       hs_df           = hs_df,
       hs_df_global    = hs_df_global,
@@ -785,9 +1041,11 @@ hbm <- function(formula,
       hs_scale_global = hs_scale_global,
       hs_scale_slab   = hs_scale_slab,
       hs_par_ratio    = hs_par_ratio,
+      hs_autoscale    = hs_autoscale,
       r2d2_mean_R2    = r2d2_mean_R2,
       r2d2_prec_R2    = r2d2_prec_R2,
-      r2d2_cons_D2    = r2d2_cons_D2
+      r2d2_cons_D2    = r2d2_cons_D2,
+      r2d2_autoscale  = r2d2_autoscale
     )
 
     prior <- .merge_prior_type(prior, type_prior)
@@ -820,38 +1078,72 @@ hbm <- function(formula,
     }
   }
 
-  # -- 8b. Consistency check: sre and sre_type must agree --------------------
-  # Spatial random effects require BOTH `sre` (the area grouping column)
-  # and `sre_type` ("car" or "sar") plus `M` (the weight matrix).
+  # -- 8b. Consistency check: spatial_var and spatial_model must agree --------
+  # Spatial random effects require BOTH `spatial_var` (the area grouping
+  # column) and `spatial_model` ("car" or "sar") plus `M` (the weight matrix).
   # Providing only one of them is almost always a typo or an unfinished
   # call; we fail loudly with a precise suggestion so the user can fix the
   # issue immediately rather than getting a confusing downstream error
   # from brms.
-  if (xor(is.null(sre), is.null(sre_type))) {
-    if (is.null(sre_type)) {
-      # User supplied sre but forgot sre_type
+  if (xor(is.null(spatial_var), is.null(spatial_model))) {
+    if (is.null(spatial_model)) {
+      # User supplied spatial_var but forgot spatial_model
       stop(
-        "`sre = \"", sre, "\"` was supplied but `sre_type` is NULL.\n",
-        "  Spatial random effects require both `sre` (column name) ",
-        "and `sre_type` (\"car\" or \"sar\") plus `M` (weight matrix).\n",
+        "`spatial_var = \"", spatial_var, "\"` was supplied but ",
+        "`spatial_model` is NULL.\n",
+        "  Spatial random effects require both `spatial_var` (column name) ",
+        "and `spatial_model` (\"car\" or \"sar\") plus `M` (weight matrix).\n",
         "  Did you mean one of:\n",
-        "    - SPATIAL CAR : sre = \"", sre, "\", sre_type = \"car\", M = W\n",
-        "    - SPATIAL SAR : sre = \"", sre, "\", sre_type = \"sar\", M = W\n",
-        "    - IID area RE: re = ~ (1 | ", sre, ")  (drop `sre`)\n",
-        "    - No area RE : drop both `sre` and `sre_type`.",
+        "    - SPATIAL CAR : spatial_var = \"", spatial_var,
+        "\", spatial_model = \"car\", M = W\n",
+        "    - SPATIAL SAR : spatial_var = \"", spatial_var,
+        "\", spatial_model = \"sar\", M = W\n",
+        "    - IID area RE: re = ~ (1 | ", spatial_var,
+        ")  (drop `spatial_var`)\n",
+        "    - No area RE : drop both `spatial_var` and `spatial_model`.",
         call. = FALSE
       )
     } else {
-      # User supplied sre_type but forgot sre
+      # User supplied spatial_model but forgot spatial_var
       stop(
-        "`sre_type = \"", sre_type, "\"` was supplied but `sre` is NULL.\n",
-        "  Spatial random effects require `sre` to specify the column ",
-        "in `data` that identifies the spatial areas.\n",
-        "  Add `sre = \"<your_area_column>\"` (and `M = <weight_matrix>` ",
-        "if not already supplied) to proceed.",
+        "`spatial_model = \"", spatial_model, "\"` was supplied but ",
+        "`spatial_var` is NULL.\n",
+        "  Spatial random effects require `spatial_var` to specify the ",
+        "column in `data` that identifies the spatial areas.\n",
+        "  Add `spatial_var = \"<your_area_column>\"` (and ",
+        "`M = <weight_matrix>` if not already supplied) to proceed.",
         call. = FALSE
       )
     }
+  }
+
+  # -- 8b-ii. Consistency check: car_type / sar_type need matching spatial_model
+  # `car_type` is meaningful only with `spatial_model = "car"`; `sar_type`
+  # only with `spatial_model = "sar"`.  Silently ignoring these would mask a
+  # typo (e.g. user wants BYM2 but forgot `spatial_model = "car"`).
+  if (!is.null(car_type) && !identical(spatial_model, "car")) {
+    stop(
+      "`car_type = \"", car_type, "\"` was supplied but ",
+      if (is.null(spatial_model)) "`spatial_model` is NULL" else
+        paste0("`spatial_model = \"", spatial_model, "\"`"),
+      ".\n",
+      "  `car_type` (\"icar\", \"escar\", \"esicar\", \"bym2\") is only valid ",
+      "with `spatial_model = \"car\"`.\n",
+      "  Did you mean `spatial_model = \"car\"`?",
+      call. = FALSE
+    )
+  }
+  if (!is.null(sar_type) && !identical(spatial_model, "sar")) {
+    stop(
+      "`sar_type = \"", sar_type, "\"` was supplied but ",
+      if (is.null(spatial_model)) "`spatial_model` is NULL" else
+        paste0("`spatial_model = \"", spatial_model, "\"`"),
+      ".\n",
+      "  `sar_type` (\"lag\", \"error\") is only valid with ",
+      "`spatial_model = \"sar\"`.\n",
+      "  Did you mean `spatial_model = \"sar\"`?",
+      call. = FALSE
+    )
   }
 
   # -- 8c. Soft warning: BYM-style decomposition recommended -----------------
@@ -864,8 +1156,8 @@ hbm <- function(formula,
   # clustering), but brms provides a more identifiable reparameterisation
   # via car_type = "bym2".  We emit a single informative message so the
   # user can switch to the recommended form if they wish.
-  if (!is.null(re) && !is.null(sre) && !is.null(sre_type) &&
-      identical(sre_type, "car")) {
+  if (!is.null(re) && !is.null(spatial_var) && !is.null(spatial_model) &&
+      identical(spatial_model, "car")) {
     re_str_check <- paste(deparse(re), collapse = " ")
     # Match patterns like "(1 | g)" / "(1|g)" with optional spaces
     re_grp <- regmatches(
@@ -877,56 +1169,58 @@ hbm <- function(formula,
       # Extract the variable name inside (1 | xxx)
       re_var <- sub(".*\\|\\s*([A-Za-z_][A-Za-z0-9_.]*)\\s*\\).*",
                     "\\1", re_grp)
-      if (identical(re_var, sre)) {
+      if (identical(re_var, spatial_var)) {
         message(
-          "You have specified both `re = ~ (1 | ", sre, ")` and ",
-          "`sre = \"", sre, "\"` with `sre_type = \"car\"`.\n",
+          "You have specified both `re = ~ (1 | ", spatial_var, ")` and ",
+          "`spatial_var = \"", spatial_var, "\"` with ",
+          "`spatial_model = \"car\"`.\n",
           "  This fits the parallel BYM decomposition (IID + CAR on ",
           "the same area column), which is mathematically valid but can ",
           "have weakly identified variance components.\n",
           "  A more identifiable alternative is the BYM2 ",
           "reparameterisation: drop `re` and set ",
-          "`sre_type = \"car\"`, `car_type = \"bym2\"`."
+          "`spatial_model = \"car\"`, `car_type = \"bym2\"`."
         )
       }
     }
   }
 
   # -- 9. Spatial random effects ------------------------------------------------
-  if (!is.null(sre_type)) {
-    M <- .validate_spatial_matrix(M, sre_type)
+  if (!is.null(spatial_model)) {
+    M <- .validate_spatial_matrix(M, spatial_model)
     data2 <- list(M = M)
 
-    if (sre_type == "car") {
-      car_t   <- if (is.null(car_type)) "icar" else car_type
-      sre_str <- paste0("car(M, gr = ", sre, ", type = '", car_t, "')")
-    } else if (sre_type == "sar") {
-      sar_t   <- if (is.null(sar_type)) "lag" else sar_type
-      sre_str <- paste0("sar(M, type = '", sar_t, "')")
+    if (spatial_model == "car") {
+      car_t        <- if (is.null(car_type)) "icar" else car_type
+      spatial_term <- paste0("car(M, gr = ", spatial_var,
+                              ", type = '", car_t, "')")
+    } else if (spatial_model == "sar") {
+      sar_t        <- if (is.null(sar_type)) "lag" else sar_type
+      spatial_term <- paste0("sar(M, type = '", sar_t, "')")
     } else {
-      stop("Invalid `sre_type`. Choose 'car' or 'sar'.", call. = FALSE)
+      stop("Invalid `spatial_model`. Choose 'car' or 'sar'.", call. = FALSE)
     }
 
     if (!is.null(all_formulas$forms)) {
       all_formulas$forms <- lapply(all_formulas$forms, function(f) {
-        f$formula <- stats::update(f$formula, paste(". ~ . +", sre_str))
+        f$formula <- stats::update(f$formula, paste(". ~ . +", spatial_term))
         f
       })
     } else {
       all_formulas$formula <- stats::update(
-        all_formulas$formula, paste(". ~ . +", sre_str)
+        all_formulas$formula, paste(". ~ . +", spatial_term)
       )
     }
   }
 
   # -- 9b. Sanity check: warn if NO area-level random structure is present ----
   # The Fay-Herriot SAE framework assumes u_i ~ N(0, sigma_u^2) per area.
-  # Forgetting both `re` and `sre_type` reduces hbm() to a fixed-effects-only
-  # regression, which is rarely what users want from a HBSAE package.  Emit
-  # a single informative warning so the user can either confirm intent or
-  # add the missing term.  Backward compatible: nothing is auto-injected
-  # into the formula -- the user retains full control.
-  if (is.null(re) && is.null(sre_type)) {
+  # Forgetting both `re` and `spatial_model` reduces hbm() to a
+  # fixed-effects-only regression, which is rarely what users want from a
+  # HBSAE package.  Emit a single informative warning so the user can either
+  # confirm intent or add the missing term.  Backward compatible: nothing is
+  # auto-injected into the formula -- the user retains full control.
+  if (is.null(re) && is.null(spatial_model)) {
     warning(
       "Model fitted without any area-level random effects.\n",
       "  This is unusual for Small Area Estimation: the standard ",
@@ -934,9 +1228,9 @@ hbm <- function(formula,
       "so estimates from a purely fixed-effects model will not ",
       "borrow strength across areas.\n",
       "  Consider one of:\n",
-      "    re = ~ (1 | area_id)                          # IID area RE\n",
-      "    sre = 'area_id', sre_type = 'car', M = W       # CAR spatial RE\n",
-      "    sre = 'area_id', sre_type = 'sar', M = W       # SAR spatial RE\n",
+      "    re = ~ (1 | area_id)                                     # IID area RE\n",
+      "    spatial_var = 'area_id', spatial_model = 'car', M = W    # CAR spatial RE\n",
+      "    spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE\n",
       "  If a fixed-effects-only baseline is intentional, you can ",
       "suppress this warning with `suppressWarnings()`.",
       call. = FALSE
@@ -944,7 +1238,7 @@ hbm <- function(formula,
   }
 
   # -- 10. Attach distribution family -------------------------------------------
-  # v0.6.0: hb_sampling can now be either:
+  # hb_sampling can now be either:
   #   (a) a character key for a brms-native family (e.g. "gaussian", "Beta")
   #   (b) a character key for a registered brms::custom_family() in the
   #       hbsaems model registry (e.g. "loglogistic", "shifted_loglogistic")
@@ -983,7 +1277,7 @@ hbm <- function(formula,
     all_formulas$family <- family_obj
   }
 
-  # -- 10b. v1.0.0: Attach fixed-parameter pforms -------------------------------
+  # -- 10b. Attach fixed-parameter pforms -------------------------------
   # For each pinned distributional parameter, append
   #   <par> ~ 0 + offset(.hbsaems_<par>_fixed)
   # to the brms formula.  This must happen AFTER the family is attached

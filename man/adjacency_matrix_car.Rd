@@ -3,10 +3,11 @@
 \docType{data}
 \name{adjacency_matrix_car}
 \alias{adjacency_matrix_car}
-\title{Adjacency Matrix for Conditional Autoregressive Models}
+\title{Province-level Adjacency Matrix}
 \format{
-A binary symmetric \eqn{5 \times 5} matrix with \code{1} for
-  adjacent pairs of areas and \code{0} otherwise.
+A binary symmetric \eqn{5 \times 5} matrix with row- and
+  column-names \code{province_01} .. \code{province_05}; entries are
+  \code{1} for adjacent province pairs and \code{0} otherwise.
 }
 \source{
 Simulated.
@@ -16,6 +17,8 @@ adjacency_matrix_car
 }
 \description{
 A small example adjacency matrix used for fitting Conditional
-Autoregressive (CAR) random effects.
+Autoregressive (CAR) random effects on the **province** level.
+Pairs with \code{data_fhnorm} and \code{data_betalogitnorm}, whose
+\code{province} column has matching labels.
 }
 \keyword{datasets}

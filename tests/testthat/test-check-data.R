@@ -37,7 +37,7 @@ test_that("check_data rejects empty predictors", {
 
 test_that("check_data reports missing required variables", {
   d <- .fake_data()
-  res <- check_data(d, response = "yyy", predictors = c("x1", "x2"))
+  res <- check_data(d, response = "yyy", auxiliary = c("x1", "x2"))
   expect_s3_class(res, "hbsaems_data_check")
   expect_true(length(res$issues) >= 1L)
   expect_true(any(grepl("yyy", res$issues)))
@@ -45,7 +45,7 @@ test_that("check_data reports missing required variables", {
 
 test_that("check_data reports missing optional variables", {
   d <- .fake_data()
-  res <- check_data(d, "y", c("x1", "x2"), group = "no_such_group")
+  res <- check_data(d, "y", c("x1", "x2"), area_var = "no_such_group")
   expect_true(any(grepl("no_such_group", res$issues)))
 })
 
@@ -114,7 +114,7 @@ test_that("check_data validates square matrix", {
 test_that("check_data detects dimension mismatch with sre", {
   d <- .fake_data()
   M <- matrix(0, 7, 7)  # 7x7 but only 5 unique sre levels
-  res <- check_data(d, "y", c("x1", "x2"), sre = "sre", M = M)
+  res <- check_data(d, "y", c("x1", "x2"), spatial_var = "sre", M = M)
   expect_true(any(grepl("Dimension mismatch", res$issues)))
 })
 
@@ -122,7 +122,7 @@ test_that("check_data accepts matching dimensions", {
   d <- .fake_data()
   n_unique <- length(unique(d$sre))
   M <- matrix(0, n_unique, n_unique)
-  res <- check_data(d, "y", c("x1", "x2"), sre = "sre", M = M)
+  res <- check_data(d, "y", c("x1", "x2"), spatial_var = "sre", M = M)
   expect_length(res$issues, 0L)
   expect_true(res$dimension_check$dim_match)
 })

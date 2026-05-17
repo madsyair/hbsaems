@@ -9,8 +9,17 @@ hbm_binlogitnorm(
   trials,
   auxiliary = NULL,
   data,
+  area_var = NULL,
+  spatial_var = NULL,
+  spatial_model = NULL,
+  car_type = NULL,
+  sar_type = NULL,
+  M = NULL,
   fixed_params = NULL,
   predictors = NULL,
+  group = NULL,
+  sre = NULL,
+  sre_type = NULL,
   ...
 )
 }
@@ -26,6 +35,28 @@ names; corresponds to area-level covariates in SAE literature
 
 \item{data}{A \code{data.frame}.}
 
+\item{area_var}{Optional character.  Name of the column in \code{data}
+identifying the small area / domain.  When supplied, an IID
+area-level random effect \code{(1 | area_var)} is added to the
+linear predictor.  Default: \code{NULL}.}
+
+\item{spatial_var}{Optional character.  Name of a column identifying
+the spatial cluster.  Must be supplied together with
+\code{spatial_model} and \code{M}.  Default: \code{NULL}.}
+
+\item{spatial_model}{Optional character.  Spatial dependence:
+\code{"car"} (default \code{car_type = "icar"}) or \code{"sar"}
+(default \code{sar_type = "lag"}).  Default: \code{NULL}.}
+
+\item{car_type}{Optional character.  CAR sub-type passed to \pkg{brms}:
+\code{"escar"}, \code{"esicar"}, \code{"icar"}, or \code{"bym2"}.}
+
+\item{sar_type}{Optional character.  SAR sub-type:
+\code{"lag"} or \code{"error"}.}
+
+\item{M}{Optional numeric matrix.  Spatial weight matrix.
+Required when \code{spatial_model} is supplied.}
+
 \item{fixed_params}{Optional named list pinning distributional
 parameters to known values.  See \code{\link{hbm}} for the spec
 format.}
@@ -33,8 +64,14 @@ format.}
 \item{predictors}{\strong{Deprecated.}  Use \code{auxiliary} instead.
 Kept for backward compatibility; will be removed in v2.0.0.}
 
-\item{...}{Additional arguments forwarded to \code{\link{hbm_flex}}.
-See \code{?hbm_flex}.}
+\item{group}{\strong{Deprecated.}  Use \code{area_var} instead.}
+
+\item{sre}{\strong{Deprecated.}  Use \code{spatial_var} instead.}
+
+\item{sre_type}{\strong{Deprecated.}  Use \code{spatial_model} instead.}
+
+\item{...}{Additional arguments forwarded to \code{\link{hbm_flex}}
+(e.g.\ \code{prior_type}, \code{handle_missing}, sampler controls).}
 }
 \value{
 An object of class \code{hbmfit}.
@@ -82,21 +119,21 @@ fit <- hbm_binlogitnorm(
   response   = "y",
   trials     = "n",
   auxiliary  = c("x1", "x2", "x3"),
-  group      = "group",            # area-level random effect
+  area_var   = "district",        # area-level random effect (1 | district)
   data       = data_binlogitnorm,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
 
 # -- 2. With spatial CAR random effect -------------------------------------
-data("adjacency_matrix_car")
+data("adjacency_matrix_car_regency")
 fit_car <- hbm_binlogitnorm(
-  response   = "y",
-  trials     = "n",
-  auxiliary  = c("x1", "x2", "x3"),
-  sre        = "sre",
-  sre_type   = "car",
-  M          = adjacency_matrix_car,
-  data       = data_binlogitnorm,
+  response      = "y",
+  trials        = "n",
+  auxiliary     = c("x1", "x2", "x3"),
+  spatial_var   = "regency",
+  spatial_model = "car",
+  M             = adjacency_matrix_car_regency,
+  data          = data_binlogitnorm,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
 }

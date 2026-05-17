@@ -33,11 +33,12 @@ rshifted_loglogistic(n, mu = 0, sigma = 1, xi = 0)
 \arguments{
 \item{x, q}{Numeric vector of quantiles.}
 
-\item{mu}{Location parameter (real).}
+\item{mu}{Location parameter (real; equals the median).}
 
 \item{sigma}{Scale parameter (\code{sigma > 0}).}
 
-\item{xi}{Shape parameter (real; \code{xi = 0} gives logistic).}
+\item{xi}{Shape parameter (real; \code{xi = 0} gives the logistic
+distribution).}
 
 \item{log, log.p}{Logical.  See \code{\link{Distributions}}.}
 
@@ -52,14 +53,73 @@ Numeric vector.
 }
 \description{
 Density, distribution function, quantile function and random generation
-for the shifted loglogistic distribution with location \code{mu}, scale
-\code{sigma > 0} and shape \code{xi}.  The standard 2-parameter logistic
-is recovered as \code{xi -> 0}.
+for the shifted log-logistic (generalised log-logistic) distribution
+with location \code{mu} (real), scale \code{sigma > 0} and shape
+\code{xi} (real).  The two-parameter logistic distribution is
+recovered as \code{xi -> 0}.
 }
+\section{Parameterisation}{
+
+This implementation uses the \strong{GEV-style parameterisation} of
+Hosking & Wallis (1997) and the Flood Estimation Handbook (Robson &
+Reed 1999), in which \eqn{\mu} is a pure location parameter (the
+median), \eqn{\sigma} a pure scale parameter and \eqn{\xi} a pure
+shape parameter:
+\deqn{F(x \mid \mu, \sigma, \xi) =
+  \{1 + (1 + \xi z)^{-1/\xi}\}^{-1},
+  \qquad z = (x - \mu) / \sigma,}
+with corresponding density
+\deqn{f(x \mid \mu, \sigma, \xi) =
+  \frac{(1 + \xi z)^{-(1/\xi + 1)}}
+       {\sigma \{1 + (1 + \xi z)^{-1/\xi}\}^{2}}.}
+
+The support depends on \eqn{\xi}:
+\itemize{
+  \item \eqn{\xi > 0}: \eqn{x \ge \mu - \sigma/\xi} (bounded below).
+  \item \eqn{\xi < 0}: \eqn{x \le \mu - \sigma/\xi} (bounded above).
+  \item \eqn{\xi = 0}: \eqn{x \in \mathbb{R}} (logistic limit).
+}
+The median is always \eqn{\mu}; the mean exists when \eqn{|\xi| < 1}
+and is \eqn{\mu + \sigma (\alpha\csc\alpha - 1)/\xi},
+\eqn{\alpha = \pi\xi}.  Reducing further, the family contains:
+\itemize{
+  \item the standard log-logistic when \eqn{\xi = 1} (reparameterised);
+  \item the logistic distribution as \eqn{\xi \to 0};
+  \item the generalised Pareto family at \eqn{\xi = -1}.
+}
+
+\strong{Why this parameterisation?}  An alternative
+"simple-shift" form, \eqn{Y - \delta \sim \mathrm{LogLogistic}},
+exists in the literature (Geskus 2001) and is closer in spirit to
+\code{brms::shifted_lognormal()}'s positive shift \code{ndt}.  We
+deliberately follow the GEV-style parameterisation because
+\enumerate{
+  \item it provides a \emph{smooth} limit to the logistic
+        distribution at \eqn{\xi = 0};
+  \item the parameters \eqn{(\mu, \sigma, \xi)} are
+        orthogonally interpretable (location / scale / shape);
+  \item it is the canonical form in hydrology and extreme-value
+        applications (Hosking & Wallis 1997).
+}
+}
+
 \examples{
 dshifted_loglogistic(c(1, 2, 5),    mu = 0, sigma = 1, xi = 0.5)
 pshifted_loglogistic(c(1, 2, 5),    mu = 0, sigma = 1, xi = 0.5)
 qshifted_loglogistic(c(0.25, 0.75), mu = 0, sigma = 1, xi = 0.5)
 set.seed(1); rshifted_loglogistic(5, mu = 0, sigma = 1, xi = 0.5)
 
+}
+\references{
+Geskus, R. B. (2001). Methods for estimating the AIDS incubation time
+distribution when date of seroconversion is censored.
+\emph{Statistics in Medicine}, 20(5), 795-812.
+
+Hosking, J. R. M., & Wallis, J. R. (1997). \emph{Regional Frequency
+Analysis: An Approach Based on L-Moments}.  Cambridge University
+Press.  ISBN 0-521-43045-3.
+
+Robson, A., & Reed, D. (1999). Flood Estimation Handbook, Volume 3:
+Statistical Procedures for Flood Frequency Estimation.  Institute of
+Hydrology, Wallingford, UK.
 }

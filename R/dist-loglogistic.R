@@ -20,14 +20,35 @@
 #' Loglogistic Distribution Functions
 #'
 #' Density, distribution function, quantile function, and random generation
-#' for the loglogistic distribution with scale parameter \code{mu > 0} and
-#' shape parameter \code{beta > 0}.
+#' for the loglogistic (Fisk) distribution with scale parameter
+#' \code{mu > 0} and shape parameter \code{beta > 0}.
 #'
-#' The probability density function is
-#' \deqn{f(y) = (\beta/\mu) (y/\mu)^{\beta - 1}
-#'          \{1 + (y/\mu)^{\beta}\}^{-2}, \quad y > 0,}
-#' with cumulative distribution function
-#' \deqn{F(y) = \{1 + (y/\mu)^{-\beta}\}^{-1}.}
+#' @section Parameterisation:
+#' This implementation follows the canonical Wikipedia / \pkg{flexsurv} /
+#' \pkg{eha} parameterisation (Jackson 2016; Bennett 1983):
+#' \deqn{Y \sim \mathrm{LogLogistic}(\mu, \beta),
+#'   \quad \mu > 0, \quad \beta > 0,}
+#' with probability density function
+#' \deqn{f(y \mid \mu, \beta) =
+#'   \frac{(\beta/\mu)(y/\mu)^{\beta - 1}}{\{1 + (y/\mu)^{\beta}\}^{2}},
+#'   \quad y > 0,}
+#' cumulative distribution function
+#' \deqn{F(y \mid \mu, \beta) = \{1 + (y/\mu)^{-\beta}\}^{-1},}
+#' median \eqn{\mu}, and mean
+#' \eqn{E[Y] = \mu \pi / [\beta \sin(\pi / \beta)]} when
+#' \eqn{\beta > 1}.  Equivalently, \eqn{\log(Y) \sim
+#'   \mathrm{Logistic}(\log\mu, \, 1/\beta)}.
+#'
+#' \strong{Why not match the brms \code{lognormal} convention?}  The
+#' \code{brms::lognormal()} family parameterises \eqn{\mu} on the log
+#' scale (so \eqn{\mu} is unconstrained and uses an identity link).
+#' Doing the same for the log-logistic would require redefining
+#' \eqn{\mu = \log(\mathrm{median}(Y))} -- which deviates from every
+#' standard R reference (\pkg{flexsurv}, \pkg{eha}, Wolfram, scipy,
+#' Stata).  We deliberately follow the survival-analysis convention
+#' instead: \eqn{\mu} is the median (positive, log link), keeping
+#' interpretation simple and posterior summaries comparable with the
+#' rest of the R survival ecosystem.
 #'
 #' @param x,q Vector of quantiles (\code{x > 0} for non-zero density).
 #' @param p Vector of probabilities (\code{0 <= p <= 1}).
@@ -40,6 +61,18 @@
 #'   \eqn{P[Y \le q]}, otherwise \eqn{P[Y > q]}.
 #'
 #' @return Numeric vector of the same length as the input.
+#'
+#' @references
+#' Bennett, S. (1983). Log-logistic regression models for survival data.
+#' \emph{Journal of the Royal Statistical Society, Series C}, 32(2),
+#' 165-171. \doi{10.2307/2347295}
+#'
+#' Jackson, C. H. (2016). flexsurv: A platform for parametric survival
+#' modelling in R. \emph{Journal of Statistical Software}, 70(8), 1-33.
+#' \doi{10.18637/jss.v070.i08}
+#'
+#' Kleiber, C., & Kotz, S. (2003). \emph{Statistical Size Distributions
+#' in Economics and Actuarial Sciences}.  Wiley.
 #'
 #' @examples
 #' dloglogistic(c(0.5, 1, 2),  mu = 1, beta = 2)
@@ -234,7 +267,7 @@ brms_custom_loglogistic <- function() {
   build_brms_custom_family(
     name              = "loglogistic",
     dpars             = c("mu", "beta"),
-    links             = c("identity", "log"),
+    links             = c("log", "log"),
     lb                = c(0,    0),
     ub                = c(NA,   NA),
     type              = "real",

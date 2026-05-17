@@ -90,7 +90,7 @@ fit_fh <- hbm(
   formula     = bf(y ~ x1 + x2 + x3),
   hb_sampling = "gaussian",
   hb_link     = "identity",
-  re          = ~(1 | group),
+  re          = ~ (1 | regency),
   data        = data_fhnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
@@ -147,7 +147,7 @@ str(data_betalogitnorm[, c("y", "n", "deff", "x1", "x2", "x3", "group")])
 fit_beta_random <- hbm_betalogitnorm(
   response  = "y",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "regency",
   data      = data_betalogitnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
@@ -172,7 +172,7 @@ fit_beta_fixed <- hbm_betalogitnorm(
   auxiliary = c("x1", "x2", "x3"),
   n         = "n",
   deff      = "deff",
-  group     = "group",
+  area_var   = "regency",
   data      = data_betalogitnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
@@ -199,7 +199,7 @@ Override the default $\mathrm{Gamma}(1,1)$ priors:
 fit_beta_custom <- hbm_betalogitnorm(
   response  = "y",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "regency",
   data      = data_betalogitnorm,
   stanvars  = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
               stanvar(scode = "beta  ~ gamma(2, 3);", block = "model"),
@@ -216,7 +216,7 @@ fit_beta_flex <- hbm_flex(
   family_key   = "Beta",
   response     = "y",
   auxiliary    = c("x1", "x2", "x3"),
-  group        = "group",
+  area_var   = "regency",
   data         = data_betalogitnorm,
   fixed_params = list(phi = ~ I(n / deff - 1)),
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -252,7 +252,7 @@ fit_bin <- hbm_binlogitnorm(
   response  = "y",
   trials    = "n",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "regency",
   data      = data_binlogitnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
@@ -287,7 +287,7 @@ data("data_lnln")
 fit_lnln <- hbm_lnln(
   response  = "y_obs",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "regency",
   data      = data_lnln,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
@@ -296,7 +296,7 @@ summary(fit_lnln)
 
 ### Fay-Herriot variant: $\sigma_i = \sqrt{\psi_i}$ pinned
 
-`sampling_var` expects the variance of $\log(\hat y_i)$.  If your
+`sampling_variance` expects the variance of $\log(\hat y_i)$.  If your
 survey software produces $\mathrm{Var}(\hat y_i)$ on the original
 scale, convert with $\psi_i \approx \mathrm{Var}(\hat y_i) / \hat y_i^2$
 (delta-method approximation).
@@ -305,8 +305,8 @@ scale, convert with $\psi_i \approx \mathrm{Var}(\hat y_i) / \hat y_i^2$
 fit_lnln_fh <- hbm_lnln(
   response     = "y_obs",
   auxiliary    = c("x1", "x2", "x3"),
-  group        = "group",
-  sampling_var = "psi_i",        # known log-scale sampling variance
+  area_var   = "regency",
+  sampling_variance = "psi_i",        # known log-scale sampling variance
   data         = data_lnln,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
@@ -339,8 +339,8 @@ data("adjacency_matrix_car")
 fit_icar <- hbm(
   formula  = bf(y ~ x1 + x2 + x3),
   hb_sampling = "gaussian",
-  sre      = "sre",
-  sre_type = "car",
+  spatial_var = "province",
+  spatial_model = "car",
   M        = adjacency_matrix_car,
   data     = data_fhnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -359,8 +359,8 @@ sdcar     0.31      0.07     0.18     0.46 1.00     1742     2419
 ```{r car-escar}
 fit_escar <- hbm(
   formula  = bf(y ~ x1 + x2 + x3),
-  sre      = "sre",
-  sre_type = "car",
+  spatial_var = "province",
+  spatial_model = "car",
   car_type = "escar",            # exact sparse CAR (proper)
   M        = adjacency_matrix_car,
   data     = data_fhnorm,
@@ -370,15 +370,16 @@ fit_escar <- hbm(
 
 ### BYM2 (Riebler et al., 2016)
 
-Modern convolution of CAR + IID via mixing parameter $\rho$:
+Modern convolution of CAR + IID via mixing parameter $\rho$ -- the
+BYM2 reparameterisation internally handles both components, so you do
+**not** add a separate `re` term:
 
 ```{r car-bym2}
 fit_bym2 <- hbm(
   formula  = bf(y ~ x1 + x2 + x3),
-  re       = ~ (1 | sre),                # IID counterpart
-  sre      = "sre",
-  sre_type = "car",
-  car_type = "bym2",
+  spatial_var = "province",
+  spatial_model = "car",
+  car_type = "bym2",                     # internally includes IID + CAR
   M        = adjacency_matrix_car,
   data     = data_fhnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -394,7 +395,7 @@ data("spatial_weight_sar")
 
 fit_sar_lag <- hbm(
   formula  = bf(y ~ x1 + x2 + x3),
-  sre_type = "sar",
+  spatial_model = "sar",
   sar_type = "lag",
   M        = spatial_weight_sar,
   data     = data_fhnorm,
@@ -415,7 +416,7 @@ sdsar      0.41      0.09     0.25     0.61 1.00     2517     3104
 ```{r sar-error}
 fit_sar_err <- hbm(
   formula  = bf(y ~ x1 + x2 + x3),
-  sre_type = "sar",
+  spatial_model = "sar",
   sar_type = "error",
   M        = spatial_weight_sar,
   data     = data_fhnorm
@@ -466,7 +467,7 @@ The same `sre`, `sre_type`, `M` arguments work with all wrappers:
 fit_beta_car <- hbm_betalogitnorm(
   response  = "y", auxiliary = c("x1", "x2", "x3"),
   n = "n", deff = "deff",
-  sre = "sre", sre_type = "car", M = adjacency_matrix_car,
+  spatial_var = "province", spatial_model = "car", M = adjacency_matrix_car,
   data = data_betalogitnorm
 )
 
@@ -474,8 +475,7 @@ fit_beta_car <- hbm_betalogitnorm(
 fit_bin_bym2 <- hbm_binlogitnorm(
   response  = "y", trials = "n",
   auxiliary = c("x1", "x2", "x3"),
-  re        = ~(1 | group),
-  sre       = "sre", sre_type = "car", car_type = "bym2",
+  spatial_var = "province", spatial_model = "car", car_type = "bym2",
   M         = adjacency_matrix_car,
   data      = data_binlogitnorm
 )
@@ -503,6 +503,7 @@ fit_ll <- hbm_flex(
   family_key = "loglogistic",
   response   = "y",
   auxiliary  = c("x1", "x2", "x3"),
+  area_var   = "regency",
   data       = data_lnln,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
@@ -518,6 +519,7 @@ fit_sll <- hbm_flex(
   family_key = "shifted_loglogistic",
   response   = "y",
   auxiliary  = c("x1", "x2", "x3"),
+  area_var   = "regency",
   data       = data_lnln,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
@@ -554,6 +556,7 @@ fit_custom <- hbm_flex(
   family_key = "my_family",
   response   = "y",
   auxiliary  = c("x1", "x2"),
+  area_var   = "area_id",                # area-level random effect
   data       = my_data
 )
 ```
@@ -589,7 +592,7 @@ data_miss$y[c(3, 14, 27)] <- NA
 
 fit_del <- hbm(
   formula        = bf(y ~ x1 + x2 + x3),
-  re             = ~(1 | group),
+  re             = ~ (1 | regency),
   data           = data_miss,
   handle_missing = "deleted",
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -615,7 +618,7 @@ data_miss$x1[6:8] <- NA
 
 fit_mi <- hbm(
   formula        = bf(y ~ x1 + x2 + x3),
-  re             = ~(1 | group),
+  re             = ~ (1 | regency),
   data           = data_miss,
   handle_missing = "multiple",
   m              = 5,
@@ -630,7 +633,7 @@ fit_mi <- hbm(
 fit_joint <- hbm(
   formula        = bf(y  | mi() ~ mi(x1) + x2 + x3) +
                    bf(x1 | mi() ~ x2 + x3),
-  re             = ~(1 | group),
+  re             = ~ (1 | regency),
   data           = data_miss,
   handle_missing = "model",
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -652,10 +655,14 @@ chosen strategy itself (see the `hbsaems-handle-missing` vignette for
 details).
 
 ```{r mi-auto}
+# Build a data frame with some missing values to demonstrate
+data_with_some_na <- data_lnln
+data_with_some_na$x1[c(3, 14, 27)] <- NA    # missing covariate
+
 fit_auto <- hbm_lnln(
   response  = "y_obs",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "regency",
   data      = data_with_some_na,
   # handle_missing left NULL
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -687,7 +694,7 @@ Heavy-tailed shrinkage for many covariates with sparse signal
 ```{r prior-horseshoe}
 fit_hs <- hbm(
   formula         = bf(y ~ x1 + x2 + x3),
-  re              = ~(1 | group),
+  re              = ~ (1 | regency),
   data            = data_fhnorm,
   prior_type      = "horseshoe",
   hs_df           = 1,             # df of half-Student-t on local scale
@@ -706,7 +713,7 @@ Concentration-of-variance shrinkage prior (Zhang et al., 2022):
 ```{r prior-r2d2}
 fit_r2d2 <- hbm(
   formula      = bf(y ~ x1 + x2 + x3),
-  re           = ~(1 | group),
+  re           = ~ (1 | regency),
   data         = data_fhnorm,
   prior_type   = "R2D2",
   r2d2_mean_R2 = 0.5,              # prior mean of R^2
@@ -720,11 +727,11 @@ fit_r2d2 <- hbm(
 ```{r prior-custom}
 custom_prior <- prior(normal(0, 1), class = "b") +
                 prior(normal(0, 5), class = "Intercept") +
-                prior(student_t(3, 0, 2), class = "sd", group = "group")
+                prior(student_t(3, 0, 2), class = "sd", area_var   = "regency")
 
 fit_custom_prior <- hbm(
   formula = bf(y ~ x1 + x2 + x3),
-  re      = ~(1 | group),
+  re      = ~ (1 | regency),
   data    = data_fhnorm,
   prior   = custom_prior,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -737,7 +744,7 @@ fit_custom_prior <- hbm(
 fit_stanvars <- hbm_betalogitnorm(
   response  = "y",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "regency",
   data      = data_betalogitnorm,
   stanvars  = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
               stanvar(scode = "beta  ~ gamma(2, 3);", block = "model")
@@ -745,7 +752,7 @@ fit_stanvars <- hbm_betalogitnorm(
 ```
 
 > **Conflict policy.**  When a distributional parameter is pinned (e.g.\ via
-> `n` + `deff`, `sampling_var`, or `fixed_params`), supplying a `prior`
+> `n` + `deff`, `sampling_variance`, or `fixed_params`), supplying a `prior`
 > or `stanvars` sampling statement on that same parameter is rejected with
 > a clear error at construction time.
 
@@ -759,7 +766,7 @@ fit_stanvars <- hbm_betalogitnorm(
 fit_spline <- hbm_lnln(
   response       = "y_obs",
   auxiliary      = c("x1", "x2", "x3"),
-  group          = "group",
+  area_var   = "regency",
   data           = data_lnln,
   nonlinear      = "x1",
   nonlinear_type = "spline",
@@ -776,16 +783,17 @@ The formula becomes `y_obs ~ s(x1) + x2 + x3 + (1 | group)`.
 fit_gp <- hbm_lnln(
   response       = "y_obs",
   auxiliary      = c("x1", "x2", "x3"),
-  group          = "group",
+  area_var       = "regency",
   data           = data_lnln,
   nonlinear      = "x1",
   nonlinear_type = "gp",
-  gp_scale       = 0.5,
+  gp_k           = 20L,           # HSGP basis size (recommended for n > 100)
+  gp_cov         = "matern25",    # numerically more stable than default
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
 ```
 
-The formula becomes `y_obs ~ gp(x1) + x2 + x3 + (1 | group)`.
+The formula becomes `y_obs ~ gp(x1, k = 20, cov = "matern25") + x2 + x3 + (1 | regency)`.
 
 ---
 
@@ -798,7 +806,7 @@ Fit only from the prior (set `sample_prior = "only"`) and inspect:
 ```{r prior-check}
 fit_prior_only <- hbm(
   formula      = bf(y ~ x1 + x2 + x3),
-  re           = ~(1 | group),
+  re           = ~ (1 | regency),
   data         = data_fhnorm,
   sample_prior = "only",
   prior        = c(
@@ -870,7 +878,7 @@ LOO-CV, WAIC, and Bayes factors:
 ```{r model-compare}
 fit_no_x3 <- hbm(
   formula = bf(y ~ x1 + x2),         # drop x3
-  re      = ~(1 | group),
+  re      = ~ (1 | regency),
   data    = data_fhnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
@@ -1023,6 +1031,7 @@ ctrl <- hbm_control(
 fit_tuned <- hbm(
   formula = bf(y ~ x1 + x2 + x3),
   data    = data_fhnorm,
+  re      = ~ (1 | regency),         # area-level random effect (Fay-Herriot)
   control = ctrl,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
@@ -1040,7 +1049,7 @@ prior_bundle <- hbm_priors(
 
 fit_p <- hbm(
   formula = bf(y ~ x1 + x2 + x3),
-  re      = ~(1 | group),
+  re      = ~ (1 | regency),
   data    = data_fhnorm,
   prior   = prior_bundle,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -1060,7 +1069,7 @@ nl <- hbm_nonlinear(
 fit_nl <- hbm_lnln(
   response  = "y_obs",
   auxiliary = c("x1", "x2", "x3"),
-  group     = "group",
+  area_var   = "regency",
   data      = data_lnln,
   nonlinear = nl,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1

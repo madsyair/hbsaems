@@ -1,6 +1,6 @@
 # R/zzz.R
 # =============================================================================
-# Startup hook: populate the model registry with built-in and v0.6.0 custom
+# Startup hook: populate the model registry with built-in and v1.0.0 custom
 # brms families (loglogistic, shifted_loglogistic) so they are available in
 # every fresh R session.
 # =============================================================================
@@ -9,7 +9,7 @@
   # 1. Built-in (brms-native) families
   .init_model_registry()
 
-  # 2. v0.6.0: built-in custom brms families (require brms namespace, so we
+  # 2. Built-in custom brms families (require brms namespace, so we
   # guard with requireNamespace to keep load-time light if brms is missing).
   if (requireNamespace("brms", quietly = TRUE)) {
     .register_builtin_custom_families()

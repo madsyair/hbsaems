@@ -19,18 +19,22 @@
 #' @param data        A \code{data.frame}.
 #' @param response    Character.  Name of the response variable in
 #'   \code{data}.
-#' @param predictors  Character vector.  Names of the predictor (auxiliary)
-#'   variables.
-#' @param group       Optional character.  Name of the random-effect grouping
-#'   variable.
-#' @param sre         Optional character.  Name of the spatial-grouping
-#'   variable.
+#' @param auxiliary   Character vector.  Names of the auxiliary
+#'   variables (the SAE 'X' covariates).
+#' @param predictors  \strong{Deprecated.}  Use \code{auxiliary} instead.
+#' @param area_var    Optional character.  Name of the area (random-effect
+#'   grouping) variable.
+#' @param spatial_var Optional character.  Name of the spatial-grouping
+#'   variable (column in \code{data} that indexes rows of the spatial
+#'   weight matrix \code{M}).
 #' @param M           Optional spatial weight matrix to dimension-check
 #'   against \code{data}.
 #' @param trials      Optional character.  Name of the trials variable
 #'   (binomial models).
 #' @param n_var       Optional character.  Name of the sample-size variable
 #'   (beta / lognormal direct-estimator models).
+#' @param group       \strong{Deprecated.}  Use \code{area_var} instead.
+#' @param sre         \strong{Deprecated.}  Use \code{spatial_var} instead.
 #'
 #' @return An object of class \code{hbsaems_data_check} with components:
 #'   \describe{
@@ -52,17 +56,17 @@
 #'
 #' @details
 #' \subsection{1. Variable presence}{
-#'   Verifies that \code{response}, every name in \code{predictors}, and the
-#'   optional \code{group}/\code{sre}/\code{trials}/\code{n_var} columns
-#'   exist in \code{data}.  Missing variables are reported in
-#'   \code{$issues}.
+#'   Verifies that \code{response}, every name in \code{auxiliary}, and
+#'   the optional \code{area_var} / \code{spatial_var} / \code{trials} /
+#'   \code{n_var} columns exist in \code{data}.  Missing variables are
+#'   reported in \code{$issues}.
 #' }
 #' \subsection{2. Missing-value pattern}{
 #'   The pattern is one of:
 #'   \describe{
 #'     \item{\code{"none"}}{All listed columns are complete.}
 #'     \item{\code{"y_only"}}{Only the response has NAs.}
-#'     \item{\code{"x_only"}}{Only the predictors have NAs.}
+#'     \item{\code{"x_only"}}{Only the auxiliary variables have NAs.}
 #'     \item{\code{"both"}}{Both Y and X have NAs.}
 #'   }
 #'   Based on the pattern, a strategy is recommended:
@@ -85,8 +89,8 @@
 #' \subsection{3. Dimension check}{
 #'   When \code{M} is supplied, verifies that it is square and that
 #'   \code{nrow(M)} matches the number of \emph{distinct} levels in
-#'   \code{data[[sre]]} (or \code{nrow(data)} when \code{sre} is
-#'   \code{NULL}).
+#'   \code{data[[spatial_var]]} (or \code{nrow(data)} when
+#'   \code{spatial_var} is \code{NULL}).
 #' }
 #'
 #' @examples
@@ -95,28 +99,28 @@
 #' # 1. Complete data -> no warnings, no recommendation
 #' chk <- check_data(data_fhnorm,
 #'                   response   = "y",
-#'                   predictors = c("x1", "x2", "x3"))
+#'                   auxiliary  = c("x1", "x2", "x3"))
 #' print(chk)
 #'
 #' # 2. Missing-Y pattern -> recommends checking for non-sample areas
 #' d <- data_fhnorm
 #' d$y[1:5] <- NA
 #' chk2 <- check_data(d, response = "y",
-#'                       predictors = c("x1", "x2", "x3"))
+#'                       auxiliary  = c("x1", "x2", "x3"))
 #' summary(chk2)
 #'
 #' # 3. Missing-X-only -> recommends multiple imputation
 #' d2 <- data_fhnorm
 #' d2$x1[10:15] <- NA
 #' chk3 <- check_data(d2, response = "y",
-#'                       predictors = c("x1", "x2", "x3"))
+#'                       auxiliary  = c("x1", "x2", "x3"))
 #' chk3$recommended_method
 #'
 #' # 4. Spatial dimension check
 #' data("adjacency_matrix_car")
 #' chk4 <- check_data(data_fhnorm[1:5, ],
 #'                    response   = "y",
-#'                    predictors = c("x1", "x2", "x3"),
+#'                    auxiliary  = c("x1", "x2", "x3"),
 #'                    M          = adjacency_matrix_car)
 #' chk4$dimension_check
 #'
@@ -124,27 +128,57 @@
 #' @export
 check_data <- function(data,
                        response,
-                       predictors,
-                       group   = NULL,
-                       sre     = NULL,
-                       M       = NULL,
-                       trials  = NULL,
-                       n_var   = NULL) {
+                       auxiliary   = NULL,
+                       area_var    = NULL,
+                       spatial_var = NULL,
+                       M           = NULL,
+                       trials      = NULL,
+                       n_var       = NULL,
+                       # -- DEPRECATED aliases (v1.0.0) -----
+                       predictors  = NULL,
+                       group       = NULL,
+                       sre         = NULL) {
+
+  # -- 0. Deprecated alias handling -----------------------------------------
+  if (!is.null(predictors)) {
+    if (!is.null(auxiliary))
+      stop("Pass either `auxiliary` (preferred) or `predictors` (deprecated), ",
+           "but not both.", call. = FALSE)
+    .deprecate_arg("predictors", "auxiliary", "v2.0.0")
+    auxiliary <- predictors
+  }
+  if (is.null(auxiliary))
+    stop("`auxiliary` (auxiliary variables) is required.", call. = FALSE)
+
+  if (!is.null(group)) {
+    if (!is.null(area_var))
+      stop("Pass either `area_var` (preferred) or `group` (deprecated), ",
+           "but not both.", call. = FALSE)
+    .deprecate_arg("group", "area_var", "v2.0.0")
+    area_var <- group
+  }
+  if (!is.null(sre)) {
+    if (!is.null(spatial_var))
+      stop("Pass either `spatial_var` (preferred) or `sre` (deprecated), ",
+           "but not both.", call. = FALSE)
+    .deprecate_arg("sre", "spatial_var", "v2.0.0")
+    spatial_var <- sre
+  }
 
   # -- 1. Argument validation -------------------------------------------------
   if (!is.data.frame(data))
     stop("'data' must be a data.frame.", call. = FALSE)
   if (!is.character(response) || length(response) != 1L)
     stop("'response' must be a single character string.", call. = FALSE)
-  if (!is.character(predictors) || length(predictors) < 1L)
-    stop("'predictors' must be a non-empty character vector.",
+  if (!is.character(auxiliary) || length(auxiliary) < 1L)
+    stop("'auxiliary' must be a non-empty character vector.",
          call. = FALSE)
 
   issues <- character(0L)
 
   # -- 2. Variable presence ---------------------------------------------------
-  required_vars <- c(response, predictors)
-  optional_vars <- c(group, sre, trials, n_var)
+  required_vars <- c(response, auxiliary)
+  optional_vars <- c(area_var, spatial_var, trials, n_var)
   optional_vars <- optional_vars[!vapply(optional_vars, is.null, logical(1L))]
 
   missing_required <- setdiff(required_vars, names(data))
@@ -186,7 +220,7 @@ check_data <- function(data,
   names(na_counts) <- all_vars
 
   has_na_y <- na_counts[response] > 0L
-  has_na_x <- any(na_counts[predictors] > 0L)
+  has_na_x <- any(na_counts[auxiliary] > 0L)
 
   pattern <- if (!has_na_y && !has_na_x) "none"
              else if ( has_na_y && !has_na_x) "y_only"
@@ -230,7 +264,7 @@ check_data <- function(data,
   } else if (pattern == "x_only") {
     rec$method <- "multiple"
     rec$text   <- paste0(
-      "Only predictors are missing. Recommended: handle_missing = ",
+      "Only auxiliary variables are missing. Recommended: handle_missing = ",
       "'multiple' (multiple imputation via mice; works for any family)."
     )
   } else {  # both
@@ -271,8 +305,8 @@ check_data <- function(data,
         nrow(M), ncol(M)
       ))
     else {
-      n_areas <- if (!is.null(sre) && sre %in% names(data))
-        length(unique(stats::na.omit(data[[sre]])))
+      n_areas <- if (!is.null(spatial_var) && spatial_var %in% names(data))
+        length(unique(stats::na.omit(data[[spatial_var]])))
       else
         nrow(data)
 
@@ -285,7 +319,7 @@ check_data <- function(data,
         issues <- c(issues, sprintf(
           "Dimension mismatch: M is %d x %d but data has %d %s.",
           nrow(M), nrow(M), n_areas,
-          if (!is.null(sre)) paste0("unique '", sre, "' levels")
+          if (!is.null(spatial_var)) paste0("unique '", spatial_var, "' levels")
           else                 "rows"
         ))
     }

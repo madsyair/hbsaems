@@ -52,7 +52,7 @@ hbcc <- function(model,
     new     = "convergence_check",
     package = "hbsaems",
     msg     = paste0(
-      "'hbcc()' is deprecated as of hbsaems 0.3.0 and will be ",
+      "'hbcc()' is deprecated as of hbsaems 1.0.0 and will be ",
       "removed in v2.0.0.\n",
       "Please use 'convergence_check()' instead.\n",
       "See help(\"deprecated\", package = \"hbsaems\")."
@@ -85,7 +85,7 @@ hbmc <- function(model,
     new     = "model_compare",
     package = "hbsaems",
     msg     = paste0(
-      "'hbmc()' is deprecated as of hbsaems 0.3.0 and will be ",
+      "'hbmc()' is deprecated as of hbsaems 1.0.0 and will be ",
       "removed in v2.0.0.\n",
       "Please use 'model_compare()' instead.\n",
       "See help(\"deprecated\", package = \"hbsaems\")."
@@ -114,7 +114,7 @@ hbpc <- function(model, data, response_var, ndraws_ppc = 50, ...) {
     new     = "prior_check",
     package = "hbsaems",
     msg     = paste0(
-      "'hbpc()' is deprecated as of hbsaems 0.3.0 and will be ",
+      "'hbpc()' is deprecated as of hbsaems 1.0.0 and will be ",
       "removed in v2.0.0.\n",
       "Please use 'prior_check()' instead.\n",
       "See help(\"deprecated\", package = \"hbsaems\")."
@@ -137,7 +137,7 @@ hbsae <- function(model, newdata = NULL, ...) {
     new     = "sae_predict",
     package = "hbsaems",
     msg     = paste0(
-      "'hbsae()' is deprecated as of hbsaems 0.3.0 and will be ",
+      "'hbsae()' is deprecated as of hbsaems 1.0.0 and will be ",
       "removed in v2.0.0.\n",
       "Please use 'sae_predict()' instead.\n",
       "See help(\"deprecated\", package = \"hbsaems\")."

@@ -10,14 +10,14 @@ suppressPackageStartupMessages(library(hbsaems))
 
 ## ----show-data, eval = TRUE---------------------------------------------------
 data("data_lnln")
-str(data_lnln[, c("group", "y_obs", "psi_i", "x1", "x2", "x3")])
+str(data_lnln[, c("district", "y_obs", "psi_i", "x1", "x2", "x3")])
 
 ## ----fit-basic----------------------------------------------------------------
 # library(hbsaems)
 # fit <- hbm_lnln(
 #   response  = "y_obs",
 #   auxiliary = c("x1", "x2", "x3"),
-#   group     = "group",
+#   area_var   = "district",
 #   data      = data_lnln,
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4,
 #   seed = 1
@@ -28,8 +28,8 @@ str(data_lnln[, c("group", "y_obs", "psi_i", "x1", "x2", "x3")])
 # fit_fh <- hbm_lnln(
 #   response     = "y_obs",
 #   auxiliary    = c("x1", "x2", "x3"),
-#   group        = "group",
-#   sampling_var = "psi_i",     # <- pins sigma_i = sqrt(psi_i)
+#   area_var   = "district",
+#   sampling_variance = "psi_i",     # <- pins sigma_i = sqrt(psi_i)
 #   data         = data_lnln,
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4,
 #   seed = 1
@@ -40,7 +40,7 @@ str(data_lnln[, c("group", "y_obs", "psi_i", "x1", "x2", "x3")])
 # fit_custom <- hbm_lnln(
 #   response  = "y_obs",
 #   auxiliary = c("x1", "x2", "x3"),
-#   group     = "group",
+#   area_var   = "district",
 #   data      = data_lnln,
 #   prior     = brms::set_prior("normal(0.3, 0.05)", class = "sigma"),
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4,
@@ -52,7 +52,7 @@ str(data_lnln[, c("group", "y_obs", "psi_i", "x1", "x2", "x3")])
 #   family_key   = "lognormal",
 #   response     = "y_obs",
 #   auxiliary    = c("x1", "x2", "x3"),
-#   group        = "group",
+#   area_var   = "district",
 #   fixed_params = list(sigma = ~ sqrt(psi_i)),
 #   data         = data_lnln,
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -60,13 +60,13 @@ str(data_lnln[, c("group", "y_obs", "psi_i", "x1", "x2", "x3")])
 
 ## ----fit-spline---------------------------------------------------------------
 # fit_spline <- hbm_lnln(
-#   response       = "y_obs",
-#   auxiliary      = c("x1", "x2", "x3"),
-#   group          = "group",
-#   sampling_var   = "psi_i",
-#   data           = data_lnln,
-#   nonlinear      = "x1",
-#   nonlinear_type = "spline",
+#   response          = "y_obs",
+#   auxiliary         = c("x1", "x2", "x3"),
+#   area_var          = "district",
+#   sampling_variance = "psi_i",
+#   data              = data_lnln,
+#   nonlinear         = "x1",
+#   nonlinear_type    = "spline",
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 # )
 

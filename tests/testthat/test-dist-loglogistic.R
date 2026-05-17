@@ -1,7 +1,7 @@
 # tests/testthat/test-dist-loglogistic.R
 # =============================================================================
 # CRAN-safe tests for the loglogistic + shifted_loglogistic distribution
-# functions added in v0.6.0.  Tests the R-side d/p/q/r implementations
+# functions added in v1.0.0.  Tests the R-side d/p/q/r implementations
 # (mathematical identities) and the structure of the brms custom_family
 # wrappers, but does NOT compile Stan models -- those live in dev-tests/.
 # =============================================================================

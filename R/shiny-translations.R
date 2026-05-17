@@ -48,7 +48,7 @@
     menu_spatial     = "Spatial Setup",
     menu_update      = "Update Model",
 
-    # ---- Spatial setup tab (v1.0.0) ----
+    # ---- Spatial setup tab ----
     spatial_intro_title    = "About Spatial Setup",
     spatial_intro_text     = paste0(
       "Configure the spatial neighbourhood structure used by CAR and ",
@@ -132,8 +132,8 @@
     label_predictors = "Predictor variables",
     label_family     = "Distribution family",
     label_link       = "Link function",
-    label_sre        = "Spatial area variable (optional)",
-    label_sre_type   = "Spatial model type",
+    label_spatial_var        = "Spatial area variable (optional)",
+    label_spatial_model   = "Spatial model type",
     label_M          = "Spatial weight matrix",
     label_chains     = "Number of chains",
     label_iter       = "Iterations per chain",
@@ -198,7 +198,7 @@
       "specify the model, run diagnostics, and benchmark the results."
     ),
     text_families_help = paste0(
-      "hbsaems v1.0.0 ships with a registry of distributions usable ",
+      "hbsaems 1.0.0 ships with a registry of distributions usable ",
       "via the hbm() family argument or the convenience wrappers ",
       "(hbm_lnln, hbm_binlogitnorm, hbm_betalogitnorm)."
     ),
@@ -237,7 +237,7 @@
     menu_spatial     = "Pengaturan Spasial",
     menu_update      = "Perbarui Model",
 
-    # ---- Spatial setup tab (v1.0.0) ----
+    # ---- Spatial setup tab ----
     spatial_intro_title    = "Tentang Pengaturan Spasial",
     spatial_intro_text     = paste0(
       "Konfigurasi struktur ketetanggaan spasial yang digunakan oleh ",
@@ -321,8 +321,8 @@
     label_predictors = "Variabel prediktor",
     label_family     = "Distribusi keluarga",
     label_link       = "Fungsi link",
-    label_sre        = "Variabel area spasial (opsional)",
-    label_sre_type   = "Tipe model spasial",
+    label_spatial_var        = "Variabel area spasial (opsional)",
+    label_spatial_model   = "Tipe model spasial",
     label_M          = "Matriks bobot spasial",
     label_chains     = "Jumlah chain",
     label_iter       = "Iterasi per chain",
@@ -387,7 +387,7 @@
       "model, jalankan diagnostik, dan benchmark hasil."
     ),
     text_families_help = paste0(
-      "hbsaems v1.0.0 menyediakan registry distribusi yang dapat digunakan ",
+      "hbsaems 1.0.0 menyediakan registry distribusi yang dapat digunakan ",
       "melalui argumen family dari hbm() atau wrapper khusus ",
       "(hbm_lnln, hbm_binlogitnorm, hbm_betalogitnorm)."
     ),

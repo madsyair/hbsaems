@@ -8,9 +8,19 @@ hbm_lnln(
   response,
   auxiliary = NULL,
   data,
-  sampling_var = NULL,
+  area_var = NULL,
+  spatial_var = NULL,
+  spatial_model = NULL,
+  car_type = NULL,
+  sar_type = NULL,
+  M = NULL,
+  sampling_variance = NULL,
   fixed_params = NULL,
   predictors = NULL,
+  sampling_var = NULL,
+  group = NULL,
+  sre = NULL,
+  sre_type = NULL,
   ...
 )
 }
@@ -24,7 +34,31 @@ names; corresponds to area-level covariates in SAE literature
 
 \item{data}{A \code{data.frame}.}
 
-\item{sampling_var}{Optional character.  Name of a column in \code{data}
+\item{area_var}{Optional character.  Name of a column in \code{data}
+identifying the small area / domain.  When supplied, an IID
+area-level random effect \code{(1 | area_var)} is added to the
+formula.  Default: \code{NULL}.}
+
+\item{spatial_var}{Optional character.  Name of a column in \code{data}
+identifying the spatial cluster (e.g. province).  Must be supplied
+together with \code{spatial_model} and \code{M}.  Default: \code{NULL}.}
+
+\item{spatial_model}{Optional character.  Type of spatial dependence:
+\code{"car"} (conditional autoregressive) or \code{"sar"}
+(simultaneous autoregressive).  Default: \code{NULL}.}
+
+\item{car_type}{Optional character.  CAR sub-type passed to \pkg{brms}:
+\code{"escar"}, \code{"esicar"}, \code{"icar"} (intrinsic CAR;
+default when \code{spatial_model = "car"}), or \code{"bym2"}.}
+
+\item{sar_type}{Optional character.  SAR sub-type:
+\code{"lag"} (spatial-lag, default when \code{spatial_model = "sar"})
+or \code{"error"} (spatial-error).}
+
+\item{M}{Optional numeric matrix.  Spatial weight matrix.  Required
+when \code{spatial_model} is supplied.}
+
+\item{sampling_variance}{Optional character.  Name of a column in \code{data}
 containing the known per-area sampling variance \eqn{\psi_i} on the
 \strong{log scale}, i.e.\ the variance of \eqn{\log(\hat y_i)}.  When
 supplied, \eqn{\sigma_i = \sqrt{\psi_i}} is pinned via offset,
@@ -37,14 +71,24 @@ passing.  Default: \code{NULL} (sigma is random).}
 \item{fixed_params}{Optional named list pinning distributional
 parameters to known values.  See \code{\link{hbm}} for the spec
 format.  Allows power-user access to the same machinery used by
-\code{sampling_var}.}
+\code{sampling_variance}.}
 
 \item{predictors}{\strong{Deprecated.}  Use \code{auxiliary} instead.
 Kept for backward compatibility; will be removed in v2.0.0.}
 
+\item{sampling_var}{\strong{Deprecated.}  Use \code{sampling_variance}
+instead.  Kept for backward compatibility; will be removed in v2.0.0.}
+
+\item{group}{\strong{Deprecated.}  Use \code{area_var} instead.}
+
+\item{sre}{\strong{Deprecated.}  Use \code{spatial_var} instead.}
+
+\item{sre_type}{\strong{Deprecated.}  Use \code{spatial_model} instead.}
+
 \item{...}{Additional arguments forwarded to \code{\link{hbm_flex}}
-(e.g. \code{group}, \code{sre}, \code{prior_type}, \code{nonlinear},
-\code{handle_missing}, sampler controls).}
+(e.g.\ \code{prior_type}, \code{nonlinear}, \code{handle_missing},
+sampler controls such as \code{chains}, \code{iter}, \code{cores},
+\code{seed}).}
 }
 \value{
 An object of class \code{hbmfit}.
@@ -62,7 +106,7 @@ with the log-mean linked to auxiliary variables via
 \deqn{\log(\theta_i) = x_i^\top \boldsymbol{\beta} + u_i,
        \quad u_i \sim \mathcal{N}(0, \sigma_v^2).}
 
-When the user supplies \code{sampling_var = "psi_i"} (the column name of
+When the user supplies \code{sampling_variance = "psi_i"} (the column name of
 the known per-area sampling variance \eqn{\psi_i}), \eqn{\sigma_i =
 \sqrt{\psi_i}} is pinned for each area via an offset.  This recovers
 the Fay-Herriot-style lognormal model in which residual variability is
@@ -71,16 +115,16 @@ fully determined by the survey design.
 \section{Conflict policy}{
 
 When the residual standard deviation \eqn{\sigma_i = \sqrt{\psi_i}}
-is pinned via \code{sampling_var} (or via
+is pinned via \code{sampling_variance} (or via
 \code{fixed_params$sigma}), the function refuses any additional
 specification that would also set \eqn{\sigma}.  Specifically, all
 of the following are rejected with an informative error at
 construction time:
 \itemize{
-  \item \code{sampling_var} \emph{and} \code{fixed_params$sigma}.
-  \item \code{sampling_var} \emph{and} a user \code{prior} on
+  \item \code{sampling_variance} \emph{and} \code{fixed_params$sigma}.
+  \item \code{sampling_variance} \emph{and} a user \code{prior} on
         \code{class = "sigma"}.
-  \item \code{sampling_var} \emph{and} a \code{stanvars} sampling
+  \item \code{sampling_variance} \emph{and} a \code{stanvars} sampling
         statement involving \code{sigma}.
   \item \code{auxiliary} \emph{and} the deprecated \code{predictors}
         in the same call.
@@ -96,7 +140,7 @@ data("data_lnln")
 fit1 <- hbm_lnln(
   response   = "y_obs",
   auxiliary  = c("x1", "x2", "x3"),
-  group      = "group",
+  area_var   = "district",
   data       = data_lnln,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
@@ -106,8 +150,8 @@ fit1 <- hbm_lnln(
 fit2 <- hbm_lnln(
   response     = "y_obs",
   auxiliary    = c("x1", "x2", "x3"),
-  group        = "group",
-  sampling_var = "psi_i",
+  area_var     = "district",
+  sampling_variance = "psi_i",
   data         = data_lnln,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )

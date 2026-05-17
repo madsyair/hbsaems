@@ -4,7 +4,15 @@
 \alias{hbm_nonlinear}
 \title{Nonlinear-Term Configuration for HBSAE Models}
 \usage{
-hbm_nonlinear(terms, type = c("spline", "gp"), k = -1L, gp_scale = NULL)
+hbm_nonlinear(
+  terms,
+  type = c("spline", "gp"),
+  k = -1L,
+  spline_bs = "tp",
+  gp_cov = "exp_quad",
+  gp_c = NULL,
+  gp_scale = NULL
+)
 }
 \arguments{
 \item{terms}{Character vector of predictor names to be wrapped in
@@ -12,23 +20,41 @@ hbm_nonlinear(terms, type = c("spline", "gp"), k = -1L, gp_scale = NULL)
 
 \item{type}{Character.  \code{"spline"} (default) or \code{"gp"}.}
 
-\item{k}{Integer.  Spline basis dimension.  Default \code{-1L}
-(let \pkg{mgcv} choose).}
+\item{k}{Integer.  Basis dimension.  For splines: passed to
+\code{mgcv::s(..., k = ...)}; \code{-1L} (default) lets \pkg{mgcv}
+choose.  For GP: passed to \code{brms::gp(..., k = ...)} for the
+Hilbert-space approximate GP (Riutort-Mayol et al.\ 2020);
+\code{NA} = exact GP (slow, not recommended for \eqn{n > 100}).}
 
-\item{gp_scale}{Optional numeric.  GP length-scale (\code{c} argument
-of \code{\link[brms]{gp}}).}
+\item{spline_bs}{Character.  Spline basis type (\code{"tp"},
+\code{"cr"}, \code{"cs"}, \code{"ps"}, ...).  Default \code{"tp"}.}
+
+\item{gp_cov}{Character.  GP covariance function: \code{"exp_quad"},
+\code{"matern15"}, \code{"matern25"}, \code{"exponential"}.
+Default \code{"exp_quad"}.}
+
+\item{gp_c}{Numeric or NULL.  HSGP boundary-scale factor for
+\code{brms::gp(c = ...)}.}
+
+\item{gp_scale}{\strong{Deprecated.}  Use \code{gp_c} instead.}
 }
 \value{
-A named list of arguments for \code{\link{hbm}}, mapping to
-  \code{nonlinear}, \code{nonlinear_type}, \code{spline_k}, \code{gp_scale}.
+A named list of arguments for \code{\link{hbm}}, with class
+  \code{c("hbm_config_nonlinear", "hbm_config", "list")}.
 }
 \description{
 Bundles the nonlinear-term arguments of \code{\link{hbm}} into a
 single named list.  Same opt-in pattern as \code{\link{hbm_control}}.
 }
 \examples{
-nl_spline <- hbm_nonlinear(c("x1", "x3"), type = "spline", k = 5)
-nl_gp     <- hbm_nonlinear(c("x2"),       type = "gp",     gp_scale = 1.5)
+# Penalised regression spline (auto-chosen basis dimension):
+nl_spline <- hbm_nonlinear(c("x1", "x3"), type = "spline")
+
+# Spline with cubic-regression basis and fixed k:
+nl_cr <- hbm_nonlinear("x1", type = "spline", k = 8, spline_bs = "cr")
+
+# Hilbert-space approximate GP with Matern 5/2 covariance (recommended):
+nl_gp <- hbm_nonlinear("x2", type = "gp", k = 20, gp_cov = "matern25")
 
 }
 \seealso{

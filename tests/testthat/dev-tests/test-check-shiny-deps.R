@@ -50,7 +50,7 @@ test_that(".shiny_app_deps lists at least the documented critical pkgs", {
   expect_true("DT"             %in% names(cls$critical))
 })
 
-test_that(".shiny_app_deps lists key optional pkgs introduced in v0.3.0", {
+test_that(".shiny_app_deps lists key optional pkgs introduced in v1.0.0", {
   opt <- names(hbsaems:::.shiny_app_deps()$optional)
   expect_true("sf"   %in% opt)
   expect_true("spdep" %in% opt)

@@ -10,9 +10,9 @@ hbm_flex(
   auxiliary = NULL,
   data,
   addition_var = NULL,
-  group = NULL,
-  sre = NULL,
-  sre_type = NULL,
+  area_var = NULL,
+  spatial_var = NULL,
+  spatial_model = NULL,
   car_type = NULL,
   sar_type = NULL,
   M = NULL,
@@ -25,12 +25,18 @@ hbm_flex(
   hs_scale_global = NULL,
   hs_scale_slab = 2,
   hs_par_ratio = NULL,
+  hs_autoscale = TRUE,
   r2d2_mean_R2 = 0.5,
   r2d2_prec_R2 = 2,
   r2d2_cons_D2 = NULL,
+  r2d2_autoscale = TRUE,
   nonlinear = NULL,
   nonlinear_type = "spline",
   spline_k = -1L,
+  spline_bs = "tp",
+  gp_k = NA_integer_,
+  gp_cov = "exp_quad",
+  gp_c = NULL,
   gp_scale = NULL,
   handle_missing = NULL,
   m = 5L,
@@ -45,6 +51,9 @@ hbm_flex(
   aux_args = NULL,
   stanvars = NULL,
   predictors = NULL,
+  group = NULL,
+  sre = NULL,
+  sre_type = NULL,
   ...
 )
 }
@@ -63,18 +72,62 @@ variables; corresponds to area-level covariates in SAE literature.}
 variable (e.g.\ trials for binomial).  Required when the family spec
 has \code{has_addition_term = TRUE}.}
 
-\item{group, sre, sre_type, car_type, sar_type, M}{Random/spatial effect
-arguments forwarded to \code{\link{hbm}}.}
+\item{area_var}{Character or \code{NULL}.  Name of the column in
+\code{data} identifying the areas; if supplied, adds
+\code{(1 | area_var)} as an IID random intercept (Fay-Herriot).}
 
-\item{prior, prior_type, hs_df, hs_df_global, hs_df_slab, hs_scale_global, hs_scale_slab, hs_par_ratio, r2d2_mean_R2, r2d2_prec_R2, r2d2_cons_D2}{Shrinkage prior arguments forwarded to \code{\link{hbm}}.}
+\item{spatial_var, spatial_model, car_type, sar_type, M}{Spatial
+random-effect arguments forwarded to \code{\link{hbm}}.  See
+\code{?hbm} for a full description.}
+
+\item{prior, prior_type, hs_df, hs_df_global, hs_df_slab, hs_scale_global, hs_scale_slab, hs_par_ratio, hs_autoscale, r2d2_mean_R2, r2d2_prec_R2, r2d2_cons_D2, r2d2_autoscale}{Shrinkage prior arguments forwarded to \code{\link{hbm}}.  When the
+formula contains \code{s()} or \code{gp()} terms, the prior is
+automatically cascaded to the corresponding parameter classes
+(\code{"sds"}, \code{"sdgp"}) via the brms \code{main = TRUE} pattern.}
 
 \item{fixed_params}{Optional named list pinning distributional
 parameters to known values.  See \code{\link{hbm}} for the spec
 format.  Allows power-user access to the generic fixed-parameter
 machinery (works with custom families too).}
 
-\item{nonlinear, nonlinear_type, spline_k, gp_scale}{Nonlinear-term
-arguments forwarded to \code{\link{hbm}}.}
+\item{nonlinear}{Character vector of variable names to include as
+smooth/nonlinear terms (rather than linear).  Variables listed here
+that also appear in \code{auxiliary} are modelled nonlinearly only.}
+
+\item{nonlinear_type}{Character.  \code{"spline"} (penalised regression
+spline via \pkg{mgcv}, default) or \code{"gp"} (Gaussian process via
+\pkg{brms}).}
+
+\item{spline_k}{Integer.  Spline basis dimension passed to
+\code{mgcv::s(..., k = ...)}.  \code{-1} (default) lets \pkg{mgcv}
+choose automatically.  For SAE typically \code{k = 8} to \code{15}.}
+
+\item{spline_bs}{Character.  Spline basis type passed to
+\code{mgcv::s(..., bs = ...)}.  Defaults to \code{"tp"} (thin-plate
+regression spline).  Set \code{"cr"} (cubic regression) for better
+numerical stability with correlated auxiliary variables.  Other
+choices: \code{"cs"} (cubic with shrinkage), \code{"ps"} (P-splines).}
+
+\item{gp_k}{Integer or \code{NA}.  Number of basis functions for the
+Hilbert-space approximate GP (Riutort-Mayol et al.\ 2020).
+\code{NA} (default) = exact GP, scales \eqn{O(n^3)} and is
+\strong{not recommended for} \eqn{n > 100} areas.  Integer
+\code{gp_k = 10}--\code{25} is typical for SAE applications and
+dramatically improves convergence and runtime.}
+
+\item{gp_cov}{Character.  Covariance function: \code{"exp_quad"}
+(squared exponential / RBF, default), \code{"matern15"}
+(Matern 3/2), \code{"matern25"} (Matern 5/2, often more numerically
+stable than RBF), \code{"exponential"}.}
+
+\item{gp_c}{Numeric.  Hilbert-space GP boundary-scale factor passed
+to \code{brms::gp(c = ...)}.  Default brms value is 5/4 (= 1.25);
+increase if the GP appears truncated at domain boundaries.  Only
+relevant when \code{gp_k} is set.}
+
+\item{gp_scale}{\strong{Deprecated.}  Use \code{gp_c} instead.  The
+old name suggested a length-scale interpretation but actually
+mapped to the boundary-scale factor.}
 
 \item{handle_missing, m, mice_args}{Missing-data arguments.  When
 \code{handle_missing = NULL} the wrapper auto-selects a strategy
@@ -95,6 +148,12 @@ through to \pkg{brms}.  When the family has an
 
 \item{predictors}{\strong{Deprecated.}  Use \code{auxiliary} instead.
 Kept for backward compatibility; will be removed in v2.0.0.}
+
+\item{group}{\strong{Deprecated.}  Use \code{area_var} instead.}
+
+\item{sre}{\strong{Deprecated.}  Use \code{spatial_var} instead.}
+
+\item{sre_type}{\strong{Deprecated.}  Use \code{spatial_model} instead.}
 
 \item{...}{Additional arguments forwarded to \code{\link[brms]{brm}}.}
 }
@@ -142,7 +201,7 @@ fit <- hbm_flex(
   family_key = "lognormal",
   response   = "y_obs",
   auxiliary  = c("x1", "x2", "x3"),
-  group      = "group",            # area-level random effect: (1 | group)
+  area_var   = "district",         # area-level random effect: (1 | district)
   data       = data_lnln,
   chains = 2, iter = 1000, refresh = 0
 )

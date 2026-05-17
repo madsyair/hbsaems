@@ -7,7 +7,8 @@
 \format{
 A data frame with 100 rows and 13 variables:
 \describe{
-  \item{\code{group}}{Area identifier (1-100).}
+  \item{\code{district}}{District identifier (\code{"district_001"} ..
+    \code{"district_100"}).}
   \item{\code{x1}, \code{x2}, \code{x3}}{Auxiliary covariates.}
   \item{\code{u_true}}{True area-level random effect (log scale).}
   \item{\code{teta_true}}{True linear predictor (log scale).}
@@ -17,7 +18,9 @@ A data frame with 100 rows and 13 variables:
   \item{\code{lambda_dir}}{Direct estimator scale parameter.}
   \item{\code{y_log_obs}}{Observed value on the log scale.}
   \item{\code{psi_i}}{Sampling variance on the log scale.}
-  \item{\code{sre}}{Spatial-random-effect grouping variable.}
+  \item{\code{regency}}{Regency identifier (\code{"regency_01"} ..
+    \code{"regency_05"}) -- spatial cluster level.  Pair with
+    \code{adjacency_matrix_car_regency}.}
 }
 }
 \source{
@@ -27,7 +30,7 @@ Simulated.
 data_lnln
 }
 \description{
-A simulated dataset for 100 areas under a Lognormal-Lognormal model.
-Suitable for strictly positive, right-skewed outcomes.
+A simulated dataset for 100 districts under a Lognormal-Lognormal
+model.  Suitable for strictly positive, right-skewed outcomes.
 }
 \keyword{datasets}

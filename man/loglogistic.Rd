@@ -38,20 +38,54 @@ Numeric vector of the same length as the input.
 }
 \description{
 Density, distribution function, quantile function, and random generation
-for the loglogistic distribution with scale parameter \code{mu > 0} and
-shape parameter \code{beta > 0}.
+for the loglogistic (Fisk) distribution with scale parameter
+\code{mu > 0} and shape parameter \code{beta > 0}.
 }
-\details{
-The probability density function is
-\deqn{f(y) = (\beta/\mu) (y/\mu)^{\beta - 1}
-         \{1 + (y/\mu)^{\beta}\}^{-2}, \quad y > 0,}
-with cumulative distribution function
-\deqn{F(y) = \{1 + (y/\mu)^{-\beta}\}^{-1}.}
+\section{Parameterisation}{
+
+This implementation follows the canonical Wikipedia / \pkg{flexsurv} /
+\pkg{eha} parameterisation (Jackson 2016; Bennett 1983):
+\deqn{Y \sim \mathrm{LogLogistic}(\mu, \beta),
+  \quad \mu > 0, \quad \beta > 0,}
+with probability density function
+\deqn{f(y \mid \mu, \beta) =
+  \frac{(\beta/\mu)(y/\mu)^{\beta - 1}}{\{1 + (y/\mu)^{\beta}\}^{2}},
+  \quad y > 0,}
+cumulative distribution function
+\deqn{F(y \mid \mu, \beta) = \{1 + (y/\mu)^{-\beta}\}^{-1},}
+median \eqn{\mu}, and mean
+\eqn{E[Y] = \mu \pi / [\beta \sin(\pi / \beta)]} when
+\eqn{\beta > 1}.  Equivalently, \eqn{\log(Y) \sim
+  \mathrm{Logistic}(\log\mu, \, 1/\beta)}.
+
+\strong{Why not match the brms \code{lognormal} convention?}  The
+\code{brms::lognormal()} family parameterises \eqn{\mu} on the log
+scale (so \eqn{\mu} is unconstrained and uses an identity link).
+Doing the same for the log-logistic would require redefining
+\eqn{\mu = \log(\mathrm{median}(Y))} -- which deviates from every
+standard R reference (\pkg{flexsurv}, \pkg{eha}, Wolfram, scipy,
+Stata).  We deliberately follow the survival-analysis convention
+instead: \eqn{\mu} is the median (positive, log link), keeping
+interpretation simple and posterior summaries comparable with the
+rest of the R survival ecosystem.
 }
+
 \examples{
 dloglogistic(c(0.5, 1, 2),  mu = 1, beta = 2)
 ploglogistic(c(0.5, 1, 2),  mu = 1, beta = 2)
 qloglogistic(c(0.25, 0.75), mu = 1, beta = 2)
 set.seed(1); rloglogistic(5, mu = 1, beta = 2)
 
+}
+\references{
+Bennett, S. (1983). Log-logistic regression models for survival data.
+\emph{Journal of the Royal Statistical Society, Series C}, 32(2),
+165-171. \doi{10.2307/2347295}
+
+Jackson, C. H. (2016). flexsurv: A platform for parametric survival
+modelling in R. \emph{Journal of Statistical Software}, 70(8), 1-33.
+\doi{10.18637/jss.v070.i08}
+
+Kleiber, C., & Kotz, S. (2003). \emph{Statistical Size Distributions
+in Economics and Actuarial Sciences}.  Wiley.
 }

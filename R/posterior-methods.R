@@ -31,7 +31,7 @@ NULL
 #' library(brms)
 #' data("data_fhnorm")
 #' model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
-#'              re = ~ (1 | group),    # area-level random effect
+#'              re = ~ (1 | regency),    # area-level random effect
 #'              chains = 2, iter = 1000, warmup = 500,
 #'              cores = 1, seed = 1, refresh = 0)
 #' draws <- posterior_draws(model)
@@ -74,7 +74,7 @@ posterior_draws.hbmfit <- function(model, params = NULL, ...) {
 #' # `sample_prior = "yes"` works best when all coefficients have a
 #' # proper prior; supply explicit priors on the regression class.
 #' model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
-#'              re = ~ (1 | group),    # area-level random effect
+#'              re = ~ (1 | regency),    # area-level random effect
 #'              sample_prior = "yes",
 #'              prior        = c(
 #'                brms::prior(normal(0, 1), class = "b"),
@@ -134,7 +134,7 @@ prior_draws.hbmfit <- function(x, ...) {
 #' library(brms)
 #' data("data_fhnorm")
 #' model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
-#'              re = ~ (1 | group),    # area-level random effect
+#'              re = ~ (1 | regency),    # area-level random effect
 #'              chains = 2, iter = 1000, warmup = 500,
 #'              cores = 1, seed = 1, refresh = 0)
 #' posterior_interval(model, prob = 0.90)
@@ -186,7 +186,7 @@ posterior_interval.hbmfit <- function(object, prob = 0.95,
 #' library(brms)
 #' data("data_fhnorm")
 #' model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
-#'              re = ~ (1 | group),    # area-level random effect
+#'              re = ~ (1 | regency),    # area-level random effect
 #'              chains = 2, iter = 1000, warmup = 500,
 #'              cores = 1, seed = 1, refresh = 0)
 #' s <- posterior_summary_hbm(model)

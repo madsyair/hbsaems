@@ -18,7 +18,7 @@ suppressPackageStartupMessages(library(hbsaems))
 # 
 # fit_deleted <- hbm(
 #   formula        = brms::bf(y ~ x1 + x2 + x3),
-#   re             = ~ (1 | group),
+#   re             = ~ (1 | regency),
 #   data           = data_miss_y,
 #   handle_missing = "deleted",
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -30,6 +30,7 @@ suppressPackageStartupMessages(library(hbsaems))
 # 
 # hbm(brms::bf(y ~ x1 + x2 + x3),
 #     data           = data_miss_x,
+#     re             = ~ (1 | regency),
 #     handle_missing = "deleted")
 
 ## ----mi-x---------------------------------------------------------------------
@@ -38,7 +39,7 @@ suppressPackageStartupMessages(library(hbsaems))
 # 
 # fit_mi <- hbm(
 #   formula        = brms::bf(y ~ x1 + x2 + x3),
-#   re             = ~ (1 | group),
+#   re             = ~ (1 | regency),
 #   data           = data_miss_x,
 #   handle_missing = "multiple",
 #   m              = 5,                       # 5 imputations
@@ -52,7 +53,7 @@ suppressPackageStartupMessages(library(hbsaems))
 # 
 # fit_mi_both <- hbm(
 #   formula        = brms::bf(y ~ x1 + x2 + x3),
-#   re             = ~ (1 | group),
+#   re             = ~ (1 | regency),
 #   data           = data_miss_both,
 #   handle_missing = "multiple"
 # )
@@ -64,7 +65,7 @@ suppressPackageStartupMessages(library(hbsaems))
 # # Gaussian family -> auto-converts to "model" with | mi() on LHS
 # fit_auto1 <- hbm(
 #   formula        = brms::bf(y ~ x1 + x2 + x3),
-#   re             = ~ (1 | group),
+#   re             = ~ (1 | regency),
 #   data           = data_miss_y_only,
 #   handle_missing = "multiple"
 # )
@@ -72,7 +73,7 @@ suppressPackageStartupMessages(library(hbsaems))
 ## ----mi-args------------------------------------------------------------------
 # fit_mi2 <- hbm(
 #   formula        = brms::bf(y ~ x1 + x2 + x3),
-#   re             = ~ (1 | group),
+#   re             = ~ (1 | regency),
 #   data           = data_miss_x,
 #   handle_missing = "multiple",
 #   m              = 10,
@@ -88,17 +89,22 @@ suppressPackageStartupMessages(library(hbsaems))
 # fit_model <- hbm(
 #   formula        = brms::bf(y  | mi() ~ mi(x1) + x2 + x3) +
 #                    brms::bf(x1 | mi() ~ x2 + x3),
-#   re             = ~ (1 | group),
+#   re             = ~ (1 | regency),
 #   data           = data_miss_both,
 #   handle_missing = "model",
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 # )
 
 ## ----auto---------------------------------------------------------------------
+# # Build a data frame with some missing values to demonstrate
+# data("data_lnln")
+# data_with_some_na <- data_lnln
+# data_with_some_na$x1[c(3, 14, 27)] <- NA    # missing covariate
+# 
 # fit_auto <- hbm_lnln(
 #   response  = "y_obs",
 #   auxiliary = c("x1", "x2", "x3"),
-#   group     = "group",
+#   area_var  = "district",
 #   data      = data_with_some_na,
 #   # handle_missing not given
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1

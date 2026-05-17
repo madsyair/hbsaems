@@ -10,8 +10,8 @@ hbm(
   hb_link = "identity",
   link_phi = "log",
   re = NULL,
-  sre = NULL,
-  sre_type = NULL,
+  spatial_var = NULL,
+  spatial_model = NULL,
   car_type = NULL,
   sar_type = NULL,
   M = NULL,
@@ -25,12 +25,18 @@ hbm(
   hs_scale_global = NULL,
   hs_scale_slab = 2,
   hs_par_ratio = NULL,
+  hs_autoscale = TRUE,
   r2d2_mean_R2 = 0.5,
   r2d2_prec_R2 = 2,
   r2d2_cons_D2 = NULL,
+  r2d2_autoscale = TRUE,
   nonlinear = NULL,
   nonlinear_type = "spline",
   spline_k = -1L,
+  spline_bs = "tp",
+  gp_k = NA_integer_,
+  gp_cov = "exp_quad",
+  gp_c = NULL,
   gp_scale = NULL,
   handle_missing = NULL,
   m = 5L,
@@ -41,6 +47,8 @@ hbm(
   warmup = floor(iter/2),
   cores = 1L,
   sample_prior = "no",
+  sre = NULL,
+  sre_type = NULL,
   stanvars = NULL,
   ...
 )
@@ -66,35 +74,40 @@ related families.}
 \item{re}{An optional one-sided \code{formula} specifying group-level
 (random) effects, e.g. \code{~(1|area)}.  Must follow standard
 \code{lme4}-style syntax: \code{~ (1|group1) + (1|group2)}.  If
-\code{NULL} (default) \emph{and} \code{sre_type} is also \code{NULL},
-the function emits a warning recommending an area-level random
-effect, since a Fay-Herriot SAE model with neither IID nor spatial
-area effects degenerates to fixed-effects regression and does not
-borrow strength across areas.  The warning can be silenced with
+\code{NULL} (default) \emph{and} \code{spatial_model} is also
+\code{NULL}, the function emits a warning recommending an area-level
+random effect, since a Fay-Herriot SAE model with neither IID nor
+spatial area effects degenerates to fixed-effects regression and does
+not borrow strength across areas.  The warning can be silenced with
 \code{suppressWarnings()} if a fixed-effects-only baseline is
 intentional.}
 
-\item{sre}{Character.  Name of the grouping variable used for spatial
-random effects.  Must be supplied \emph{together with} \code{sre_type}
-and \code{M}; providing only one of them is an error.}
+\item{spatial_var}{Character.  Name of the column in \code{data} that
+identifies the spatial areas (e.g. \code{"regency"} or
+\code{"province"}).  Must be supplied \emph{together with}
+\code{spatial_model} and \code{M}; providing only one of them is an
+error.  Distinct from \code{re}: \code{re} is a formula for IID
+random effects, whereas \code{spatial_var} is a column name (string)
+for the spatially-structured random effect.}
 
-\item{sre_type}{Character.  Type of spatial model: \code{"car"}
+\item{spatial_model}{Character.  Type of spatial model: \code{"car"}
 (Conditional Autoregressive) or \code{"sar"} (Simultaneous
-Autoregressive).  Must be supplied \emph{together with} \code{sre}
-and \code{M}; providing only one of them is an error.}
+Autoregressive).  Must be supplied \emph{together with}
+\code{spatial_var} and \code{M}; providing only one of them is an
+error.}
 
 \item{car_type}{Character.  CAR subtype passed to \code{brms}: one of
 \code{"escar"} (exact sparse CAR), \code{"esicar"} (exact sparse
 intrinsic CAR), \code{"icar"} (intrinsic CAR), or \code{"bym2"}.
-Defaults to \code{"icar"} when \code{sre_type = "car"}.}
+Defaults to \code{"icar"} when \code{spatial_model = "car"}.}
 
 \item{sar_type}{Character.  SAR subtype: \code{"lag"} (SAR of the response
 values) or \code{"error"} (SAR of the residuals).  Defaults to
-\code{"lag"} when \code{sre_type = "sar"}.}
+\code{"lag"} when \code{spatial_model = "sar"}.}
 
 \item{M}{Spatial matrix supplied as \code{data2} to \code{brms}.  For CAR
 this must be a binary adjacency matrix; for SAR a spatial weight matrix.
-Row names must match the levels of the spatial grouping variable.}
+Row names must match the levels of \code{spatial_var}.}
 
 \item{data}{A data frame containing all variables referenced in
 \code{formula}.}
@@ -123,22 +136,33 @@ an explicit prior is an error.  Typical use cases include pinning
 Fay--Herriot-style models with known sampling variance.}
 
 \item{prior_type}{Character.  Global-local shrinkage prior applied to all
-regression coefficients (\code{class = "b"}).  One of:
-\describe{
-  \item{\code{"default"}}{No shrinkage prior is added; the \code{prior}
-    argument governs everything (default).}
-  \item{\code{"horseshoe"}}{Regularised horseshoe prior
-    (Piironen & Vehtari 2017).  Encourages exact sparsity while allowing
-    large signals through.  Controlled by \code{hs_df},
-    \code{hs_df_global}, \code{hs_df_slab}, \code{hs_scale_global},
-    \code{hs_scale_slab}, and \code{hs_par_ratio}.}
-  \item{\code{"r2d2"}}{R2D2 prior (Zhang et al. 2022).  Places a prior
-    directly on the model \eqn{R^2} and distributes explained variance
-    across predictors via a Dirichlet decomposition.  Controlled by
-    \code{r2d2_mean_R2}, \code{r2d2_prec_R2}, and \code{r2d2_cons_D2}.}
-}
-If \code{prior} already contains a global \code{class = "b"} entry,
-\code{prior_type} is ignored and a warning is issued.}
+  regression coefficients (\code{class = "b"}).  One of:
+  \describe{
+    \item{\code{"default"}}{No shrinkage prior is added; the \code{prior}
+      argument governs everything (default).}
+    \item{\code{"horseshoe"}}{Regularised horseshoe prior
+      (Piironen & Vehtari 2017).  Encourages exact sparsity while allowing
+      large signals through.  Controlled by \code{hs_df},
+      \code{hs_df_global}, \code{hs_df_slab}, \code{hs_scale_global},
+      \code{hs_scale_slab}, \code{hs_par_ratio}, and \code{hs_autoscale}.}
+    \item{\code{"r2d2"}}{R2D2 prior (Zhang et al. 2022).  Places a prior
+      directly on the model \eqn{R^2} and distributes explained variance
+      across predictors via a Dirichlet decomposition.  Controlled by
+      \code{r2d2_mean_R2}, \code{r2d2_prec_R2}, \code{r2d2_cons_D2},
+      and \code{r2d2_autoscale}.}
+  }
+  If \code{prior} already contains a global \code{class = "b"} entry,
+  \code{prior_type} is ignored and a warning is issued.
+
+  \strong{Cascading to smooth and GP terms.}  When the formula
+  contains \code{s()} or \code{gp()} terms, the shrinkage prior is
+  automatically extended to the corresponding parameter classes
+  \code{"sds"} (spline SDs) and/or \code{"sdgp"} (GP SDs) using the
+  brms-canonical \code{main = TRUE} pattern.  The resulting prior
+  regularises ALL components jointly -- linear coefficients,
+  nonlinear smooth wiggliness, and GP marginal variance -- which is
+  the principled approach to global-local shrinkage in models that
+  combine parametric and nonparametric components.}
 
 \item{hs_df}{Numeric \eqn{> 0}.  Local half-\eqn{t} degrees of freedom for
 the horseshoe prior (default \code{1} = half-Cauchy).}
@@ -151,7 +175,8 @@ freedom (default \code{4}).}
 
 \item{hs_scale_global}{Numeric \eqn{> 0} or \code{NULL}.  Scale for the
 global half-\eqn{t} prior.  \code{NULL} (default) lets \code{brms}
-compute it automatically from the number of predictors.}
+compute it automatically from the number of predictors via
+\code{hs_autoscale}.}
 
 \item{hs_scale_slab}{Numeric \eqn{> 0}.  Scale for the slab component
 (default \code{2}).}
@@ -159,6 +184,11 @@ compute it automatically from the number of predictors.}
 \item{hs_par_ratio}{Numeric \eqn{> 0} or \code{NULL}.  Expected ratio of
 non-zero to total coefficients.  \code{NULL} (default) treats all
 coefficients as potentially non-zero.}
+
+\item{hs_autoscale}{Logical.  Whether \code{brms} should auto-scale the
+horseshoe prior using the residual SD \eqn{\sigma}.  Default
+\code{TRUE}; set to \code{FALSE} for non-continuous responses
+(binomial, Poisson, ...) where \eqn{\sigma} is not defined.}
 
 \item{r2d2_mean_R2}{Numeric in \eqn{(0, 1)}.  Prior mean of the model
 \eqn{R^2} (default \code{0.5}).}
@@ -168,8 +198,12 @@ coefficients as potentially non-zero.}
 \code{r2d2_mean_R2}.}
 
 \item{r2d2_cons_D2}{Numeric \eqn{> 0} or \code{NULL}.  Dirichlet
-concentration for the D2 component.  \code{NULL} (default) corresponds to
-\code{0.5}, yielding a uniform distribution over the simplex.}
+concentration for the D2 component.  \code{NULL} (default) uses the
+\code{brms} default \code{0.5}.}
+
+\item{r2d2_autoscale}{Logical.  Whether \code{brms} should auto-scale
+the R2D2 prior using \eqn{\sigma}.  Default \code{TRUE}; set to
+\code{FALSE} for non-continuous responses.}
 
 \item{nonlinear}{Character vector or \code{NULL}.  Names of predictor
 variables to model with a smooth nonlinear term.  Each listed variable
@@ -180,19 +214,47 @@ argument -- the modification is applied automatically.  Default \code{NULL}
 (all predictors remain linear).}
 
 \item{nonlinear_type}{Character.  Smooth term family to use.  One of
-\code{"spline"} (default, thin-plate regression spline via
+\code{"spline"} (default, penalised regression spline via
 \code{mgcv::s()}) or \code{"gp"} (Gaussian process via
 \code{brms::gp()}).}
 
-\item{spline_k}{Integer.  Spline basis dimension (number of knots).
-\code{-1L} (default) lets \pkg{mgcv} choose automatically.  Values
-\eqn{\geq 3} are also accepted.  Ignored when
-\code{nonlinear_type = "gp"}.}
+\item{spline_k}{Integer.  Spline basis dimension (number of knots)
+passed to \code{mgcv::s(..., k = ...)}.  \code{-1L} (default) lets
+\pkg{mgcv} choose automatically.  For SAE typically \code{k = 8} to
+\code{15}.  Ignored when \code{nonlinear_type = "gp"}.}
 
-\item{gp_scale}{Numeric \eqn{> 0} or \code{NULL}.  Length-scale
-hyperparameter (\code{c} in \code{brms::gp()}).  \code{NULL} (default)
-uses the \code{brms} default.  Ignored when
-\code{nonlinear_type = "spline"}.}
+\item{spline_bs}{Character.  Spline basis type passed to
+\code{mgcv::s(..., bs = ...)}.  Default \code{"tp"} (thin-plate
+regression spline, the \pkg{mgcv} default).  Common alternatives:
+\code{"cr"} (cubic regression spline; often more stable for SAE
+with correlated auxiliary variables), \code{"cs"} (cubic with
+shrinkage; allows variable selection), \code{"ps"} (P-splines).
+Ignored when \code{nonlinear_type = "gp"}.}
+
+\item{gp_k}{Integer or \code{NA}.  Number of basis functions for the
+Hilbert-space approximate GP (Riutort-Mayol et al.\ 2020), passed
+to \code{brms::gp(..., k = ...)}.  \code{NA} (default) = exact GP
+which scales \eqn{O(n^3)} and is \strong{not recommended for}
+\eqn{n > 100} areas; an immediate warning is emitted in that case
+pointing to this argument.  Integer values \code{10}--\code{25}
+are typical for SAE and dramatically improve convergence and
+runtime.  Ignored when \code{nonlinear_type = "spline"}.}
+
+\item{gp_cov}{Character.  GP covariance function passed to
+\code{brms::gp(..., cov = ...)}: \code{"exp_quad"} (squared
+exponential / RBF, default), \code{"matern15"} (Matern 3/2),
+\code{"matern25"} (Matern 5/2; often more numerically stable for
+SAE than RBF), or \code{"exponential"}.}
+
+\item{gp_c}{Numeric \eqn{> 0} or \code{NULL}.  Hilbert-space GP
+boundary-scale factor passed to \code{brms::gp(..., c = ...)}.
+Default brms value is \eqn{5/4} (= 1.25); increase if the GP
+appears truncated at the domain boundaries.  Only relevant when
+\code{gp_k} is supplied.}
+
+\item{gp_scale}{\strong{Deprecated.}  Use \code{gp_c} instead.  The
+old name suggested a length-scale interpretation but actually
+mapped to the HSGP boundary-scale factor.  Will be removed in v2.0.0.}
 
 \item{handle_missing}{Character or \code{NULL}.  Strategy for missing data.
 One of \code{"deleted"}, \code{"multiple"}, or \code{"model"} (see
@@ -224,6 +286,12 @@ other strategies.}
 \item{sample_prior}{Character.  Whether to draw from the prior
 distribution.  One of \code{"no"} (default), \code{"yes"}, or
 \code{"only"}.}
+
+\item{sre}{\strong{Deprecated.}  Use \code{spatial_var} instead.  Kept
+for backward compatibility; will be removed in v2.0.0.}
+
+\item{sre_type}{\strong{Deprecated.}  Use \code{spatial_model} instead.
+Kept for backward compatibility; will be removed in v2.0.0.}
 
 \item{stanvars}{An optional \code{\link[brms]{stanvar}} object (or a list
 of such objects) supplying additional Stan code, data, or parameters.
@@ -270,7 +338,7 @@ supported.
 
 \describe{
   \item{\strong{CAR (Conditional Autoregressive; Besag 1974)}}{
-    Specified by \code{sre_type = "car"}.  The joint distribution of the
+    Specified by \code{spatial_model = "car"}.  The joint distribution of the
     spatial effects is
     \deqn{u \sim \mathcal{N}\bigl(0,\, \sigma_u^2 (D - \rho W)^{-1}\bigr),}
     where \eqn{W} is a binary adjacency matrix (1 if neighbour, 0
@@ -281,7 +349,7 @@ supported.
     Riebler et al.\ 2016, recommended for disconnected graphs).
   }
   \item{\strong{SAR (Simultaneous Autoregressive; Whittle 1954, Anselin 1988)}}{
-    Specified by \code{sre_type = "sar"}.  The model is
+    Specified by \code{spatial_model = "sar"}.  The model is
     \deqn{u = \rho W u + \varepsilon,
        \quad \varepsilon \sim \mathcal{N}(0, \sigma_\varepsilon^2 I),}
     where \eqn{W} is row-standardised so that
@@ -340,6 +408,127 @@ If data are Missing Not At Random (MNAR), none of the above strategies
 applies directly; sensitivity analyses and explicit missingness models are
 recommended.
 }
+\section{Conflict resolution between prior, prior_type, fixed_params, and stanvars}{
+
+\code{hbm()} provides four orthogonal mechanisms to influence the
+prior / parameter specification of the underlying \pkg{brms} model:
+\enumerate{
+  \item \code{prior}        -- explicit \code{brmsprior} object(s).
+  \item \code{prior_type}   -- global-local shrinkage prior on the
+                                regression coefficients (cascades to
+                                \code{"sds"} / \code{"sdgp"} when
+                                splines or GPs are present).
+  \item \code{fixed_params} -- pin distributional parameters to known
+                                values via the offset trick.
+  \item \code{stanvars}     -- inject custom Stan code blocks.
+}
+Combining these without rules in mind can produce unidentified models
+or compile-time errors.  \code{hbm()} therefore enforces the
+following precedence and conflict policy:
+\itemize{
+  \item \strong{\code{prior} vs \code{prior_type}.}  If the user
+        supplies a \emph{global} (no \code{coef =}) prior on
+        \code{class = "b"}, \code{"sds"}, or \code{"sdgp"},
+        \code{prior_type} is silently dropped for that class and a
+        warning is emitted.  Coefficient-specific user priors
+        (\code{coef = "x1"}) are kept alongside the shrinkage prior
+        without warning.
+  \item \strong{\code{fixed_params} vs \code{prior}.}  A pinned
+        parameter is removed from the sampler; supplying a prior on
+        that same parameter therefore has no effect and is treated
+        as a user error -- an informative \code{stop()} is issued.
+  \item \strong{\code{fixed_params} vs \code{stanvars}.}  Same logic
+        as above: a sampling statement in \code{stanvars} that
+        targets a pinned parameter would fail at Stan compile time;
+        \code{hbm()} catches this and stops with a clear message.
+  \item \strong{Wrapper sugar (e.g. \code{sampling_variance} in
+        \code{hbm_lnln}).}  Wrappers translate their domain-specific
+        arguments into \code{fixed_params} entries before delegating
+        to \code{hbm()}, so the same conflict policy applies
+        transitively.  Supplying both \code{sampling_variance =
+        "psi"} and a user prior on \code{class = "sigma"} therefore
+        also errors.
+}
+The intent is to fail fast and explicitly rather than silently
+producing an unidentified or mis-specified model.
+}
+
+\section{Convergence advice for SAE practitioners}{
+
+Common convergence pathologies in hierarchical Bayesian SAE models
+and how to address them.  Run \code{\link{convergence_check}()} after
+fitting to inspect \eqn{\hat R}, effective sample size (ESS), and
+divergent transitions.
+
+\strong{1. Default sampler settings (recommended starting point).}
+\itemize{
+  \item \code{chains = 4}, \code{iter = 4000}, \code{warmup = 2000}
+  \item \code{control = list(adapt_delta = 0.95, max_treedepth = 12)}
+  \item \code{cores = parallel::detectCores() - 1}
+}
+
+\strong{2. Divergent transitions.}  Most common cause is the
+\emph{funnel} geometry of hierarchical variance parameters.
+\itemize{
+  \item First-line: increase \code{adapt_delta} to \code{0.99}.
+  \item If still diverging, increase \code{warmup} and consider a
+        tighter prior on the area-level standard deviation
+        (\code{sd} class), e.g.\ \code{set_prior("normal(0, 0.5)",
+        class = "sd")}.
+  \item For Beta/Binomial logit-normal models, prior on the random
+        intercept SD should also be on the logit scale.
+}
+
+\strong{3. Low effective sample size (ESS < 1000).}
+\itemize{
+  \item Increase \code{iter} (e.g.\ to \code{6000}); this is the
+        single most reliable fix.
+  \item Centre and scale the auxiliary variables before fitting.
+  \item Check for prior--data conflict via \pkg{priorsense}; see
+        \code{?prior_check}.
+}
+
+\strong{4. Gaussian processes.}
+\itemize{
+  \item \strong{Exact GP scales \eqn{O(n^3)}.}  For \eqn{n > 100}
+        areas, set \code{gp_k} to use the Hilbert-space approximate
+        GP (Riutort-Mayol et al.\ 2020).  A heuristic is
+        \code{gp_k = ceiling(min(n / 5, 25))}.
+  \item Try \code{gp_cov = "matern25"} (Matern 5/2) if the default
+        squared-exponential covariance is numerically unstable.
+  \item The boundary-scale factor \code{gp_c} (brms default 1.25)
+        may need increasing if the posterior GP is truncated at
+        the domain edges.
+}
+
+\strong{5. Splines.}
+\itemize{
+  \item Start with \code{spline_k = -1} (auto).  Increase only if
+        the residual diagnostics suggest under-smoothing.
+  \item For strongly correlated auxiliary variables, try
+        \code{spline_bs = "cr"} (cubic regression spline) for
+        better numerical stability than the default thin-plate.
+  \item For variable selection, use \code{spline_bs = "cs"} (cubic
+        with shrinkage); coefficients on irrelevant smooths shrink
+        toward zero.
+}
+
+\strong{6. Spatial models.}
+\itemize{
+  \item For CAR, \code{car_type = "bym2"} (Riebler et al.\ 2016) is
+        the modern recommendation; it stabilises the
+        spatial/IID decomposition via a single mixing parameter.
+  \item Verify the weight matrix with
+        \code{\link{check_spatial_weight}()}; isolated areas or
+        multiple disconnected components cause non-identifiability.
+}
+
+\strong{7. Prior predictive check first.}  Always call
+\code{\link{prior_check}()} (\code{sample_prior = "only"}) before
+the full posterior run.  Implausible prior predictives are the
+single most common cause of slow / divergent sampling.
+}
+
 \examples{
 \donttest{
 library(hbsaems)
@@ -357,7 +546,7 @@ model <- do.call(hbm, c(
   list(formula     = bf(y ~ x1 + x2 + x3),
        hb_sampling = "gaussian",
        hb_link     = "identity",
-       re          = ~(1 | group),
+       re          = ~(1 | regency),
        data        = data),
   FAST
 ))
@@ -366,7 +555,7 @@ summary(model)
 # -- Horseshoe prior (sparse coefficients) ------------------------------------
 model_hs <- do.call(hbm, c(
   list(formula     = bf(y ~ x1 + x2 + x3),
-       re          = ~(1 | group),
+       re          = ~(1 | regency),
        data        = data,
        prior_type  = "horseshoe",
        hs_df       = 1),
@@ -377,7 +566,7 @@ summary(model_hs)
 # -- R2D2 prior (prior on model R-squared) -------------------------------------
 model_r2 <- do.call(hbm, c(
   list(formula      = bf(y ~ x1 + x2 + x3),
-       re           = ~(1 | group),
+       re           = ~(1 | regency),
        data         = data,
        prior_type   = "r2d2",
        r2d2_mean_R2 = 0.5,
@@ -390,7 +579,7 @@ summary(model_r2)
 # x1 is modelled with s(x1); x2 and x3 remain linear.
 model_spline <- do.call(hbm, c(
   list(formula        = bf(y ~ x1 + x2 + x3),
-       re             = ~(1 | group),
+       re             = ~(1 | regency),
        data           = data,
        nonlinear      = "x1",
        nonlinear_type = "spline"),
@@ -401,7 +590,7 @@ summary(model_spline)
 # -- Gaussian process for x2 (nonlinear) --------------------------------------
 model_gp <- do.call(hbm, c(
   list(formula        = bf(y ~ x1 + x2 + x3),
-       re             = ~(1 | group),
+       re             = ~(1 | regency),
        data           = data,
        nonlinear      = "x2",
        nonlinear_type = "gp"),
@@ -415,7 +604,7 @@ data_miss_y$y[3:5] <- NA
 
 model_deleted <- do.call(hbm, c(
   list(formula        = bf(y ~ x1 + x2 + x3),
-       re             = ~(1 | group),
+       re             = ~(1 | regency),
        data           = data_miss_y,
        handle_missing = "deleted"),
   FAST
@@ -428,7 +617,7 @@ data_miss_x$x1[6:8]  <- NA
 
 model_multiple <- do.call(hbm, c(
   list(formula        = bf(y ~ x1 + x2 + x3),
-       re             = ~(1 | group),
+       re             = ~(1 | regency),
        data           = data_miss_x,
        handle_missing = "multiple",
        m              = 5),
@@ -443,7 +632,7 @@ data_miss_x2$x1[6:7] <- NA
 model_model <- do.call(hbm, c(
   list(formula        = bf(y | mi() ~ mi(x1) + x2 + x3) +
                         bf(x1 | mi() ~ x2 + x3),
-       re             = ~(1 | group),
+       re             = ~(1 | regency),
        data           = data_miss_x2,
        handle_missing = "model"),
   FAST
@@ -455,8 +644,8 @@ data("adjacency_matrix_car")
 model_car <- do.call(hbm, c(
   list(formula     = bf(y ~ x1 + x2 + x3),
        data        = data,
-       sre         = "sre",
-       sre_type    = "car",
+       spatial_var = "province",
+       spatial_model    = "car",
        M           = adjacency_matrix_car),
   FAST
 ))
@@ -467,8 +656,8 @@ data("spatial_weight_sar")
 model_sar <- do.call(hbm, c(
   list(formula     = bf(y ~ x1 + x2 + x3),
        data        = data,
-       sre         = "sre",
-       sre_type    = "sar",
+       spatial_var = "province",
+       spatial_model    = "sar",
        M           = spatial_weight_sar),
   FAST
 ))
@@ -481,6 +670,17 @@ John Wiley & Sons.
 
 Burkner, P. C. (2017). brms: An R package for Bayesian multilevel models
 using Stan. \emph{Journal of Statistical Software}, 80(1), 1--28.
+
+Riutort-Mayol, G., Burkner, P.-C., Andersen, M. R., Solin, A., &
+Vehtari, A. (2023).  Practical Hilbert space approximate Bayesian
+Gaussian processes for probabilistic programming.
+\emph{Statistics and Computing}, 33, 17.
+\doi{10.1007/s11222-022-10167-2}
+
+Riebler, A., Sorbye, S. H., Simpson, D., & Rue, H. (2016).  An
+intuitive Bayesian spatial model for disease mapping that accounts
+for scaling.  \emph{Statistical Methods in Medical Research},
+25(4), 1145--1165.
 
 van Buuren, S., & Groothuis-Oudshoorn, K. (2011). mice: Multivariate
 imputation by chained equations in R. \emph{Journal of Statistical

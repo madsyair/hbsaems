@@ -12,11 +12,10 @@
 # in a single call.  Distribution-specific wrappers are presets for the
 # most common cases; hbm_flex() is the full-power entry point.
 #
-# Naming history: this function was named `hbsae_wrapper()` in v0.3.x,
-# `hbm_generic()` in v0.4.0 -- v0.5.0, and `hbm_flex()` from v0.5.1+.
-# The old names were retained as deprecated aliases up to v0.5.0 and
-# REMOVED in v0.5.1.  Existing code that called `hbsae_wrapper()` or
-# `hbm_generic()` must be updated to `hbm_flex()`.
+# Note: in pre-v1.0.0 development this function went through several name
+# changes (`hbsae_wrapper`, `hbm_generic`).  Those names were never on
+# CRAN -- v1.0.0 is the first stable release and exports only the final
+# name `hbm_flex()`.
 # =============================================================================
 
 
@@ -49,12 +48,51 @@
 #' @param addition_var Character or \code{NULL}.  Name of the addition term
 #'   variable (e.g.\ trials for binomial).  Required when the family spec
 #'   has \code{has_addition_term = TRUE}.
-#' @param group,sre,sre_type,car_type,sar_type,M Random/spatial effect
-#'   arguments forwarded to \code{\link{hbm}}.
-#' @param prior,prior_type,hs_df,hs_df_global,hs_df_slab,hs_scale_global,hs_scale_slab,hs_par_ratio,r2d2_mean_R2,r2d2_prec_R2,r2d2_cons_D2
-#'   Shrinkage prior arguments forwarded to \code{\link{hbm}}.
-#' @param nonlinear,nonlinear_type,spline_k,gp_scale Nonlinear-term
-#'   arguments forwarded to \code{\link{hbm}}.
+#' @param area_var Character or \code{NULL}.  Name of the column in
+#'   \code{data} identifying the areas; if supplied, adds
+#'   \code{(1 | area_var)} as an IID random intercept (Fay-Herriot).
+#' @param spatial_var,spatial_model,car_type,sar_type,M Spatial
+#'   random-effect arguments forwarded to \code{\link{hbm}}.  See
+#'   \code{?hbm} for a full description.
+#' @param group \strong{Deprecated.}  Use \code{area_var} instead.
+#' @param sre \strong{Deprecated.}  Use \code{spatial_var} instead.
+#' @param sre_type \strong{Deprecated.}  Use \code{spatial_model} instead.
+#' @param prior,prior_type,hs_df,hs_df_global,hs_df_slab,hs_scale_global,hs_scale_slab,hs_par_ratio,hs_autoscale,r2d2_mean_R2,r2d2_prec_R2,r2d2_cons_D2,r2d2_autoscale
+#'   Shrinkage prior arguments forwarded to \code{\link{hbm}}.  When the
+#'   formula contains \code{s()} or \code{gp()} terms, the prior is
+#'   automatically cascaded to the corresponding parameter classes
+#'   (\code{"sds"}, \code{"sdgp"}) via the brms \code{main = TRUE} pattern.
+#' @param nonlinear Character vector of variable names to include as
+#'   smooth/nonlinear terms (rather than linear).  Variables listed here
+#'   that also appear in \code{auxiliary} are modelled nonlinearly only.
+#' @param nonlinear_type Character.  \code{"spline"} (penalised regression
+#'   spline via \pkg{mgcv}, default) or \code{"gp"} (Gaussian process via
+#'   \pkg{brms}).
+#' @param spline_k Integer.  Spline basis dimension passed to
+#'   \code{mgcv::s(..., k = ...)}.  \code{-1} (default) lets \pkg{mgcv}
+#'   choose automatically.  For SAE typically \code{k = 8} to \code{15}.
+#' @param spline_bs Character.  Spline basis type passed to
+#'   \code{mgcv::s(..., bs = ...)}.  Defaults to \code{"tp"} (thin-plate
+#'   regression spline).  Set \code{"cr"} (cubic regression) for better
+#'   numerical stability with correlated auxiliary variables.  Other
+#'   choices: \code{"cs"} (cubic with shrinkage), \code{"ps"} (P-splines).
+#' @param gp_k Integer or \code{NA}.  Number of basis functions for the
+#'   Hilbert-space approximate GP (Riutort-Mayol et al.\ 2020).
+#'   \code{NA} (default) = exact GP, scales \eqn{O(n^3)} and is
+#'   \strong{not recommended for} \eqn{n > 100} areas.  Integer
+#'   \code{gp_k = 10}--\code{25} is typical for SAE applications and
+#'   dramatically improves convergence and runtime.
+#' @param gp_cov Character.  Covariance function: \code{"exp_quad"}
+#'   (squared exponential / RBF, default), \code{"matern15"}
+#'   (Matern 3/2), \code{"matern25"} (Matern 5/2, often more numerically
+#'   stable than RBF), \code{"exponential"}.
+#' @param gp_c Numeric.  Hilbert-space GP boundary-scale factor passed
+#'   to \code{brms::gp(c = ...)}.  Default brms value is 5/4 (= 1.25);
+#'   increase if the GP appears truncated at domain boundaries.  Only
+#'   relevant when \code{gp_k} is set.
+#' @param gp_scale \strong{Deprecated.}  Use \code{gp_c} instead.  The
+#'   old name suggested a length-scale interpretation but actually
+#'   mapped to the boundary-scale factor.
 #' @param handle_missing,m,mice_args Missing-data arguments.  When
 #'   \code{handle_missing = NULL} the wrapper auto-selects a strategy
 #'   based on the family registry's \code{supports_mi} flag.
@@ -100,7 +138,7 @@
 #'   family_key = "lognormal",
 #'   response   = "y_obs",
 #'   auxiliary  = c("x1", "x2", "x3"),
-#'   group      = "group",            # area-level random effect: (1 | group)
+#'   area_var   = "district",         # area-level random effect: (1 | district)
 #'   data       = data_lnln,
 #'   chains = 2, iter = 1000, refresh = 0
 #' )
@@ -114,14 +152,14 @@ hbm_flex <- function(family_key,
                           auxiliary       = NULL,
                           data,
                           addition_var    = NULL,
-                          group           = NULL,
-                          sre             = NULL,
-                          sre_type        = NULL,
+                          area_var        = NULL,
+                          spatial_var     = NULL,
+                          spatial_model   = NULL,
                           car_type        = NULL,
                           sar_type        = NULL,
                           M               = NULL,
                           prior           = NULL,
-                          # v0.6.1: Fixed-value distributional parameters
+                          # Fixed-value distributional parameters
                           fixed_params    = NULL,
                           # Shrinkage priors
                           prior_type      = "default",
@@ -131,13 +169,20 @@ hbm_flex <- function(family_key,
                           hs_scale_global = NULL,
                           hs_scale_slab   = 2,
                           hs_par_ratio    = NULL,
+                          hs_autoscale    = TRUE,
                           r2d2_mean_R2    = 0.5,
                           r2d2_prec_R2    = 2,
                           r2d2_cons_D2    = NULL,
+                          r2d2_autoscale  = TRUE,
                           # Nonlinear terms
                           nonlinear       = NULL,
                           nonlinear_type  = "spline",
                           spline_k        = -1L,
+                          spline_bs       = "tp",
+                          gp_k            = NA_integer_,
+                          gp_cov          = "exp_quad",
+                          gp_c            = NULL,
+                          # Deprecated nonlinear alias (v1.0.0)
                           gp_scale        = NULL,
                           # Missing data
                           handle_missing  = NULL,
@@ -156,9 +201,12 @@ hbm_flex <- function(family_key,
                           stanvars        = NULL,
                           # DEPRECATED: kept for backward compatibility (v1.0.0 -> v2.0.0)
                           predictors      = NULL,
+                          group           = NULL,
+                          sre             = NULL,
+                          sre_type        = NULL,
                           ...) {
 
-  # -- 0. v0.6.1: deprecated alias 'predictors' -----------------------------
+  # -- 0. Deprecated alias 'predictors' -----------------------------
   # The argument was renamed from `predictors` (brms idiom) to `auxiliary`
   # (Small Area Estimation idiom; see Rao & Molina 2015 Ch. 4).  Emit a
   # one-time soft deprecation warning if the old name is used, then map to
@@ -172,6 +220,30 @@ hbm_flex <- function(family_key,
   }
   if (is.null(auxiliary))
     stop("`auxiliary` (auxiliary variables) is required.", call. = FALSE)
+
+  # -- 0b. Deprecated aliases (v1.0.0): group -> area_var,
+  #         sre -> spatial_var, sre_type -> spatial_model
+  if (!is.null(group)) {
+    if (!is.null(area_var))
+      stop("Pass either `area_var` (preferred) or `group` (deprecated), ",
+           "but not both.", call. = FALSE)
+    .deprecate_arg("group", "area_var", "v2.0.0")
+    area_var <- group
+  }
+  if (!is.null(sre)) {
+    if (!is.null(spatial_var))
+      stop("Pass either `spatial_var` (preferred) or `sre` (deprecated), ",
+           "but not both.", call. = FALSE)
+    .deprecate_arg("sre", "spatial_var", "v2.0.0")
+    spatial_var <- sre
+  }
+  if (!is.null(sre_type)) {
+    if (!is.null(spatial_model))
+      stop("Pass either `spatial_model` (preferred) or `sre_type` ",
+           "(deprecated), but not both.", call. = FALSE)
+    .deprecate_arg("sre_type", "spatial_model", "v2.0.0")
+    spatial_model <- sre_type
+  }
 
   # -- 1. Look up family spec ------------------------------------------------
   spec <- .get_model(family_key)
@@ -196,11 +268,11 @@ hbm_flex <- function(family_key,
                  paste(missing_aux, collapse = ", ")),
          call. = FALSE)
 
-  if (!is.null(group) && !(group %in% names(data)))
-    stop(sprintf("Group variable '%s' not found in 'data'.", group),
+  if (!is.null(area_var) && !(area_var %in% names(data)))
+    stop(sprintf("Area variable '%s' not found in 'data'.", area_var),
          call. = FALSE)
-  if (!is.null(sre) && !(sre %in% names(data)))
-    stop(sprintf("Spatial variable '%s' not found in 'data'.", sre),
+  if (!is.null(spatial_var) && !(spatial_var %in% names(data)))
+    stop(sprintf("Spatial variable '%s' not found in 'data'.", spatial_var),
          call. = FALSE)
 
   # -- 3. Addition-term variable (e.g. trials for binomial) ------------------
@@ -275,13 +347,27 @@ hbm_flex <- function(family_key,
            "Install with: install.packages('mgcv')", call. = FALSE)
   }
 
+  # -- 7b. Deprecated `gp_scale` alias (v1.0.0) -----------------------------
+  # gp_scale was a misnomer (suggested length-scale, actually mapped to brms
+  # `c` parameter = HSGP boundary-scale factor).  Renamed for clarity.
+  if (!is.null(gp_scale)) {
+    if (!is.null(gp_c))
+      stop("Pass either `gp_c` (preferred) or `gp_scale` (deprecated), ",
+           "but not both.", call. = FALSE)
+    .deprecate_arg("gp_scale", "gp_c", "v2.0.0")
+    gp_c <- gp_scale
+  }
+
   # -- 8. Build formula ------------------------------------------------------
   rhs_str <- .build_wrapper_rhs(
-    predictors     = auxiliary,
+    auxiliary      = auxiliary,
     nonlinear      = nonlinear,
     nonlinear_type = nonlinear_type,
     spline_k       = spline_k,
-    gp_scale       = gp_scale
+    spline_bs      = spline_bs,
+    gp_k           = gp_k,
+    gp_cov         = gp_cov,
+    gp_c           = gp_c
   )
 
   if (isTRUE(spec$has_addition_term)) {
@@ -293,8 +379,8 @@ hbm_flex <- function(family_key,
   base_formula <- brms::bf(stats::as.formula(fml_str))
 
   # -- 9. Random-effect formula ---------------------------------------------
-  formula_re <- if (!is.null(group))
-    stats::as.formula(paste("~", paste0("(1 | ", group, ")")))
+  formula_re <- if (!is.null(area_var))
+    stats::as.formula(paste("~", paste0("(1 | ", area_var, ")")))
   else
     NULL
 
@@ -334,13 +420,13 @@ hbm_flex <- function(family_key,
     hb_sampling     = spec$family,
     hb_link         = use_link,
     re              = formula_re,
-    sre             = sre,
-    sre_type        = sre_type,
+    spatial_var     = spatial_var,
+    spatial_model   = spatial_model,
     car_type        = car_type,
     sar_type        = sar_type,
     M               = M,
     prior           = effective_prior,
-    fixed_params    = fixed_params,           # v0.6.1: forward fixed params
+    fixed_params    = fixed_params,           # forward fixed params
     stanvars        = stanvars,
     prior_type      = prior_type,
     hs_df           = hs_df,
@@ -349,9 +435,11 @@ hbm_flex <- function(family_key,
     hs_scale_global = hs_scale_global,
     hs_scale_slab   = hs_scale_slab,
     hs_par_ratio    = hs_par_ratio,
+    hs_autoscale    = hs_autoscale,
     r2d2_mean_R2    = r2d2_mean_R2,
     r2d2_prec_R2    = r2d2_prec_R2,
     r2d2_cons_D2    = r2d2_cons_D2,
+    r2d2_autoscale  = r2d2_autoscale,
     handle_missing  = handle_missing,
     m               = m,
     mice_args       = mice_args,

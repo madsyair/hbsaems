@@ -1,6 +1,6 @@
 # R/convergence-check.R
 # =============================================================================
-# Primary convergence diagnostics function for hbsaems v0.3.0+.
+# Primary convergence diagnostics function for hbsaems 1.0.0+.
 # This file replaces the body of the deprecated `hbcc()` function.
 # =============================================================================
 
@@ -42,7 +42,7 @@
 #' data("data_fhnorm")
 #' model <- hbm(brms::bf(y ~ x1 + x2 + x3),
 #'              data   = data_fhnorm,
-#'              re     = ~ (1 | group),    # area-level random effect
+#'              re     = ~ (1 | regency),    # area-level random effect
 #'              chains = 2, iter = 2000, warmup = 1000,
 #'              cores  = 1, seed = 123, refresh = 0)
 #'

@@ -12,8 +12,10 @@ A data frame with 100 rows and 9 variables:
   \item{\code{x1}, \code{x2}, \code{x3}}{Auxiliary covariates.}
   \item{\code{n}}{Area sample size.}
   \item{\code{deff}}{Design effect.}
-  \item{\code{group}}{Area identifier (1-100).}
-  \item{\code{sre}}{Spatial-random-effect grouping variable.}
+  \item{\code{regency}}{Regency identifier (\code{"regency_001"} ..
+    \code{"regency_100"}).}
+  \item{\code{province}}{Province identifier (\code{"province_01"} ..
+    \code{"province_05"}) -- spatial cluster level for CAR / SAR.}
 }
 }
 \source{
@@ -23,7 +25,7 @@ Simulated.
 data_betalogitnorm
 }
 \description{
-A simulated dataset for 100 areas under a Beta logit-normal model.  The
-response \code{y} is a proportion in \eqn{(0, 1)}.
+A simulated dataset for 100 regencies under a Beta logit-normal model.
+The response \code{y} is a proportion in \eqn{(0, 1)}.
 }
 \keyword{datasets}

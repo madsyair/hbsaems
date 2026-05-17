@@ -1,6 +1,6 @@
 # R/sae-predict.R
 # =============================================================================
-# Primary small-area-estimation prediction function for hbsaems v0.3.0+.
+# Primary small-area-estimation prediction function for hbsaems 1.0.0+.
 #
 #   sae_predict()   -- area-level posterior predictive (replaces hbsae())
 #   sae_aggregate() -- combine multiple hbsae_results

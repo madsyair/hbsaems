@@ -116,9 +116,9 @@ hbm_control <- function(chains       = 4L,
 #'   \code{"r2d2"}.
 #' @param prior      Optional \code{brmsprior} for explicit priors that
 #'   override the registry default.
-#' @param hs_df,hs_df_global,hs_df_slab,hs_scale_global,hs_scale_slab,hs_par_ratio
+#' @param hs_df,hs_df_global,hs_df_slab,hs_scale_global,hs_scale_slab,hs_par_ratio,hs_autoscale
 #'   Horseshoe-prior hyperparameters; see \code{\link{hbm}}.
-#' @param r2d2_mean_R2,r2d2_prec_R2,r2d2_cons_D2 R2D2-prior
+#' @param r2d2_mean_R2,r2d2_prec_R2,r2d2_cons_D2,r2d2_autoscale R2D2-prior
 #'   hyperparameters; see \code{\link{hbm}}.
 #'
 #' @return A named list of arguments for \code{\link{hbm}}.
@@ -138,9 +138,11 @@ hbm_priors <- function(prior_type      = c("default", "horseshoe", "r2d2"),
                        hs_scale_global = NULL,
                        hs_scale_slab   = 2,
                        hs_par_ratio    = NULL,
+                       hs_autoscale    = TRUE,
                        r2d2_mean_R2    = 0.5,
                        r2d2_prec_R2    = 2,
-                       r2d2_cons_D2    = NULL) {
+                       r2d2_cons_D2    = NULL,
+                       r2d2_autoscale  = TRUE) {
   prior_type <- match.arg(prior_type)
   out <- list(prior_type = prior_type)
   if (!is.null(prior))           out$prior           <- prior
@@ -151,11 +153,13 @@ hbm_priors <- function(prior_type      = c("default", "horseshoe", "r2d2"),
     out$hs_scale_global <- hs_scale_global
     out$hs_scale_slab   <- hs_scale_slab
     out$hs_par_ratio    <- hs_par_ratio
+    out$hs_autoscale    <- hs_autoscale
   }
   if (prior_type == "r2d2") {
-    out$r2d2_mean_R2 <- r2d2_mean_R2
-    out$r2d2_prec_R2 <- r2d2_prec_R2
-    out$r2d2_cons_D2 <- r2d2_cons_D2
+    out$r2d2_mean_R2   <- r2d2_mean_R2
+    out$r2d2_prec_R2   <- r2d2_prec_R2
+    out$r2d2_cons_D2   <- r2d2_cons_D2
+    out$r2d2_autoscale <- r2d2_autoscale
   }
   class(out) <- c("hbm_config_priors", "hbm_config", "list")
   out
@@ -170,34 +174,77 @@ hbm_priors <- function(prior_type      = c("default", "horseshoe", "r2d2"),
 #' @param terms Character vector of predictor names to be wrapped in
 #'   \code{s()} or \code{gp()}.
 #' @param type  Character.  \code{"spline"} (default) or \code{"gp"}.
-#' @param k     Integer.  Spline basis dimension.  Default \code{-1L}
-#'   (let \pkg{mgcv} choose).
-#' @param gp_scale Optional numeric.  GP length-scale (\code{c} argument
-#'   of \code{\link[brms]{gp}}).
+#' @param k     Integer.  Basis dimension.  For splines: passed to
+#'   \code{mgcv::s(..., k = ...)}; \code{-1L} (default) lets \pkg{mgcv}
+#'   choose.  For GP: passed to \code{brms::gp(..., k = ...)} for the
+#'   Hilbert-space approximate GP (Riutort-Mayol et al.\ 2020);
+#'   \code{NA} = exact GP (slow, not recommended for \eqn{n > 100}).
+#' @param spline_bs Character.  Spline basis type (\code{"tp"},
+#'   \code{"cr"}, \code{"cs"}, \code{"ps"}, ...).  Default \code{"tp"}.
+#' @param gp_cov Character.  GP covariance function: \code{"exp_quad"},
+#'   \code{"matern15"}, \code{"matern25"}, \code{"exponential"}.
+#'   Default \code{"exp_quad"}.
+#' @param gp_c Numeric or NULL.  HSGP boundary-scale factor for
+#'   \code{brms::gp(c = ...)}.
+#' @param gp_scale \strong{Deprecated.}  Use \code{gp_c} instead.
 #'
-#' @return A named list of arguments for \code{\link{hbm}}, mapping to
-#'   \code{nonlinear}, \code{nonlinear_type}, \code{spline_k}, \code{gp_scale}.
+#' @return A named list of arguments for \code{\link{hbm}}, with class
+#'   \code{c("hbm_config_nonlinear", "hbm_config", "list")}.
 #'
 #' @examples
-#' nl_spline <- hbm_nonlinear(c("x1", "x3"), type = "spline", k = 5)
-#' nl_gp     <- hbm_nonlinear(c("x2"),       type = "gp",     gp_scale = 1.5)
+#' # Penalised regression spline (auto-chosen basis dimension):
+#' nl_spline <- hbm_nonlinear(c("x1", "x3"), type = "spline")
+#'
+#' # Spline with cubic-regression basis and fixed k:
+#' nl_cr <- hbm_nonlinear("x1", type = "spline", k = 8, spline_bs = "cr")
+#'
+#' # Hilbert-space approximate GP with Matern 5/2 covariance (recommended):
+#' nl_gp <- hbm_nonlinear("x2", type = "gp", k = 20, gp_cov = "matern25")
 #'
 #' @seealso \code{\link{hbm_control}}, \code{\link{hbm_priors}},
 #'   \code{\link{hbm}}
 #' @export
 hbm_nonlinear <- function(terms,
-                          type     = c("spline", "gp"),
-                          k        = -1L,
-                          gp_scale = NULL) {
+                          type      = c("spline", "gp"),
+                          k         = -1L,
+                          spline_bs = "tp",
+                          gp_cov    = "exp_quad",
+                          gp_c      = NULL,
+                          gp_scale  = NULL) {
   type <- match.arg(type)
   if (!is.character(terms) || length(terms) == 0L)
     stop("'terms' must be a non-empty character vector.", call. = FALSE)
+
+  # Deprecated gp_scale
+  if (!is.null(gp_scale)) {
+    if (!is.null(gp_c))
+      stop("Pass either `gp_c` (preferred) or `gp_scale` (deprecated), ",
+           "but not both.", call. = FALSE)
+    .deprecate_arg("gp_scale", "gp_c", "v2.0.0")
+    gp_c <- gp_scale
+  }
+
   out <- list(
     nonlinear      = terms,
-    nonlinear_type = type,
-    spline_k       = as.integer(k)
+    nonlinear_type = type
   )
-  if (!is.null(gp_scale)) out$gp_scale <- gp_scale
+
+  if (type == "spline") {
+    out$spline_k  <- if (is.na(k)) -1L else as.integer(k)
+    if (!is.null(spline_bs) && spline_bs != "tp")
+      out$spline_bs <- spline_bs
+  } else {
+    # GP: `k` maps to gp_k.  -1L is invalid here; only NA or positive integer.
+    if (!is.na(k) && k != -1L)
+      out$gp_k <- as.integer(k)
+    else
+      out$gp_k <- NA_integer_
+    if (!is.null(gp_cov) && gp_cov != "exp_quad")
+      out$gp_cov <- gp_cov
+    if (!is.null(gp_c))
+      out$gp_c <- gp_c
+  }
+
   class(out) <- c("hbm_config_nonlinear", "hbm_config", "list")
   out
 }

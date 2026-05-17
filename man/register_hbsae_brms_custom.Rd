@@ -60,8 +60,8 @@ After registration, the family is usable in any of the following ways:
 \preformatted{
   # Direct via the registry key
   fit <- hbm_flex("loglogistic", response = "y",
-                   predictors = c("x1", "x2"),
-                   data = d, re = ~ (1 | area))
+                   auxiliary = c("x1", "x2"),
+                   data = d, area_var = "area")
 
   # Direct via hbm() (canonical):
   fit <- hbm(brms::bf(y ~ x1 + x2 + (1 | area)),
@@ -80,7 +80,7 @@ any user-supplied \code{stanvars}.
 library(hbsaems)
 library(brms)
 
-# Loglogistic (built in to hbsaems v0.6.0; this just shows the registration mechanism)
+# Loglogistic (built in to hbsaems 1.0.0; this just shows the registration mechanism)
 ll <- brms_custom_loglogistic()
 register_hbsae_brms_custom(
   key             = "loglogistic_user",

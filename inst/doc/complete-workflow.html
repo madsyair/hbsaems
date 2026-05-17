@@ -12,7 +12,7 @@
 
 
 
-<title>Complete Workflow with hbsaems v0.3.0</title>
+<title>Complete Workflow with hbsaems 1.0.0</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -336,12 +336,12 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-<h1 class="title toc-ignore">Complete Workflow with hbsaems v0.3.0</h1>
+<h1 class="title toc-ignore">Complete Workflow with hbsaems 1.0.0</h1>
 
 
 
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(hbsaems)</span></code></pre></div>
-<p>A typical Bayesian SAE workflow with <code>hbsaems</code> v0.3.0
+<p>A typical Bayesian SAE workflow with <code>hbsaems</code> v1.0.0
 follows seven steps, each backed by a single primary function.</p>
 <div id="prior-predictive-check" class="section level2">
 <h2>1. Prior predictive check</h2>
@@ -349,22 +349,28 @@ follows seven steps, each backed by a single primary function.</p>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>model_prior <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">formula      =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
 <span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">data         =</span> data_fhnorm,</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">sample_prior =</span> <span class="st">&quot;only&quot;</span>,</span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">2</span>, <span class="at">iter =</span> <span class="dv">1000</span></span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>)</span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>pc <span class="ot">&lt;-</span> <span class="fu">prior_check</span>(model_prior,</span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>                  <span class="at">data         =</span> data_fhnorm,</span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>                  <span class="at">response_var =</span> <span class="st">&quot;y&quot;</span>)</span>
-<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="fu">plot</span>(pc)</span></code></pre></div>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">re           =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),       <span class="co"># area-level random effect (Fay-Herriot)</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">sample_prior =</span> <span class="st">&quot;only&quot;</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="at">prior        =</span> <span class="fu">c</span>(</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>    brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">class =</span> <span class="st">&quot;b&quot;</span>),</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>    brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">5</span>), <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>  ),</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">2</span>, <span class="at">iter =</span> <span class="dv">1000</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>)</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>pc <span class="ot">&lt;-</span> <span class="fu">prior_check</span>(model_prior,</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>                  <span class="at">data         =</span> data_fhnorm,</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>                  <span class="at">response_var =</span> <span class="st">&quot;y&quot;</span>)</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="fu">plot</span>(pc)</span></code></pre></div>
 </div>
 <div id="fit-the-model" class="section level2">
 <h2>2. Fit the model</h2>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="at">formula =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">data    =</span> data_fhnorm,</span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">chains  =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">2</span></span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>)</span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code></pre></div>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">re      =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),              <span class="co"># area-level random effect (Fay-Herriot)</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">chains  =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">2</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>)</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code></pre></div>
 </div>
 <div id="convergence-diagnostics" class="section level2">
 <h2>3. Convergence diagnostics</h2>
@@ -383,12 +389,14 @@ follows seven steps, each backed by a single primary function.</p>
 <div id="compare-alternatives" class="section level2">
 <h2>5. Compare alternatives</h2>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>model2 <span class="ot">&lt;-</span> <span class="fu">hbm</span>(brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2), <span class="at">data =</span> data_fhnorm,</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>              <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>)</span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>model3 <span class="ot">&lt;-</span> <span class="fu">hbm</span>(brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1),      <span class="at">data =</span> data_fhnorm,</span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>              <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="fu">model_compare</span>(model, model2)</span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="fu">model_compare_all</span>(<span class="at">full =</span> model, <span class="at">medium =</span> model2, <span class="at">simple =</span> model3)</span></code></pre></div>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>              <span class="at">re =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>              <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>model3 <span class="ot">&lt;-</span> <span class="fu">hbm</span>(brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1),      <span class="at">data =</span> data_fhnorm,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>              <span class="at">re =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>              <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="fu">model_compare</span>(model, model2)</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="fu">model_compare_all</span>(<span class="at">full =</span> model, <span class="at">medium =</span> model2, <span class="at">simple =</span> model3)</span></code></pre></div>
 </div>
 <div id="small-area-estimates" class="section level2">
 <h2>6. Small-area estimates</h2>

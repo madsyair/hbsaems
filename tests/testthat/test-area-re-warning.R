@@ -1,7 +1,7 @@
 # tests/testthat/test-area-re-warning.R
 # =============================================================================
-# Verify the v0.5.1 sanity check that warns when hbm() is called without
-# any area-level random effects (neither `re` nor `sre_type`).
+# Verify the v1.0.0 sanity check that warns when hbm() is called without
+# any area-level random effects (neither `re` nor `spatial_model`).
 #
 # These tests do NOT compile Stan models -- they stub brms::brm() so the
 # call exits before Stan touches the formula.  The Section 9b warning fires
@@ -13,7 +13,7 @@
 .brm_stub <- function(...) stop("__BRM_STUB__", call. = FALSE)
 
 
-test_that("warning fires when re=NULL and sre_type=NULL", {
+test_that("warning fires when re=NULL and spatial_model=NULL", {
   d <- data.frame(y = rnorm(20), x = runif(20))
 
   # Local mock so the stub is reverted at end of test
@@ -65,7 +65,7 @@ test_that("NO warning when re is supplied", {
 })
 
 
-test_that("NO warning when sre_type='car' is supplied", {
+test_that("NO warning when spatial_model='car' is supplied", {
   # Binary symmetric W with zero diagonal: CAR-compatible
   W <- matrix(c(0, 1, 1, 0,
                 1, 0, 0, 1,
@@ -79,7 +79,7 @@ test_that("NO warning when sre_type='car' is supplied", {
   tryCatch(
     withCallingHandlers(
       hbm(brms::bf(y ~ x), data = d,
-          sre = "area", sre_type = "car", M = W,
+          spatial_var = "area", spatial_model = "car", M = W,
           chains = 1, iter = 10, warmup = 5, refresh = 0),
       warning = function(w) {
         warns <<- c(warns, conditionMessage(w))
@@ -96,7 +96,7 @@ test_that("NO warning when sre_type='car' is supplied", {
 })
 
 
-test_that("NO warning when sre_type='sar' is supplied", {
+test_that("NO warning when spatial_model='sar' is supplied", {
   # Row-standardised W: SAR-compatible
   W <- matrix(c(0,  .5, .5, 0,
                 .5, 0,  0,  .5,
@@ -110,7 +110,7 @@ test_that("NO warning when sre_type='sar' is supplied", {
   tryCatch(
     withCallingHandlers(
       hbm(brms::bf(y ~ x), data = d,
-          sre = "area", sre_type = "sar", M = W,
+          spatial_var = "area", spatial_model = "sar", M = W,
           chains = 1, iter = 10, warmup = 5, refresh = 0),
       warning = function(w) {
         warns <<- c(warns, conditionMessage(w))
@@ -147,8 +147,8 @@ test_that("warning text contains all three suggested patterns", {
 
   msg <- paste(warns, collapse = " ")
   expect_true(grepl("\\(1 \\| area_id\\)",                msg))  # IID
-  expect_true(grepl("sre_type = 'car'",                    msg))  # CAR
-  expect_true(grepl("sre_type = 'sar'",                    msg))  # SAR
+  expect_true(grepl("spatial_model = 'car'",              msg))  # CAR
+  expect_true(grepl("spatial_model = 'sar'",              msg))  # SAR
   expect_true(grepl("suppressWarnings",                    msg))  # escape hatch
 })
 
@@ -181,23 +181,23 @@ test_that("suppressWarnings silences the area-RE warning", {
 
 
 # ===========================================================================
-# v0.5.1: Consistency check for sre / sre_type
-# (sre and sre_type must be supplied together or not at all)
+# v1.0.0: Consistency check for spatial_var / spatial_model
+# (spatial_var and spatial_model must be supplied together or not at all)
 # ===========================================================================
 
-test_that("error when sre is supplied but sre_type is NULL", {
+test_that("error when spatial_var is supplied but spatial_model is NULL", {
   d <- data.frame(y = rnorm(20), x = runif(20),
                   area = factor(rep(1:5, 4)))
 
   testthat::local_mocked_bindings(brm = .brm_stub, .package = "brms")
 
   err <- tryCatch(
-    hbm(brms::bf(y ~ x), data = d, sre = "area",
+    hbm(brms::bf(y ~ x), data = d, spatial_var = "area",
         chains = 1, iter = 10, warmup = 5, refresh = 0),
     error = function(e) conditionMessage(e)
   )
 
-  expect_true(grepl("was supplied but `sre_type` is NULL", err),
+  expect_true(grepl("was supplied but `spatial_model` is NULL", err),
               info = paste("Got error:", err))
   expect_true(grepl("SPATIAL CAR", err))
   expect_true(grepl("SPATIAL SAR", err))
@@ -205,7 +205,7 @@ test_that("error when sre is supplied but sre_type is NULL", {
 })
 
 
-test_that("error when sre_type is supplied but sre is NULL", {
+test_that("error when spatial_model is supplied but spatial_var is NULL", {
   W <- matrix(c(0, 1, 1, 0,
                 1, 0, 0, 1,
                 1, 0, 0, 1,
@@ -215,18 +215,18 @@ test_that("error when sre_type is supplied but sre is NULL", {
   testthat::local_mocked_bindings(brm = .brm_stub, .package = "brms")
 
   err <- tryCatch(
-    hbm(brms::bf(y ~ x), data = d, sre_type = "car", M = W,
+    hbm(brms::bf(y ~ x), data = d, spatial_model = "car", M = W,
         chains = 1, iter = 10, warmup = 5, refresh = 0),
     error = function(e) conditionMessage(e)
   )
 
-  expect_true(grepl("was supplied but `sre` is NULL", err),
+  expect_true(grepl("was supplied but `spatial_var` is NULL", err),
               info = paste("Got error:", err))
   expect_true(grepl("specify the column", err))
 })
 
 
-test_that("no error when both sre and sre_type are supplied", {
+test_that("no error when both spatial_var and spatial_model are supplied", {
   W <- matrix(c(0, 1, 1, 0,
                 1, 0, 0, 1,
                 1, 0, 0, 1,
@@ -239,7 +239,7 @@ test_that("no error when both sre and sre_type are supplied", {
   # may still error, but with a different message)
   err <- tryCatch(
     hbm(brms::bf(y ~ x), data = d,
-        sre = "area", sre_type = "car", M = W,
+        spatial_var = "area", spatial_model = "car", M = W,
         chains = 1, iter = 10, warmup = 5, refresh = 0),
     error = function(e) conditionMessage(e)
   )
@@ -248,7 +248,7 @@ test_that("no error when both sre and sre_type are supplied", {
 })
 
 
-test_that("BYM message when re and sre on same column with CAR", {
+test_that("BYM message when re and spatial_var on same column with CAR", {
   W <- matrix(c(0, 1, 1, 0,
                 1, 0, 0, 1,
                 1, 0, 0, 1,
@@ -264,7 +264,7 @@ test_that("BYM message when re and sre on same column with CAR", {
     withCallingHandlers(
       hbm(brms::bf(y ~ x), data = d,
           re = ~ (1 | area),
-          sre = "area", sre_type = "car", M = W,
+          spatial_var = "area", spatial_model = "car", M = W,
           chains = 1, iter = 10, warmup = 5, refresh = 0),
       message = function(m) {
         msgs <<- c(msgs, conditionMessage(m))
@@ -286,7 +286,7 @@ test_that("BYM message when re and sre on same column with CAR", {
 })
 
 
-test_that("no BYM message when re and sre on different columns", {
+test_that("no BYM message when re and spatial_var on different columns", {
   W <- matrix(c(0, 1, 1, 0,
                 1, 0, 0, 1,
                 1, 0, 0, 1,
@@ -302,7 +302,7 @@ test_that("no BYM message when re and sre on different columns", {
     withCallingHandlers(
       hbm(brms::bf(y ~ x), data = d,
           re = ~ (1 | group),
-          sre = "area", sre_type = "car", M = W,
+          spatial_var = "area", spatial_model = "car", M = W,
           chains = 1, iter = 10, warmup = 5, refresh = 0),
       message = function(m) {
         msgs <<- c(msgs, conditionMessage(m))

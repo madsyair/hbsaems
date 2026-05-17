@@ -14,8 +14,8 @@ knitr::opts_chunk$set(
 #  chk <- check_data(
 #    data       = data_fhnorm,
 #    response   = "y",
-#    predictors = c("x1", "x2", "x3"),
-#    sre        = "sre"
+#    auxiliary  = c("x1", "x2", "x3"),
+#    spatial_var = "province"
 #  )
 #  
 #  print(chk)
@@ -33,7 +33,7 @@ knitr::opts_chunk$set(
 ## -----------------------------------------------------------------------------
 #  d2 <- data_fhnorm
 #  d2$y[1:5] <- NA
-#  chk2 <- check_data(d2, response = "y", predictors = c("x1", "x2", "x3"))
+#  chk2 <- check_data(d2, response = "y", auxiliary = c("x1", "x2", "x3"))
 #  chk2$non_sample_warning
 
 ## -----------------------------------------------------------------------------
@@ -51,7 +51,7 @@ knitr::opts_chunk$set(
 #  )
 
 ## -----------------------------------------------------------------------------
-#  check_spatial_weight(M_car, sre_type = "car")
+#  check_spatial_weight(M_car, spatial_model = "car")
 #  #> Spatial Weight Matrix Diagnostic
 #  #> ---------------------------------
 #  #>   Square          : TRUE
@@ -85,7 +85,7 @@ knitr::opts_chunk$set(
 #    predictions = estimates,
 #    target      = 1000,
 #    method      = "ratio",
-#    posterior   = TRUE,                # NEW in v0.5.0
+#    posterior   = TRUE,                # NEW in v1.0.0
 #    probs       = c(0.025, 0.5, 0.975)
 #  )
 #  
@@ -100,35 +100,55 @@ knitr::opts_chunk$set(
 #                              posterior = draws)
 
 ## -----------------------------------------------------------------------------
-#  # Penalised regression spline (mgcv backend)
+#  # Default: thin-plate regression spline, basis dimension chosen by mgcv
 #  fit_spline <- hbm(
 #    formula        = brms::bf(y ~ x1 + x2 + x3),
 #    data           = data_fhnorm,
-#    nonlinear      = c("x2", "x3"),     # variables to smooth
+#    re             = ~ (1 | regency),       # area-level random effect (Fay-Herriot)
+#    nonlinear      = c("x2", "x3"),
 #    nonlinear_type = "spline",
-#    spline_k       = 7L,                 # basis dimension (-1 = auto)
+#    spline_k       = 7L,                    # basis dim (-1 = auto)
+#    spline_bs      = "tp",                  # "tp" (default), "cr", "cs", "ps"
 #    chains = 2, iter = 2000, refresh = 0
 #  )
-#  
-#  # Gaussian process
+
+## -----------------------------------------------------------------------------
+#  # RECOMMENDED: HSGP with Matérn 5/2 covariance
 #  fit_gp <- hbm(
 #    formula        = brms::bf(y ~ x1 + x2),
 #    data           = data_fhnorm,
-#    nonlinear      = c("x1"),
+#    re             = ~ (1 | regency),
+#    nonlinear      = "x1",
 #    nonlinear_type = "gp",
-#    gp_scale       = 1.5,                # length-scale 'c' (NULL -> brms default)
+#    gp_k           = 20L,                  # basis dim — REQUIRED for n > 100
+#    gp_cov         = "matern25",           # more stable than "exp_quad"
+#    gp_c           = 1.25,                 # boundary scale (brms default)
 #    chains = 2, iter = 2000, refresh = 0
 #  )
+
+## -----------------------------------------------------------------------------
+#  # Build the smooth-term spec once, reuse across models
+#  nl <- hbm_nonlinear(c("x1"), type = "gp",
+#                       k = 20, gp_cov = "matern25")
+#  
+#  fit <- hbm_flex(family_key = "lognormal",
+#                   response  = "y_obs",
+#                   auxiliary = c("x1", "x2"),
+#                   area_var  = "district",
+#                   data      = data_lnln,
+#                   nl)                       # spliced in automatically
 
 ## -----------------------------------------------------------------------------
 #  fit_hs <- hbm(
 #    formula        = brms::bf(y ~ x1 + x2 + x3 + x4 + x5),
 #    data           = my_data,
+#    re             = ~ (1 | regency),
 #    prior_type     = "horseshoe",
 #    hs_df          = 1,        # local half-t df  (1 = original HS)
 #    hs_df_global   = 1,        # global half-t df
 #    hs_df_slab     = 4,        # slab half-t df   (regularised HS+)
 #    hs_scale_slab  = 2,        # slab scale
+#    hs_autoscale   = TRUE,     # scale with residual sigma (Gaussian only)
 #    chains = 2, iter = 2000, refresh = 0
 #  )
 
@@ -136,9 +156,35 @@ knitr::opts_chunk$set(
 #  fit_r2d2 <- hbm(
 #    formula        = brms::bf(y ~ x1 + x2 + x3 + x4 + x5),
 #    data           = my_data,
+#    re             = ~ (1 | regency),
 #    prior_type     = "r2d2",
 #    r2d2_mean_R2   = 0.5,      # prior mean of R^2
 #    r2d2_prec_R2   = 2,        # prior precision of R^2
+#    r2d2_autoscale = TRUE,
+#    chains = 2, iter = 2000, refresh = 0
+#  )
+
+## -----------------------------------------------------------------------------
+#  # Model with linear coefficients + spline + Gaussian process
+#  fit_combined <- hbm(
+#    formula        = brms::bf(y ~ x1 + x2 + x3),
+#    data           = my_data,
+#    re             = ~ (1 | regency),
+#    nonlinear      = c("x2", "x3"),
+#    nonlinear_type = "spline",       # spline for x2 AND x3
+#    prior_type     = "horseshoe",    # cascades automatically
+#    chains = 2, iter = 2000, refresh = 0
+#  )
+
+## -----------------------------------------------------------------------------
+#  fit_bin_hs <- hbm_binlogitnorm(
+#    response       = "y",
+#    trials         = "n",
+#    auxiliary      = c("x1", "x2", "x3", "x4", "x5"),
+#    area_var       = "district",
+#    data           = data_binlogitnorm,
+#    prior_type     = "horseshoe",
+#    hs_autoscale   = FALSE,            # binomial: no residual SD to scale by
 #    chains = 2, iter = 2000, refresh = 0
 #  )
 
@@ -168,7 +214,8 @@ knitr::opts_chunk$set(
 #  fit_gamma <- hbm_flex(
 #    family_key = "gamma_log",
 #    response   = "expenditure",
-#    predictors = c("age", "income", "education"),
+#    auxiliary  = c("age", "income", "education"),
+#    area_var   = "kecamatan",                    # area-level random effect
 #    data       = my_household_data
 #  )
 
@@ -198,23 +245,62 @@ knitr::opts_chunk$set(
 #  fit <- hbm_flex(
 #    family_key = "gamma_with_hyperprior",
 #    response   = "y",
-#    predictors = c("x1", "x2"),
+#    auxiliary  = c("x1", "x2"),
+#    area_var   = "area_id",                      # area-level random effect
 #    data       = my_data,
 #    aux_args   = list(add_shape_prior = TRUE)
 #  )
 
 ## -----------------------------------------------------------------------------
+#  # Fit two competing models
+#  fit_linear <- hbm(brms::bf(y ~ x1 + x2 + x3),
+#                     data = my_data, re = ~(1 | regency))
+#  fit_smooth <- hbm(brms::bf(y ~ x1 + x2 + x3),
+#                     data           = my_data,
+#                     re             = ~(1 | regency),
+#                     nonlinear      = c("x2", "x3"),
+#                     nonlinear_type = "spline")
+#  
+#  # Stacking (recommended Bayesian model averaging)
+#  avg_stack <- model_average(fit_linear, fit_smooth,
+#                              method = "stacking")
+#  
+#  # Inspect the computed weights
+#  attr(avg_stack, "weights")
+#  #> [1] 0.34 0.66
+#  attr(avg_stack, "weight_method")
+#  #> [1] "stacking"
+
+## -----------------------------------------------------------------------------
+#  fit <- hbm(brms::bf(y ~ x1 + x2 + x3),
+#             data           = my_data,
+#             re             = ~(1 | regency),
+#             prior_type     = "horseshoe",
+#             chains = 4, iter = 4000)
+#  
+#  # Report power-scaling diagnostics for every monitored parameter
+#  ps <- prior_sensitivity(fit)
+#  print(ps)
+#  #> # A tibble: 8 x 4
+#  #>   variable                  prior  likelihood diagnosis
+#  #>   <chr>                     <dbl>       <dbl> <chr>
+#  #> 1 b_Intercept              0.012        0.821 -
+#  #> 2 b_x1                     0.156        0.683 -
+#  #> 3 b_x2                     0.834        0.412 prior-data conflict
+#  #> ...
+
+## -----------------------------------------------------------------------------
 #  # 1. Check data
 #  chk <- check_data(my_data, response = "y",
-#                     predictors = c("x1", "x2", "x3"),
-#                     sre = "kecamatan")
+#                     auxiliary  = c("x1", "x2", "x3"),
+#                     spatial_var = "kecamatan")
 #  
 #  # 2. Build CAR matrix from shapefile
 #  M <- build_spatial_weight("kecamatan.shp",
 #                              for_model = "car",
 #                              id_col    = "kec_code")
 #  
-#  # 3. Configure with helpers (v0.4.1+); pass bundles directly to hbm()
+#  # 3. Configure with helpers (v1.0.0+); pass bundles directly to hbm()
 #  priors <- hbm_priors(prior_type = "horseshoe", hs_df_slab = 4)
 #  nl     <- hbm_nonlinear(c("x1"), type = "spline", k = 5)
 #  ctrl   <- hbm_control(chains = 4, iter = 4000, cores = 4,
@@ -224,7 +310,7 @@ knitr::opts_chunk$set(
 #  fit <- hbm(
 #    formula = brms::bf(y ~ x1 + x2 + x3),
 #    data    = my_data,
-#    sre = "kecamatan", sre_type = "car", M = M,
+#    spatial_var = "kecamatan", spatial_model = "car", M = M,
 #    handle_missing = chk$recommended_method,
 #    priors, nl, ctrl
 #  )

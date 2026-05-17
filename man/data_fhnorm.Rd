@@ -13,8 +13,14 @@ A data frame with 100 rows and 9 variables:
     level.}
   \item{\code{theta_true}}{True area-level latent value.}
   \item{\code{u}}{True area-level random effect.}
-  \item{\code{group}}{Area identifier (1-100) for random-effect grouping.}
-  \item{\code{sre}}{Spatial-random-effect grouping variable.}
+  \item{\code{regency}}{Regency identifier (\code{"regency_001"} ..
+    \code{"regency_100"}) used as the IID random-effect grouping
+    variable.  Use with \code{re = ~ (1 | regency)} or as
+    \code{area_var = "regency"} in the wrapper functions.}
+  \item{\code{province}}{Province identifier (\code{"province_01"} ..
+    \code{"province_05"}) used as the spatial random-effect grouping
+    variable for CAR or SAR models.  Use with
+    \code{spatial_var = "province"} and \code{M = adjacency_matrix_car}.}
 }
 }
 \source{
@@ -24,8 +30,8 @@ Simulated.
 data_fhnorm
 }
 \description{
-A simulated dataset for 100 areas under the Fay-Herriot Normal small-area
-model.  Used as the running example throughout the package
+A simulated dataset for 100 regencies under the Fay-Herriot Normal
+small-area model.  Used as the running example throughout the package
 documentation and vignettes.
 }
 \keyword{datasets}

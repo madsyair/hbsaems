@@ -48,7 +48,7 @@ Required for \code{method = "raking"}; ignored otherwise.}
 \item{posterior}{Optional logical or matrix.  Controls Bayesian mode:
 \describe{
   \item{\code{NULL} or \code{FALSE} (default)}{Point-estimate mode --
-    same behaviour as v0.4.x.}
+    same behaviour as v1.0.0.}
   \item{\code{TRUE}}{Bayesian mode.  Posterior draws are extracted
     from \code{predictions} automatically (requires
     \code{predictions$model} to be available).}

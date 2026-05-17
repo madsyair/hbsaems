@@ -5,8 +5,9 @@
 \alias{spatial_weight_sar}
 \title{Spatial Weight Matrix for Simultaneous Autoregressive Models}
 \format{
-A \eqn{100 \times 100} numeric matrix with row sums equal to one
-  (when at least one neighbour is present).
+A \eqn{100 \times 100} numeric matrix with row- and
+  column-names \code{regency_001} .. \code{regency_100} and row sums
+  equal to one (when at least one neighbour is present).
 }
 \source{
 Simulated.
@@ -15,7 +16,8 @@ Simulated.
 spatial_weight_sar
 }
 \description{
-A row-standardised spatial weight matrix for 100 areas, used for fitting
-Simultaneous Autoregressive (SAR) random effects.
+A row-standardised spatial weight matrix for 100 regencies, used for
+fitting Simultaneous Autoregressive (SAR) random effects.  Pairs with
+\code{data_fhnorm}'s \code{regency} column.
 }
 \keyword{datasets}

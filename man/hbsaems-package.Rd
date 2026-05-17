@@ -68,7 +68,7 @@ needed:
   \item \strong{Wrappers} -- \code{\link{hbm_lnln}},
         \code{\link{hbm_betalogitnorm}}, \code{\link{hbm_binlogitnorm}}.
         SAE-friendly arguments (\code{auxiliary}, \code{group},
-        \code{n} + \code{deff}, \code{sampling_var}).
+        \code{n} + \code{deff}, \code{sampling_variance}).
   \item \strong{Flexible factory} -- \code{\link{hbm_flex}}.  Works
         with any registered family, exposes the generic
         \code{fixed_params} interface.
@@ -178,7 +178,6 @@ Useful links:
 
 Authors:
 \itemize{
-  \item Achmad Syahrul Choir \email{madsyair@stis.ac.id} (\href{https://orcid.org/0000-0001-7088-0646}{ORCID})
   \item Saniyyah Sri Nurhayati
   \item Sofi Zamzanah
   \item Arsyka Laila Oktalia Siregar

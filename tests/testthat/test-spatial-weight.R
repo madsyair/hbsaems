@@ -58,8 +58,8 @@ test_that("for_model='car' sets type=queen, style=B", {
   skip_if_no_spatial()
   g <- .fake_grid_sf()
   M <- build_spatial_weight(g, for_model = "car", validate = FALSE)
-  expect_equal(attr(M, "hbsae_type"),  "queen")
-  expect_equal(attr(M, "hbsae_style"), "B")
+  expect_equal(attr(M, "hbsaems_type"),  "queen")
+  expect_equal(attr(M, "hbsaems_style"), "B")
   expect_true(all(M %in% c(0, 1)))
 })
 
@@ -72,8 +72,8 @@ test_that("for_model='sar' sets type=knn, style=W", {
     build_spatial_weight(g, for_model = "sar", k = 1L,
                           validate = FALSE)
   )
-  expect_equal(attr(M, "hbsae_type"),  "knn")
-  expect_equal(attr(M, "hbsae_style"), "W")
+  expect_equal(attr(M, "hbsaems_type"),  "knn")
+  expect_equal(attr(M, "hbsaems_style"), "W")
   # Row-standardised: rows sum to 1 (or 0 for isolated)
   rs <- rowSums(M)
   expect_true(all(abs(rs - 1) < 1e-10))
@@ -84,7 +84,7 @@ test_that("explicit type/style overrides for_model", {
   g <- .fake_grid_sf()
   M <- build_spatial_weight(g, for_model = "car",
                               type = "rook", validate = FALSE)
-  expect_equal(attr(M, "hbsae_type"), "rook")
+  expect_equal(attr(M, "hbsaems_type"), "rook")
 })
 
 
@@ -94,15 +94,15 @@ test_that("validate=TRUE attaches check object", {
   skip_if_no_spatial()
   g <- .fake_grid_sf()
   M <- build_spatial_weight(g, for_model = "car", validate = TRUE)
-  expect_s3_class(attr(M, "hbsae_check"), "hbsaems_spatial_check")
-  expect_true(attr(M, "hbsae_check")$compatible)
+  expect_s3_class(attr(M, "hbsaems_check"), "hbsaems_spatial_check")
+  expect_true(attr(M, "hbsaems_check")$compatible)
 })
 
 test_that("validate=FALSE skips checking", {
   skip_if_no_spatial()
   g <- .fake_grid_sf()
   M <- build_spatial_weight(g, for_model = "car", validate = FALSE)
-  expect_null(attr(M, "hbsae_check"))
+  expect_null(attr(M, "hbsaems_check"))
 })
 
 

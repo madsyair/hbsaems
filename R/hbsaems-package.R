@@ -63,7 +63,7 @@
 #'   \item \strong{Wrappers} -- \code{\link{hbm_lnln}},
 #'         \code{\link{hbm_betalogitnorm}}, \code{\link{hbm_binlogitnorm}}.
 #'         SAE-friendly arguments (\code{auxiliary}, \code{group},
-#'         \code{n} + \code{deff}, \code{sampling_var}).
+#'         \code{n} + \code{deff}, \code{sampling_variance}).
 #'   \item \strong{Flexible factory} -- \code{\link{hbm_flex}}.  Works
 #'         with any registered family, exposes the generic
 #'         \code{fixed_params} interface.

@@ -57,11 +57,14 @@
 #'   (treats \code{phi} as random with hyperprior).
 #' @param deff Character or \code{NULL}.  Name of the design-effect
 #'   column.  Required when \code{n} is supplied (and vice versa).
-#' @param group Character or \code{NULL}.  Name of the area-grouping
-#'   variable; if supplied, adds \code{(1 | group)} as a random
+#' @param area_var Character or \code{NULL}.  Name of the area-grouping
+#'   column; if supplied, adds \code{(1 | area_var)} as a random
 #'   intercept.
-#' @param sre,sre_type,car_type,sar_type,M Spatial random-effect arguments,
-#'   forwarded to \code{\link{hbm}}.
+#' @param spatial_var,spatial_model,car_type,sar_type,M Spatial
+#'   random-effect arguments, forwarded to \code{\link{hbm}}.
+#' @param group \strong{Deprecated.}  Use \code{area_var} instead.
+#' @param sre \strong{Deprecated.}  Use \code{spatial_var} instead.
+#' @param sre_type \strong{Deprecated.}  Use \code{spatial_model} instead.
 #' @param link_phi Character. Link function for \code{phi}; default
 #'   \code{"identity"} when \code{phi} is pinned (offset must be on the
 #'   identity scale).
@@ -125,7 +128,7 @@
 #' model1 <- hbm_betalogitnorm(
 #'   response   = "y",
 #'   auxiliary  = c("x1", "x2", "x3"),
-#'   group      = "group",
+#'   area_var   = "regency",
 #'   data       = data,
 #'   chains = 1, iter = 500, warmup = 250, refresh = 0
 #' )
@@ -137,7 +140,7 @@
 #'   auxiliary  = c("x1", "x2", "x3"),
 #'   n          = "n",
 #'   deff       = "deff",
-#'   group      = "group",
+#'   area_var   = "regency",
 #'   data       = data,
 #'   chains = 1, iter = 500, warmup = 250, refresh = 0
 #' )
@@ -147,7 +150,7 @@
 #' model3 <- hbm_betalogitnorm(
 #'   response   = "y",
 #'   auxiliary  = c("x1", "x2", "x3"),
-#'   group      = "group",
+#'   area_var   = "regency",
 #'   data       = data,
 #'   stanvars   = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
 #'                stanvar(scode = "beta  ~ gamma(2, 3);", block = "model"),
@@ -161,8 +164,8 @@
 #'   auxiliary  = c("x1", "x2", "x3"),
 #'   n          = "n",
 #'   deff       = "deff",
-#'   sre        = "sre",
-#'   sre_type   = "car",
+#'   spatial_var = "province",
+#'   spatial_model   = "car",
 #'   M          = adjacency_matrix_car,
 #'   data       = data,
 #'   chains = 1, iter = 500, warmup = 250, refresh = 0
@@ -183,9 +186,9 @@ hbm_betalogitnorm <- function(response,
                               data,
                               n              = NULL,
                               deff           = NULL,
-                              group          = NULL,
-                              sre            = NULL,
-                              sre_type       = NULL,
+                              area_var       = NULL,
+                              spatial_var    = NULL,
+                              spatial_model  = NULL,
                               car_type       = NULL,
                               sar_type       = NULL,
                               M              = NULL,
@@ -200,11 +203,15 @@ hbm_betalogitnorm <- function(response,
                               warmup         = floor(iter / 2),
                               cores          = 1L,
                               sample_prior   = "no",
-                              fixed_params   = NULL,    # v0.6.1: pinned dist parameters
-                              predictors     = NULL,    # DEPRECATED in v0.6.1
+                              fixed_params   = NULL,    # pinned dist parameters
+                              # -- DEPRECATED aliases (v1.0.0) ----
+                              predictors     = NULL,
+                              group          = NULL,
+                              sre            = NULL,
+                              sre_type       = NULL,
                               ...) {
 
-  # -- 0. Deprecated alias 'predictors' (v0.6.1) ----------------------------
+  # -- 0. Deprecated alias 'predictors' (v1.0.0) ----------------------------
   if (!is.null(predictors)) {
     if (!is.null(auxiliary))
       stop("Pass either `auxiliary` (preferred) or `predictors` (deprecated), ",
@@ -214,6 +221,30 @@ hbm_betalogitnorm <- function(response,
   }
   if (is.null(auxiliary))
     stop("`auxiliary` (auxiliary variables) is required.", call. = FALSE)
+
+  # -- 0b. Deprecated aliases: group -> area_var,
+  #         sre -> spatial_var, sre_type -> spatial_model
+  if (!is.null(group)) {
+    if (!is.null(area_var))
+      stop("Pass either `area_var` (preferred) or `group` (deprecated), ",
+           "but not both.", call. = FALSE)
+    .deprecate_arg("group", "area_var", "v2.0.0")
+    area_var <- group
+  }
+  if (!is.null(sre)) {
+    if (!is.null(spatial_var))
+      stop("Pass either `spatial_var` (preferred) or `sre` (deprecated), ",
+           "but not both.", call. = FALSE)
+    .deprecate_arg("sre", "spatial_var", "v2.0.0")
+    spatial_var <- sre
+  }
+  if (!is.null(sre_type)) {
+    if (!is.null(spatial_model))
+      stop("Pass either `spatial_model` (preferred) or `sre_type` ",
+           "(deprecated), but not both.", call. = FALSE)
+    .deprecate_arg("sre_type", "spatial_model", "v2.0.0")
+    spatial_model <- sre_type
+  }
 
 
   # -- 1. Input validation -----------------------------------------------------
@@ -237,8 +268,8 @@ hbm_betalogitnorm <- function(response,
   if (!is.null(deff) && !(deff %in% names(data)))
     stop(sprintf("`deff = \"%s\"` is not a column in `data`.", deff),
          call. = FALSE)
-  if (!is.null(group) && !(group %in% names(data)))
-    stop(sprintf("`group = \"%s\"` is not a column in `data`.", group),
+  if (!is.null(area_var) && !(area_var %in% names(data)))
+    stop(sprintf("`area_var = \"%s\"` is not a column in `data`.", area_var),
          call. = FALSE)
 
   # Response support: strictly in (0, 1)
@@ -342,8 +373,8 @@ hbm_betalogitnorm <- function(response,
   )
 
   # -- 5. Build random-effect formula -----------------------------------------
-  re_formula <- if (!is.null(group))
-    stats::as.formula(paste0("~ (1 | ", group, ")"))
+  re_formula <- if (!is.null(area_var))
+    stats::as.formula(paste0("~ (1 | ", area_var, ")"))
   else
     NULL
 
@@ -359,8 +390,8 @@ hbm_betalogitnorm <- function(response,
     hb_link        = "logit",
     link_phi       = link_phi,
     re             = re_formula,
-    sre            = sre,
-    sre_type       = sre_type,
+    spatial_var    = spatial_var,
+    spatial_model  = spatial_model,
     car_type       = car_type,
     sar_type       = sar_type,
     M              = M,

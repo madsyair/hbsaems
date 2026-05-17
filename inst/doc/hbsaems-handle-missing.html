@@ -445,7 +445,7 @@ more principled strategies can recover.</li>
 <span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a></span>
 <span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>fit_deleted <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
 <span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>  <span class="at">formula        =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>  <span class="at">re             =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> group),</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>  <span class="at">re             =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),</span>
 <span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>  <span class="at">data           =</span> data_miss_y,</span>
 <span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>  <span class="at">handle_missing =</span> <span class="st">&quot;deleted&quot;</span>,</span>
 <span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span></span>
@@ -459,7 +459,8 @@ to <code>&quot;deleted&quot;</code>, the call is rejected:</p>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a></span>
 <span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="fu">hbm</span>(brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
 <span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>    <span class="at">data           =</span> data_miss_x,</span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>    <span class="at">handle_missing =</span> <span class="st">&quot;deleted&quot;</span>)</span></code></pre></div>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>    <span class="at">re             =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>    <span class="at">handle_missing =</span> <span class="st">&quot;deleted&quot;</span>)</span></code></pre></div>
 <pre><code>Error: Option `handle_missing = &#39;deleted&#39;` requires all auxiliary (predictor)
 variables to be complete. Missing values were detected in: x1. Consider
 `handle_missing = &#39;multiple&#39;` to impute missing predictors.</code></pre>
@@ -483,7 +484,7 @@ package handles each pattern:</p>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>fit_mi <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">formula        =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">re             =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> group),</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">re             =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),</span>
 <span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">data           =</span> data_miss_x,</span>
 <span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  <span class="at">handle_missing =</span> <span class="st">&quot;multiple&quot;</span>,</span>
 <span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>  <span class="at">m              =</span> <span class="dv">5</span>,                       <span class="co"># 5 imputations</span></span>
@@ -520,7 +521,7 @@ but retained in the returned object:</p>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a></span>
 <span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>fit_mi_both <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">formula        =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">re             =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> group),</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">re             =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),</span>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="at">data           =</span> data_miss_both,</span>
 <span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  <span class="at">handle_missing =</span> <span class="st">&quot;multiple&quot;</span></span>
 <span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>)</span></code></pre></div>
@@ -559,7 +560,7 @@ missing <span class="math inline">\(Y\)</span>.</li>
 <span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co"># Gaussian family -&gt; auto-converts to &quot;model&quot; with | mi() on LHS</span></span>
 <span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>fit_auto1 <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
 <span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">formula        =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="at">re             =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> group),</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="at">re             =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),</span>
 <span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="at">data           =</span> data_miss_y_only,</span>
 <span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>  <span class="at">handle_missing =</span> <span class="st">&quot;multiple&quot;</span></span>
 <span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>)</span></code></pre></div>
@@ -574,7 +575,7 @@ missing Y with the model parameters (the correct Bayesian approach).</code></pre
 <p>Pass options through <code>mice_args</code>:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>fit_mi2 <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
 <span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>  <span class="at">formula        =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="at">re             =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> group),</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="at">re             =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),</span>
 <span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="at">data           =</span> data_miss_x,</span>
 <span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  <span class="at">handle_missing =</span> <span class="st">&quot;multiple&quot;</span>,</span>
 <span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  <span class="at">m              =</span> <span class="dv">10</span>,</span>
@@ -596,7 +597,7 @@ sub-models explicitly in the formula:</p>
 <span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>fit_model <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
 <span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>  <span class="at">formula        =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y  <span class="sc">|</span> <span class="fu">mi</span>() <span class="sc">~</span> <span class="fu">mi</span>(x1) <span class="sc">+</span> x2 <span class="sc">+</span> x3) <span class="sc">+</span></span>
 <span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>                   brms<span class="sc">::</span><span class="fu">bf</span>(x1 <span class="sc">|</span> <span class="fu">mi</span>() <span class="sc">~</span> x2 <span class="sc">+</span> x3),</span>
-<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>  <span class="at">re             =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> group),</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>  <span class="at">re             =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),</span>
 <span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>  <span class="at">data           =</span> data_miss_both,</span>
 <span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>  <span class="at">handle_missing =</span> <span class="st">&quot;model&quot;</span>,</span>
 <span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span></span>
@@ -626,14 +627,19 @@ missing <span class="math inline">\(Y\)</span>.</p>
 <p>If you omit <code>handle_missing</code>, the package looks at whether
 <strong>any</strong> missingness exists and selects based on the
 family’s <code>supports_mi</code> flag:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>fit_auto <span class="ot">&lt;-</span> <span class="fu">hbm_lnln</span>(</span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  <span class="at">response  =</span> <span class="st">&quot;y_obs&quot;</span>,</span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="at">auxiliary =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="at">group     =</span> <span class="st">&quot;group&quot;</span>,</span>
-<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  <span class="at">data      =</span> data_with_some_na,</span>
-<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>  <span class="co"># handle_missing not given</span></span>
-<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span></span>
-<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Build a data frame with some missing values to demonstrate</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;data_lnln&quot;</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>data_with_some_na <span class="ot">&lt;-</span> data_lnln</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>data_with_some_na<span class="sc">$</span>x1[<span class="fu">c</span>(<span class="dv">3</span>, <span class="dv">14</span>, <span class="dv">27</span>)] <span class="ot">&lt;-</span> <span class="cn">NA</span>    <span class="co"># missing covariate</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>fit_auto <span class="ot">&lt;-</span> <span class="fu">hbm_lnln</span>(</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>  <span class="at">response  =</span> <span class="st">&quot;y_obs&quot;</span>,</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>  <span class="at">auxiliary =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>  <span class="at">area_var  =</span> <span class="st">&quot;district&quot;</span>,</span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>  <span class="at">data      =</span> data_with_some_na,</span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>  <span class="co"># handle_missing not given</span></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>)</span></code></pre></div>
 <pre><code>Missing values detected. Auto-selecting handle_missing = &#39;multiple&#39;
 (family &#39;lognormal&#39;, supports_mi = FALSE).</code></pre>
 <p>The actual decision rule used in the code is:</p>

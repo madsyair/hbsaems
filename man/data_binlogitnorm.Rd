@@ -7,7 +7,7 @@
 \format{
 A data frame with 100 rows and 14 variables:
 \describe{
-  \item{\code{n}}{Number of trials in the area.}
+  \item{\code{n}}{Number of trials in the district.}
   \item{\code{y}}{Number of successes.}
   \item{\code{p}}{Direct proportion (\code{y / n}).}
   \item{\code{x1}, \code{x2}, \code{x3}}{Auxiliary covariates.}
@@ -16,8 +16,11 @@ A data frame with 100 rows and 14 variables:
   \item{\code{p_true}}{True success probability.}
   \item{\code{psi_i}}{Sampling variance.}
   \item{\code{y_obs}, \code{p_obs}}{Observed (direct) values.}
-  \item{\code{group}}{Area identifier (1-100).}
-  \item{\code{sre}}{Spatial-random-effect grouping variable.}
+  \item{\code{district}}{District identifier (\code{"district_001"} ..
+    \code{"district_100"}).}
+  \item{\code{regency}}{Regency identifier (\code{"regency_01"} ..
+    \code{"regency_05"}) -- spatial cluster level.  Pair with
+    \code{adjacency_matrix_car_regency}.}
 }
 }
 \source{
@@ -27,8 +30,8 @@ Simulated.
 data_binlogitnorm
 }
 \description{
-A simulated dataset for 100 areas under a Binomial logit-normal model.
-Each area provides a number of successes (\code{y}) out of \code{n}
-trials.
+A simulated dataset for 100 districts under a Binomial logit-normal
+model.  Each district provides a number of successes (\code{y}) out of
+\code{n} trials.
 }
 \keyword{datasets}

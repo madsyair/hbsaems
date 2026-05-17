@@ -380,8 +380,8 @@ SAE practitioners:</p>
 <li>a small set of <strong>convenience wrappers</strong>
 (<code>hbm_lnln</code>, <code>hbm_betalogitnorm</code>,
 <code>hbm_binlogitnorm</code>) with arguments named after SAE concepts
-(<code>auxiliary</code>, <code>sampling_var</code>, <code>n</code> +
-<code>deff</code>);</li>
+(<code>auxiliary</code>, <code>sampling_variance</code>, <code>n</code>
++ <code>deff</code>);</li>
 <li>a <strong>generic factory</strong> <code>hbm_flex()</code> that
 handles any registered likelihood;</li>
 <li>the <strong>universal entry point</strong> <code>hbm()</code> for
@@ -407,7 +407,7 @@ unsampled areas.</li>
                                        ▲
                                        |
         LAYER 1:  Wrappers (hbm_lnln, hbm_betalogitnorm, hbm_binlogitnorm)
-        SAE-friendly: response, auxiliary, group, n/deff, sampling_var</code></pre>
+        SAE-friendly: response, auxiliary, area_var, n/deff, sampling_variance</code></pre>
 <p>Most users start in <strong>Layer 1</strong>: pick the wrapper that
 matches your response distribution, plug in your data, get a fit. When a
 need arises that the wrapper doesn’t cover (an exotic family, a custom
@@ -422,16 +422,16 @@ known sampling variance <code>psi_i</code>, area-level auxiliary
 variables <code>x1</code>, <code>x2</code>, <code>x3</code>, and an area
 identifier <code>group</code>.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;data_lnln&quot;</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">str</span>(data_lnln[, <span class="fu">c</span>(<span class="st">&quot;group&quot;</span>, <span class="st">&quot;y_obs&quot;</span>, <span class="st">&quot;psi_i&quot;</span>, <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>)])</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">str</span>(data_lnln[, <span class="fu">c</span>(<span class="st">&quot;district&quot;</span>, <span class="st">&quot;y_obs&quot;</span>, <span class="st">&quot;psi_i&quot;</span>, <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>)])</span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; &#39;data.frame&#39;:    100 obs. of  6 variables:</span></span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt;  $ group: int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt;  $ y_obs: num  4.5 2.98 2.5 1.97 2.04 ...</span></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt;  $ psi_i: num  0.1222 0.0725 0.046 0.1003 0.0943 ...</span></span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt;  $ x1   : num  -0.5605 -0.2302 1.5587 0.0705 0.1293 ...</span></span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt;  $ x2   : num  0.2896 1.2569 0.7533 0.6525 0.0484 ...</span></span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt;  $ x3   : num  1.199 0.312 -1.265 -0.457 -1.414 ...</span></span></code></pre></div>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt;  $ district: chr  &quot;district_001&quot; &quot;district_002&quot; &quot;district_003&quot; &quot;district_004&quot; ...</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt;  $ y_obs   : num  4.5 2.98 2.5 1.97 2.04 ...</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt;  $ psi_i   : num  0.1222 0.0725 0.046 0.1003 0.0943 ...</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt;  $ x1      : num  -0.5605 -0.2302 1.5587 0.0705 0.1293 ...</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt;  $ x2      : num  0.2896 1.2569 0.7533 0.6525 0.0484 ...</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt;  $ x3      : num  1.199 0.312 -1.265 -0.457 -1.414 ...</span></span></code></pre></div>
 <pre><code>&#39;data.frame&#39;:   100 obs. of  6 variables:
- $ group: int  1 2 3 4 5 6 7 8 9 10 ...
+ $ district: chr  &quot;district_001&quot; &quot;district_002&quot; &quot;district_003&quot; &quot;district_004&quot; ...
  $ y_obs: num  4.21 3.18 6.55 5.04 7.12 ...
  $ psi_i: num  0.058 0.071 0.044 0.089 0.062 ...
  $ x1   : num  1.34 -0.42 0.51 -1.07 0.89 ...
@@ -442,7 +442,7 @@ identifier <code>group</code>.</p>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">hbm_lnln</span>(</span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">response  =</span> <span class="st">&quot;y_obs&quot;</span>,</span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">auxiliary =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">group     =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">area_var   =</span> <span class="st">&quot;district&quot;</span>,</span>
 <span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">data      =</span> data_lnln,</span>
 <span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">chains    =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>,</span>
 <span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">seed      =</span> <span class="dv">1</span></span>
@@ -452,8 +452,8 @@ sampling variance <code>psi_i</code>:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>fit_fh <span class="ot">&lt;-</span> <span class="fu">hbm_lnln</span>(</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="at">response     =</span> <span class="st">&quot;y_obs&quot;</span>,</span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">auxiliary    =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">group        =</span> <span class="st">&quot;group&quot;</span>,</span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">sampling_var =</span> <span class="st">&quot;psi_i&quot;</span>,     <span class="co"># &lt;- pins sigma_i = sqrt(psi_i)</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">area_var   =</span> <span class="st">&quot;district&quot;</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">sampling_variance =</span> <span class="st">&quot;psi_i&quot;</span>,     <span class="co"># &lt;- pins sigma_i = sqrt(psi_i)</span></span>
 <span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">data         =</span> data_lnln,</span>
 <span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span></span>
 <span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>)</span></code></pre></div>
@@ -464,12 +464,12 @@ downstream interface:</p>
 
  Observations : 100
  Family       : lognormal (link: identity )
- Formula      : y_obs ~ x1 + x2 + x3 + (1 | group)
+ Formula      : y_obs ~ x1 + x2 + x3 + (1 | district)
 
 ----- Parameter Estimates -----
  Family: lognormal
   Links: mu = identity; sigma = log
-Formula: y_obs ~ x1 + x2 + x3 + (1 | group)
+Formula: y_obs ~ x1 + x2 + x3 + (1 | district)
    Data: data_lnln (Number of observations: 100)
   Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
          total post-warmup draws = 8000
@@ -575,7 +575,7 @@ include, with or without spatial structure):</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>fit_no_x3 <span class="ot">&lt;-</span> <span class="fu">hbm_lnln</span>(</span>
 <span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="at">response  =</span> <span class="st">&quot;y_obs&quot;</span>,</span>
 <span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">auxiliary =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>),         <span class="co"># drop x3</span></span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">group     =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">area_var   =</span> <span class="st">&quot;district&quot;</span>,</span>
 <span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="at">data      =</span> data_lnln,</span>
 <span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span></span>
 <span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>)</span>
@@ -633,7 +633,7 @@ imputation;</li>
 <li>you need control over every brms argument.</li>
 </ul>
 <p>The three layers share a consistent interface
-(<code>auxiliary</code>, <code>group</code>, <code>sre</code>,
+(<code>auxiliary</code>, <code>group</code>, <code>spatial_var</code>,
 <code>M</code>, <code>fixed_params</code>, <code>prior</code>,
 <code>stanvars</code>), so moving down the hierarchy is mostly additive
 – you keep the arguments you already had and gain extras.</p>

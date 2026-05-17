@@ -10,9 +10,9 @@ hbm_betalogitnorm(
   data,
   n = NULL,
   deff = NULL,
-  group = NULL,
-  sre = NULL,
-  sre_type = NULL,
+  area_var = NULL,
+  spatial_var = NULL,
+  spatial_model = NULL,
   car_type = NULL,
   sar_type = NULL,
   M = NULL,
@@ -29,6 +29,9 @@ hbm_betalogitnorm(
   sample_prior = "no",
   fixed_params = NULL,
   predictors = NULL,
+  group = NULL,
+  sre = NULL,
+  sre_type = NULL,
   ...
 )
 }
@@ -51,12 +54,12 @@ n_i / \text{deff}_i - 1} is pinned via offset.  Default: \code{NULL}
 \item{deff}{Character or \code{NULL}.  Name of the design-effect
 column.  Required when \code{n} is supplied (and vice versa).}
 
-\item{group}{Character or \code{NULL}.  Name of the area-grouping
-variable; if supplied, adds \code{(1 | group)} as a random
+\item{area_var}{Character or \code{NULL}.  Name of the area-grouping
+column; if supplied, adds \code{(1 | area_var)} as a random
 intercept.}
 
-\item{sre, sre_type, car_type, sar_type, M}{Spatial random-effect arguments,
-forwarded to \code{\link{hbm}}.}
+\item{spatial_var, spatial_model, car_type, sar_type, M}{Spatial
+random-effect arguments, forwarded to \code{\link{hbm}}.}
 
 \item{link_phi}{Character. Link function for \code{phi}; default
 \code{"identity"} when \code{phi} is pinned (offset must be on the
@@ -92,6 +95,12 @@ parameter; use one or the other.}
 
 \item{predictors}{\strong{Deprecated.}  Use \code{auxiliary} instead.
 Kept for backward compatibility; will be removed in v2.0.0.}
+
+\item{group}{\strong{Deprecated.}  Use \code{area_var} instead.}
+
+\item{sre}{\strong{Deprecated.}  Use \code{spatial_var} instead.}
+
+\item{sre_type}{\strong{Deprecated.}  Use \code{spatial_model} instead.}
 }
 \value{
 An object of class \code{hbmfit}.
@@ -143,7 +152,7 @@ data <- data_betalogitnorm
 model1 <- hbm_betalogitnorm(
   response   = "y",
   auxiliary  = c("x1", "x2", "x3"),
-  group      = "group",
+  area_var   = "regency",
   data       = data,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
@@ -155,7 +164,7 @@ model2 <- hbm_betalogitnorm(
   auxiliary  = c("x1", "x2", "x3"),
   n          = "n",
   deff       = "deff",
-  group      = "group",
+  area_var   = "regency",
   data       = data,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
@@ -165,7 +174,7 @@ summary(model2)
 model3 <- hbm_betalogitnorm(
   response   = "y",
   auxiliary  = c("x1", "x2", "x3"),
-  group      = "group",
+  area_var   = "regency",
   data       = data,
   stanvars   = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
                stanvar(scode = "beta  ~ gamma(2, 3);", block = "model"),
@@ -179,8 +188,8 @@ model4 <- hbm_betalogitnorm(
   auxiliary  = c("x1", "x2", "x3"),
   n          = "n",
   deff       = "deff",
-  sre        = "sre",
-  sre_type   = "car",
+  spatial_var = "province",
+  spatial_model   = "car",
   M          = adjacency_matrix_car,
   data       = data,
   chains = 1, iter = 500, warmup = 250, refresh = 0

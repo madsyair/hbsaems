@@ -4,16 +4,24 @@
 \alias{check_spatial_weight}
 \title{Validate a Spatial Weight Matrix Against CAR/SAR Theory}
 \usage{
-check_spatial_weight(M, sre_type = c("car", "sar"), verbose = TRUE)
+check_spatial_weight(
+  M,
+  spatial_model = c("car", "sar"),
+  verbose = TRUE,
+  sre_type = NULL
+)
 }
 \arguments{
 \item{M}{A square numeric matrix.}
 
-\item{sre_type}{Character.  \code{"car"} or \code{"sar"} -- the model
-class the matrix is intended for.}
+\item{spatial_model}{Character.  \code{"car"} or \code{"sar"} -- the
+model class the matrix is intended for.}
 
 \item{verbose}{Logical.  When \code{TRUE} (default), prints a formatted
 diagnostic report.}
+
+\item{sre_type}{\strong{Deprecated.}  Use \code{spatial_model} instead.
+Kept for backward compatibility; will be removed in v2.0.0.}
 }
 \value{
 Invisibly, an object of class \code{hbsaems_spatial_check} with
@@ -29,7 +37,7 @@ Invisibly, an object of class \code{hbsaems_spatial_check} with
     \item{\code{issues}}{Character vector of fatal errors.}
     \item{\code{warnings}}{Character vector of soft warnings.}
     \item{\code{compatible}}{Logical: TRUE if matrix is theoretically
-      compatible with \code{sre_type}.}
+      compatible with \code{spatial_model}.}
   }
 }
 \description{
@@ -69,11 +77,11 @@ M <- matrix(c(0, 1, 1, 0,
               1, 0, 0, 1,
               1, 0, 0, 1,
               0, 1, 1, 0), 4, 4)
-check_spatial_weight(M, sre_type = "car")
+check_spatial_weight(M, spatial_model = "car")
 
 # An asymmetric matrix flagged for CAR
 M2 <- M; M2[1, 2] <- 2
-check_spatial_weight(M2, sre_type = "car", verbose = FALSE)$issues
+check_spatial_weight(M2, spatial_model = "car", verbose = FALSE)$issues
 
 }
 \seealso{

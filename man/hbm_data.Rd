@@ -21,7 +21,7 @@ library(hbsaems)
 library(brms)
 data("data_fhnorm")
 model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
-             re = ~ (1 | group),    # area-level random effect
+             re = ~ (1 | regency),    # area-level random effect
              chains = 2, iter = 1000, warmup = 500,
              cores = 1, seed = 1, refresh = 0)
 head(hbm_data(model))

@@ -11,7 +11,7 @@
 #   1. Square matrix
 #   2. Zero diagonal (no self-loops)
 #   3. Symmetry (required for CAR; warning for asymmetric SAR)
-#   4. Style appropriate for sre_type (B for CAR, W for SAR)
+#   4. Style appropriate for spatial_model (B for CAR, W for SAR)
 #   5. Graph connectivity (warning for isolated nodes)
 # =============================================================================
 
@@ -24,10 +24,12 @@
 #' results.
 #'
 #' @param M A square numeric matrix.
-#' @param sre_type Character.  \code{"car"} or \code{"sar"} -- the model
-#'   class the matrix is intended for.
+#' @param spatial_model Character.  \code{"car"} or \code{"sar"} -- the
+#'   model class the matrix is intended for.
 #' @param verbose Logical.  When \code{TRUE} (default), prints a formatted
 #'   diagnostic report.
+#' @param sre_type \strong{Deprecated.}  Use \code{spatial_model} instead.
+#'   Kept for backward compatibility; will be removed in v2.0.0.
 #'
 #' @return Invisibly, an object of class \code{hbsaems_spatial_check} with
 #'   components:
@@ -42,7 +44,7 @@
 #'     \item{\code{issues}}{Character vector of fatal errors.}
 #'     \item{\code{warnings}}{Character vector of soft warnings.}
 #'     \item{\code{compatible}}{Logical: TRUE if matrix is theoretically
-#'       compatible with \code{sre_type}.}
+#'       compatible with \code{spatial_model}.}
 #'   }
 #'
 #' @details
@@ -76,19 +78,29 @@
 #'               1, 0, 0, 1,
 #'               1, 0, 0, 1,
 #'               0, 1, 1, 0), 4, 4)
-#' check_spatial_weight(M, sre_type = "car")
+#' check_spatial_weight(M, spatial_model = "car")
 #'
 #' # An asymmetric matrix flagged for CAR
 #' M2 <- M; M2[1, 2] <- 2
-#' check_spatial_weight(M2, sre_type = "car", verbose = FALSE)$issues
+#' check_spatial_weight(M2, spatial_model = "car", verbose = FALSE)$issues
 #'
 #' @seealso \code{\link{build_spatial_weight}}, \code{\link{hbm}}
 #' @export
 check_spatial_weight <- function(M,
-                                  sre_type = c("car", "sar"),
-                                  verbose  = TRUE) {
+                                  spatial_model = c("car", "sar"),
+                                  verbose       = TRUE,
+                                  sre_type      = NULL) {
 
-  sre_type <- match.arg(sre_type)
+  # -- Deprecated alias handling ---------------------------------------------
+  if (!is.null(sre_type)) {
+    if (!missing(spatial_model))
+      stop("Pass either `spatial_model` (preferred) or `sre_type` ",
+           "(deprecated), but not both.", call. = FALSE)
+    .deprecate_arg("sre_type", "spatial_model", "v2.0.0")
+    spatial_model <- sre_type
+  }
+
+  spatial_model <- match.arg(spatial_model)
 
   if (!is.matrix(M))
     stop("'M' must be a matrix.", call. = FALSE)
@@ -116,7 +128,7 @@ check_spatial_weight <- function(M,
   # -- 3. Symmetry -----------------------------------------------------------
   is_symmetric <- if (is_square) isSymmetric(unname(M)) else NA
   if (isFALSE(is_symmetric)) {
-    if (sre_type == "car")
+    if (spatial_model == "car")
       issues <- c(issues, paste0(
         "CAR requires a symmetric weight matrix (Besag 1974). ",
         "Detected asymmetry. Consider symmetrising via ",
@@ -137,13 +149,13 @@ check_spatial_weight <- function(M,
     else                                         "other"
   } else "unknown"
 
-  if (sre_type == "car" && detected_style == "W")
+  if (spatial_model == "car" && detected_style == "W")
     warns <- c(warns, paste0(
       "CAR is conventionally fit on a BINARY adjacency matrix (style = 'B'), ",
       "but a row-standardised matrix was supplied. The model will still ",
       "compile but interpretation differs from standard Besag CAR."
     ))
-  if (sre_type == "sar" && detected_style == "B")
+  if (spatial_model == "sar" && detected_style == "B")
     warns <- c(warns, paste0(
       "SAR is conventionally fit on a ROW-STANDARDISED matrix (style = 'W'), ",
       "but a binary matrix was supplied. The spatial autoregressive ",

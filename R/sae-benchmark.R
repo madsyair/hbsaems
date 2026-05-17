@@ -8,7 +8,7 @@
 #   * "difference"  --  additive adjustment (Pfeffermann-Tiller)
 #   * "raking"      --  iterative proportional fitting (multi-target)
 #
-# v0.5.0: Now supports FULLY BAYESIAN benchmarking via the `posterior`
+# Now supports FULLY BAYESIAN benchmarking via the `posterior`
 # argument.  Each draw is benchmarked independently; SD, quantiles, and
 # RSE are recomputed from the adjusted draws -- giving statistically
 # correct uncertainty after benchmarking.
@@ -117,7 +117,7 @@
 #' @param posterior Optional logical or matrix.  Controls Bayesian mode:
 #'   \describe{
 #'     \item{\code{NULL} or \code{FALSE} (default)}{Point-estimate mode --
-#'       same behaviour as v0.4.x.}
+#'       same behaviour as v1.0.0.}
 #'     \item{\code{TRUE}}{Bayesian mode.  Posterior draws are extracted
 #'       from \code{predictions} automatically (requires
 #'       \code{predictions$model} to be available).}

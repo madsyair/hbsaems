@@ -31,7 +31,7 @@ data("data_fhnorm")
 # `sample_prior = "yes"` works best when all coefficients have a
 # proper prior; supply explicit priors on the regression class.
 model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
-             re = ~ (1 | group),    # area-level random effect
+             re = ~ (1 | regency),    # area-level random effect
              sample_prior = "yes",
              prior        = c(
                brms::prior(normal(0, 1), class = "b"),

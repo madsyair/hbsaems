@@ -137,7 +137,7 @@ test_that("benchmark_info contains expected fields", {
 
 
 # =============================================================================
-# v0.5.0: Fully Bayesian benchmarking tests
+# v1.0.0: Fully Bayesian benchmarking tests
 # =============================================================================
 
 # Helper: build hbsae_results with synthetic posterior draws

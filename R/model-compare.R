@@ -1,6 +1,6 @@
 # R/model-compare.R
 # =============================================================================
-# Primary model-comparison function for hbsaems v0.3.0+.
+# Primary model-comparison function for hbsaems 1.0.0+.
 #
 #   model_compare()      -- 1 or 2 models  (replaces deprecated hbmc())
 #   model_compare_all()  -- N models (analogous to brms::loo_compare)
@@ -236,28 +236,69 @@ model_compare_all <- function(..., criterion = c("loo", "waic", "both")) {
 
 #' Bayesian Model Averaging on Small-Area Estimates
 #'
-#' Averages the area-level predictions across multiple fitted HBMs using a
-#' user-supplied weight vector.  Internally calls \code{\link{sae_predict}}
-#' on each model and then \code{\link{sae_aggregate}} with
-#' \code{method = "weighted"}.
+#' Averages the area-level predictions across multiple fitted HBMs.
+#' Weights may be supplied manually \emph{or} computed automatically
+#' from leave-one-out cross-validation via
+#' \code{\link[loo]{loo_model_weights}} -- the canonical Bayesian
+#' stacking / pseudo-BMA approach of Yao et al.\ (2018).
+#'
+#' @details
+#' Three weighting modes are supported:
+#' \itemize{
+#'   \item \code{method = "manual"} (default when \code{weights} is supplied):
+#'     use the user-supplied \code{weights} vector directly.  Internally
+#'     normalised to sum to 1.
+#'   \item \code{method = "stacking"}:  weights are obtained from
+#'     \code{loo::loo_model_weights(loo_list, method = "stacking")},
+#'     which optimises a log-score over a simplex.  Recommended when
+#'     models are well-specified but capture different features of
+#'     the data (Yao et al.\ 2018).
+#'   \item \code{method = "pseudobma"}: weights are obtained from
+#'     \code{loo::loo_model_weights(loo_list, method = "pseudobma")},
+#'     a smoothed pseudo-BMA+ that resembles classical BMA but uses
+#'     PSIS-LOO log scores.  Use as a robust default when one model
+#'     is much better than the others.
+#' }
+#' Internally calls \code{\link{sae_predict}} on each model and then
+#' \code{\link{sae_aggregate}} with \code{method = "weighted"}.
 #'
 #' @param ...     Two or more \code{hbmfit} objects.
-#' @param weights Numeric weights of the same length as the number of models.
-#'   \code{NULL} (default) gives equal weights.  Internally normalised to
-#'   sum to 1.
+#' @param weights Numeric weights of the same length as the number of
+#'   models, or \code{NULL}.  When \code{NULL} and \code{method = "manual"},
+#'   equal weights are used.
+#' @param method  Character.  Weighting method: \code{"manual"} (default),
+#'   \code{"stacking"} (Yao et al. 2018), or \code{"pseudobma"}.  When
+#'   \code{"stacking"} or \code{"pseudobma"}, \code{weights} must be
+#'   \code{NULL}; an error is raised otherwise.
 #' @param newdata Optional new \code{data.frame} forwarded to
 #'   \code{\link{sae_predict}}.
 #'
-#' @return An \code{hbsae_results} object of averaged predictions.
+#' @return An \code{hbsae_results} object of averaged predictions.  The
+#'   computed weights are attached as an attribute \code{"weights"}.
+#'
+#' @references
+#' Yao, Y., Vehtari, A., Simpson, D., & Gelman, A. (2018).  Using
+#' stacking to average Bayesian predictive distributions (with
+#' discussion).  \emph{Bayesian Analysis}, 13(3), 917--1007.
+#' \doi{10.1214/17-BA1091}
+#'
+#' Vehtari, A., Gelman, A., & Gabry, J. (2017).  Practical Bayesian
+#' model evaluation using leave-one-out cross-validation and WAIC.
+#' \emph{Statistics and Computing}, 27(5), 1413--1432.
 #'
 #' @examples
 #' \donttest{
 #' # See ?model_compare_all for the full example fitting m1 / m2.
-#' # avg <- model_average(m1, m2, weights = c(0.6, 0.4))
+#' # Manual:    avg <- model_average(m1, m2, weights = c(0.6, 0.4))
+#' # Stacking:  avg <- model_average(m1, m2, method = "stacking")
+#' # Pseudo-BMA: avg <- model_average(m1, m2, method = "pseudobma")
 #' }
 #' @export
-model_average <- function(..., weights = NULL, newdata = NULL) {
+model_average <- function(..., weights = NULL,
+                            method = c("manual", "stacking", "pseudobma"),
+                            newdata = NULL) {
   models <- list(...)
+  method <- match.arg(method)
 
   if (length(models) < 2L)
     stop("model_average() requires at least two hbmfit objects.",
@@ -266,14 +307,37 @@ model_average <- function(..., weights = NULL, newdata = NULL) {
     stop("All arguments must be hbmfit objects.", call. = FALSE)
 
   n <- length(models)
-  if (is.null(weights)) weights <- rep(1 / n, n)
-  if (length(weights) != n)
-    stop("length(weights) must equal the number of models.", call. = FALSE)
-  if (any(weights < 0))
-    stop("All weights must be non-negative.", call. = FALSE)
 
-  weights <- weights / sum(weights)
+  # ---- Compute or validate weights --------------------------------------
+  if (method == "manual") {
+    if (is.null(weights)) weights <- rep(1 / n, n)
+    if (length(weights) != n)
+      stop("length(weights) must equal the number of models.", call. = FALSE)
+    if (any(weights < 0))
+      stop("All weights must be non-negative.", call. = FALSE)
+    weights <- weights / sum(weights)
+  } else {
+    # Automatic weighting via loo
+    if (!is.null(weights))
+      stop("`weights` must be NULL when method = \"", method, "\".",
+           call. = FALSE)
+    if (!requireNamespace("loo", quietly = TRUE))
+      stop("Package 'loo' is required for method = '", method,
+           "'. Install with: install.packages('loo')", call. = FALSE)
+    loo_list <- lapply(models, function(m) brms::loo(m$model))
+    weights  <- as.numeric(
+      loo::loo_model_weights(loo_list, method = method)
+    )
+    if (length(weights) != n)
+      stop("loo_model_weights() returned ", length(weights),
+           " weights for ", n, " models.", call. = FALSE)
+  }
+
+  # ---- Average ---------------------------------------------------------
   ests    <- lapply(models, function(m) sae_predict(m, newdata = newdata))
-  do.call(sae_aggregate, c(ests, list(method = "weighted",
-                                      weights = weights)))
+  out <- do.call(sae_aggregate, c(ests, list(method = "weighted",
+                                              weights = weights)))
+  attr(out, "weights") <- weights
+  attr(out, "weight_method") <- method
+  out
 }

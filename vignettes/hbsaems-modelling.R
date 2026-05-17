@@ -12,14 +12,14 @@ suppressPackageStartupMessages(library(hbsaems))
 
 ## ----data-glimpse, eval = TRUE------------------------------------------------
 data("data_lnln")
-str(data_lnln[, c("group", "y_obs", "psi_i", "x1", "x2", "x3")])
+str(data_lnln[, c("district", "y_obs", "psi_i", "x1", "x2", "x3")])
 
 ## ----fit-basic----------------------------------------------------------------
 # library(hbsaems)
 # fit <- hbm_lnln(
 #   response  = "y_obs",
 #   auxiliary = c("x1", "x2", "x3"),
-#   group     = "group",
+#   area_var   = "district",
 #   data      = data_lnln,
 #   chains    = 4, iter = 4000, warmup = 2000, cores = 4,
 #   seed      = 1
@@ -29,8 +29,8 @@ str(data_lnln[, c("group", "y_obs", "psi_i", "x1", "x2", "x3")])
 # fit_fh <- hbm_lnln(
 #   response     = "y_obs",
 #   auxiliary    = c("x1", "x2", "x3"),
-#   group        = "group",
-#   sampling_var = "psi_i",     # <- pins sigma_i = sqrt(psi_i)
+#   area_var   = "district",
+#   sampling_variance = "psi_i",     # <- pins sigma_i = sqrt(psi_i)
 #   data         = data_lnln,
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 # )
@@ -49,7 +49,7 @@ summary(data_lnln[, c("y_obs", "psi_i", "x1", "x2", "x3")])
 # fit_no_x3 <- hbm_lnln(
 #   response  = "y_obs",
 #   auxiliary = c("x1", "x2"),         # drop x3
-#   group     = "group",
+#   area_var   = "district",
 #   data      = data_lnln,
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 # )

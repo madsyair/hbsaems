@@ -6,7 +6,7 @@
 # Both `sf` (for shapefile I/O) and `spdep` (for neighbour computation) are
 # in Suggests and accessed through requireNamespace() guards.
 #
-# v0.4.0+: Added theoretical guidance via the `for_model` argument that
+# Added theoretical guidance via the `for_model` argument that
 # auto-selects sensible defaults for the chosen model class (CAR vs SAR).
 # =============================================================================
 
@@ -95,8 +95,8 @@
 #'
 #' @return A square numeric matrix with row/column names taken from
 #'   \code{id_col} (if supplied) or sequential integers, plus the
-#'   following attributes: \code{"hbsae_type"}, \code{"hbsae_style"},
-#'   \code{"hbsae_for_model"}, \code{"hbsae_check"} (the result of
+#'   following attributes: \code{"hbsaems_type"}, \code{"hbsaems_style"},
+#'   \code{"hbsaems_for_model"}, \code{"hbsaems_check"} (the result of
 #'   \code{check_spatial_weight}).
 #'
 #' @section Reproducibility note:
@@ -105,34 +105,30 @@
 #' depend on feature ordering.
 #'
 #' @examples
-#' \dontrun{
-#' # Recommended for CAR: queen contiguity + binary style
-#' M_car <- build_spatial_weight(
-#'   shp        = "areas.shp",
-#'   for_model  = "car",      # implies type = "queen", style = "B"
-#'   id_col     = "area_id"
-#' )
+#' # Inspect a pre-built CAR adjacency matrix shipped with the package
+#' data("adjacency_matrix_car")
+#' dim(adjacency_matrix_car)
+#' check_spatial_weight(adjacency_matrix_car, spatial_model = "car",
+#'                       verbose = FALSE)$compatible
 #'
-#' # Recommended for SAR: 4 nearest neighbours + row-standardised
-#' M_sar <- build_spatial_weight(
-#'   shp        = "areas.shp",
-#'   for_model  = "sar",      # implies type = "knn", style = "W"
-#'   k          = 4
-#' )
-#'
-#' # Explicit override
-#' M_explicit <- build_spatial_weight(
-#'   shp   = my_sf,
-#'   type  = "rook",
-#'   style = "B"
-#' )
-#'
-#' # Pass to hbm()
-#' fit <- hbm(brms::bf(y ~ x1 + x2),
-#'            data = my_data,
-#'            sre = "area_id",
-#'            sre_type = "car",
-#'            M = M_car)
+#' \donttest{
+#' # Build a CAR matrix from an sf object (requires sf + spdep)
+#' if (requireNamespace("sf", quietly = TRUE) &&
+#'     requireNamespace("spdep", quietly = TRUE)) {
+#'   library(sf)
+#'   # A small 2x2 grid of polygons
+#'   g <- st_sf(
+#'     id = LETTERS[1:4],
+#'     geometry = st_sfc(
+#'       st_polygon(list(rbind(c(0,0), c(1,0), c(1,1), c(0,1), c(0,0)))),
+#'       st_polygon(list(rbind(c(1,0), c(2,0), c(2,1), c(1,1), c(1,0)))),
+#'       st_polygon(list(rbind(c(0,1), c(1,1), c(1,2), c(0,2), c(0,1)))),
+#'       st_polygon(list(rbind(c(1,1), c(2,1), c(2,2), c(1,2), c(1,1))))
+#'     )
+#'   )
+#'   M_car <- build_spatial_weight(g, for_model = "car")
+#'   M_sar <- build_spatial_weight(g, for_model = "sar", k = 2L)
+#' }
 #' }
 #'
 #' @references
@@ -245,16 +241,16 @@ build_spatial_weight <- function(shp,
   colnames(M) <- ids
 
   # -- 7. Annotate with metadata --------------------------------------------
-  attr(M, "hbsae_type")      <- type
-  attr(M, "hbsae_style")     <- style
-  attr(M, "hbsae_for_model") <- for_model
+  attr(M, "hbsaems_type")      <- type
+  attr(M, "hbsaems_style")     <- style
+  attr(M, "hbsaems_for_model") <- for_model
 
   # -- 8. Run theoretical validation ----------------------------------------
   if (isTRUE(validate)) {
     target_model <- for_model %||% (if (style == "B") "car" else "sar")
-    chk <- check_spatial_weight(M, sre_type = target_model,
+    chk <- check_spatial_weight(M, spatial_model = target_model,
                                   verbose = FALSE)
-    attr(M, "hbsae_check") <- chk
+    attr(M, "hbsaems_check") <- chk
 
     # Surface critical issues to the user
     for (msg in chk$warnings)

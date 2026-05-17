@@ -21,7 +21,7 @@ handling.
 }
 \examples{
 chk <- check_data(data.frame(y = 1:5, x = 1:5),
-                  response = "y", predictors = "x")
+                  response = "y", auxiliary = "x")
 is.hbsaems_check(chk)              # TRUE
 is.hbsaems_check("not a check")    # FALSE
 

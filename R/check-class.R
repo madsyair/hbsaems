@@ -12,7 +12,6 @@
 #   c("hbsaems_data_check",    "hbsaems_check")  -- from check_data()
 #   c("hbsaems_spatial_check", "hbsaems_check")  -- from check_spatial_weight()
 #   c("hbsaems_shiny_check",   "hbsaems_check")  -- from check_shiny_deps()
-#                                                    (added in v0.4.1)
 # =============================================================================
 
 
@@ -30,7 +29,7 @@
 #'
 #' @examples
 #' chk <- check_data(data.frame(y = 1:5, x = 1:5),
-#'                   response = "y", predictors = "x")
+#'                   response = "y", auxiliary = "x")
 #' is.hbsaems_check(chk)              # TRUE
 #' is.hbsaems_check("not a check")    # FALSE
 #'

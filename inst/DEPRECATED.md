@@ -16,27 +16,27 @@ There are two categories:
 
 ---
 
-## Currently active deprecations (v0.5.1)
+## Currently active deprecations (v1.0.0)
 
-These four functions were renamed in v0.3.0 and remain available as
+These four functions were renamed in v1.0.0 and remain available as
 deprecated aliases.  All four forward to their replacement, so
 behaviour is identical to the new name.
 
 | Deprecated  | Replacement           | Since  | Note |
 |-------------|-----------------------|:------:|------|
-| `hbcc()`    | `convergence_check()` | v0.3.0 | Match `verb_noun()` naming convention |
-| `hbmc()`    | `model_compare()`     | v0.3.0 | Match `verb_noun()` naming convention |
-| `hbpc()`    | `prior_check()`       | v0.3.0 | Match `verb_noun()` naming convention |
-| `hbsae()`   | `sae_predict()`       | v0.3.0 | Disambiguate from the package name |
+| `hbcc()`    | `convergence_check()` | v1.0.0 | Match `verb_noun()` naming convention |
+| `hbmc()`    | `model_compare()`     | v1.0.0 | Match `verb_noun()` naming convention |
+| `hbpc()`    | `prior_check()`       | v1.0.0 | Match `verb_noun()` naming convention |
+| `hbsae()`   | `sae_predict()`       | v1.0.0 | Disambiguate from the package name |
 
 ```r
-# v0.2.x style (deprecated -- warns once per session):
+# v1.0.0 style (deprecated -- warns once per session):
 hbcc(model)        # diagnostics
 hbmc(model)        # model comparison
 hbpc(model, ...)   # prior predictive
 hbsae(model, ...)  # prediction
 
-# v0.3.0+ style (current):
+# v1.0.0+ style (current):
 convergence_check(model)
 model_compare(model)
 prior_check(model, ...)
@@ -45,25 +45,25 @@ sae_predict(model, ...)
 
 ---
 
-## Removed in v0.5.1 (no longer callable)
+## Removed in v1.0.0 (no longer callable)
 
 The three aliases below were active deprecations in earlier versions
-but have been **removed** as of v0.5.1.  Their replacements
+but have been **removed** as of v1.0.0.  Their replacements
 (`hbm_flex()` and `hbm()`) provide identical functionality.
 
 | Removed             | Use instead    | Original deprecation | Removed in |
 |---------------------|----------------|:--------------------:|:----------:|
-| `hbsae_wrapper()`   | `hbm_flex()`   | v0.4.0               | v0.5.1     |
-| `hbm_generic()`     | `hbm_flex()`   | v0.5.1               | v0.5.1     |
-| `hbm_call()`        | `hbm()`        | v0.5.0               | v0.5.1     |
+| `hbsae_wrapper()`   | `hbm_flex()`   | v1.0.0               | v1.0.0     |
+| `hbm_generic()`     | `hbm_flex()`   | v1.0.0               | v1.0.0     |
+| `hbm_call()`        | `hbm()`        | v1.0.0               | v1.0.0     |
 
 Why three aliases pointing to two replacements?  Two reasons:
 
 * The factory function evolved through two naming generations
   (`hbsae_wrapper` -> `hbm_generic` -> `hbm_flex`); both legacy names
-  were preserved in `v0.4.x` -- `v0.5.0`, then removed together.
-* `hbm_call` was a v0.4.1 helper that spliced configuration bundles
-  into `hbm()`.  Since v0.5.0, `hbm()` does that splicing itself when
+  were preserved in `v1.0.0` -- `v1.0.0`, then removed together.
+* `hbm_call` was a v1.0.0 helper that spliced configuration bundles
+  into `hbm()`.  Since v1.0.0, `hbm()` does that splicing itself when
   passed objects of class `hbm_config`, so `hbm_call` became redundant.
 
 ### Migration

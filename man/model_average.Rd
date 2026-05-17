@@ -4,30 +4,74 @@
 \alias{model_average}
 \title{Bayesian Model Averaging on Small-Area Estimates}
 \usage{
-model_average(..., weights = NULL, newdata = NULL)
+model_average(
+  ...,
+  weights = NULL,
+  method = c("manual", "stacking", "pseudobma"),
+  newdata = NULL
+)
 }
 \arguments{
 \item{...}{Two or more \code{hbmfit} objects.}
 
-\item{weights}{Numeric weights of the same length as the number of models.
-\code{NULL} (default) gives equal weights.  Internally normalised to
-sum to 1.}
+\item{weights}{Numeric weights of the same length as the number of
+models, or \code{NULL}.  When \code{NULL} and \code{method = "manual"},
+equal weights are used.}
+
+\item{method}{Character.  Weighting method: \code{"manual"} (default),
+\code{"stacking"} (Yao et al. 2018), or \code{"pseudobma"}.  When
+\code{"stacking"} or \code{"pseudobma"}, \code{weights} must be
+\code{NULL}; an error is raised otherwise.}
 
 \item{newdata}{Optional new \code{data.frame} forwarded to
 \code{\link{sae_predict}}.}
 }
 \value{
-An \code{hbsae_results} object of averaged predictions.
+An \code{hbsae_results} object of averaged predictions.  The
+  computed weights are attached as an attribute \code{"weights"}.
 }
 \description{
-Averages the area-level predictions across multiple fitted HBMs using a
-user-supplied weight vector.  Internally calls \code{\link{sae_predict}}
-on each model and then \code{\link{sae_aggregate}} with
-\code{method = "weighted"}.
+Averages the area-level predictions across multiple fitted HBMs.
+Weights may be supplied manually \emph{or} computed automatically
+from leave-one-out cross-validation via
+\code{\link[loo]{loo_model_weights}} -- the canonical Bayesian
+stacking / pseudo-BMA approach of Yao et al.\ (2018).
+}
+\details{
+Three weighting modes are supported:
+\itemize{
+  \item \code{method = "manual"} (default when \code{weights} is supplied):
+    use the user-supplied \code{weights} vector directly.  Internally
+    normalised to sum to 1.
+  \item \code{method = "stacking"}:  weights are obtained from
+    \code{loo::loo_model_weights(loo_list, method = "stacking")},
+    which optimises a log-score over a simplex.  Recommended when
+    models are well-specified but capture different features of
+    the data (Yao et al.\ 2018).
+  \item \code{method = "pseudobma"}: weights are obtained from
+    \code{loo::loo_model_weights(loo_list, method = "pseudobma")},
+    a smoothed pseudo-BMA+ that resembles classical BMA but uses
+    PSIS-LOO log scores.  Use as a robust default when one model
+    is much better than the others.
+}
+Internally calls \code{\link{sae_predict}} on each model and then
+\code{\link{sae_aggregate}} with \code{method = "weighted"}.
 }
 \examples{
 \donttest{
 # See ?model_compare_all for the full example fitting m1 / m2.
-# avg <- model_average(m1, m2, weights = c(0.6, 0.4))
+# Manual:    avg <- model_average(m1, m2, weights = c(0.6, 0.4))
+# Stacking:  avg <- model_average(m1, m2, method = "stacking")
+# Pseudo-BMA: avg <- model_average(m1, m2, method = "pseudobma")
 }
+}
+\references{
+Yao, Y., Vehtari, A., Simpson, D., & Gelman, A. (2018).  Using
+stacking to average Bayesian predictive distributions (with
+discussion).  \emph{Bayesian Analysis}, 13(3), 917--1007.
+\doi{10.1214/17-BA1091}
+
+Vehtari, A., Gelman, A., & Gabry, J. (2017).  Practical Bayesian
+model evaluation using leave-one-out cross-validation and WAIC.
+\emph{Statistics and Computing}, 27(5), 1413--1432.
 }

@@ -464,8 +464,8 @@ integer/character columns.</li>
 <li><strong>Spatial random effect</strong>: toggle on/off; if on, choose
 CAR or SAR.</li>
 <li><strong>Pinned parameters</strong>: toggle on/off for <span class="math inline">\(\phi\)</span> from
-<code>n</code>+<code>deff</code> (Beta) or <span class="math inline">\(\sigma\)</span> from <code>sampling_var</code>
-(lnln).</li>
+<code>n</code>+<code>deff</code> (Beta) or <span class="math inline">\(\sigma\)</span> from
+<code>sampling_variance</code> (lnln).</li>
 <li><strong>Priors</strong>: a table of priors with reasonable defaults
 that the user can edit. Distribution preview (PDF/CDF plots) is shown
 for the currently-selected class.</li>
@@ -477,8 +477,8 @@ scripted use:</p>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">hbm_lnln</span>(</span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">response     =</span> <span class="st">&quot;y_obs&quot;</span>,</span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">auxiliary    =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">group        =</span> <span class="st">&quot;group&quot;</span>,</span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">sampling_var =</span> <span class="st">&quot;psi_i&quot;</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">area_var   =</span> <span class="st">&quot;regency&quot;</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">sampling_variance =</span> <span class="st">&quot;psi_i&quot;</span>,</span>
 <span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">data         =</span> my_data,</span>
 <span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span></span>
 <span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>)</span></code></pre></div>

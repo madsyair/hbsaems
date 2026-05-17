@@ -95,7 +95,7 @@ register_hbsae_model(
 fit <- hbm_flex(
   family_key = "gamma_log",
   response   = "expenditure",
-  predictors = c("x1", "x2"),
+  auxiliary  = c("x1", "x2"),
   data       = my_data
 )
 }

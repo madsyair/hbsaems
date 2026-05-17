@@ -30,8 +30,8 @@ dim(spatial_weight_sar)
 # fit_icar <- hbm(
 #   formula  = brms::bf(y ~ x1 + x2 + x3),
 #   hb_sampling = "gaussian",
-#   sre      = "sre",
-#   sre_type = "car",
+#   spatial_var = "province",
+#   spatial_model = "car",
 #   M        = adjacency_matrix_car,
 #   data     = data_fhnorm,
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4,
@@ -42,8 +42,8 @@ dim(spatial_weight_sar)
 ## ----fit-escar----------------------------------------------------------------
 # fit_escar <- hbm(
 #   formula  = brms::bf(y ~ x1 + x2 + x3),
-#   sre      = "sre",
-#   sre_type = "car",
+#   spatial_var = "province",
+#   spatial_model = "car",
 #   car_type = "escar",
 #   M        = adjacency_matrix_car,
 #   data     = data_fhnorm,
@@ -53,10 +53,9 @@ dim(spatial_weight_sar)
 ## ----fit-bym2-----------------------------------------------------------------
 # fit_bym2 <- hbm(
 #   formula  = brms::bf(y ~ x1 + x2 + x3),
-#   re       = ~ (1 | sre),                    # IID counterpart
-#   sre      = "sre",
-#   sre_type = "car",
-#   car_type = "bym2",
+#   spatial_var = "province",
+#   spatial_model = "car",
+#   car_type = "bym2",                          # BYM2 already includes IID + CAR
 #   M        = adjacency_matrix_car,
 #   data     = data_fhnorm,
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -66,8 +65,8 @@ dim(spatial_weight_sar)
 # data("spatial_weight_sar")
 # fit_sar <- hbm(
 #   formula  = brms::bf(y ~ x1 + x2 + x3),
-#   sre      = "sre",
-#   sre_type = "sar",
+#   spatial_var = "province",
+#   spatial_model = "sar",
 #   M        = spatial_weight_sar,
 #   data     = data_fhnorm,
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -79,7 +78,7 @@ dim(spatial_weight_sar)
 # fit_beta_car <- hbm_betalogitnorm(
 #   response  = "y", auxiliary = c("x1", "x2", "x3"),
 #   n         = "n", deff = "deff",
-#   sre       = "sre", sre_type = "car", M = adjacency_matrix_car,
+#   spatial_var = "province", spatial_model = "car", M = adjacency_matrix_car,
 #   data      = data_betalogitnorm,
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 # )
@@ -88,8 +87,7 @@ dim(spatial_weight_sar)
 # fit_bin_bym2 <- hbm_binlogitnorm(
 #   response  = "y", trials = "n",
 #   auxiliary = c("x1", "x2", "x3"),
-#   re        = ~ (1 | group),     # IID counterpart
-#   sre       = "sre", sre_type = "car", car_type = "bym2",
+#   spatial_var = "province", spatial_model = "car", car_type = "bym2",
 #   M         = adjacency_matrix_car,
 #   data      = data_binlogitnorm,
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
@@ -100,7 +98,7 @@ dim(spatial_weight_sar)
 
 ## ----loo-spatial--------------------------------------------------------------
 # fit_iid <- hbm(formula = brms::bf(y ~ x1 + x2 + x3),
-#                re = ~ (1 | sre), data = data_fhnorm,
+#                re = ~ (1 | province), data = data_fhnorm,
 #                chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1)
 # 
 # loo_compare <- loo::loo_compare(

@@ -375,17 +375,17 @@ proportion estimates with a known design effect.</p>
 <div id="the-data" class="section level2">
 <h2>The data</h2>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;data_binlogitnorm&quot;</span>)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">str</span>(data_binlogitnorm[, <span class="fu">c</span>(<span class="st">&quot;group&quot;</span>, <span class="st">&quot;y&quot;</span>, <span class="st">&quot;n&quot;</span>, <span class="st">&quot;p&quot;</span>, <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>)])</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">str</span>(data_binlogitnorm[, <span class="fu">c</span>(<span class="st">&quot;district&quot;</span>, <span class="st">&quot;y&quot;</span>, <span class="st">&quot;n&quot;</span>, <span class="st">&quot;p&quot;</span>, <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>)])</span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co">#&gt; &#39;data.frame&#39;:    100 obs. of  7 variables:</span></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co">#&gt;  $ group: int  1 2 3 4 5 6 7 8 9 10 ...</span></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co">#&gt;  $ y    : int  25 27 69 27 16 47 4 27 59 42 ...</span></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co">#&gt;  $ n    : int  136 171 183 120 53 130 57 116 157 177 ...</span></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co">#&gt;  $ p    : num  0.184 0.158 0.377 0.225 0.302 ...</span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#&gt;  $ x1   : num  -0.5605 -0.2302 1.5587 0.0705 0.1293 ...</span></span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co">#&gt;  $ x2   : num  0.2896 1.2569 0.7533 0.6525 0.0484 ...</span></span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt;  $ x3   : num  1.199 0.312 -1.265 -0.457 -1.414 ...</span></span></code></pre></div>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co">#&gt;  $ district: chr  &quot;district_001&quot; &quot;district_002&quot; &quot;district_003&quot; &quot;district_004&quot; ...</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co">#&gt;  $ y       : int  25 27 69 27 16 47 4 27 59 42 ...</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co">#&gt;  $ n       : int  136 171 183 120 53 130 57 116 157 177 ...</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co">#&gt;  $ p       : num  0.184 0.158 0.377 0.225 0.302 ...</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#&gt;  $ x1      : num  -0.5605 -0.2302 1.5587 0.0705 0.1293 ...</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co">#&gt;  $ x2      : num  0.2896 1.2569 0.7533 0.6525 0.0484 ...</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt;  $ x3      : num  1.199 0.312 -1.265 -0.457 -1.414 ...</span></span></code></pre></div>
 <pre><code>&#39;data.frame&#39;:   100 obs. of  7 variables:
- $ group: int  1 2 3 4 5 6 7 8 9 10 ...
+ $ district: chr  &quot;district_001&quot; &quot;district_002&quot; &quot;district_003&quot; &quot;district_004&quot; ...
  $ y    : int  62 41 78 53 39 84 67 49 41 76 ...
  $ n    : int  120 95 142 108 87 153 124 102 91 138 ...
  $ p    : num  0.517 0.432 0.549 0.491 0.448 ...
@@ -406,7 +406,7 @@ variables.</p>
 <span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">response  =</span> <span class="st">&quot;y&quot;</span>,</span>
 <span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="at">trials    =</span> <span class="st">&quot;n&quot;</span>,</span>
 <span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">auxiliary =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">group     =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">area_var   =</span> <span class="st">&quot;district&quot;</span>,</span>
 <span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">data      =</span> data_binlogitnorm,</span>
 <span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>,</span>
 <span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">1</span></span>
@@ -416,12 +416,12 @@ variables.</p>
 
  Observations : 100
  Family       : binomial (link: logit )
- Formula      : y | trials(n) ~ x1 + x2 + x3 + (1 | group)
+ Formula      : y | trials(n) ~ x1 + x2 + x3 + (1 | district)
 
 ----- Parameter Estimates -----
  Family: binomial
   Links: mu = logit
-Formula: y | trials(n) ~ x1 + x2 + x3 + (1 | group)
+Formula: y | trials(n) ~ x1 + x2 + x3 + (1 | district)
    Data: data_binlogitnorm (Number of observations: 100)
   Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
          total post-warmup draws = 8000
@@ -446,15 +446,15 @@ correctly set up the binomial response and passed the trials column.</p>
 <div id="with-car-spatial-random-effect" class="section level2">
 <h2>With CAR spatial random effect</h2>
 <p>For spatially autocorrelated areas (e.g. neighbouring districts
-sharing characteristics), replace the IID <code>(1 | group)</code>
+sharing characteristics), replace the IID <code>(1 | district)</code>
 random effect with a CAR spatial random effect:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;adjacency_matrix_car&quot;</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>fit_car <span class="ot">&lt;-</span> <span class="fu">hbm_binlogitnorm</span>(</span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">response  =</span> <span class="st">&quot;y&quot;</span>,</span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">trials    =</span> <span class="st">&quot;n&quot;</span>,</span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">auxiliary =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">sre       =</span> <span class="st">&quot;sre&quot;</span>,                       <span class="co"># spatial-RE column</span></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">sre_type  =</span> <span class="st">&quot;car&quot;</span>,                       <span class="co"># CAR structure</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">spatial_var =</span> <span class="st">&quot;regency&quot;</span>,                       <span class="co"># spatial-RE column</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">spatial_model  =</span> <span class="st">&quot;car&quot;</span>,                       <span class="co"># CAR structure</span></span>
 <span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  <span class="at">M         =</span> adjacency_matrix_car,        <span class="co"># neighbour weight matrix</span></span>
 <span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>  <span class="at">data      =</span> data_binlogitnorm,</span>
 <span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>,</span>
@@ -485,7 +485,7 @@ near-zero – supply a <code>brms::set_prior()</code> object:</p>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="at">response  =</span> <span class="st">&quot;y&quot;</span>,</span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">trials    =</span> <span class="st">&quot;n&quot;</span>,</span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">auxiliary =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">group     =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">area_var   =</span> <span class="st">&quot;district&quot;</span>,</span>
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">data      =</span> data_binlogitnorm,</span>
 <span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">prior     =</span> brms<span class="sc">::</span><span class="fu">set_prior</span>(<span class="st">&quot;normal(0, 0.1)&quot;</span>, <span class="at">class =</span> <span class="st">&quot;b&quot;</span>, <span class="at">coef =</span> <span class="st">&quot;x3&quot;</span>),</span>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>,</span>
@@ -507,7 +507,7 @@ unless you supply <code>handle_missing</code>:</p>
 <span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">response  =</span> <span class="st">&quot;y&quot;</span>,</span>
 <span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="at">trials    =</span> <span class="st">&quot;n&quot;</span>,</span>
 <span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  <span class="at">auxiliary =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  <span class="at">group     =</span> <span class="st">&quot;group&quot;</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  <span class="at">area_var   =</span> <span class="st">&quot;district&quot;</span>,</span>
 <span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  <span class="at">data      =</span> data_with_na,</span>
 <span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>  <span class="co"># handle_missing not given -&gt; auto-select &quot;multiple&quot; (mice)</span></span>
 <span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>,</span>
@@ -561,8 +561,9 @@ intercept.</p>
 <em>raw success counts</em> and <em>known trial counts</em>.</li>
 <li>Use <strong><code>hbm_betalogitnorm()</code></strong> instead when
 you have <em>direct proportion estimates with a design effect</em>.</li>
-<li>Add spatial structure via <code>sre</code>, <code>sre_type</code>,
-and <code>M</code> – see the spatial vignette.</li>
+<li>Add spatial structure via <code>spatial_var</code>,
+<code>spatial_model</code>, and <code>M</code> – see the spatial
+vignette.</li>
 <li>Missing data is auto-handled with multiple imputation (mice).</li>
 </ul>
 </div>

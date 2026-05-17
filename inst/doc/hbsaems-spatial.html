@@ -392,7 +392,7 @@ consistent interface:</p>
 </tr>
 <tr class="odd">
 <td><strong>SAR (simultaneous AR)</strong></td>
-<td><code>sre_type = &quot;sar&quot;</code></td>
+<td><code>spatial_model = &quot;sar&quot;</code></td>
 <td>Long-range spillovers; lag or error variant</td>
 </tr>
 <tr class="even">
@@ -431,11 +431,85 @@ example matrices:</p>
 <code>?build_spatial_weight</code> for KNN, distance-band, and
 contiguity methods.</p>
 </div>
+<div id="choosing-between-re-spatial_var-or-both" class="section level2">
+<h2>Choosing between <code>re</code>, <code>spatial_var</code>, or
+both</h2>
+<p><code>hbsaems</code> exposes two distinct argument families for
+area-level random effects:</p>
+<ul>
+<li><code>re = ~ (1 | area)</code> – a standard IID area random effect,
+i.e. the classical Fay-Herriot <span class="math inline">\(u_i \sim
+\mathcal{N}(0, \sigma_u^2)\)</span>.</li>
+<li><code>spatial_var = &quot;area&quot;</code> with
+<code>spatial_model = &quot;car&quot;</code> or <code>&quot;sar&quot;</code> – a spatially
+structured random effect that uses the adjacency / weight matrix <span class="math inline">\(M\)</span>.</li>
+</ul>
+<p>Either one alone is sufficient for a valid SAE model. Use whichever
+matches your scientific assumption about how neighbouring areas
+relate:</p>
+<table>
+<colgroup>
+<col width="25%" />
+<col width="37%" />
+<col width="37%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Setup</th>
+<th>Specification</th>
+<th>When to use</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>IID Fay-Herriot</strong></td>
+<td><code>re = ~ (1 \| area)</code></td>
+<td>No spatial signal; areas exchangeable</td>
+</tr>
+<tr class="even">
+<td><strong>ICAR / proper CAR / SAR</strong></td>
+<td><code>spatial_var = &quot;area&quot;</code>,
+<code>spatial_model = &quot;car&quot;</code> (or <code>&quot;sar&quot;</code>),
+<code>M = W</code></td>
+<td>Pure spatial smoothing; no extra IID noise</td>
+</tr>
+<tr class="odd">
+<td><strong>BYM2</strong> (modern best practice)</td>
+<td><code>spatial_var = &quot;area&quot;</code>,
+<code>spatial_model = &quot;car&quot;</code>, <code>car_type = &quot;bym2&quot;</code>,
+<code>M = W</code></td>
+<td>Spatial signal <strong>plus</strong> unstructured heterogeneity</td>
+</tr>
+<tr class="even">
+<td><strong>Parallel BYM</strong> (legacy / advisory)</td>
+<td><code>re = ~ (1 \| area)</code> <strong>and</strong>
+<code>spatial_var = &quot;area&quot;</code> + CAR</td>
+<td>Mathematically valid but weakly identified – prefer BYM2</td>
+</tr>
+<tr class="odd">
+<td><strong>None</strong></td>
+<td>Neither <code>re</code> nor <code>spatial_model</code></td>
+<td>Fixed-effects regression – not SAE; <code>hbsaems</code> warns</td>
+</tr>
+</tbody>
+</table>
+<p>Key rule of thumb:</p>
+<ul>
+<li><strong>BYM2 already includes the IID component internally</strong>,
+so when you set <code>car_type = &quot;bym2&quot;</code> you do
+<strong>not</strong> need to add <code>re</code> separately. Providing
+both fits the older parallel BYM specification instead;
+<code>hbsaems</code> prints an advisory message recommending BYM2.</li>
+<li>For <strong>plain CAR / SAR</strong> (without BYM2), the spatial
+effect typically carries the entire area-level variance. Adding an IID
+<code>re</code> on the same grouping is unusual.</li>
+</ul>
+</div>
 <div id="icar-default-car" class="section level2">
 <h2>ICAR (default CAR)</h2>
-<p>The simplest specification: pass <code>sre</code>,
-<code>sre_type = &quot;car&quot;</code>, and <code>M</code>. The intrinsic CAR
-(ICAR) is used by default because it has one fewer parameter and is
+<p>The simplest specification: pass <code>spatial_var</code>,
+<code>spatial_model = &quot;car&quot;</code>, and <code>M</code>. The intrinsic
+CAR (ICAR) is used by default because it has one fewer parameter and is
 computationally cheaper:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">library</span>(hbsaems)</span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;data_fhnorm&quot;</span>)</span>
@@ -444,8 +518,8 @@ computationally cheaper:</p>
 <span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>fit_icar <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
 <span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">formula  =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
 <span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">hb_sampling =</span> <span class="st">&quot;gaussian&quot;</span>,</span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">sre      =</span> <span class="st">&quot;sre&quot;</span>,</span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="at">sre_type =</span> <span class="st">&quot;car&quot;</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">spatial_var =</span> <span class="st">&quot;province&quot;</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="at">spatial_model =</span> <span class="st">&quot;car&quot;</span>,</span>
 <span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  <span class="at">M        =</span> adjacency_matrix_car,</span>
 <span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  <span class="at">data     =</span> data_fhnorm,</span>
 <span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>,</span>
@@ -456,7 +530,7 @@ computationally cheaper:</p>
 
  Observations : 100
  Family       : gaussian (link: identity )
- Formula      : y ~ x1 + x2 + x3 + car(M, gr = sre, type = &quot;icar&quot;)
+ Formula      : y ~ x1 + x2 + x3 + car(M, gr = province, type = &quot;icar&quot;)
 
 ----- Parameter Estimates -----
 Correlation Structures:
@@ -481,8 +555,8 @@ factor against a non-spatial alternative – use
 <code>car_type = &quot;escar&quot;</code>:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>fit_escar <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="at">formula  =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">sre      =</span> <span class="st">&quot;sre&quot;</span>,</span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">sre_type =</span> <span class="st">&quot;car&quot;</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">spatial_var =</span> <span class="st">&quot;province&quot;</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">spatial_model =</span> <span class="st">&quot;car&quot;</span>,</span>
 <span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">car_type =</span> <span class="st">&quot;escar&quot;</span>,</span>
 <span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">M        =</span> adjacency_matrix_car,</span>
 <span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  <span class="at">data     =</span> data_fhnorm,</span>
@@ -505,17 +579,20 @@ normal. This both decorrelates the two variance components and gives a
 principled prior for <span class="math inline">\(\rho\)</span>.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>fit_bym2 <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="at">formula  =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">re       =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> sre),                    <span class="co"># IID counterpart</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">sre      =</span> <span class="st">&quot;sre&quot;</span>,</span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">sre_type =</span> <span class="st">&quot;car&quot;</span>,</span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">car_type =</span> <span class="st">&quot;bym2&quot;</span>,</span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">M        =</span> adjacency_matrix_car,</span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="at">data     =</span> data_fhnorm,</span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span></span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>)</span></code></pre></div>
-<p><code>hbsaems</code> will print an advisory message reminding you
-that combining <code>re = ~(1 | sre)</code> with
-<code>sre_type = &quot;car&quot;</code> is the BYM2 setup.</p>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">spatial_var =</span> <span class="st">&quot;province&quot;</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">spatial_model =</span> <span class="st">&quot;car&quot;</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">car_type =</span> <span class="st">&quot;bym2&quot;</span>,                          <span class="co"># BYM2 already includes IID + CAR</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">M        =</span> adjacency_matrix_car,</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">data     =</span> data_fhnorm,</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>)</span></code></pre></div>
+<p>The BYM2 reparameterisation <strong>internally</strong> combines an
+IID effect and an ICAR effect via the mixing weight <span class="math inline">\(\rho\)</span>. You therefore do
+<strong>not</strong> need to add <code>re = ~ (1 | province)</code>
+separately – doing so fits a different (less identifiable) parallel BYM
+specification. If you do supply both, <code>hbsaems</code> prints an
+advisory message pointing you to the BYM2 parameterisation as the
+preferred alternative.</p>
 </div>
 <div id="sar" class="section level2">
 <h2>SAR</h2>
@@ -524,12 +601,12 @@ that combining <code>re = ~(1 | sre)</code> with
 \varepsilon,\]</span></p>
 <p>i.e. each <span class="math inline">\(u_i\)</span> is a linear
 combination of its neighbours’ effects plus an iid shock. Use
-<code>sre_type = &quot;sar&quot;</code>:</p>
+<code>spatial_model = &quot;sar&quot;</code>:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;spatial_weight_sar&quot;</span>)</span>
 <span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>fit_sar <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
 <span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">formula  =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">sre      =</span> <span class="st">&quot;sre&quot;</span>,</span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">sre_type =</span> <span class="st">&quot;sar&quot;</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">spatial_var =</span> <span class="st">&quot;province&quot;</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">spatial_model =</span> <span class="st">&quot;sar&quot;</span>,</span>
 <span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="at">M        =</span> spatial_weight_sar,</span>
 <span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  <span class="at">data     =</span> data_fhnorm,</span>
 <span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span></span>
@@ -538,7 +615,7 @@ combination of its neighbours’ effects plus an iid shock. Use
 <pre><code>===== Hierarchical Bayesian Model Summary =====
 
  Family       : gaussian (link: identity )
- Formula      : y ~ x1 + x2 + x3 + sar(M, gr = sre, type = &quot;lag&quot;)
+ Formula      : y ~ x1 + x2 + x3 + sar(M, gr = province, type = &quot;lag&quot;)
 
 Correlation Structures:
        Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
@@ -551,13 +628,13 @@ coefficient <span class="math inline">\(\rho_s\)</span>. Use
 </div>
 <div id="spatial-structure-in-wrappers" class="section level2">
 <h2>Spatial structure in wrappers</h2>
-<p>The same <code>sre</code>, <code>sre_type</code>, <code>M</code>
-arguments work with all wrappers:</p>
+<p>The same <code>spatial_var</code>, <code>spatial_model</code>,
+<code>M</code> arguments work with all wrappers:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Beta + CAR</span></span>
 <span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>fit_beta_car <span class="ot">&lt;-</span> <span class="fu">hbm_betalogitnorm</span>(</span>
 <span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">response  =</span> <span class="st">&quot;y&quot;</span>, <span class="at">auxiliary =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
 <span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">n         =</span> <span class="st">&quot;n&quot;</span>, <span class="at">deff =</span> <span class="st">&quot;deff&quot;</span>,</span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">sre       =</span> <span class="st">&quot;sre&quot;</span>, <span class="at">sre_type =</span> <span class="st">&quot;car&quot;</span>, <span class="at">M =</span> adjacency_matrix_car,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">spatial_var =</span> <span class="st">&quot;province&quot;</span>, <span class="at">spatial_model =</span> <span class="st">&quot;car&quot;</span>, <span class="at">M =</span> adjacency_matrix_car,</span>
 <span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="at">data      =</span> data_betalogitnorm,</span>
 <span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span></span>
 <span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>)</span>
@@ -566,12 +643,11 @@ arguments work with all wrappers:</p>
 <span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>fit_bin_bym2 <span class="ot">&lt;-</span> <span class="fu">hbm_binlogitnorm</span>(</span>
 <span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>  <span class="at">response  =</span> <span class="st">&quot;y&quot;</span>, <span class="at">trials =</span> <span class="st">&quot;n&quot;</span>,</span>
 <span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>  <span class="at">auxiliary =</span> <span class="fu">c</span>(<span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>),</span>
-<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>  <span class="at">re        =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> group),     <span class="co"># IID counterpart</span></span>
-<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>  <span class="at">sre       =</span> <span class="st">&quot;sre&quot;</span>, <span class="at">sre_type =</span> <span class="st">&quot;car&quot;</span>, <span class="at">car_type =</span> <span class="st">&quot;bym2&quot;</span>,</span>
-<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>  <span class="at">M         =</span> adjacency_matrix_car,</span>
-<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>  <span class="at">data      =</span> data_binlogitnorm,</span>
-<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span></span>
-<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>)</span></code></pre></div>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>  <span class="at">spatial_var =</span> <span class="st">&quot;province&quot;</span>, <span class="at">spatial_model =</span> <span class="st">&quot;car&quot;</span>, <span class="at">car_type =</span> <span class="st">&quot;bym2&quot;</span>,</span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>  <span class="at">M         =</span> adjacency_matrix_car,</span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>  <span class="at">data      =</span> data_binlogitnorm,</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>)</span></code></pre></div>
 </div>
 <div id="validation-of-the-weight-matrix" class="section level2">
 <h2>Validation of the weight matrix</h2>
@@ -598,7 +674,7 @@ break CAR; add a tiny diagonal or merge isolates with a nearby area.</p>
 <div id="comparing-spatial-vs-non-spatial-fits-with-loo" class="section level2">
 <h2>Comparing spatial vs non-spatial fits with LOO</h2>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>fit_iid <span class="ot">&lt;-</span> <span class="fu">hbm</span>(<span class="at">formula =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>               <span class="at">re =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> sre), <span class="at">data =</span> data_fhnorm,</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>               <span class="at">re =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> province), <span class="at">data =</span> data_fhnorm,</span>
 <span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>               <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span>, <span class="at">seed =</span> <span class="dv">1</span>)</span>
 <span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a></span>
 <span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>loo_compare <span class="ot">&lt;-</span> loo<span class="sc">::</span><span class="fu">loo_compare</span>(</span>
@@ -618,14 +694,14 @@ beat the IID baseline.</p>
 <div id="summary" class="section level2">
 <h2>Summary</h2>
 <ul>
-<li>Use <code>sre_type = &quot;car&quot;</code> (default ICAR) as the SAE
+<li>Use <code>spatial_model = &quot;car&quot;</code> (default ICAR) as the SAE
 workhorse spatial prior.</li>
-<li>Use <code>car_type = &quot;bym2&quot;</code> together with
-<code>re = ~(1 | sre)</code> for the modern Riebler et
-al. parameterisation.</li>
-<li>SAR (<code>sre_type = &quot;sar&quot;</code>) is appropriate when the spatial
-mechanism is regression-like (current area depends on neighbours’
-levels).</li>
+<li>Use <code>car_type = &quot;bym2&quot;</code> (alone, without a separate
+<code>re</code> term) for the modern Riebler et al. parameterisation,
+which internally combines IID and CAR via a single mixing weight.</li>
+<li>SAR (<code>spatial_model = &quot;sar&quot;</code>) is appropriate when the
+spatial mechanism is regression-like (current area depends on
+neighbours’ levels).</li>
 <li>Always validate your weight matrix before fitting.</li>
 </ul>
 </div>

@@ -7,12 +7,15 @@
 check_data(
   data,
   response,
-  predictors,
-  group = NULL,
-  sre = NULL,
+  auxiliary = NULL,
+  area_var = NULL,
+  spatial_var = NULL,
   M = NULL,
   trials = NULL,
-  n_var = NULL
+  n_var = NULL,
+  predictors = NULL,
+  group = NULL,
+  sre = NULL
 )
 }
 \arguments{
@@ -21,14 +24,15 @@ check_data(
 \item{response}{Character.  Name of the response variable in
 \code{data}.}
 
-\item{predictors}{Character vector.  Names of the predictor (auxiliary)
-variables.}
+\item{auxiliary}{Character vector.  Names of the auxiliary
+variables (the SAE 'X' covariates).}
 
-\item{group}{Optional character.  Name of the random-effect grouping
-variable.}
+\item{area_var}{Optional character.  Name of the area (random-effect
+grouping) variable.}
 
-\item{sre}{Optional character.  Name of the spatial-grouping
-variable.}
+\item{spatial_var}{Optional character.  Name of the spatial-grouping
+variable (column in \code{data} that indexes rows of the spatial
+weight matrix \code{M}).}
 
 \item{M}{Optional spatial weight matrix to dimension-check
 against \code{data}.}
@@ -38,6 +42,12 @@ against \code{data}.}
 
 \item{n_var}{Optional character.  Name of the sample-size variable
 (beta / lognormal direct-estimator models).}
+
+\item{predictors}{\strong{Deprecated.}  Use \code{auxiliary} instead.}
+
+\item{group}{\strong{Deprecated.}  Use \code{area_var} instead.}
+
+\item{sre}{\strong{Deprecated.}  Use \code{spatial_var} instead.}
 }
 \value{
 An object of class \code{hbsaems_data_check} with components:
@@ -66,17 +76,17 @@ any of the distribution-specific wrappers.
 }
 \details{
 \subsection{1. Variable presence}{
-  Verifies that \code{response}, every name in \code{predictors}, and the
-  optional \code{group}/\code{sre}/\code{trials}/\code{n_var} columns
-  exist in \code{data}.  Missing variables are reported in
-  \code{$issues}.
+  Verifies that \code{response}, every name in \code{auxiliary}, and
+  the optional \code{area_var} / \code{spatial_var} / \code{trials} /
+  \code{n_var} columns exist in \code{data}.  Missing variables are
+  reported in \code{$issues}.
 }
 \subsection{2. Missing-value pattern}{
   The pattern is one of:
   \describe{
     \item{\code{"none"}}{All listed columns are complete.}
     \item{\code{"y_only"}}{Only the response has NAs.}
-    \item{\code{"x_only"}}{Only the predictors have NAs.}
+    \item{\code{"x_only"}}{Only the auxiliary variables have NAs.}
     \item{\code{"both"}}{Both Y and X have NAs.}
   }
   Based on the pattern, a strategy is recommended:
@@ -99,8 +109,8 @@ any of the distribution-specific wrappers.
 \subsection{3. Dimension check}{
   When \code{M} is supplied, verifies that it is square and that
   \code{nrow(M)} matches the number of \emph{distinct} levels in
-  \code{data[[sre]]} (or \code{nrow(data)} when \code{sre} is
-  \code{NULL}).
+  \code{data[[spatial_var]]} (or \code{nrow(data)} when
+  \code{spatial_var} is \code{NULL}).
 }
 }
 \examples{
@@ -109,28 +119,28 @@ data("data_fhnorm")
 # 1. Complete data -> no warnings, no recommendation
 chk <- check_data(data_fhnorm,
                   response   = "y",
-                  predictors = c("x1", "x2", "x3"))
+                  auxiliary  = c("x1", "x2", "x3"))
 print(chk)
 
 # 2. Missing-Y pattern -> recommends checking for non-sample areas
 d <- data_fhnorm
 d$y[1:5] <- NA
 chk2 <- check_data(d, response = "y",
-                      predictors = c("x1", "x2", "x3"))
+                      auxiliary  = c("x1", "x2", "x3"))
 summary(chk2)
 
 # 3. Missing-X-only -> recommends multiple imputation
 d2 <- data_fhnorm
 d2$x1[10:15] <- NA
 chk3 <- check_data(d2, response = "y",
-                      predictors = c("x1", "x2", "x3"))
+                      auxiliary  = c("x1", "x2", "x3"))
 chk3$recommended_method
 
 # 4. Spatial dimension check
 data("adjacency_matrix_car")
 chk4 <- check_data(data_fhnorm[1:5, ],
                    response   = "y",
-                   predictors = c("x1", "x2", "x3"),
+                   auxiliary  = c("x1", "x2", "x3"),
                    M          = adjacency_matrix_car)
 chk4$dimension_check
 

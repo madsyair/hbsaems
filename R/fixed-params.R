@@ -5,7 +5,7 @@
 # `fixed_params` lets the user pin a distributional parameter (e.g. phi for
 # Beta, sigma for lognormal) to known values that are either constant or
 # computed from the data.  It is the generic counterpart of the convenience
-# arguments `n` + `deff` in hbm_betalogitnorm() and `sampling_var` in
+# arguments `n` + `deff` in hbm_betalogitnorm() and `sampling_variance` in
 # hbm_lnln().
 #
 # Specification format (passed by the user)

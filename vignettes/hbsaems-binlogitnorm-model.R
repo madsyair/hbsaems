@@ -10,7 +10,7 @@ suppressPackageStartupMessages(library(hbsaems))
 
 ## ----show-data, eval = TRUE---------------------------------------------------
 data("data_binlogitnorm")
-str(data_binlogitnorm[, c("group", "y", "n", "p", "x1", "x2", "x3")])
+str(data_binlogitnorm[, c("district", "y", "n", "p", "x1", "x2", "x3")])
 
 ## ----fit-basic----------------------------------------------------------------
 # library(hbsaems)
@@ -20,7 +20,7 @@ str(data_binlogitnorm[, c("group", "y", "n", "p", "x1", "x2", "x3")])
 #   response  = "y",
 #   trials    = "n",
 #   auxiliary = c("x1", "x2", "x3"),
-#   group     = "group",
+#   area_var   = "district",
 #   data      = data_binlogitnorm,
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4,
 #   seed = 1
@@ -33,8 +33,8 @@ str(data_binlogitnorm[, c("group", "y", "n", "p", "x1", "x2", "x3")])
 #   response  = "y",
 #   trials    = "n",
 #   auxiliary = c("x1", "x2", "x3"),
-#   sre       = "sre",                       # spatial-RE column
-#   sre_type  = "car",                       # CAR structure
+#   spatial_var = "regency",                       # spatial-RE column
+#   spatial_model  = "car",                       # CAR structure
 #   M         = adjacency_matrix_car,        # neighbour weight matrix
 #   data      = data_binlogitnorm,
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4,
@@ -47,7 +47,7 @@ str(data_binlogitnorm[, c("group", "y", "n", "p", "x1", "x2", "x3")])
 #   response  = "y",
 #   trials    = "n",
 #   auxiliary = c("x1", "x2", "x3"),
-#   group     = "group",
+#   area_var   = "district",
 #   data      = data_binlogitnorm,
 #   prior     = brms::set_prior("normal(0, 0.1)", class = "b", coef = "x3"),
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4,
@@ -62,7 +62,7 @@ str(data_binlogitnorm[, c("group", "y", "n", "p", "x1", "x2", "x3")])
 #   response  = "y",
 #   trials    = "n",
 #   auxiliary = c("x1", "x2", "x3"),
-#   group     = "group",
+#   area_var   = "district",
 #   data      = data_with_na,
 #   # handle_missing not given -> auto-select "multiple" (mice)
 #   chains = 4, iter = 4000, warmup = 2000, cores = 4,

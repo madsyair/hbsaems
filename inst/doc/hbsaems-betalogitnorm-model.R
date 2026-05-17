@@ -10,7 +10,7 @@ suppressPackageStartupMessages(library(hbsaems))
 
 ## ----show-data, eval = TRUE---------------------------------------------------
 data("data_betalogitnorm")
-str(data_betalogitnorm[, c("group", "y", "n", "deff", "x1", "x2", "x3")])
+str(data_betalogitnorm[, c("regency", "y", "n", "deff", "x1", "x2", "x3")])
 
 ## ----fit-random---------------------------------------------------------------
 #  library(hbsaems)
@@ -19,7 +19,7 @@ str(data_betalogitnorm[, c("group", "y", "n", "deff", "x1", "x2", "x3")])
 #  fit_random <- hbm_betalogitnorm(
 #    response  = "y",
 #    auxiliary = c("x1", "x2", "x3"),
-#    group     = "group",
+#    area_var   = "regency",
 #    data      = data_betalogitnorm,
 #    chains = 4, iter = 4000, warmup = 2000, cores = 4,
 #    seed = 1
@@ -32,7 +32,7 @@ str(data_betalogitnorm[, c("group", "y", "n", "deff", "x1", "x2", "x3")])
 #    auxiliary = c("x1", "x2", "x3"),
 #    n         = "n",                   # <- column with sample sizes
 #    deff      = "deff",                # <- column with design effects
-#    group     = "group",
+#    area_var   = "regency",
 #    data      = data_betalogitnorm,
 #    chains = 4, iter = 4000, warmup = 2000, cores = 4,
 #    seed = 1
@@ -43,7 +43,7 @@ str(data_betalogitnorm[, c("group", "y", "n", "deff", "x1", "x2", "x3")])
 #  fit_custom <- hbm_betalogitnorm(
 #    response  = "y",
 #    auxiliary = c("x1", "x2", "x3"),
-#    group     = "group",
+#    area_var   = "regency",
 #    data      = data_betalogitnorm,
 #    stanvars  = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
 #                stanvar(scode = "beta  ~ gamma(2, 3);", block = "model"),
@@ -56,7 +56,7 @@ str(data_betalogitnorm[, c("group", "y", "n", "deff", "x1", "x2", "x3")])
 #  fit_phi <- hbm_betalogitnorm(
 #    response  = "y",
 #    auxiliary = c("x1", "x2", "x3"),
-#    group     = "group",
+#    area_var   = "regency",
 #    data      = data_betalogitnorm,
 #    prior     = brms::set_prior("gamma(2, 0.05)", class = "phi"),
 #    chains = 4, iter = 4000, warmup = 2000, cores = 4,
@@ -68,7 +68,7 @@ str(data_betalogitnorm[, c("group", "y", "n", "deff", "x1", "x2", "x3")])
 #    family_key   = "Beta",
 #    response     = "y",
 #    auxiliary    = c("x1", "x2", "x3"),
-#    group        = "group",
+#    area_var   = "regency",
 #    data         = data_betalogitnorm,
 #    fixed_params = list(phi = ~ I(n / deff - 1)),    # <- formula spec
 #    chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1

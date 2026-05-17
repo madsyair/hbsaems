@@ -1,6 +1,6 @@
 # tests/testthat/test-fixed-params.R
 # =============================================================================
-# Tests for the v0.6.1 `fixed_params` mechanism and the refactored
+# Tests for the v1.0.0 `fixed_params` mechanism and the refactored
 # hbm_betalogitnorm() wrapper.  CRAN-safe: no Stan compilation.
 # =============================================================================
 
@@ -264,7 +264,7 @@ test_that("fixed_params end-to-end flow attaches column to data", {
   tryCatch(
     hbm_betalogitnorm(response = "y", auxiliary = "x1",
                        n = "n", deff = "deff",
-                       group = "group",
+                       area_var = "group",      # column happens to be named "group"
                        data = d,
                        chains = 1, iter = 10),
     error = function(e) NULL

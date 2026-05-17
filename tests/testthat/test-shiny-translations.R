@@ -1,6 +1,6 @@
 # tests/testthat/test-shiny-translations.R
 # =============================================================================
-# Unit tests for the bilingual support helpers added in v0.5.0.
+# Unit tests for the bilingual support helpers added in v1.0.0.
 # =============================================================================
 
 test_that("tr_langs returns expected language codes", {
