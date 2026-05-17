@@ -1,30 +1,35 @@
 url: https://madsyair.github.io/hbsaems/
+
 template:
   bootstrap: 5
   bslib:
-    primary: '#1976D2'
-    base_font:
-      google: Source Sans Pro
-    heading_font:
-      google: Source Sans Pro
-    code_font:
-      google: JetBrains Mono
+    primary: "#1976D2"
+    base_font: {google: "Source Sans Pro"}
+    heading_font: {google: "Source Sans Pro"}
+    code_font: {google: "JetBrains Mono"}
+
 development:
   mode: auto
+
 home:
   title: hbsaems — Hierarchical Bayesian Area-Level SAE Models
-  description: |
-    Area-level Hierarchical Bayesian Small Area Estimation following Rao and Molina (2015), with computational implementation adapted to the 'brms' / Stan parameterisation. Supports Fay-Herriot normal, lognormal-lognormal, beta logit-normal, and binomial logit-normal models; CAR/SAR/BYM2 spatial random effects; survey-design-informed fixed parameters; missing data via multiple imputation or joint Bayesian imputation; and the complete Bayesian workflow (prior predictive checks, MCMC convergence diagnostics, posterior predictive checks, leave-one- out cross-validation, model comparison and averaging, prior sensitivity, design-consistent benchmarking).
+  description: >
+    Area-level Hierarchical Bayesian Small Area Estimation following
+    Rao and Molina (2015), with computational implementation adapted
+    to the 'brms' / Stan parameterisation. Supports Fay-Herriot
+    normal, lognormal-lognormal, beta logit-normal, and binomial
+    logit-normal models; CAR/SAR/BYM2 spatial random effects;
+    survey-design-informed fixed parameters; missing data via
+    multiple imputation or joint Bayesian imputation; and the
+    complete Bayesian workflow (prior predictive checks, MCMC
+    convergence diagnostics, posterior predictive checks, leave-one-
+    out cross-validation, model comparison and averaging, prior
+    sensitivity, design-consistent benchmarking).
+
 navbar:
   structure:
-    left:
-    - intro
-    - reference
-    - articles
-    - news
-    right:
-    - search
-    - github
+    left:  [intro, reference, articles, news]
+    right: [search, github]
   components:
     intro:
       text: Get started
@@ -32,8 +37,8 @@ navbar:
     articles:
       text: Articles
       menu:
-      - text: '-------'
-      - text: Model walkthroughs
+      - text: "-------"
+      - text: "Model walkthroughs"
       - text: Modelling overview
         href: articles/hbsaems-modelling.html
       - text: Beta logit-normal
@@ -42,26 +47,29 @@ navbar:
         href: articles/hbsaems-binlogitnorm-model.html
       - text: Lognormal-lognormal
         href: articles/hbsaems-lnln-model.html
-      - text: '-------'
-      - text: Advanced topics
+      - text: "-------"
+      - text: "Advanced topics"
       - text: Spatial models (CAR / SAR / BYM2)
         href: articles/hbsaems-spatial.html
       - text: Handling missing data
         href: articles/hbsaems-handle-missing.html
       - text: Interactive Shiny dashboard
         href: articles/hbsaems-run_sae_app.html
-      - text: '-------'
-      - text: Reference
+      - text: "-------"
+      - text: "Reference"
       - text: Complete workflow walk-through
         href: articles/complete-workflow.html
       - text: Advanced features
         href: articles/advanced-features.html
       - text: Migration guide (legacy users)
         href: articles/migration-guide.html
+
 reference:
-- title: Model fitting (entry points)
-  desc: |
-    Three layers of API for fitting a hierarchical Bayesian SAE model, from the most user-friendly wrappers to the universal brms interface.
+- title: "Model fitting (entry points)"
+  desc: >
+    Three layers of API for fitting a hierarchical Bayesian SAE model,
+    from the most user-friendly distribution-specific wrappers to the
+    universal brms interface, plus the post-fit refit helper.
   contents:
   - hbm
   - hbm_flex
@@ -69,22 +77,49 @@ reference:
   - hbm_betalogitnorm
   - hbm_binlogitnorm
   - update_hbm
-- title: Diagnostics & comparison
-  desc: |
-    Post-fit assessment of MCMC convergence, predictive performance, and model selection.
+
+- title: "Pre-fit data & spatial-weight checking"
+  desc: >
+    Validate data structure, missing-data patterns, and adjacency
+    matrices before fitting.
   contents:
+  - check_data
+  - check_spatial_weight
+  - build_spatial_weight
+
+- title: "Configuration bundles"
+  desc: >
+    Helpers for assembling sampler / prior / nonlinear-term arguments
+    into reusable named lists that can be passed to `hbm()` and its
+    wrappers.
+  contents:
+  - hbm_control
+  - hbm_priors
+  - hbm_nonlinear
+
+- title: "Bayesian workflow — diagnostics & comparison"
+  desc: >
+    Post-fit assessment of MCMC convergence, predictive performance,
+    model selection, model averaging, and prior sensitivity. Together
+    these cover stages 1, 3–7 of the canonical Bayesian workflow
+    (Gelman et al. 2020).
+  contents:
+  - prior_check
   - convergence_check
   - is_converged
+  - diagnostic_summary
   - model_compare
   - model_compare_all
   - model_average
-  - prior_check
-  - diagnostic_summary
+  - prior_sensitivity
   - is.hbsaems_check
   - summary.hbsaems_check
-- title: Prediction & benchmarking
-  desc: |
-    Out-of-sample prediction for unsampled areas and design-consistent benchmarking against direct estimates.
+
+- title: "Prediction & benchmarking"
+  desc: >
+    Out-of-sample prediction for unsampled areas (in-sample EBLUP and
+    posterior predictive draws) and design-consistent benchmarking
+    against direct estimates (Pfeffermann-style raking and ratio).
   contents:
   - sae_predict
   - sae_benchmark
@@ -92,15 +127,23 @@ reference:
   - sae_scale
   - sae_transform
   - sae_filter
-- title: Spatial weights
-  desc: |
-    Construct, validate, and inspect neighbourhood weight matrices for CAR / SAR / BYM2 spatial random effects.
+
+- title: "Posterior & prior extraction"
+  desc: >
+    Light-touch helpers for extracting draws, summaries, and credible
+    intervals from `hbmfit` / `brmsfit` objects, including the
+    prior-only fit produced by `sample_prior = "only"`.
   contents:
-  - build_spatial_weight
-  - check_spatial_weight
-- title: Custom brms families
-  desc: |
-    Built-in custom distributions and the framework for registering new ones.
+  - posterior_draws
+  - posterior_interval
+  - posterior_summary_hbm
+  - prior_draws
+
+- title: "Custom brms families"
+  desc: >
+    Built-in custom distributions (loglogistic and shifted loglogistic)
+    plus the framework for registering new families and Stan log-pdf
+    functions through the model registry.
   contents:
   - brms_custom_loglogistic
   - brms_custom_shifted_loglogistic
@@ -112,65 +155,55 @@ reference:
   - register_hbsae_model
   - list_hbsae_models
   - get_hbsae_model
-- title: Configuration bundles
-  desc: |
-    Helpers for assembling sampler / prior / nonlinear-term arguments.
-  contents:
-  - hbm_control
-  - hbm_priors
-  - hbm_nonlinear
-- title: Object methods & Internal state
-  desc: |
-    S3 methods for the `hbmfit` class and internal object inspection.
+
+- title: "Object methods & internal state"
+  desc: >
+    S3 constructors, validators, and methods for the `hbmfit` class
+    along with helpers to inspect a fitted model's metadata, raw data,
+    and any warnings raised during fitting.
   contents:
   - hbmfit
   - new_hbmfit
   - validate_hbmfit
-  - hbm_data
-  - hbmfit-methods
   - hbmfit-class
-  - hbm-info
+  - hbm_data
   - hbm_info
   - hbm_warnings
   - is-hbsaems
+  - hbmfit-methods
   - posterior-methods
   - plot.hbmfit
-- title: Posterior & Prior Extraction
-  desc: Tools for extracting draws and summaries from fitted models.
-  contents:
-  - posterior_draws
-  - posterior_interval
-  - posterior_summary_hbm
-  - prior_draws
-- title: Data validation
-  desc: Helpers for checking input data consistency.
-  contents: check_data
-- title: Shiny dashboard
-  desc: |
-    Launch the interactive bilingual SAE GUI.
+
+- title: "Shiny dashboard"
+  desc: >
+    Launch the interactive bilingual (English / Indonesian) SAE GUI
+    and inspect its translation infrastructure.
   contents:
   - run_sae_app
   - check_shiny_deps
   - tr
   - tr_langs
   - tr_keys
-- title: Datasets
-  desc: |
-    Example datasets shipped for vignettes and tests.
+
+- title: "Datasets"
+  desc: >
+    Example datasets shipped for vignettes and tests, including spatial
+    adjacency matrices used by the CAR / SAR / BYM2 examples.
   contents:
   - data_fhnorm
   - data_lnln
   - data_betalogitnorm
   - data_binlogitnorm
   - adjacency_matrix_car
+  - adjacency_matrix_car_regency
   - spatial_weight_sar
-- title: Deprecated
-  desc: |
+
+- title: "Deprecated"
+  desc: >
     Retained for backward compatibility; scheduled for removal in v2.0.0.
+    Use the modern replacements listed in each function's documentation.
   contents:
   - hbcc
   - hbmc
   - hbpc
   - hbsae
-  - model-compare
-
