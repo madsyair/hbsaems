@@ -73,11 +73,25 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The named list spec, or <code>NULL</code> if not found.</p>
-    </div>
+    <p>The named list spec, or <code>NULL</code> if not found.  Useful
+  fields include:</p><ul><li><p><code>family</code>      – brms family name passed to
+                                <code><a href="https://paulbuerkner.com/brms/reference/brmsfamily.html" class="external-link">brmsfamily</a></code>.</p></li>
+<li><p><code>link</code>        – default link function used by the family
+                                (<code>"identity"</code>, <code>"logit"</code>,
+                                <code>"log"</code>, ...).  See
+                                <code><a href="https://paulbuerkner.com/brms/reference/brmsfamily.html" class="external-link">brmsfamily</a></code> for the
+                                complete set of supported links per
+                                family.</p></li>
+<li><p><code>discrete</code>    – whether the response is discrete.</p></li>
+<li><p><code>supports_mi</code> – whether brms-canonical <code><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi()</a></code>
+                                imputation is allowed for this family
+                                (FALSE for all discrete responses).</p></li>
+</ul></div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="register_hbsae_model.html">register_hbsae_model</a></code></p></div>
+    <div class="dont-index"><p><code><a href="register_hbsae_model.html">register_hbsae_model</a></code>,
+  <code><a href="https://paulbuerkner.com/brms/reference/brmsfamily.html" class="external-link">brmsfamily</a></code> for the canonical brms family /
+  link reference.</p></div>
     </div>
 
     <div class="section level2">
@@ -107,8 +121,8 @@
 <span class="r-out co"><span class="r-pr">#&gt;</span>     v &lt;- y[!is.na(y)]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     length(v) == 0L || all(v &gt; 0)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;bytecode: 0x559873e38e30&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x559873e47450&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;bytecode: 0x55c0402e5578&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x55c0402ed940&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $response_check_msg</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "Lognormal response must be strictly positive (y &gt; 0)."</span>
@@ -116,9 +130,11 @@
 <span class="r-out co"><span class="r-pr">#&gt;</span> $default_priors</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> function (...) </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> NULL</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;bytecode: 0x559873e383d8&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x559873e47450&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;bytecode: 0x55c0402dec48&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: 0x55c0402ed940&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span><span class="fu">get_hbsae_model</span><span class="op">(</span><span class="st">"beta"</span><span class="op">)</span><span class="op">$</span><span class="va">link</span>  <span class="co"># "logit"</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "logit"</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

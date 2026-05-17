@@ -17,11 +17,27 @@ get_hbsae_model(key)
 
 ## Value
 
-The named list spec, or `NULL` if not found.
+The named list spec, or `NULL` if not found. Useful fields include:
+
+- `family` – brms family name passed to
+  [`brmsfamily`](https://paulbuerkner.com/brms/reference/brmsfamily.html).
+
+- `link` – default link function used by the family (`"identity"`,
+  `"logit"`, `"log"`, ...). See
+  [`brmsfamily`](https://paulbuerkner.com/brms/reference/brmsfamily.html)
+  for the complete set of supported links per family.
+
+- `discrete` – whether the response is discrete.
+
+- `supports_mi` – whether brms-canonical
+  [`mi()`](https://paulbuerkner.com/brms/reference/mi.html) imputation
+  is allowed for this family (FALSE for all discrete responses).
 
 ## See also
 
-[`register_hbsae_model`](https://madsyair.github.io/hbsaems/reference/register_hbsae_model.md)
+[`register_hbsae_model`](https://madsyair.github.io/hbsaems/reference/register_hbsae_model.md),
+[`brmsfamily`](https://paulbuerkner.com/brms/reference/brmsfamily.html)
+for the canonical brms family / link reference.
 
 ## Examples
 
@@ -51,8 +67,8 @@ get_hbsae_model("lognormal")
 #>     v <- y[!is.na(y)]
 #>     length(v) == 0L || all(v > 0)
 #> }
-#> <bytecode: 0x559873e38e30>
-#> <environment: 0x559873e47450>
+#> <bytecode: 0x55c0402e5578>
+#> <environment: 0x55c0402ed940>
 #> 
 #> $response_check_msg
 #> [1] "Lognormal response must be strictly positive (y > 0)."
@@ -60,7 +76,9 @@ get_hbsae_model("lognormal")
 #> $default_priors
 #> function (...) 
 #> NULL
-#> <bytecode: 0x559873e383d8>
-#> <environment: 0x559873e47450>
+#> <bytecode: 0x55c0402dec48>
+#> <environment: 0x55c0402ed940>
 #> 
+get_hbsae_model("beta")$link  # "logit"
+#> [1] "logit"
 ```

@@ -68,12 +68,26 @@ included; user-registered models appear in addition.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">list_hbsae_models</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">list_hbsae_models</span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
+    <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
+
+
+<dl><dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical.  If <code>TRUE</code>, return a data.frame summarising
+each registered model: family name, default brms link function,
+whether the family is discrete, and whether brms-canonical
+<code><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi()</a></code> imputation is supported.  Default <code>FALSE</code> returns a
+plain character vector of keys (backward compatible).</p></dd>
+
+</dl></div>
+    <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Character vector of model keys.</p>
+    <p>Character vector of model keys, or a <code>data.frame</code> with
+  columns <code>key, family, link, discrete, supports_mi</code> when
+  <code>verbose = TRUE</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -83,15 +97,49 @@ included; user-registered models appear in addition.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">list_hbsae_models</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "bernoulli"                   "beta"                       </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [3] "beta-binomial"               "binomial"                   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [5] "categorical"                 "gaussian"                   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "geometric"                   "loglogistic"                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [9] "lognormal"                   "multinomial"                </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11] "negbinomial"                 "poisson"                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13] "shifted_loglogistic"         "zero_inflated_beta_binomial"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [15] "zero_inflated_binomial"      "zero_inflated_negbinomial"  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [17] "zero_inflated_poisson"      </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "beta"                        "beta-binomial"              </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [3] "binomial"                    "categorical"                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [5] "gaussian"                    "geometric"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "loglogistic"                 "lognormal"                  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [9] "multinomial"                 "negbinomial"                </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [11] "poisson"                     "shifted_loglogistic"        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13] "zero_inflated_beta_binomial" "zero_inflated_binomial"     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [15] "zero_inflated_negbinomial"   "zero_inflated_poisson"      </span>
+<span class="r-in"><span><span class="fu">list_hbsae_models</span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                            key                      family     link discrete</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1                         beta                        Beta    logit    FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2                beta-binomial               beta-binomial    logit     TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3                     binomial                    binomial    logit     TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4                  categorical                 categorical    logit     TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5                     gaussian                    gaussian identity    FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6                    geometric                   geometric      log     TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7                  loglogistic                 loglogistic      log    FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8                    lognormal                   lognormal identity    FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9                  multinomial                 multinomial    logit     TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10                 negbinomial                 negbinomial      log     TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11                     poisson                     poisson      log     TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12         shifted_loglogistic         shifted_loglogistic identity    FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13 zero_inflated_beta_binomial zero_inflated_beta_binomial     &lt;NA&gt;     TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 14      zero_inflated_binomial      zero_inflated_binomial     &lt;NA&gt;     TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 15   zero_inflated_negbinomial   zero_inflated_negbinomial     &lt;NA&gt;     TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 16       zero_inflated_poisson       zero_inflated_poisson     &lt;NA&gt;     TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    supports_mi</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 7        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8         TRUE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9        FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 10       FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 11       FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 12       FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 13       FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 14       FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 15       FALSE</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 16       FALSE</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
