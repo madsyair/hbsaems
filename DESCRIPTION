@@ -56,6 +56,7 @@ Suggests:
     mockery,
     posterior,
     priorsense,
+    RcppEigen,
     readxl,
     rmarkdown (>= 2.16),
     rstan,
