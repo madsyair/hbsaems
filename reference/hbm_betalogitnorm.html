@@ -314,9 +314,54 @@ Wiley, p. 390.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Eigen not found; call install.packages('RcppEigen')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.06, indicating chains have not mixed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model1</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model1' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ===== Hierarchical Bayesian Model Summary =====</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Observations : 100 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family       : beta (link: logit )</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + (1 | regency), pforms = list(),      pfix = list(), resp = "y", family = structure(list(family = "beta",          link = "logit", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "phi"),          type = "real", ybounds = c(0, 1), closed = c(FALSE, FALSE         ), ad = c("weights", "subset", "cens", "trunc", "mi",          "index"), link_phi = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ----- Parameter Estimates -----</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The ESS has been capped to avoid unstable estimates.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The ESS has been capped to avoid unstable estimates.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The ESS has been capped to avoid unstable estimates.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family: beta </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Links: mu = logit </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Formula: y ~ x1 + x2 + x3 + (1 | regency) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Data: structure(list(y = c(0.01, 0.984074547994896, 0.01 (Number of observations: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Draws: 1 chains, each with iter = 500; warmup = 250; thin = 1;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          total post-warmup draws = 250</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multilevel Hyperparameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ~regency (Number of levels: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sd(Intercept)     0.15      0.12     0.00     0.43 1.00      170      159</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Regression Coefficients:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Intercept    -0.50      0.77    -2.03     1.20 1.00      599      132</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x1           -0.13      0.05    -0.23    -0.02 1.00      320      206</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x2           -0.06      0.04    -0.15     0.01 1.02      599      118</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x3            0.06      0.03     0.01     0.12 1.00      599      278</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Further Distributional Parameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> phi     0.87      0.10     0.68     1.10 1.00      441      148</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> and Tail_ESS are effective sample size measures, and Rhat is the potential</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> scale reduction factor on split chains (at convergence, Rhat = 1).</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># -- 2. Fixed phi via survey design (n + deff) -------------------------------</span></span></span>
 <span class="r-in"><span><span class="va">model2</span> <span class="op">&lt;-</span> <span class="fu">hbm_betalogitnorm</span><span class="op">(</span></span></span>
@@ -330,9 +375,45 @@ Wiley, p. 390.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Eigen not found; call install.packages('RcppEigen')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model2</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model2' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ===== Hierarchical Bayesian Model Summary =====</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Observations : 100 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family       : beta (link: logit )</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + (1 | regency), pforms = list(     phi = phi ~ 0 + offset(.hbsaems_phi_fixed)), pfix = list(),      resp = "y", family = structure(list(family = "beta", link = "logit",          linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "phi"),          type = "real", ybounds = c(0, 1), closed = c(FALSE, FALSE         ), ad = c("weights", "subset", "cens", "trunc", "mi",          "index"), link_phi = "identity"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ----- Parameter Estimates -----</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family: beta </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Links: mu = logit; phi = identity </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Formula: y ~ x1 + x2 + x3 + (1 | regency) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          phi ~ 0 + offset(.hbsaems_phi_fixed)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Data: structure(list(y = c(0.01, 0.984074547994896, 0.01 (Number of observations: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Draws: 1 chains, each with iter = 500; warmup = 250; thin = 1;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          total post-warmup draws = 250</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multilevel Hyperparameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ~regency (Number of levels: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sd(Intercept)     2.42      0.22     2.01     2.87 1.02       64       83</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Regression Coefficients:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Intercept    -1.24      1.41    -3.95     1.59 1.00       35       38</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x1           -0.35      0.13    -0.60    -0.13 1.00       40       89</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x2           -0.14      0.07    -0.27     0.01 1.00       62      121</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x3            0.15      0.06     0.03     0.27 1.00       41       41</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> and Tail_ESS are effective sample size measures, and Rhat is the potential</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> scale reduction factor on split chains (at convergence, Rhat = 1).</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># -- 3. Custom prior on phi via the standard `prior` argument ----------------</span></span></span>
 <span class="r-in"><span><span class="co">#</span></span></span>
@@ -352,7 +433,16 @@ Wiley, p. 390.</p>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Eigen not found; call install.packages('RcppEigen')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.06, indicating chains have not mixed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># -- 4. Spatial CAR model ----------------------------------------------------</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"adjacency_matrix_car"</span><span class="op">)</span></span></span>
@@ -368,7 +458,16 @@ Wiley, p. 390.</p>
 <span class="r-in"><span>  chains <span class="op">=</span> <span class="fl">1</span>, iter <span class="op">=</span> <span class="fl">500</span>, warmup <span class="op">=</span> <span class="fl">250</span>, refresh <span class="op">=</span> <span class="fl">0</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Eigen not found; call install.packages('RcppEigen')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 3 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

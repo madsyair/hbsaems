@@ -103,7 +103,7 @@ Analogous to <code><a href="https://mc-stan.org/loo/reference/loo_compare.html" 
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>     spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Eigen not found; call install.packages('RcppEigen')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
 <span class="r-in"><span><span class="va">m2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">hbm</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>formula <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                          data <span class="op">=</span> <span class="va">data_fhnorm</span><span class="op">)</span>, <span class="va">FAST</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Model fitted without any area-level random effects.</span>
@@ -114,9 +114,16 @@ Analogous to <code><a href="https://mc-stan.org/loo/reference/loo_compare.html" 
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>     spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Eigen not found; call install.packages('RcppEigen')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
 <span class="r-in"><span><span class="fu">model_compare_all</span><span class="op">(</span>simple <span class="op">=</span> <span class="va">m1</span>, medium <span class="op">=</span> <span class="va">m2</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'm1' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Model Comparison Table  [hbm_table]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> =====================================</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Model  ELPD_LOO   LOO_SE LOO_rank</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  medium -180.6205 7.634552        1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  simple -183.2511 7.371225        2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Best model: medium </span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

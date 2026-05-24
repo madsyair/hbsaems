@@ -97,14 +97,18 @@ model_prior <- hbm(
 #>     spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE
 #>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
 pc <- prior_check(model_prior,
                   data         = data_fhnorm,
                   response_var = "y")
-#> Error: object 'model_prior' not found
 print(pc)
-#> Error: object 'pc' not found
+#> 
+#> Prior Predictive Check  [hbpc_results]
+#> ----------------------------------------
+#>  Prior draws  : 50 x 100 
+#>  Observations : 100 
+#> 
 plot(pc)
-#> Error: object 'pc' not found
+
 # }
 ```

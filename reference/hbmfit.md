@@ -48,12 +48,16 @@ A validated `hbmfit` object.
 raw <- brms::brm(y ~ x1, data = data.frame(y = rnorm(10), x1 = 1:10),
                  chains = 1, iter = 200, refresh = 0)
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
+#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
 fit <- hbmfit(model = raw,
               data  = data.frame(y = rnorm(10), x1 = 1:10),
               missing_method = NULL)
-#> Error in new_hbmfit(model = model, missing_method = missing_method, data = data): inherits(model, c("brmsfit", "brmsfit_multiple")) is not TRUE
 validate_hbmfit(fit)
-#> Error: object 'fit' not found
 # }
 ```

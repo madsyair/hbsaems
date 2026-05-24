@@ -253,9 +253,54 @@ model1 <- hbm_betalogitnorm(
 )
 #> Warning: Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
+#> Warning: The largest R-hat is 1.06, indicating chains have not mixed.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#r-hat
+#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
 summary(model1)
-#> Error: object 'model1' not found
+#> 
+#> ===== Hierarchical Bayesian Model Summary =====
+#> 
+#>  Observations : 100 
+#>  Family       : beta (link: logit )
+#>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + (1 | regency), pforms = list(),      pfix = list(), resp = "y", family = structure(list(family = "beta",          link = "logit", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "phi"),          type = "real", ybounds = c(0, 1), closed = c(FALSE, FALSE         ), ad = c("weights", "subset", "cens", "trunc", "mi",          "index"), link_phi = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) 
+#> 
+#> ----- Parameter Estimates -----
+#> Warning: The ESS has been capped to avoid unstable estimates.
+#> Warning: The ESS has been capped to avoid unstable estimates.
+#> Warning: The ESS has been capped to avoid unstable estimates.
+#>  Family: beta 
+#>   Links: mu = logit 
+#> Formula: y ~ x1 + x2 + x3 + (1 | regency) 
+#>    Data: structure(list(y = c(0.01, 0.984074547994896, 0.01 (Number of observations: 100) 
+#>   Draws: 1 chains, each with iter = 500; warmup = 250; thin = 1;
+#>          total post-warmup draws = 250
+#> 
+#> Multilevel Hyperparameters:
+#> ~regency (Number of levels: 100) 
+#>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sd(Intercept)     0.15      0.12     0.00     0.43 1.00      170      159
+#> 
+#> Regression Coefficients:
+#>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> Intercept    -0.50      0.77    -2.03     1.20 1.00      599      132
+#> x1           -0.13      0.05    -0.23    -0.02 1.00      320      206
+#> x2           -0.06      0.04    -0.15     0.01 1.02      599      118
+#> x3            0.06      0.03     0.01     0.12 1.00      599      278
+#> 
+#> Further Distributional Parameters:
+#>     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> phi     0.87      0.10     0.68     1.10 1.00      441      148
+#> 
+#> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+#> and Tail_ESS are effective sample size measures, and Rhat is the potential
+#> scale reduction factor on split chains (at convergence, Rhat = 1).
 
 # -- 2. Fixed phi via survey design (n + deff) -------------------------------
 model2 <- hbm_betalogitnorm(
@@ -269,9 +314,45 @@ model2 <- hbm_betalogitnorm(
 )
 #> Warning: Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
+#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
 summary(model2)
-#> Error: object 'model2' not found
+#> 
+#> ===== Hierarchical Bayesian Model Summary =====
+#> 
+#>  Observations : 100 
+#>  Family       : beta (link: logit )
+#>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + (1 | regency), pforms = list(     phi = phi ~ 0 + offset(.hbsaems_phi_fixed)), pfix = list(),      resp = "y", family = structure(list(family = "beta", link = "logit",          linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "phi"),          type = "real", ybounds = c(0, 1), closed = c(FALSE, FALSE         ), ad = c("weights", "subset", "cens", "trunc", "mi",          "index"), link_phi = "identity"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) 
+#> 
+#> ----- Parameter Estimates -----
+#>  Family: beta 
+#>   Links: mu = logit; phi = identity 
+#> Formula: y ~ x1 + x2 + x3 + (1 | regency) 
+#>          phi ~ 0 + offset(.hbsaems_phi_fixed)
+#>    Data: structure(list(y = c(0.01, 0.984074547994896, 0.01 (Number of observations: 100) 
+#>   Draws: 1 chains, each with iter = 500; warmup = 250; thin = 1;
+#>          total post-warmup draws = 250
+#> 
+#> Multilevel Hyperparameters:
+#> ~regency (Number of levels: 100) 
+#>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sd(Intercept)     2.42      0.22     2.01     2.87 1.02       64       83
+#> 
+#> Regression Coefficients:
+#>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> Intercept    -1.24      1.41    -3.95     1.59 1.00       35       38
+#> x1           -0.35      0.13    -0.60    -0.13 1.00       40       89
+#> x2           -0.14      0.07    -0.27     0.01 1.00       62      121
+#> x3            0.15      0.06     0.03     0.27 1.00       41       41
+#> 
+#> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+#> and Tail_ESS are effective sample size measures, and Rhat is the potential
+#> scale reduction factor on split chains (at convergence, Rhat = 1).
 
 # -- 3. Custom prior on phi via the standard `prior` argument ----------------
 #
@@ -291,7 +372,16 @@ model3 <- hbm_betalogitnorm(
 )
 #> Warning: Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
+#> Warning: The largest R-hat is 1.06, indicating chains have not mixed.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#r-hat
+#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
 
 # -- 4. Spatial CAR model ----------------------------------------------------
 data("adjacency_matrix_car")
@@ -307,6 +397,15 @@ model4 <- hbm_betalogitnorm(
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
+#> Warning: There were 3 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10. See
+#> https://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded
+#> Warning: Examine the pairs() plot to diagnose sampling problems
+#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
 # }
 ```

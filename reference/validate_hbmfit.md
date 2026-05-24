@@ -58,8 +58,7 @@ fit <- suppressWarnings(
       chains = 1, iter = 200, refresh = 0)
 )
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
 validate_hbmfit(fit)
-#> Error: object 'fit' not found
 # }
 ```

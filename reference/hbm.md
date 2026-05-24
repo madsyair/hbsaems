@@ -814,9 +814,59 @@ model <- do.call(hbm, c(
   FAST
 ))
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
+#> Warning: There were 50 divergent transitions after warmup. See
+#> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#> to find out why this is a problem and how to eliminate them.
+#> Warning: There were 2 chains where the estimated Bayesian Fraction of Missing Information was low. See
+#> https://mc-stan.org/misc/warnings.html#bfmi-low
+#> Warning: Examine the pairs() plot to diagnose sampling problems
+#> Warning: The largest R-hat is 1.68, indicating chains have not mixed.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#r-hat
+#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
 summary(model)
-#> Error: object 'model' not found
+#> 
+#> ===== Hierarchical Bayesian Model Summary =====
+#> 
+#>  Observations : 100 
+#>  Family       : gaussian (link: identity )
+#>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + (1 | regency), pforms = list(),      pfix = list(), resp = "y", family = structure(list(family = "gaussian",          link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) 
+#> 
+#> ----- Parameter Estimates -----
+#> Warning: Parts of the model have not converged (some Rhats are > 1.05). Be careful when analysing the results! We recommend running more iterations and/or setting stronger priors.
+#> Warning: There were 50 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#>  Family: gaussian 
+#>   Links: mu = identity 
+#> Formula: y ~ x1 + x2 + x3 + (1 | regency) 
+#>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) 
+#>   Draws: 2 chains, each with iter = 2000; warmup = 1000; thin = 1;
+#>          total post-warmup draws = 2000
+#> 
+#> Multilevel Hyperparameters:
+#> ~regency (Number of levels: 100) 
+#>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sd(Intercept)     0.96      0.45     0.04     1.50 1.32        5      122
+#> 
+#> Regression Coefficients:
+#>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> Intercept    10.11      0.13     9.83    10.33 1.05       39     1018
+#> x1            1.00      0.14     0.73     1.30 1.07      302      355
+#> x2           -0.37      0.13    -0.64    -0.12 1.10      496      512
+#> x3            0.34      0.14     0.04     0.59 1.07       23      651
+#> 
+#> Further Distributional Parameters:
+#>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sigma     0.78      0.53     0.02     1.54 1.68        3       23
+#> 
+#> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+#> and Tail_ESS are effective sample size measures, and Rhat is the potential
+#> scale reduction factor on split chains (at convergence, Rhat = 1).
 
 # -- Horseshoe prior (sparse coefficients) ------------------------------------
 model_hs <- do.call(hbm, c(
@@ -828,9 +878,55 @@ model_hs <- do.call(hbm, c(
   FAST
 ))
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
+#> Warning: There were 4 divergent transitions after warmup. See
+#> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#> to find out why this is a problem and how to eliminate them.
+#> Warning: There were 2 chains where the estimated Bayesian Fraction of Missing Information was low. See
+#> https://mc-stan.org/misc/warnings.html#bfmi-low
+#> Warning: Examine the pairs() plot to diagnose sampling problems
+#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
 summary(model_hs)
-#> Error: object 'model_hs' not found
+#> 
+#> ===== Hierarchical Bayesian Model Summary =====
+#> 
+#>  Observations : 100 
+#>  Family       : gaussian (link: identity )
+#>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + (1 | regency), pforms = list(),      pfix = list(), resp = "y", family = structure(list(family = "gaussian",          link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) 
+#> 
+#> ----- Parameter Estimates -----
+#> Warning: There were 4 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#>  Family: gaussian 
+#>   Links: mu = identity 
+#> Formula: y ~ x1 + x2 + x3 + (1 | regency) 
+#>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) 
+#>   Draws: 2 chains, each with iter = 2000; warmup = 1000; thin = 1;
+#>          total post-warmup draws = 2000
+#> 
+#> Multilevel Hyperparameters:
+#> ~regency (Number of levels: 100) 
+#>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sd(Intercept)     0.68      0.40     0.02     1.39 1.03       74       73
+#> 
+#> Regression Coefficients:
+#>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> Intercept    10.08      0.14     9.80    10.36 1.00      816      619
+#> x1            0.97      0.15     0.68     1.24 1.00     1498     1638
+#> x2           -0.33      0.15    -0.62    -0.04 1.00     1181      736
+#> x3            0.27      0.15    -0.01     0.56 1.00     1130      601
+#> 
+#> Further Distributional Parameters:
+#>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sigma     1.17      0.27     0.56     1.58 1.04       76       65
+#> 
+#> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+#> and Tail_ESS are effective sample size measures, and Rhat is the potential
+#> scale reduction factor on split chains (at convergence, Rhat = 1).
 
 # -- R2D2 prior (prior on model R-squared) -------------------------------------
 model_r2 <- do.call(hbm, c(
@@ -843,9 +939,59 @@ model_r2 <- do.call(hbm, c(
   FAST
 ))
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
+#> Warning: There were 37 divergent transitions after warmup. See
+#> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#> to find out why this is a problem and how to eliminate them.
+#> Warning: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
+#> https://mc-stan.org/misc/warnings.html#bfmi-low
+#> Warning: Examine the pairs() plot to diagnose sampling problems
+#> Warning: The largest R-hat is 1.07, indicating chains have not mixed.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#r-hat
+#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
 summary(model_r2)
-#> Error: object 'model_r2' not found
+#> 
+#> ===== Hierarchical Bayesian Model Summary =====
+#> 
+#>  Observations : 100 
+#>  Family       : gaussian (link: identity )
+#>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + (1 | regency), pforms = list(),      pfix = list(), resp = "y", family = structure(list(family = "gaussian",          link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) 
+#> 
+#> ----- Parameter Estimates -----
+#> Warning: Parts of the model have not converged (some Rhats are > 1.05). Be careful when analysing the results! We recommend running more iterations and/or setting stronger priors.
+#> Warning: There were 37 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#>  Family: gaussian 
+#>   Links: mu = identity 
+#> Formula: y ~ x1 + x2 + x3 + (1 | regency) 
+#>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) 
+#>   Draws: 2 chains, each with iter = 2000; warmup = 1000; thin = 1;
+#>          total post-warmup draws = 2000
+#> 
+#> Multilevel Hyperparameters:
+#> ~regency (Number of levels: 100) 
+#>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sd(Intercept)     0.67      0.39     0.02     1.38 1.07       45       32
+#> 
+#> Regression Coefficients:
+#>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> Intercept    10.08      0.15     9.78    10.37 1.00      906      785
+#> x1            0.96      0.15     0.68     1.26 1.00     1441     1447
+#> x2           -0.32      0.15    -0.62    -0.02 1.01      779      746
+#> x3            0.26      0.14    -0.01     0.54 1.00     1174      977
+#> 
+#> Further Distributional Parameters:
+#>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sigma     1.18      0.28     0.52     1.60 1.07       26       17
+#> 
+#> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+#> and Tail_ESS are effective sample size measures, and Rhat is the potential
+#> scale reduction factor on split chains (at convergence, Rhat = 1).
 
 # -- Spline smooth for x1 (nonlinear) -----------------------------------------
 # x1 is modelled with s(x1); x2 and x3 remain linear.
@@ -859,9 +1005,63 @@ model_spline <- do.call(hbm, c(
 ))
 #> Warning: Variable(s) x1 appear in both 'auxiliary' (linear) and 'nonlinear'. They will be modelled nonlinearly ONLY. Remove them from 'auxiliary' to suppress this warning.
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
+#> Warning: There were 31 divergent transitions after warmup. See
+#> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#> to find out why this is a problem and how to eliminate them.
+#> Warning: There were 2 chains where the estimated Bayesian Fraction of Missing Information was low. See
+#> https://mc-stan.org/misc/warnings.html#bfmi-low
+#> Warning: Examine the pairs() plot to diagnose sampling problems
+#> Warning: The largest R-hat is 1.17, indicating chains have not mixed.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#r-hat
+#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
 summary(model_spline)
-#> Error: object 'model_spline' not found
+#> 
+#> ===== Hierarchical Bayesian Model Summary =====
+#> 
+#>  Observations : 100 
+#>  Family       : gaussian (link: identity )
+#>  Formula      : structure(list(formula = y ~ s(x1) + x2 + x3 + (1 | regency),      pforms = list(), pfix = list(), resp = "y", family = structure(list(         family = "gaussian", link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) 
+#> 
+#> ----- Parameter Estimates -----
+#> Warning: Parts of the model have not converged (some Rhats are > 1.05). Be careful when analysing the results! We recommend running more iterations and/or setting stronger priors.
+#> Warning: There were 31 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#>  Family: gaussian 
+#>   Links: mu = identity 
+#> Formula: y ~ s(x1) + x2 + x3 + (1 | regency) 
+#>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) 
+#>   Draws: 2 chains, each with iter = 2000; warmup = 1000; thin = 1;
+#>          total post-warmup draws = 2000
+#> 
+#> Smoothing Spline Hyperparameters:
+#>            Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sds(sx1_1)     1.02      0.98     0.02     3.67 1.02      284      161
+#> 
+#> Multilevel Hyperparameters:
+#> ~regency (Number of levels: 100) 
+#>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sd(Intercept)     0.86      0.47     0.05     1.52 1.11       13      113
+#> 
+#> Regression Coefficients:
+#>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> Intercept     9.94      0.14     9.64    10.21 1.00      384      349
+#> x2           -0.36      0.15    -0.64    -0.08 1.00      340      980
+#> x3            0.33      0.16     0.03     0.63 1.01      293      492
+#> sx1_1         7.06      2.80     1.97    14.17 1.01      378      340
+#> 
+#> Further Distributional Parameters:
+#>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sigma     0.97      0.43     0.07     1.56 1.17        9       11
+#> 
+#> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+#> and Tail_ESS are effective sample size measures, and Rhat is the potential
+#> scale reduction factor on split chains (at convergence, Rhat = 1).
 
 # -- Gaussian process for x2 (nonlinear) --------------------------------------
 model_gp <- do.call(hbm, c(
@@ -874,9 +1074,57 @@ model_gp <- do.call(hbm, c(
 ))
 #> Warning: Variable(s) x2 appear in both 'auxiliary' (linear) and 'nonlinear'. They will be modelled nonlinearly ONLY. Remove them from 'auxiliary' to suppress this warning.
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
+#> Warning: There were 40 divergent transitions after warmup. See
+#> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#> to find out why this is a problem and how to eliminate them.
+#> Warning: Examine the pairs() plot to diagnose sampling problems
+#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
 summary(model_gp)
-#> Error: object 'model_gp' not found
+#> 
+#> ===== Hierarchical Bayesian Model Summary =====
+#> 
+#>  Observations : 100 
+#>  Family       : gaussian (link: identity )
+#>  Formula      : structure(list(formula = y ~ x1 + gp(x2) + x3 + (1 | regency),      pforms = list(), pfix = list(), resp = "y", family = structure(list(         family = "gaussian", link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) 
+#> 
+#> ----- Parameter Estimates -----
+#> Warning: There were 40 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#>  Family: gaussian 
+#>   Links: mu = identity 
+#> Formula: y ~ x1 + gp(x2) + x3 + (1 | regency) 
+#>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) 
+#>   Draws: 2 chains, each with iter = 2000; warmup = 1000; thin = 1;
+#>          total post-warmup draws = 2000
+#> 
+#> Gaussian Process Hyperparameters:
+#>              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sdgp(gpx2)       0.73      0.50     0.11     2.09 1.00      389      487
+#> lscale(gpx2)     0.19      0.52     0.01     0.97 1.01      182      447
+#> 
+#> Multilevel Hyperparameters:
+#> ~regency (Number of levels: 100) 
+#>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sd(Intercept)     0.64      0.37     0.03     1.29 1.03       93      203
+#> 
+#> Regression Coefficients:
+#>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> Intercept    10.17      0.48     9.24    11.21 1.00      740      623
+#> x1            1.02      0.14     0.76     1.30 1.00      973     1146
+#> x3            0.33      0.14     0.06     0.60 1.00      540      802
+#> 
+#> Further Distributional Parameters:
+#>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sigma     1.17      0.25     0.63     1.55 1.03       82      151
+#> 
+#> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+#> and Tail_ESS are effective sample size measures, and Rhat is the potential
+#> scale reduction factor on split chains (at convergence, Rhat = 1).
 
 # -- Missing data: deletion (Y missing, X complete) ---------------------------
 data_miss_y        <- data
@@ -891,9 +1139,56 @@ model_deleted <- do.call(hbm, c(
 ))
 #> handle_missing = 'deleted': 3 row(s) with missing response variable removed from model fitting.
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
+#> Warning: There were 28 divergent transitions after warmup. See
+#> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#> to find out why this is a problem and how to eliminate them.
+#> Warning: There were 2 chains where the estimated Bayesian Fraction of Missing Information was low. See
+#> https://mc-stan.org/misc/warnings.html#bfmi-low
+#> Warning: Examine the pairs() plot to diagnose sampling problems
+#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
 summary(model_deleted)
-#> Error: object 'model_deleted' not found
+#> 
+#> ===== Hierarchical Bayesian Model Summary =====
+#> 
+#>  Observations : 100 
+#>  Family       : gaussian (link: identity )
+#>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + (1 | regency), pforms = list(),      pfix = list(), resp = "y", family = structure(list(family = "gaussian",          link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) 
+#>  Missing data : deleted 
+#> 
+#> ----- Parameter Estimates -----
+#> Warning: There were 28 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#>  Family: gaussian 
+#>   Links: mu = identity 
+#> Formula: y ~ x1 + x2 + x3 + (1 | regency) 
+#>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 97) 
+#>   Draws: 2 chains, each with iter = 2000; warmup = 1000; thin = 1;
+#>          total post-warmup draws = 2000
+#> 
+#> Multilevel Hyperparameters:
+#> ~regency (Number of levels: 97) 
+#>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sd(Intercept)     0.65      0.38     0.02     1.31 1.01       76      244
+#> 
+#> Regression Coefficients:
+#>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> Intercept    10.13      0.14     9.85    10.40 1.00      817      666
+#> x1            0.99      0.14     0.72     1.26 1.00      813      556
+#> x2           -0.41      0.15    -0.70    -0.12 1.00      429      343
+#> x3            0.29      0.15     0.02     0.60 1.01      422      520
+#> 
+#> Further Distributional Parameters:
+#>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sigma     1.16      0.25     0.64     1.54 1.00       74      101
+#> 
+#> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+#> and Tail_ESS are effective sample size measures, and Rhat is the potential
+#> scale reduction factor on split chains (at convergence, Rhat = 1).
 
 # -- Missing data: multiple imputation (X only -- Y is never imputed) ----------
 data_miss_x          <- data
@@ -910,7 +1205,7 @@ model_multiple <- do.call(hbm, c(
 #> Missing predictor variable(s): x1. Applying multiple imputation (mice) with m = 5 imputations.
 #> Warning: Number of logged events: 2
 #> Compiling the C++ model
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Error in getGlobalsAndPackages(expr, envir = envir, globals = globals): The total size of the 7 globals exported for future expression (‘FUN(chains = 2, iter = 2000, warmup = 1000, cores = 1, control = list(),; save_pars = structure(list(group = TRUE, latent = FALSE,; all = TRUE, manual = character(0)), class = "save_pars"),; refresh = 0)’) is 1.96 GiB. This exceeds the maximum allowed size 500.00 MiB per plan() argument 'maxSizeOfObjects'. This limit is set to protect against transfering too large objects to parallel workers by mistake, which may not be intended and could be costly. See help("future.globals.maxSize", package = "future") for how to adjust or remove the default threshold via an R option The three largest globals are ‘FUN’ (0.98 GiB of class ‘function’), ‘fit’ (0.98 GiB of class ‘list’) and ‘data’ (52.70 KiB of class ‘list’)
 summary(model_multiple)
 #> Error: object 'model_multiple' not found
 
@@ -929,9 +1224,67 @@ model_model <- do.call(hbm, c(
 #> handle_missing = 'model': using mi() specification for joint model-based imputation.
 #> Setting 'rescor' to FALSE by default for this model
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
+#> Warning: There were 91 divergent transitions after warmup. See
+#> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#> to find out why this is a problem and how to eliminate them.
+#> Warning: There were 2 chains where the estimated Bayesian Fraction of Missing Information was low. See
+#> https://mc-stan.org/misc/warnings.html#bfmi-low
+#> Warning: Examine the pairs() plot to diagnose sampling problems
+#> Warning: The largest R-hat is 1.07, indicating chains have not mixed.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#r-hat
+#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
 summary(model_model)
-#> Error: object 'model_model' not found
+#> 
+#> ===== Hierarchical Bayesian Model Summary =====
+#> 
+#>  Observations : 100 
+#>  Family       : (link: )
+#>  Formula      : structure(list(forms = list(y = structure(list(formula = y |      mi() ~ mi(x1) + x2 + x3 + (1 | regency), pforms = list(),      pfix = list(), resp = "y", family = structure(list(family = "gaussian",          link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )), x1 = structure(list(formula = x1 | mi() ~ x2 + x3 + (1 |      regency), pforms = list(), pfix = list(), resp = "x1", family = structure(list(     family = "gaussian", link = "identity", linkfun = function (mu)      link(mu, link = slink), linkinv = function (eta)      inv_link(eta, link = slink), dpars = c("mu", "sigma"), type = "real",      ybounds = c(-Inf, Inf), closed = c(NA, NA), ad = c("weights",      "subset", "se", "cens", "trunc", "mi", "index"), normalized = c("_time_hom",      "_time_het", "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",      "rescor")), class = c("brmsfamily", "family")), mecor = TRUE), class = c("brmsformula",  "bform"))), responses = c("y", "x1"), rescor = FALSE, mecor = TRUE), class = c("mvbrmsformula",  "bform")) 
+#>  Missing data : model 
+#> 
+#> ----- Parameter Estimates -----
+#> Warning: Parts of the model have not converged (some Rhats are > 1.05). Be careful when analysing the results! We recommend running more iterations and/or setting stronger priors.
+#> Warning: There were 91 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#>  Family: MV(gaussian, gaussian) 
+#>   Links: mu = identity
+#>          mu = identity 
+#> Formula: y | mi() ~ mi(x1) + x2 + x3 + (1 | regency) 
+#>          x1 | mi() ~ x2 + x3 + (1 | regency) 
+#>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) 
+#>   Draws: 2 chains, each with iter = 2000; warmup = 1000; thin = 1;
+#>          total post-warmup draws = 2000
+#> 
+#> Multilevel Hyperparameters:
+#> ~regency (Number of levels: 100) 
+#>                  Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sd(y_Intercept)      0.87      0.45     0.05     1.52 1.04       23       97
+#> sd(x1_Intercept)     0.52      0.28     0.03     0.99 1.03       65       79
+#> 
+#> Regression Coefficients:
+#>              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> y_Intercept     10.10      0.14     9.83    10.38 1.01      959     1211
+#> x1_Intercept    -0.16      0.10    -0.37     0.04 1.01     1430     1199
+#> y_x2            -0.39      0.14    -0.66    -0.11 1.00      825      977
+#> y_x3             0.31      0.14     0.05     0.60 1.00     1155     1235
+#> x1_x2           -0.05      0.10    -0.26     0.15 1.03       54       46
+#> x1_x3           -0.02      0.11    -0.21     0.19 1.02      213      683
+#> y_mix1           0.97      0.15     0.70     1.26 1.02      145      775
+#> 
+#> Further Distributional Parameters:
+#>          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sigma_y      0.97      0.41     0.13     1.53 1.05       19       13
+#> sigma_x1     0.81      0.21     0.33     1.10 1.01       60       43
+#> 
+#> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+#> and Tail_ESS are effective sample size measures, and Rhat is the potential
+#> scale reduction factor on split chains (at convergence, Rhat = 1).
 
 # -- Spatial: CAR (Conditional Autoregressive) --------------------------------
 data("adjacency_matrix_car")
@@ -944,9 +1297,44 @@ model_car <- do.call(hbm, c(
   FAST
 ))
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
+#> Warning: There were 906 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10. See
+#> https://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded
+#> Warning: Examine the pairs() plot to diagnose sampling problems
 summary(model_car)
-#> Error: object 'model_car' not found
+#> 
+#> ===== Hierarchical Bayesian Model Summary =====
+#> 
+#>  Observations : 100 
+#>  Family       : gaussian (link: identity )
+#>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + car(M, gr = province,      type = "icar"), pforms = list(), pfix = list(), resp = "y",      family = structure(list(family = "gaussian", link = "identity",          linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) 
+#> 
+#> ----- Parameter Estimates -----
+#>  Family: gaussian 
+#>   Links: mu = identity 
+#> Formula: y ~ x1 + x2 + x3 + car(M, gr = province, type = "icar") 
+#>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) 
+#>   Draws: 2 chains, each with iter = 2000; warmup = 1000; thin = 1;
+#>          total post-warmup draws = 2000
+#> 
+#> Correlation Structures:
+#>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sdcar     0.69      0.45     0.10     1.79 1.00      445      496
+#> 
+#> Regression Coefficients:
+#>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> Intercept    10.09      0.14     9.80    10.36 1.00     2045     1246
+#> x1            0.94      0.14     0.68     1.21 1.00     1625     1158
+#> x2           -0.38      0.14    -0.65    -0.10 1.00     1598     1281
+#> x3            0.32      0.14     0.06     0.58 1.00     1776     1247
+#> 
+#> Further Distributional Parameters:
+#>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sigma     1.38      0.10     1.19     1.61 1.00     1297     1096
+#> 
+#> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+#> and Tail_ESS are effective sample size measures, and Rhat is the potential
+#> scale reduction factor on split chains (at convergence, Rhat = 1).
 
 # -- Spatial: SAR (Simultaneous Autoregressive) -------------------------------
 # spatial_weight_sar is a 100x100 row-standardised matrix with row-
@@ -962,8 +1350,40 @@ model_sar <- do.call(hbm, c(
   FAST
 ))
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
 summary(model_sar)
-#> Error: object 'model_sar' not found
+#> 
+#> ===== Hierarchical Bayesian Model Summary =====
+#> 
+#>  Observations : 100 
+#>  Family       : gaussian (link: identity )
+#>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + sar(M, type = "lag"),      pforms = list(), pfix = list(), resp = "y", family = structure(list(         family = "gaussian", link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) 
+#> 
+#> ----- Parameter Estimates -----
+#>  Family: gaussian 
+#>   Links: mu = identity 
+#> Formula: y ~ x1 + x2 + x3 + sar(M, type = "lag") 
+#>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) 
+#>   Draws: 2 chains, each with iter = 2000; warmup = 1000; thin = 1;
+#>          total post-warmup draws = 2000
+#> 
+#> Correlation Structures:
+#>        Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> lagsar     0.05      0.08    -0.12     0.16 1.00     2052     1272
+#> 
+#> Regression Coefficients:
+#>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> Intercept    10.03      0.17     9.69    10.37 1.00     2463     1494
+#> x1            0.99      0.14     0.72     1.26 1.00     3041     1583
+#> x2           -0.38      0.14    -0.66    -0.10 1.00     2774     1415
+#> x3            0.32      0.14     0.04     0.59 1.00     2697     1390
+#> 
+#> Further Distributional Parameters:
+#>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sigma     1.42      0.11     1.23     1.64 1.00     2573     1356
+#> 
+#> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+#> and Tail_ESS are effective sample size measures, and Rhat is the potential
+#> scale reduction factor on split chains (at convergence, Rhat = 1).
 # }
 ```

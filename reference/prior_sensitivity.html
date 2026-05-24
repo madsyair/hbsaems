@@ -152,7 +152,233 @@ power-scaling.  <em>Statistics and Computing</em>, 34, 57.
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">ps</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Eigen not found; call install.packages('RcppEigen')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 343 divergent transitions after warmup. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> to find out why this is a problem and how to eliminate them.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bfmi-low</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.66, indicating chains have not mixed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Sensitivity based on cjs_dist</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Prior selection: all priors</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Likelihood selection: all data</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          variable prior likelihood diagnosis</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       b_Intercept 0.001      0.926         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                              b_x1 0.001      2.252         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                              b_x2 0.001      1.389         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             sd_regency__Intercept 0.003     10.708         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                             sigma 0.001     10.709         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         Intercept 0.002      0.963         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_001,Intercept] 0.001      6.730         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_002,Intercept] 0.000      2.447         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_003,Intercept] 0.001      9.335         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_004,Intercept] 0.001      1.681         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_005,Intercept] 0.000      1.005         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_006,Intercept] 0.001      5.189         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_007,Intercept] 0.002      7.951         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_008,Intercept] 0.001      2.570         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_009,Intercept] 0.001      6.382         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_010,Intercept] 0.000      0.966         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_011,Intercept] 0.000      1.009         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_012,Intercept] 0.001      8.947         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_013,Intercept] 0.000      2.663         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_014,Intercept] 0.001      4.591         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_015,Intercept] 0.001      4.919         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_016,Intercept] 0.001      6.645         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_017,Intercept] 0.001      8.869         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_018,Intercept] 0.001      5.432         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_019,Intercept] 0.001      9.197         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_020,Intercept] 0.000      1.954         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_021,Intercept] 0.001      6.164         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_022,Intercept] 0.001      1.207         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_023,Intercept] 0.001      4.616         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_024,Intercept] 0.001      3.306         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_025,Intercept] 0.001      4.438         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_026,Intercept] 0.001      0.558         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_027,Intercept] 0.000      1.162         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_028,Intercept] 0.001      5.957         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_029,Intercept] 0.000      1.155         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_030,Intercept] 0.000      1.008         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_031,Intercept] 0.001      0.843         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_032,Intercept] 0.001      1.751         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_033,Intercept] 0.002      9.077         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_034,Intercept] 0.001      5.859         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_035,Intercept] 0.001      6.722         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_036,Intercept] 0.000      2.292         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_037,Intercept] 0.001      4.915         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_038,Intercept] 0.000      3.139         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_039,Intercept] 0.000      3.745         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_040,Intercept] 0.001      8.976         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_041,Intercept] 0.001      7.016         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_042,Intercept] 0.001      6.977         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_043,Intercept] 0.001      4.888         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_044,Intercept] 0.001      1.937         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_045,Intercept] 0.002      6.789         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_046,Intercept] 0.001      7.022         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_047,Intercept] 0.001      4.964         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_048,Intercept] 0.001      3.899         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_049,Intercept] 0.000      1.709         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_050,Intercept] 0.000      1.882         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_051,Intercept] 0.001      1.472         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_052,Intercept] 0.001      4.296         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_053,Intercept] 0.001      5.296         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_054,Intercept] 0.001      4.987         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_055,Intercept] 0.001      3.498         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_056,Intercept] 0.001      3.656         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_057,Intercept] 0.000      1.230         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_058,Intercept] 0.000      1.918         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_059,Intercept] 0.001      1.255         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_060,Intercept] 0.001      4.636         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_061,Intercept] 0.001      5.537         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_062,Intercept] 0.002      9.353         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_063,Intercept] 0.000      2.897         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_064,Intercept] 0.001      3.757         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_065,Intercept] 0.001      3.696         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_066,Intercept] 0.001      4.372         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_067,Intercept] 0.001      4.079         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_068,Intercept] 0.001      5.835         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_069,Intercept] 0.000      2.003         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_070,Intercept] 0.001      6.147         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_071,Intercept] 0.001      4.318         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_072,Intercept] 0.001      4.138         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_073,Intercept] 0.002      9.039         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_074,Intercept] 0.001      1.266         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_075,Intercept] 0.001      2.265         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_076,Intercept] 0.001      3.424         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_077,Intercept] 0.000      2.166         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_078,Intercept] 0.001      4.711         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_079,Intercept] 0.001      8.235         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_080,Intercept] 0.000      2.541         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_081,Intercept] 0.001      0.923         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_082,Intercept] 0.001      6.692         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_083,Intercept] 0.001      3.763         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_084,Intercept] 0.000      0.993         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_085,Intercept] 0.001      1.907         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_086,Intercept] 0.001      5.295         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_087,Intercept] 0.000      2.652         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_088,Intercept] 0.000      1.558         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_089,Intercept] 0.001      4.375         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_090,Intercept] 0.001      0.876         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_091,Intercept] 0.001      4.279         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_092,Intercept] 0.002      1.484         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_093,Intercept] 0.001      2.683         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_094,Intercept] 0.001      6.587         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_095,Intercept] 0.001      2.252         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_096,Intercept] 0.000      1.912         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_097,Intercept] 0.001      3.498         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_098,Intercept] 0.000      0.892         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_099,Intercept] 0.001      1.195         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  r_regency[regency_100,Intercept] 0.002      4.502         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          z_1[1,1] 0.001      5.143         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          z_1[1,2] 0.001      3.103         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          z_1[1,3] 0.001      7.341         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          z_1[1,4] 0.001      2.909         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          z_1[1,5] 0.000      2.688         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          z_1[1,6] 0.000      3.974         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          z_1[1,7] 0.001      6.032         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          z_1[1,8] 0.001      2.520         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          z_1[1,9] 0.001      5.325         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,10] 0.001      2.567         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,11] 0.000      2.246         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,12] 0.001      7.010         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,13] 0.001      3.002         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,14] 0.001      4.547         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,15] 0.001      4.516         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,16] 0.000      4.379         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,17] 0.001      7.090         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,18] 0.001      4.051         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,19] 0.001      6.874         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,20] 0.001      2.259         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,21] 0.001      4.931         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,22] 0.001      2.878         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,23] 0.001      4.252         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,24] 0.001      3.086         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,25] 0.001      4.265         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,26] 0.001      2.349         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,27] 0.001      2.296         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,28] 0.001      4.932         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,29] 0.001      2.467         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,30] 0.001      2.662         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,31] 0.001      2.435         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,32] 0.001      2.211         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,33] 0.001      7.451         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,34] 0.001      5.280         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,35] 0.001      5.380         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,36] 0.001      2.749         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,37] 0.001      4.323         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,38] 0.000      3.065         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,39] 0.001      3.722         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,40] 0.001      6.678         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,41] 0.001      5.562         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,42] 0.001      4.777         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,43] 0.001      3.867         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,44] 0.001      3.214         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,45] 0.001      5.323         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,46] 0.001      5.792         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,47] 0.001      3.844         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,48] 0.001      4.028         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,49] 0.001      2.938         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,50] 0.001      3.155         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,51] 0.001      3.058         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,52] 0.001      3.960         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,53] 0.001      3.549         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,54] 0.000      4.639         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,55] 0.001      3.679         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,56] 0.001      3.203         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,57] 0.000      2.857         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,58] 0.001      2.512         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,59] 0.001      2.449         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,60] 0.001      4.226         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,61] 0.001      4.337         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,62] 0.001      6.866         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,63] 0.001      3.521         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,64] 0.001      3.449         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,65] 0.001      3.561         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,66] 0.001      3.984         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,67] 0.000      3.658         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,68] 0.001      4.318         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,69] 0.000      2.586         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,70] 0.000      4.435         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,71] 0.001      3.638         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,72] 0.001      3.458         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,73] 0.001      6.544         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,74] 0.001      2.982         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,75] 0.001      3.136         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,76] 0.001      3.813         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,77] 0.001      2.913         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,78] 0.001      3.310         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,79] 0.001      6.946         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,80] 0.001      3.250         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,81] 0.001      2.401         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,82] 0.001      5.297         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,83] 0.001      3.667         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,84] 0.001      2.827         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,85] 0.001      2.646         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,86] 0.001      5.057         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,87] 0.000      3.456         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,88] 0.001      2.339         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,89] 0.001      4.110         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,90] 0.000      2.485         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,91] 0.001      2.975         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,92] 0.001      3.017         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,93] 0.001      3.375         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,94] 0.001      4.180         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,95] 0.000      3.170         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,96] 0.001      3.062         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,97] 0.001      3.851         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,98] 0.001      2.626         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,99] 0.001      3.018         -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,100] 0.001      5.100         -</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

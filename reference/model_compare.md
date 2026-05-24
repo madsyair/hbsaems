@@ -101,7 +101,7 @@ m1 <- do.call(hbm, c(list(formula = brms::bf(y ~ x1 + x2 + x3),
 #>     spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE
 #>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
 m2 <- do.call(hbm, c(list(formula = brms::bf(y ~ x1 + x2),
                           data = data_fhnorm), FAST))
 #> Warning: Model fitted without any area-level random effects.
@@ -112,11 +112,39 @@ m2 <- do.call(hbm, c(list(formula = brms::bf(y ~ x1 + x2),
 #>     spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE
 #>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
+#> Start sampling
 
 model_compare(m1)            # single-model goodness-of-fit
-#> Error: object 'm1' not found
+#> Warning: 
+#> 1 (1.0%) p_waic estimates greater than 0.4. We recommend trying loo instead.
+#> 
+#> Model Comparison  [hbmc_results]
+#> -----------------------------------
+#>  ELPD-LOO  (m1): -179.10
+#>  ELPD-WAIC (m1): -179.07
+#> 
 model_compare(m1, m2)        # pairwise comparison
-#> Error: object 'm1' not found
+#> Warning: 
+#> 1 (1.0%) p_waic estimates greater than 0.4. We recommend trying loo instead.
+#> Warning: 
+#> 1 (1.0%) p_waic estimates greater than 0.4. We recommend trying loo instead.
+#> Iteration: 1
+#> Iteration: 2
+#> Iteration: 3
+#> Iteration: 4
+#> Iteration: 5
+#> Iteration: 1
+#> Iteration: 2
+#> Iteration: 3
+#> Iteration: 4
+#> Iteration: 5
+#> 
+#> Model Comparison  [hbmc_results]
+#> -----------------------------------
+#>  ELPD-LOO  (m1): -179.10
+#>  ELPD-LOO  (m2): -180.88
+#>  ELPD-WAIC (m1): -179.07
+#>  ELPD-WAIC (m2): -180.86
+#> 
 # }
 ```

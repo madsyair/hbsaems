@@ -118,9 +118,287 @@ default is <code>0.9</code>).</p></dd>
 <span class="r-in"><span>             chains <span class="op">=</span> <span class="fl">2</span>, iter <span class="op">=</span> <span class="fl">1000</span>, warmup <span class="op">=</span> <span class="fl">500</span>,</span></span>
 <span class="r-in"><span>             cores <span class="op">=</span> <span class="fl">1</span>, seed <span class="op">=</span> <span class="fl">1</span>, refresh <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Eigen not found; call install.packages('RcppEigen')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 40 divergent transitions after warmup. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> to find out why this is a problem and how to eliminate them.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 2 chains where the estimated Bayesian Fraction of Missing Information was low. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bfmi-low</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.1, indicating chains have not mixed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-in"><span><span class="fu">posterior_interval</span><span class="op">(</span><span class="va">model</span>, prob <span class="op">=</span> <span class="fl">0.90</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       b_Intercept      b_x1 sd_regency__Intercept    sigma Intercept</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%     9.791176 0.7578318              0.117114 0.614227  9.635747</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%   10.312155 1.2602805              1.492446 1.558393 10.139947</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_001,Intercept] r_regency[regency_002,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -2.4804407                        -1.052669</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.3114698                         0.845649</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_003,Intercept] r_regency[regency_004,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -3.4315324                       -0.8109872</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.1285436                        1.2118573</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_005,Intercept] r_regency[regency_006,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.8275264                       -0.5496158</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.1549429                        1.7918442</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_007,Intercept] r_regency[regency_008,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -2.0745219                       -0.5519149</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.2996904                        1.7544519</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_009,Intercept] r_regency[regency_010,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -2.1523740                       -1.3644704</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.4456685                        0.7858374</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_011,Intercept] r_regency[regency_012,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.5301551                       -0.2713639</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.5565693                        2.3201926</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_013,Intercept] r_regency[regency_014,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.9401367                       -1.2435055</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.4459114                        0.8495309</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_015,Intercept] r_regency[regency_016,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.3445869                       -2.5082561</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        2.2742529                        0.2788507</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_017,Intercept] r_regency[regency_018,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                       -3.97221297                       -1.6837947</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                       0.05775981                        0.4403211</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_019,Intercept] r_regency[regency_020,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                       -3.50850779                       -0.5178427</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                       0.09525293                        1.5709732</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_021,Intercept] r_regency[regency_022,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.4300366                        -1.069474</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.7528667                         1.204050</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_023,Intercept] r_regency[regency_024,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.4511115                       -0.7241055</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.6585717                        1.3251641</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_025,Intercept] r_regency[regency_026,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.4106253                        -1.065478</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        2.0038133                         1.224599</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_027,Intercept] r_regency[regency_028,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.1231776                       -0.3574651</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.9479077                        2.0848391</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_029,Intercept] r_regency[regency_030,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.8993571                       -0.9466928</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.5407782                        1.1251083</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_031,Intercept] r_regency[regency_032,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.1210185                       -0.6791875</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.8447592                        1.2737250</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_033,Intercept] r_regency[regency_034,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.2008354                       -0.5307639</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        2.7706796                        1.8958907</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_035,Intercept] r_regency[regency_036,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.6379596                        -1.433251</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.5314154                         0.705924</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_037,Intercept] r_regency[regency_038,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.5997754                       -0.4570581</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.6455377                        2.1524453</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_039,Intercept] r_regency[regency_040,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                         -0.634865                       -0.3368931</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                         1.390759                        2.5410015</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_041,Intercept] r_regency[regency_042,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.4826793                       -0.4581581</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.6751515                        1.7888614</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_043,Intercept] r_regency[regency_044,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.5924223                       -0.5785545</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.9502767                        1.6225576</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_045,Intercept] r_regency[regency_046,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.8268728                        -0.186519</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.4473272                         2.995036</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_047,Intercept] r_regency[regency_048,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.2890656                        -1.405101</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        2.2260769                         0.703645</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_049,Intercept] r_regency[regency_050,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.1642030                       -1.5487814</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.7361391                        0.6796153</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_051,Intercept] r_regency[regency_052,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.6662641                       -2.2778679</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.2274964                        0.2681512</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_053,Intercept] r_regency[regency_054,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.6415839                       -0.5102876</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.5006712                        1.6494236</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_055,Intercept] r_regency[regency_056,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.2151776                       -1.3962375</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.8035161                        0.8645878</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_057,Intercept] r_regency[regency_058,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.1937452                        -1.122144</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.7099562                         1.146311</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_059,Intercept] r_regency[regency_060,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.8546174                       -1.8254981</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.1199018                        0.3632692</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_061,Intercept] r_regency[regency_062,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.5006326                       -0.2396636</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.6702791                        2.6064240</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_063,Intercept] r_regency[regency_064,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.9563583                       -1.1993685</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.3034885                        0.7904705</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_065,Intercept] r_regency[regency_066,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.5886175                       -2.0963201</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.5564596                        0.3400306</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_067,Intercept] r_regency[regency_068,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.9065453                       -2.2482694</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.0013818                        0.2728756</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_069,Intercept] r_regency[regency_070,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.9966293                       -2.4842074</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.0112389                        0.2726005</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_071,Intercept] r_regency[regency_072,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.4063718                       -1.6952303</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.7970591                        0.4984861</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_073,Intercept] r_regency[regency_074,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -2.9036396                       -1.1861900</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.1956183                        0.9471926</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_075,Intercept] r_regency[regency_076,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.0664554                       -0.3556162</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.9670795                        1.8526060</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_077,Intercept] r_regency[regency_078,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.0487073                       -1.7073354</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.9027422                        0.5059311</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_079,Intercept] r_regency[regency_080,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.2826821                       -0.5920751</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        2.1693350                        1.5774641</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_081,Intercept] r_regency[regency_082,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.2129089                       -1.5878305</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.8504595                        0.5838797</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_083,Intercept] r_regency[regency_084,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.8639155                       -1.0620899</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.3963295                        0.8275986</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_085,Intercept] r_regency[regency_086,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.7155993                       -0.3118314</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.2875845                        2.3455620</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_087,Intercept] r_regency[regency_088,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.8186283                       -0.5134922</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.4162188                        1.6754832</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_089,Intercept] r_regency[regency_090,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.4585831                       -0.8222232</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.8952935                        1.2771256</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_091,Intercept] r_regency[regency_092,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.3383708                        -1.047881</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        2.0784572                         1.051217</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_093,Intercept] r_regency[regency_094,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.6213230                       -0.3569255</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.5395307                        2.0131544</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_095,Intercept] r_regency[regency_096,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -1.5624269                       -2.0864082</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        0.5259262                        0.3776069</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_097,Intercept] r_regency[regency_098,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.4827982                       -0.9341127</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.6567630                        1.2343243</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       r_regency[regency_099,Intercept] r_regency[regency_100,Intercept]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%                        -0.6478455                       -1.3341406</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%                        1.5491703                        0.6084329</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          lprior      lp__   z_1[1,1]  z_1[1,2]   z_1[1,3]  z_1[1,4]  z_1[1,5]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%  -4.669507 -333.5539 -2.1030284 -1.361241 -2.7201700 -1.344532 -1.113245</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95% -4.559042 -232.0233  0.7218117  1.258699  0.5665471  1.309346  1.296688</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        z_1[1,6]   z_1[1,7]  z_1[1,8]  z_1[1,9] z_1[1,10]  z_1[1,11]  z_1[1,12]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%  -1.007728 -1.9531245 -1.006271 -1.973884 -1.397076 -1.5154941 -0.7952597</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%  1.733931  0.7986381  1.608622  1.124674  1.089185  0.9689494  2.1513068</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        z_1[1,13] z_1[1,14]  z_1[1,15] z_1[1,16]  z_1[1,17]  z_1[1,18]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%  -1.6939091 -1.451670 -0.8573337 -2.187791 -3.1496260 -1.6466358</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%  0.9479207  1.148194  1.9370959  0.641112  0.3507781  0.9795855</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        z_1[1,19] z_1[1,20] z_1[1,21] z_1[1,22]  z_1[1,23] z_1[1,24]  z_1[1,25]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%  -2.8069663 -1.052368 -0.911190 -1.259772 -0.9306953 -1.109451 -0.9637722</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%  0.4689011  1.580900  1.740705  1.324709  1.7802289  1.464109  2.0128053</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       z_1[1,26] z_1[1,27]  z_1[1,28] z_1[1,29] z_1[1,30] z_1[1,31] z_1[1,32]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%  -1.136668 -1.312775 -0.9048455 -1.847535 -1.319238 -1.437770 -1.073182</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%  1.389412  1.261149  1.9068033  1.000905  1.390690  1.317074  1.357020</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        z_1[1,33] z_1[1,34] z_1[1,35] z_1[1,36] z_1[1,37] z_1[1,38] z_1[1,39]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%  -0.5764584 -1.236623 -1.720334 -1.456377 -1.632076 -1.003659 -1.040419</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%  2.4173636  1.678197  1.019726  1.138784  1.242941  1.801596  1.479043</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       z_1[1,40] z_1[1,41]  z_1[1,42] z_1[1,43] z_1[1,44] z_1[1,45]  z_1[1,46]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%  -0.829730 -1.003871 -0.7898897 -1.014792 -0.988598 -1.777243 -0.6303144</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%  2.043297  1.670507  1.7211002  1.643814  1.684950  0.905018  2.4238465</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        z_1[1,47] z_1[1,48] z_1[1,49] z_1[1,50] z_1[1,51]  z_1[1,52]  z_1[1,53]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%  -0.7864359 -1.563410 -1.356515 -1.438200 -1.049208 -1.9399853 -1.6303196</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%  2.0874556  1.091941  1.136300  1.081303  1.444480  0.7715843  0.9563147</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       z_1[1,54] z_1[1,55] z_1[1,56] z_1[1,57] z_1[1,58] z_1[1,59]  z_1[1,60]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%  -1.053207 -1.331914 -1.388067 -1.438124 -1.308656 -1.111216 -1.7277789</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%  1.594360  1.194044  1.062213  1.002794  1.359507  1.360753  0.7850869</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        z_1[1,61]  z_1[1,62] z_1[1,63] z_1[1,64]  z_1[1,65]  z_1[1,66] z_1[1,67]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%  -0.9849661 -0.5948665 -1.280734 -1.361901 -1.6890461 -1.8941534 -1.199708</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%  1.7313121  2.1633470  1.379218  1.193758  0.9873994  0.8275436  1.378899</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        z_1[1,68] z_1[1,69]  z_1[1,70]  z_1[1,71]  z_1[1,72]  z_1[1,73]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%  -2.0688682 -1.236118 -2.1714826 -0.7555802 -1.6265910 -2.3912731</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%  0.7618106  1.196763  0.7707903  1.7368166  0.9787573  0.7472268</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       z_1[1,74] z_1[1,75]  z_1[1,76] z_1[1,77]  z_1[1,78]  z_1[1,79] z_1[1,80]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%  -1.414375 -1.237275 -0.8432432 -1.249071 -1.6277991 -0.7474098 -1.019544</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%  1.104000  1.379937  1.8699117  1.205554  0.8576398  1.9521648  1.510895</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       z_1[1,81] z_1[1,82]  z_1[1,83] z_1[1,84] z_1[1,85]  z_1[1,86] z_1[1,87]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%  -1.431989 -1.716145 -1.7661236 -1.350559 -1.116645 -0.8304605 -1.192772</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%  1.227851  1.173225  0.9569526  1.218151  1.496819  2.1408602  1.580819</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       z_1[1,88]  z_1[1,89] z_1[1,90]  z_1[1,91] z_1[1,92] z_1[1,93]  z_1[1,94]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%  -1.072718 -0.8861467 -1.165287 -0.7890753 -1.200791 -1.522167 -0.7780493</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%  1.566868  1.6618806  1.351922  1.9787588  1.279442  1.094531  1.7904289</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      variable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       z_1[1,95]  z_1[1,96] z_1[1,97] z_1[1,98]  z_1[1,99] z_1[1,100]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   5%  -1.560859 -1.9079649 -1.022418 -1.206322 -0.9889584  -1.587501</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   95%  1.020145  0.7885501  1.602525  1.460978  1.6037149   1.052142</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
