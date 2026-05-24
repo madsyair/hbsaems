@@ -45,6 +45,7 @@ Imports:
     utils
 Suggests:
     bayesplot,
+    BH,
     bridgesampling,
     DT,
     energy,
