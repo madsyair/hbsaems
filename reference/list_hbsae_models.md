@@ -52,12 +52,12 @@ list_hbsae_models(verbose = TRUE)
 #> 4                  categorical                 categorical    logit     TRUE
 #> 5                     gaussian                    gaussian identity    FALSE
 #> 6                    geometric                   geometric      log     TRUE
-#> 7                  loglogistic                 loglogistic      log    FALSE
+#> 7                  loglogistic           hbsae_loglogistic      log    FALSE
 #> 8                    lognormal                   lognormal identity    FALSE
 #> 9                  multinomial                 multinomial    logit     TRUE
 #> 10                 negbinomial                 negbinomial      log     TRUE
 #> 11                     poisson                     poisson      log     TRUE
-#> 12         shifted_loglogistic         shifted_loglogistic identity    FALSE
+#> 12         shifted_loglogistic   hbsae_shifted_loglogistic identity    FALSE
 #> 13 zero_inflated_beta_binomial zero_inflated_beta_binomial     <NA>     TRUE
 #> 14      zero_inflated_binomial      zero_inflated_binomial     <NA>     TRUE
 #> 15   zero_inflated_negbinomial   zero_inflated_negbinomial     <NA>     TRUE

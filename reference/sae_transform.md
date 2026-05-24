@@ -38,7 +38,7 @@ sae_transform(p, log)
 #> Small Area Estimates  [hbsae_results]
 #> --------------------------------------
 #>  Areas       : 3 
-#>  Overall RSE : 5 %
+#>  Overall RSE : 5 % 
 #>  Pred. range : 0.693 to 2.079 
 #> 
 ```

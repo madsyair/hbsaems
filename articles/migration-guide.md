@@ -129,10 +129,14 @@ library(hbsaems)
 data("data_fhnorm")
 
 model  <- hbm(brms::bf(y ~ x1 + x2 + x3), data = data_fhnorm,
-              re = ~ (1 | regency),
+              re                = ~ (1 | regency),
+              sampling_variance = "D",                 # Fay-Herriot identifiability
+              control           = list(adapt_delta = 0.99),
               chains = 4, iter = 4000)
 model2 <- hbm(brms::bf(y ~ x1 + x2),      data = data_fhnorm,
-              re = ~ (1 | regency),
+              re                = ~ (1 | regency),
+              sampling_variance = "D",
+              control           = list(adapt_delta = 0.99),
               chains = 4, iter = 4000)
 
 # Quick convergence check
@@ -165,4 +169,169 @@ ci95  <- posterior_interval(model, prob = 0.95)
 # Inspection helpers
 hbm_info(model)
 hbm_warnings(model)
+```
+
+------------------------------------------------------------------------
+
+## Additional v1.0.0 features (consolidated)
+
+The following items round out the v1.0.0 release. They are listed
+separately because they were introduced after the initial section above
+had stabilised.
+
+### 1. `sae_benchmark()`: explicit `target_type`
+
+**Earlier development versions:** when `weights = NULL` the default was
+`rep(1/n, n)`, which silently assumed `target` was a population *mean*.
+If users passed a population total, the resulting benchmarked estimates
+were scale-corrupt by a factor of $`n`$.
+
+**Current v1.0.0 behaviour:** a new argument
+`target_type = c("total", "mean")` chooses a safe default. The default
+is `"total"` (the BPS convention), so `weights = NULL` now means
+`rep(1, n)`.
+
+``` r
+
+# OLD code (silently used 1/n; corrupt if target is a total)
+sae_benchmark(predictions, target = 1e6)
+
+# NEW (explicit, correct)
+sae_benchmark(predictions, target = 1e6, target_type = "total")
+# or — recommended for production —
+sae_benchmark(predictions, target = 1e6, weights = popsize_per_area)
+```
+
+If your v1.0.0 code passed a population *mean* without explicit weights,
+add `target_type = "mean"` to retain the old default.
+
+### 2. `hbm_betalogitnorm()`: `link_phi` resolves automatically
+
+**Earlier development versions:** default was `link_phi = "identity"`,
+which is the correct choice when `phi` is pinned via the survey design
+(`n + deff` or `fixed_params$phi`), but unsafe when `phi` is estimated.
+
+**Current v1.0.0 behaviour:** default is now `NULL` and resolves
+automatically:
+
+- `link_phi = "identity"` when `phi` is pinned (fixed mode).
+- `link_phi = "log"` otherwise (random / hyperprior mode – the brms
+  default).
+
+User-supplied `"identity"` in random mode emits a clear warning about
+the risk of divergent transitions.
+
+### 2b. `hbm_betalogitnorm()`: phi prior simplified to brms default
+
+**Earlier development versions:** in random mode, `phi` was given a
+hierarchical hyperprior:
+
+    phi   ~ gamma(alpha, beta)
+    alpha ~ gamma(1, 1)              (Stan parameter, real<lower=1>)
+    beta  ~ gamma(1, 1)              (Stan parameter, real<lower=0>)
+
+The wrapper declared `alpha` and `beta` as Stan parameters and
+auto-injected the hyperprior sampling statements via `stanvars`.
+
+**Current v1.0.0 behaviour:** `phi` uses brms’s own default prior
+$`\mathrm{Gamma}(0.01, 0.01)`$ (lower bound 0). The wrapper no longer
+declares `alpha` or `beta`, and no longer injects any `stanvars`
+sampling statements for them.
+
+**Why:** the prior on `alpha` (declared as `real<lower=1>` in Stan) was
+on the boundary of its support, routinely producing divergent
+transitions on weakly-informative data. The simpler brms default also
+means `prior = NULL` does exactly what users expect.
+
+**Migration:** legacy code that still passes `stanvars` containing
+sampling statements on `alpha` / `beta` to
+[`hbm_betalogitnorm()`](https://madsyair.github.io/hbsaems/reference/hbm_betalogitnorm.md)
+now raises an informative error pointing users at the new mechanism
+(`prior = brms::set_prior("gamma(...)", class = "phi")`). If you need to
+reproduce the exact pre-v1.0.0 hierarchical model (e.g. to verify
+against an earlier analysis), drop down to the universal
+[`hbm_flex()`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md)
+interface, which doesn’t apply the
+[`hbm_betalogitnorm()`](https://madsyair.github.io/hbsaems/reference/hbm_betalogitnorm.md)
+guard and accepts arbitrary user-declared Stan parameters. See
+`vignette("hbsaems-betalogitnorm-model")` for the side-by-side code
+listing.
+
+### 2c. CRITICAL bug fix: `sampling_variance` no longer silently corrupted
+
+**Earlier development versions:**
+[`hbm()`](https://madsyair.github.io/hbsaems/reference/hbm.md) with
+`sampling_variance = "D"` stored $`\sqrt{D_i}`$ in a hidden offset
+column and attached `sigma ~ 0 + offset(.hbsaems_sigma_fixed)` to the
+formula. However, brms applies the dpar’s link function (default
+`link_sigma = "log"` for Gaussian / Lognormal / Student / etc.) to the
+linear predictor before plugging it into the likelihood – so the Stan
+model actually computed $`\sigma_i = \exp(\sqrt{D_i})`$ instead of
+$`\sqrt{D_i}`$. E.g.  
+$`D_i = 4`$ should have given $`\sigma_i = 2.0`$ but produced
+$`\sigma_i \approx 7.39`$ – a catastrophic miscalibration. Same bug
+affected `fixed_params = list(sigma = ...)`.
+
+**Current v1.0.0 behaviour:**
+[`hbm()`](https://madsyair.github.io/hbsaems/reference/hbm.md) now
+overrides `link_<par> = "identity"` on the family object for every
+pinned distributional parameter, so offset values are passed through
+verbatim. No user action required – existing code automatically benefits
+from the fix. This is the single most important behavioural change in
+v1.0.0; if you have been fitting Fay-Herriot models with
+`sampling_variance` on an earlier hbsaems development version, your
+estimates were biased and we strongly recommend refitting.
+
+### 3. `sae_scale()`: zero-variance predictions no longer corrupt downstream data
+
+**Earlier development versions:** when all area predictions were
+identical (e.g. in a toy fit),
+[`base::scale()`](https://rdrr.io/r/base/scale.html) produced `NaN`
+throughout, silently corrupting `result_table`.
+
+**Current v1.0.0 behaviour:** detects this case, emits a warning, and
+returns centred-only (or raw) predictions instead of `NaN`.
+
+### 4. NEW: `measurement_error` argument (Ybarra-Lohr 2008)
+
+When auxiliary covariates are themselves estimated from a survey and
+come with a known sampling SE, you can now declare measurement error
+without writing the brms
+[`mi()`](https://paulbuerkner.com/brms/reference/mi.html) syntax by
+hand:
+
+``` r
+
+fit <- hbm(
+  formula = brms::bf(y ~ x1 + x2),
+  data    = mydata,
+  measurement_error = list(x1 = "se_x1"),   # x1 has known SE in se_x1 column
+  sampling_variance = "D",                  # Fay-Herriot
+  re      = ~ (1 | regency)
+)
+```
+
+Internally
+[`hbm()`](https://madsyair.github.io/hbsaems/reference/hbm.md) rewrites
+the RHS to `mi(x1, se_x1) + x2` before delegating to brms. Caveat:
+measurement-error models inflate the parameter space; expect 2-5x longer
+sampling time and consider `adapt_delta = 0.99` if combining with smooth
+terms.
+
+### 5. NEW: automatic `mi() / me()` detection
+
+If you have always written `mi(...)` explicitly in your formula,
+[`hbm()`](https://madsyair.github.io/hbsaems/reference/hbm.md) no longer
+requires you to set `handle_missing` – the call silently routes to
+model-based imputation:
+
+``` r
+
+# Previously: had to spell out handle_missing
+hbm(bf(y | mi() ~ mi(x1) + x2) + bf(x1 | mi() ~ z),
+    data = d, handle_missing = "model")
+
+# v1.0.0: handle_missing inferred from formula
+hbm(bf(y | mi() ~ mi(x1) + x2) + bf(x1 | mi() ~ z),
+    data = d)
 ```

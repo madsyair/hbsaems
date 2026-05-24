@@ -25,7 +25,7 @@ an R string."></head><body>
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/hbsaems-modelling.html">Get started</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/complete-workflow.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -40,10 +40,10 @@ an R string."></head><body>
     <li><a class="dropdown-item" href="../articles/hbsaems-spatial.html">Spatial models (CAR / SAR / BYM2)</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-handle-missing.html">Handling missing data</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-run_sae_app.html">Interactive Shiny dashboard</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
-    <li><a class="dropdown-item" href="../articles/complete-workflow.html">Complete workflow walk-through</a></li>
     <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Internals &amp; development</h6></li>
+    <li><a class="dropdown-item" href="../articles/ast-formula-manipulation.html">AST-based formula manipulation</a></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration guide (legacy users)</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -84,7 +84,8 @@ an R string.</p>
 <span>  loop <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  log_lik <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  posterior_predict <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  posterior_epred <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  posterior_epred <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  use_stan_native <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -145,6 +146,14 @@ expectation \(E[Y \mid X]\) (used by <code><a href="https://rdrr.io/r/stats/fitt
 <code><a href="https://paulbuerkner.com/brms/reference/conditional_effects.brmsfit.html" class="external-link">conditional_effects()</a></code>).  Signature
 <code>function(prep)</code>.</p></dd>
 
+
+<dt id="arg-use-stan-native">use_stan_native<a class="anchor" aria-label="anchor" href="#arg-use-stan-native"></a></dt>
+<dd><p>Logical.  If <code>TRUE</code>, no <code>stanvars</code>
+block is attached – the <code>&lt;name&gt;_lpdf</code> function is assumed to
+exist as a Stan <strong>built-in</strong> (e.g.\ <code>loglogistic_lpdf</code>
+in Stan \(\geq\) 2.29).  When <code>FALSE</code> (the default), the
+function definition is loaded from <code>inst/stan/&lt;name&gt;.stan</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -153,7 +162,8 @@ expectation \(E[Y \mid X]\) (used by <code><a href="https://rdrr.io/r/stats/fitt
 
   <dt><code>stanvars_family</code></dt>
 <dd><p>A <code><a href="https://paulbuerkner.com/brms/reference/stanvar.html" class="external-link">brms::stanvars</a></code> object with the
-    Stan code in the <code>functions</code> block.</p></dd>
+    Stan code in the <code>functions</code> block, or <code>NULL</code> when
+    <code>use_stan_native = TRUE</code>.</p></dd>
 
 
 </dl></div>
@@ -174,14 +184,16 @@ wrap the returned object in a function and call it lazily.</p>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://madsyair.github.io/hbsaems/">hbsaems</a></span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/paul-buerkner/brms" class="external-link">brms</a></span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Build the loglogistic family from inst/stan/loglogistic.stan</span></span></span>
+<span class="r-in"><span><span class="co"># Build the loglogistic family.  Stan code is loaded from</span></span></span>
+<span class="r-in"><span><span class="co"># inst/stan/hbsae_loglogistic.stan — the `hbsae_` prefix avoids</span></span></span>
+<span class="r-in"><span><span class="co"># collision with Stan's BUILT-IN `loglogistic_lpdf` (Stan &gt;= 2.29).</span></span></span>
 <span class="r-in"><span><span class="va">ll</span> <span class="op">&lt;-</span> <span class="fu">build_brms_custom_family</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  name  <span class="op">=</span> <span class="st">"loglogistic"</span>,</span></span>
-<span class="r-in"><span>  dpars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mu"</span>, <span class="st">"beta"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  links <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"log"</span>, <span class="st">"log"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  lb    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,    <span class="fl">0</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  ub    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>,   <span class="cn">NA</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  type  <span class="op">=</span> <span class="st">"real"</span></span></span>
+<span class="r-in"><span>  name             <span class="op">=</span> <span class="st">"hbsae_loglogistic"</span>,</span></span>
+<span class="r-in"><span>  dpars            <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mu"</span>, <span class="st">"beta"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  links            <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"log"</span>, <span class="st">"log"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  lb               <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,    <span class="fl">0</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  ub               <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>,   <span class="cn">NA</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  type             <span class="op">=</span> <span class="st">"real"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">ll</span><span class="op">$</span><span class="va">custom_family</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "customfamily" "brmsfamily"   "family"      </span>

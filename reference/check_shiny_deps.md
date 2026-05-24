@@ -58,14 +58,12 @@ check_shiny_deps()
 #> OPTIONAL (used by individual panels):
 #>   [OK ] shinyWidgets    -- Picker inputs in Data Exploration and Diagnostics tabs (falls back to selectInput)
 #>   [OK ] readxl          -- Reading .xls / .xlsx uploads (falls back to .csv only)
-#>   [x  ] energy          -- Distance correlation in scatter plot (falls back to Pearson / Spearman)
-#>   [x  ] minerva         -- MIC correlation in scatter plot (falls back to Pearson / Spearman)
+#>   [OK ] energy          -- Distance correlation in scatter plot (falls back to Pearson / Spearman)
+#>   [OK ] minerva         -- MIC correlation in scatter plot (falls back to Pearson / Spearman)
 #>   [OK ] sf              -- Build spatial weight matrix from shapefile (falls back to manual matrix upload)
 #>   [OK ] spdep           -- Neighbour computation for spatial weights (paired with sf)
 #>   [OK ] bridgesampling  -- Bayes factor in model_compare (LOO and WAIC remain available)
 #> 
-#> !  Some optional features will be disabled.
-#>    Run:
-#>    install.packages(c("energy", "minerva"))
+#>    All dependencies installed.  Ready to launch.
 #> 
 ```

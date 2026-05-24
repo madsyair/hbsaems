@@ -31,9 +31,9 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="active nav-item"><a class="nav-link" href="../articles/hbsaems-modelling.html">Get started</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/complete-workflow.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="nav-item dropdown">
+<li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><hr class="dropdown-divider"></li>
@@ -47,10 +47,10 @@
     <li><a class="dropdown-item" href="../articles/hbsaems-spatial.html">Spatial models (CAR / SAR / BYM2)</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-handle-missing.html">Handling missing data</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-run_sae_app.html">Interactive Shiny dashboard</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
-    <li><a class="dropdown-item" href="../articles/complete-workflow.html">Complete workflow walk-through</a></li>
     <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Internals &amp; development</h6></li>
+    <li><a class="dropdown-item" href="../articles/ast-formula-manipulation.html">AST-based formula manipulation</a></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration guide (legacy users)</a></li>
   </ul>
 </li>
@@ -77,7 +77,7 @@
       <h1>Modelling Workflow Overview with hbsaems</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/main/vignettes/hbsaems-modelling.Rmd" class="external-link"><code>vignettes/hbsaems-modelling.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/main/vignettes/articles/hbsaems-modelling.Rmd" class="external-link"><code>vignettes/articles/hbsaems-modelling.Rmd</code></a></small>
       <div class="d-none name"><code>hbsaems-modelling.Rmd</code></div>
     </div>
 
@@ -415,25 +415,25 @@ imputation;</li>
 <p>Continue with one of the family-specific vignettes:</p>
 <ul>
 <li>
-<code><a href="../articles/hbsaems-betalogitnorm-model.html">vignette("hbsaems-betalogitnorm-model")</a></code> – Beta
+<code>vignette("hbsaems-betalogitnorm-model")</code> – Beta
 likelihood with optional pinned
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>
 from <code>n</code> + <code>deff</code>.</li>
 <li>
-<code><a href="../articles/hbsaems-binlogitnorm-model.html">vignette("hbsaems-binlogitnorm-model")</a></code> – binomial
+<code>vignette("hbsaems-binlogitnorm-model")</code> – binomial
 logit-normal for counts out of trials.</li>
 <li>
-<code><a href="../articles/hbsaems-lnln-model.html">vignette("hbsaems-lnln-model")</a></code> – lognormal-lognormal
+<code>vignette("hbsaems-lnln-model")</code> – lognormal-lognormal
 model and Fay-Herriot variant.</li>
 <li>
-<code><a href="../articles/hbsaems-spatial.html">vignette("hbsaems-spatial")</a></code> – CAR / SAR / BYM2 spatial
+<code>vignette("hbsaems-spatial")</code> – CAR / SAR / BYM2 spatial
 random effects.</li>
 <li>
-<code><a href="../articles/hbsaems-handle-missing.html">vignette("hbsaems-handle-missing")</a></code> – three strategies
+<code>vignette("hbsaems-handle-missing")</code> – three strategies
 for missing data (<code>deleted</code>, <code>multiple</code>,
 <code>model</code>).</li>
 <li>
-<code><a href="../articles/hbsaems-run_sae_app.html">vignette("hbsaems-run_sae_app")</a></code> – launching the bundled
+<code>vignette("hbsaems-run_sae_app")</code> – launching the bundled
 Shiny GUI for interactive modelling.</li>
 </ul>
 </div>

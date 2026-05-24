@@ -75,6 +75,26 @@ catches this specific error and automatically retries with
 `newdata = object$data` (the data frame stored on the original
 `hbmfit`). Pass an explicit `newdata` to override this behaviour.
 
+## Fixed-parameter columns
+
+Models fitted with `sampling_variance`, `n` + `deff` (in
+`hbm_betalogitnorm`), or `fixed_params` carry hidden offset columns
+named `.hbsaems_<par>_fixed` in their data frames. When `update_hbm`
+receives a `newdata` that *does not* have these columns, brms refuses to
+refit with *"variables can neither be found in 'data' nor in 'data2'"*.
+`update_hbm` now detects this case and:
+
+- warns the user when offset columns are present in the original data
+  but missing in `newdata`;
+
+- either copies the columns over from the original `object$data` (when
+  `nrow(newdata) == nrow(object$data)`, which is the typical "same
+  areas, updated covariates" case), or
+
+- raises an informative error pointing the user to either supply the
+  columns in `newdata` explicitly or refit from scratch with a fresh
+  [`hbm()`](https://madsyair.github.io/hbsaems/reference/hbm.md) call.
+
 ## Examples
 
 ``` r

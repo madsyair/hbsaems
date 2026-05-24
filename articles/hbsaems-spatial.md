@@ -118,12 +118,14 @@ data("data_fhnorm")
 data("adjacency_matrix_car")
 
 fit_icar <- hbm(
-  formula  = brms::bf(y ~ x1 + x2 + x3),
-  hb_sampling = "gaussian",
-  spatial_var = "province",
-  spatial_model = "car",
-  M        = adjacency_matrix_car,
-  data     = data_fhnorm,
+  formula           = brms::bf(y ~ x1 + x2 + x3),
+  hb_sampling       = "gaussian",
+  spatial_var       = "province",
+  spatial_model     = "car",
+  M                 = adjacency_matrix_car,
+  data              = data_fhnorm,
+  sampling_variance = "D",                       # known sampling variance
+  control           = list(adapt_delta = 0.99),
   chains = 4, iter = 4000, warmup = 2000, cores = 4,
   seed = 1
 )
@@ -160,12 +162,14 @@ factor against a non-spatial alternative – use `car_type = "escar"`:
 ``` r
 
 fit_escar <- hbm(
-  formula  = brms::bf(y ~ x1 + x2 + x3),
-  spatial_var = "province",
-  spatial_model = "car",
-  car_type = "escar",
-  M        = adjacency_matrix_car,
-  data     = data_fhnorm,
+  formula           = brms::bf(y ~ x1 + x2 + x3),
+  spatial_var       = "province",
+  spatial_model     = "car",
+  car_type          = "escar",
+  M                 = adjacency_matrix_car,
+  data              = data_fhnorm,
+  sampling_variance = "D",
+  control           = list(adapt_delta = 0.99),
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
 ```
@@ -190,12 +194,14 @@ principled prior for $`\rho`$.
 ``` r
 
 fit_bym2 <- hbm(
-  formula  = brms::bf(y ~ x1 + x2 + x3),
-  spatial_var = "province",
-  spatial_model = "car",
-  car_type = "bym2",                          # BYM2 already includes IID + CAR
-  M        = adjacency_matrix_car,
-  data     = data_fhnorm,
+  formula           = brms::bf(y ~ x1 + x2 + x3),
+  spatial_var       = "province",
+  spatial_model     = "car",
+  car_type          = "bym2",                          # BYM2 already includes IID + CAR
+  M                 = adjacency_matrix_car,
+  data              = data_fhnorm,
+  sampling_variance = "D",
+  control           = list(adapt_delta = 0.99),
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
 ```
@@ -221,12 +227,19 @@ plus an iid shock. Use `spatial_model = "sar"`:
 ``` r
 
 data("spatial_weight_sar")
+# `spatial_weight_sar` is a 100x100 row-standardised matrix with
+# rownames regency_001..regency_100; it pairs with the *fine*
+# "regency" column (100 levels) of data_fhnorm.  Using
+# spatial_var = "province" here would mismatch the matrix
+# dimension (5 provinces vs 100 matrix rows).
 fit_sar <- hbm(
-  formula  = brms::bf(y ~ x1 + x2 + x3),
-  spatial_var = "province",
-  spatial_model = "sar",
-  M        = spatial_weight_sar,
-  data     = data_fhnorm,
+  formula           = brms::bf(y ~ x1 + x2 + x3),
+  spatial_var       = "regency",
+  spatial_model     = "sar",
+  M                 = spatial_weight_sar,
+  data              = data_fhnorm,
+  sampling_variance = "D",
+  control           = list(adapt_delta = 0.99),
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
 summary(fit_sar)
@@ -263,11 +276,14 @@ fit_beta_car <- hbm_betalogitnorm(
 )
 
 # Binomial + BYM2
+# data_binlogitnorm uses "regency" (5 levels) as its coarse spatial
+# cluster, paired with adjacency_matrix_car_regency.  (See R/data.R
+# top comment for the naming convention.)
 fit_bin_bym2 <- hbm_binlogitnorm(
   response  = "y", trials = "n",
   auxiliary = c("x1", "x2", "x3"),
-  spatial_var = "province", spatial_model = "car", car_type = "bym2",
-  M         = adjacency_matrix_car,
+  spatial_var = "regency", spatial_model = "car", car_type = "bym2",
+  M         = adjacency_matrix_car_regency,
   data      = data_binlogitnorm,
   chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
 )
@@ -305,8 +321,11 @@ tiny diagonal or merge isolates with a nearby area.
 
 ``` r
 
-fit_iid <- hbm(formula = brms::bf(y ~ x1 + x2 + x3),
-               re = ~ (1 | province), data = data_fhnorm,
+fit_iid <- hbm(formula           = brms::bf(y ~ x1 + x2 + x3),
+               re                = ~ (1 | province),
+               data              = data_fhnorm,
+               sampling_variance = "D",
+               control           = list(adapt_delta = 0.99),
                chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1)
 
 loo_compare <- loo::loo_compare(

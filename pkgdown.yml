@@ -2,17 +2,18 @@ pandoc: 3.8.3
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
-  advanced-features: advanced-features.html
+  articles/advanced-features: advanced-features.html
+  articles/ast-formula-manipulation: ast-formula-manipulation.html
   complete-workflow: complete-workflow.html
-  hbsaems-betalogitnorm-model: hbsaems-betalogitnorm-model.html
-  hbsaems-binlogitnorm-model: hbsaems-binlogitnorm-model.html
-  hbsaems-handle-missing: hbsaems-handle-missing.html
-  hbsaems-lnln-model: hbsaems-lnln-model.html
-  hbsaems-modelling: hbsaems-modelling.html
-  hbsaems-run_sae_app: hbsaems-run_sae_app.html
-  hbsaems-spatial: hbsaems-spatial.html
-  migration-guide: migration-guide.html
-last_built: 2026-05-17T11:50Z
+  articles/hbsaems-betalogitnorm-model: hbsaems-betalogitnorm-model.html
+  articles/hbsaems-binlogitnorm-model: hbsaems-binlogitnorm-model.html
+  articles/hbsaems-handle-missing: hbsaems-handle-missing.html
+  articles/hbsaems-lnln-model: hbsaems-lnln-model.html
+  articles/hbsaems-modelling: hbsaems-modelling.html
+  articles/hbsaems-run_sae_app: hbsaems-run_sae_app.html
+  articles/hbsaems-spatial: hbsaems-spatial.html
+  articles/migration-guide: migration-guide.html
+last_built: 2026-05-24T04:15Z
 urls:
   reference: https://madsyair.github.io/hbsaems/reference
   article: https://madsyair.github.io/hbsaems/articles

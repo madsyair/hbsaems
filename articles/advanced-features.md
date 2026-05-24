@@ -9,7 +9,7 @@ Topics covered:
 1.  **Pre-fit data quality checking** (`check_data`)
 2.  **Spatial weight matrices** – building from shapefiles + theory
     checks
-3.  **Multi-domain benchmarking** – kecamatan to kabupaten with raking
+3.  **Multi-domain benchmarking** – district to regency with raking
 4.  **Fully Bayesian benchmarking** – correct uncertainty after
     adjustment
 5.  **Smooth terms** – splines and Gaussian processes
@@ -17,6 +17,7 @@ Topics covered:
 7.  **Custom distributions** – the model registry
 8.  **Model averaging with LOO weights** (`model_average`)
 9.  **Prior sensitivity analysis** (`prior_sensitivity`)
+10. **Hierarchical area random effects** (`area_var` as a vector)
 
 ``` r
 
@@ -135,34 +136,37 @@ isolated areas under ICAR, etc. It also runs automatically inside
 
 ------------------------------------------------------------------------
 
-## 3. Multi-domain benchmarking: kecamatan to kabupaten
+## 3. Multi-domain benchmarking: district to regency
 
-A common SAE scenario: you have estimates per kecamatan and need them to
-roll up to a published kabupaten total from BPS.
+A common SAE scenario: you have estimates per district (kecamatan in
+Indonesian) and need them to roll up to a published regency-level
+(kabupaten in Indonesian) total – for example, from BPS, the Indonesian
+central statistics office.
 [`sae_benchmark()`](https://madsyair.github.io/hbsaems/reference/sae_benchmark.md)
 with `method = "raking"` handles this:
 
 ``` r
 
-# Suppose we have SAE estimates per kecamatan, with a kabupaten column
+# Suppose we have SAE estimates per district, with a regency column
+# tagging which regency each district belongs to.
 estimates <- sae_predict(fit_hbm)
 
-# Official BPS totals
-T_kab <- c(Bogor = 110, Sukabumi = 145, Cianjur = 145)
+# Official regency-level totals (e.g.\ from BPS publications)
+T_regency <- c(Bogor = 110, Sukabumi = 145, Cianjur = 145)
 
 bm <- sae_benchmark(
   predictions = estimates,
-  target      = T_kab,                  # one target per kabupaten
-  weights     = data_fhnorm$populasi,   # population per kecamatan
-  groups      = data_fhnorm$kabupaten,  # mapping kec -> kab
+  target      = T_regency,            # one target per regency
+  weights     = my_data$population,  # population per district
+  groups      = my_data$regency,      # mapping district -> regency
   method      = "raking"
 )
 
 bm$benchmark_info$converged    # raking with one group var: converges in 1 sweep
 ```
 
-The adjustment factor is *constant within each kabupaten* but *different
-across kabupaten* – exactly what multi-domain benchmarking requires.
+The adjustment factor is *constant within each regency* but *different
+across regencies* – exactly what multi-domain benchmarking requires.
 
 ### Unit consistency
 
@@ -237,13 +241,15 @@ Replace any linear predictor with a smooth function:
 
 # Default: thin-plate regression spline, basis dimension chosen by mgcv
 fit_spline <- hbm(
-  formula        = brms::bf(y ~ x1 + x2 + x3),
-  data           = data_fhnorm,
-  re             = ~ (1 | regency),       # area-level random effect (Fay-Herriot)
-  nonlinear      = c("x2", "x3"),
-  nonlinear_type = "spline",
-  spline_k       = 7L,                    # basis dim (-1 = auto)
-  spline_bs      = "tp",                  # "tp" (default), "cr", "cs", "ps"
+  formula           = brms::bf(y ~ x1 + x2 + x3),
+  data              = data_fhnorm,
+  re                = ~ (1 | regency),       # area-level random effect (Fay-Herriot)
+  sampling_variance = "D",                    # known sampling variance (Fay-Herriot)
+  nonlinear         = c("x2", "x3"),
+  nonlinear_type    = "spline",
+  spline_k          = 7L,                    # basis dim (-1 = auto)
+  spline_bs         = "tp",                  # "tp" (default), "cr", "cs", "ps"
+  control           = list(adapt_delta = 0.99),
   chains = 2, iter = 2000, refresh = 0
 )
 ```
@@ -266,14 +272,16 @@ Hilbert-space approximate GP (HSGP) of Riutort-Mayol et al. (2023):
 
 # RECOMMENDED: HSGP with Matérn 5/2 covariance
 fit_gp <- hbm(
-  formula        = brms::bf(y ~ x1 + x2),
-  data           = data_fhnorm,
-  re             = ~ (1 | regency),
-  nonlinear      = "x1",
-  nonlinear_type = "gp",
-  gp_k           = 20L,                  # basis dim — REQUIRED for n > 100
-  gp_cov         = "matern25",           # more stable than "exp_quad"
-  gp_c           = 1.25,                 # boundary scale (brms default)
+  formula           = brms::bf(y ~ x1 + x2),
+  data              = data_fhnorm,
+  re                = ~ (1 | regency),
+  sampling_variance = "D",                  # known sampling variance (Fay-Herriot)
+  nonlinear         = "x1",
+  nonlinear_type    = "gp",
+  gp_k              = 20L,                  # basis dim — REQUIRED for n > 100
+  gp_cov            = "matern25",           # more stable than "exp_quad"
+  gp_c              = 1.25,                 # boundary scale (brms default)
+  control           = list(adapt_delta = 0.99),
   chains = 2, iter = 2000, refresh = 0
 )
 ```
@@ -349,9 +357,8 @@ diverges. Set `gp_k`. See §5.2 above.
 - Use `spline_bs = "cs"` if you want shrinkage-driven selection on the
   smooth terms.
 
-**5. Spatial random effects**. See
-[`vignette("hbsaems-spatial")`](https://madsyair.github.io/hbsaems/articles/hbsaems-spatial.md)
-for the BYM2 recommendation.
+**5. Spatial random effects**. See `vignette("hbsaems-spatial")` for the
+BYM2 recommendation.
 
 ------------------------------------------------------------------------
 
@@ -493,7 +500,8 @@ get_hbsae_model("beta")
 #> $link               : "logit"
 #> $discrete           : FALSE
 #> $supports_mi        : TRUE
-#> $aux_param_hyperprior: function(args, data) ...   # phi ~ gamma(alpha, beta)
+#> $aux_param_hyperprior: NULL                          # phi uses brms default
+                                                       # gamma(0.01, 0.01) since v1.0.0
 ```
 
 ### Adding a custom model (Tier-1: pure metadata)
@@ -680,18 +688,91 @@ fit <- hbm(
 # 5. Predict at all areas (including non-sample)
 est <- sae_predict(fit)
 
-# 6. Benchmark to kabupaten totals (fully Bayesian)
+# 6. Benchmark to regency totals (fully Bayesian)
 T_kab <- c(Bogor = 110, Sukabumi = 145, Cianjur = 145)
 bm <- sae_benchmark(est,
                      target  = T_kab,
                      weights = my_data$populasi,
-                     groups  = my_data$kabupaten,
+                     groups  = my_data$regency,
                      method  = "raking",
                      posterior = TRUE)
 
 # 7. Use the corrected uncertainty
 bm$result_table
 ```
+
+------------------------------------------------------------------------
+
+## 10. Hierarchical area random effects
+
+Many SAE designs have **multiple geographic levels** – e.g. regencies
+within provinces, or districts within counties within province.
+`hbsaems` supports this directly through the `area_var` argument, which
+now accepts a **character vector** of column names from the highest
+level down:
+
+``` r
+
+# Two-level hierarchy: regency nested within province
+fit <- hbm_lnln(
+  response          = "y_obs",
+  auxiliary         = c("x1", "x2", "x3"),
+  data              = my_data,
+  area_var          = c("province", "regency"),   # province first!
+  area_re_structure = "nested",                   # default
+  sampling_variance = "psi_i"
+)
+```
+
+Internally the helper builds the brms / lme4 formula
+`(1 | province / regency)`, which Stan expands to two independent normal
+random intercepts:
+
+``` math
+  \alpha_{j} \sim \mathcal{N}(0, \sigma_{\text{prov}}^{2}) \qquad
+  \beta_{ij}  \sim \mathcal{N}(0, \sigma_{\text{reg}}^{2}) ,
+```
+
+so the linear predictor for area $`i`$ in province $`j`$ becomes
+$`\mathbf x_{ij}^\top \boldsymbol\beta + \alpha_{j} + \beta_{ij}`$. This
+is the canonical multi-stage SAE specification (Rao & Molina 2015, Ch.
+8).
+
+**When to use `"crossed"` instead of `"nested"`?** Use crossed when the
+two grouping variables share levels across each other – e.g.  
+*urban / rural* across *all* provinces. Pass
+`area_re_structure = "crossed"`:
+
+``` r
+
+fit_crossed <- hbm_lnln(
+  response          = "y_obs",
+  auxiliary         = c("x1", "x2"),
+  data              = my_data,
+  area_var          = c("province", "urbanrural"),
+  area_re_structure = "crossed",                   # NOT nested
+  sampling_variance = "psi_i"
+)
+```
+
+which becomes `(1 | province) + (1 | urbanrural)`.
+
+**Three or more levels.** The same syntax extends arbitrarily:
+
+``` r
+
+hbm_lnln(
+  response  = "y",
+  auxiliary = c("x1", "x2"),
+  data      = my_data,
+  area_var  = c("province", "regency", "district", "village"),
+  # area_re_structure = "nested"   # default
+  sampling_variance = "psi_i"
+)
+```
+
+produces `(1 | province / regency / district / village)` which brms
+expands to four nested random effects.
 
 ------------------------------------------------------------------------
 

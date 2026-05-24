@@ -208,8 +208,8 @@ entire session.
 
 ## See also
 
-- [`vignette("hbsaems-modelling")`](https://madsyair.github.io/hbsaems/articles/hbsaems-modelling.md)
-  – the scripted workflow this app parallels.
+- `vignette("hbsaems-modelling")` – the scripted workflow this app
+  parallels.
 - [`?run_sae_app`](https://madsyair.github.io/hbsaems/reference/run_sae_app.md)
   – function reference.
 - `system.file("shiny", "sae_app", package = "hbsaems")` – the app

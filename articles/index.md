@@ -4,6 +4,8 @@
 
 - [Advanced Features: Spatial, Benchmarking, Custom Families, Smooth
   Terms](https://madsyair.github.io/hbsaems/articles/advanced-features.md):
+- [AST-based Formula Manipulation: How hbsaems Rewrites Your Formula
+  Safely](https://madsyair.github.io/hbsaems/articles/ast-formula-manipulation.md):
 - [Complete Workflow with hbsaems
   1.0.0](https://madsyair.github.io/hbsaems/articles/complete-workflow.md):
 - [Beta Logit-Normal SAE

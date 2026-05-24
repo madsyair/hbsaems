@@ -52,12 +52,14 @@ A data frame with 100 rows and 14 variables:
 
 - `district`:
 
-  District identifier (`"district_001"` .. `"district_100"`).
+  District identifier (`"district_001"` .. `"district_100"`) – the 100
+  small areas to estimate.
 
 - `regency`:
 
-  Regency identifier (`"regency_01"` .. `"regency_05"`) – spatial
-  cluster level. Pair with `adjacency_matrix_car_regency`.
+  Regency identifier (`"regency_01"` .. `"regency_05"`) – coarse
+  spatial-cluster level (5 regencies each containing 20 districts). Pair
+  with `adjacency_matrix_car_regency`.
 
 ## Source
 

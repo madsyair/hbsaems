@@ -40,7 +40,7 @@ sae_scale(p)
 #> Small Area Estimates  [hbsae_results]
 #> --------------------------------------
 #>  Areas       : 5 
-#>  Overall RSE : 5 %
+#>  Overall RSE : 5 % 
 #>  Pred. range : -1.265 to 1.265 
 #> 
 ```

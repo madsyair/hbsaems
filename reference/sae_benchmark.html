@@ -19,7 +19,7 @@ provincial or national figures).  Two modes are supported:"></head><body>
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/hbsaems-modelling.html">Get started</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/complete-workflow.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -34,10 +34,10 @@ provincial or national figures).  Two modes are supported:"></head><body>
     <li><a class="dropdown-item" href="../articles/hbsaems-spatial.html">Spatial models (CAR / SAR / BYM2)</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-handle-missing.html">Handling missing data</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-run_sae_app.html">Interactive Shiny dashboard</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
-    <li><a class="dropdown-item" href="../articles/complete-workflow.html">Complete workflow walk-through</a></li>
     <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Internals &amp; development</h6></li>
+    <li><a class="dropdown-item" href="../articles/ast-formula-manipulation.html">AST-based formula manipulation</a></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration guide (legacy users)</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -69,6 +69,7 @@ provincial or national figures).  Two modes are supported:</p>
 <span>  <span class="va">predictions</span>,</span>
 <span>  <span class="va">target</span>,</span>
 <span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  target_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"total"</span>, <span class="st">"mean"</span><span class="op">)</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ratio"</span>, <span class="st">"difference"</span>, <span class="st">"raking"</span><span class="op">)</span>,</span>
 <span>  groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  posterior <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -96,8 +97,25 @@ group; see <code>groups</code>).</p></dd>
 
 <dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
 <dd><p>Optional numeric vector of length equal to the number
-of areas in <code>predictions</code>.  Typical choices are population
-sizes or sampling weights.  Defaults to equal weights (<code>1 / n</code>).</p></dd>
+of areas in <code>predictions</code>.  In Official-Statistics practice
+this is normally the population size \(N_i\) of each area, so
+that \(\sum_i w_i \hat{\theta}_i\) is the implied population
+total.  When <code>NULL</code>, a safe default is chosen based on
+<code>target_type</code>; an informational message is emitted so users
+can see exactly which weighting was applied.</p></dd>
+
+
+<dt id="arg-target-type">target_type<a class="anchor" aria-label="anchor" href="#arg-target-type"></a></dt>
+<dd><p>Character.  Either <code>"total"</code> (default) or
+<code>"mean"</code>.  Consulted ONLY when <code>weights = NULL</code> to choose
+a safe default: <code>"total"</code> sets <code>weights = rep(1, n)</code> so
+that \(\sum_i w_i \hat{\theta}_i = \sum_i \hat{\theta}_i\);
+<code>"mean"</code> sets <code>weights = rep(1/n, n)</code> so that the
+weighted sum equals the mean.  Ignored when <code>weights</code> is
+supplied.  <strong>Always prefer to pass explicit <code>weights</code>
+(typically the population size \(N_i\)) in production code:</strong>
+the default heuristic is provided only to avoid silent scale
+corruption when the user forgets the argument.</p></dd>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
@@ -234,6 +252,8 @@ under a restriction.  <em>Survey Methodology</em> 34, 29–36.</p>
 <span class="r-in"><span>  class <span class="op">=</span> <span class="st">"hbsae_results"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">bm1</span> <span class="op">&lt;-</span> <span class="fu">sae_benchmark</span><span class="op">(</span><span class="va">p</span>, target <span class="op">=</span> <span class="fl">50</span>, method <span class="op">=</span> <span class="st">"ratio"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Using default weights for `target_type = "total"`.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   For production use, pass `weights = &lt;population size per area&gt;` to be explicit.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Fully Bayesian mode with user-supplied draws</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
@@ -242,12 +262,14 @@ under a restriction.  <em>Survey Methodology</em> 34, 29–36.</p>
 <span class="r-in"><span>                 nrow <span class="op">=</span> <span class="va">D</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">bm2</span> <span class="op">&lt;-</span> <span class="fu">sae_benchmark</span><span class="op">(</span><span class="va">p</span>, target <span class="op">=</span> <span class="fl">50</span>, method <span class="op">=</span> <span class="st">"ratio"</span>,</span></span>
 <span class="r-in"><span>                      posterior <span class="op">=</span> <span class="va">draws</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Using default weights for `target_type = "total"`.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   For production use, pass `weights = &lt;population size per area&gt;` to be explicit.</span>
 <span class="r-in"><span><span class="va">bm2</span><span class="op">$</span><span class="va">result_table</span>              <span class="co"># SD, RSE updated from draws</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Prediction       SD RSE_percent     Q2.5      Q50    Q97.5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1   47.61905 4.300884    9.031856 38.54522 47.34989 56.05428</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2   57.14286 4.312359    7.546629 48.62104 57.17462 65.55330</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3   42.85714 4.399850   10.266317 34.35734 42.75895 51.93634</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4   52.38095 4.229116    8.073767 43.66985 52.28960 60.65092</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Prediction       SD RSE_percent      Q2.5      Q50    Q97.5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1   11.90476 1.075221    9.031856  9.636304 11.83747 14.01357</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2   14.28571 1.078090    7.546629 12.155259 14.29365 16.38833</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3   10.71429 1.099963   10.266317  8.589336 10.68974 12.98409</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4   13.09524 1.057279    8.073767 10.917463 13.07240 15.16273</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

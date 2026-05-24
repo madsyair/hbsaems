@@ -35,7 +35,7 @@ sae_filter(p, p$pred > 2)
 #> Small Area Estimates  [hbsae_results]
 #> --------------------------------------
 #>  Areas       : 3 
-#>  Overall RSE : 5 %
+#>  Overall RSE : 5 % 
 #>  Pred. range : 3 to 5 
 #> 
 ```

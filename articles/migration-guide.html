@@ -31,7 +31,7 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item"><a class="nav-link" href="../articles/hbsaems-modelling.html">Get started</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/complete-workflow.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -47,10 +47,10 @@
     <li><a class="dropdown-item" href="../articles/hbsaems-spatial.html">Spatial models (CAR / SAR / BYM2)</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-handle-missing.html">Handling missing data</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-run_sae_app.html">Interactive Shiny dashboard</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
-    <li><a class="dropdown-item" href="../articles/complete-workflow.html">Complete workflow walk-through</a></li>
     <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Internals &amp; development</h6></li>
+    <li><a class="dropdown-item" href="../articles/ast-formula-manipulation.html">AST-based formula manipulation</a></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration guide (legacy users)</a></li>
   </ul>
 </li>
@@ -77,7 +77,7 @@
       <h1>Migration Guide: legacy v0.1.x names to v1.0.0</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/main/vignettes/migration-guide.Rmd" class="external-link"><code>vignettes/migration-guide.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/main/vignettes/articles/migration-guide.Rmd" class="external-link"><code>vignettes/articles/migration-guide.Rmd</code></a></small>
       <div class="d-none name"><code>migration-guide.Rmd</code></div>
     </div>
 
@@ -298,10 +298,14 @@ alongside it for district-level datasets.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"data_fhnorm"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">model</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span><span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
-<span>              re <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,</span>
+<span>              re                <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,</span>
+<span>              sampling_variance <span class="op">=</span> <span class="st">"D"</span>,                 <span class="co"># Fay-Herriot identifiability</span></span>
+<span>              control           <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>adapt_delta <span class="op">=</span> <span class="fl">0.99</span><span class="op">)</span>,</span>
 <span>              chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span><span class="op">)</span></span>
 <span><span class="va">model2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span><span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span><span class="op">)</span>,      data <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
-<span>              re <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,</span>
+<span>              re                <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,</span>
+<span>              sampling_variance <span class="op">=</span> <span class="st">"D"</span>,</span>
+<span>              control           <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>adapt_delta <span class="op">=</span> <span class="fl">0.99</span><span class="op">)</span>,</span>
 <span>              chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Quick convergence check</span></span>
@@ -334,6 +338,181 @@ alongside it for district-level datasets.</p>
 <span><span class="co"># Inspection helpers</span></span>
 <span><span class="fu"><a href="../reference/hbm_info.html">hbm_info</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/hbm_warnings.html">hbm_warnings</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></code></pre></div>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="additional-v1-0-0-features-consolidated">Additional v1.0.0 features (consolidated)<a class="anchor" aria-label="anchor" href="#additional-v1-0-0-features-consolidated"></a>
+</h2>
+<p>The following items round out the v1.0.0 release. They are listed
+separately because they were introduced after the initial section above
+had stabilised.</p>
+<div class="section level3">
+<h3 id="sae_benchmark-explicit-target_type">1. <code>sae_benchmark()</code>: explicit
+<code>target_type</code><a class="anchor" aria-label="anchor" href="#sae_benchmark-explicit-target_type"></a>
+</h3>
+<p><strong>Earlier development versions:</strong> when
+<code>weights = NULL</code> the default was <code>rep(1/n, n)</code>,
+which silently assumed <code>target</code> was a population
+<em>mean</em>. If users passed a population total, the resulting
+benchmarked estimates were scale-corrupt by a factor of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>.</p>
+<p><strong>Current v1.0.0 behaviour:</strong> a new argument
+<code>target_type = c("total", "mean")</code> chooses a safe default.
+The default is <code>"total"</code> (the BPS convention), so
+<code>weights = NULL</code> now means <code>rep(1, n)</code>.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># OLD code (silently used 1/n; corrupt if target is a total)</span></span>
+<span><span class="fu"><a href="../reference/sae_benchmark.html">sae_benchmark</a></span><span class="op">(</span><span class="va">predictions</span>, target <span class="op">=</span> <span class="fl">1e6</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># NEW (explicit, correct)</span></span>
+<span><span class="fu"><a href="../reference/sae_benchmark.html">sae_benchmark</a></span><span class="op">(</span><span class="va">predictions</span>, target <span class="op">=</span> <span class="fl">1e6</span>, target_type <span class="op">=</span> <span class="st">"total"</span><span class="op">)</span></span>
+<span><span class="co"># or — recommended for production —</span></span>
+<span><span class="fu"><a href="../reference/sae_benchmark.html">sae_benchmark</a></span><span class="op">(</span><span class="va">predictions</span>, target <span class="op">=</span> <span class="fl">1e6</span>, weights <span class="op">=</span> <span class="va">popsize_per_area</span><span class="op">)</span></span></code></pre></div>
+<p>If your v1.0.0 code passed a population <em>mean</em> without
+explicit weights, add <code>target_type = "mean"</code> to retain the
+old default.</p>
+</div>
+<div class="section level3">
+<h3 id="hbm_betalogitnorm-link_phi-resolves-automatically">2. <code>hbm_betalogitnorm()</code>: <code>link_phi</code> resolves
+automatically<a class="anchor" aria-label="anchor" href="#hbm_betalogitnorm-link_phi-resolves-automatically"></a>
+</h3>
+<p><strong>Earlier development versions:</strong> default was
+<code>link_phi = "identity"</code>, which is the correct choice when
+<code>phi</code> is pinned via the survey design (<code>n + deff</code>
+or <code>fixed_params$phi</code>), but unsafe when <code>phi</code> is
+estimated.</p>
+<p><strong>Current v1.0.0 behaviour:</strong> default is now
+<code>NULL</code> and resolves automatically:</p>
+<ul>
+<li>
+<code>link_phi = "identity"</code> when <code>phi</code> is pinned
+(fixed mode).</li>
+<li>
+<code>link_phi = "log"</code> otherwise (random / hyperprior mode –
+the brms default).</li>
+</ul>
+<p>User-supplied <code>"identity"</code> in random mode emits a clear
+warning about the risk of divergent transitions.</p>
+</div>
+<div class="section level3">
+<h3 id="b--hbm_betalogitnorm-phi-prior-simplified-to-brms-default">2b. <code>hbm_betalogitnorm()</code>: phi prior simplified to brms
+default<a class="anchor" aria-label="anchor" href="#b--hbm_betalogitnorm-phi-prior-simplified-to-brms-default"></a>
+</h3>
+<p><strong>Earlier development versions:</strong> in random mode,
+<code>phi</code> was given a hierarchical hyperprior:</p>
+<pre><code>phi   ~ gamma(alpha, beta)
+alpha ~ gamma(1, 1)              (Stan parameter, real&lt;lower=1&gt;)
+beta  ~ gamma(1, 1)              (Stan parameter, real&lt;lower=0&gt;)</code></pre>
+<p>The wrapper declared <code>alpha</code> and <code>beta</code> as Stan
+parameters and auto-injected the hyperprior sampling statements via
+<code>stanvars</code>.</p>
+<p><strong>Current v1.0.0 behaviour:</strong> <code>phi</code> uses
+brms’s own default prior
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>0.01</mn><mo>,</mo><mn>0.01</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{Gamma}(0.01, 0.01)</annotation></semantics></math>
+(lower bound 0). The wrapper no longer declares <code>alpha</code> or
+<code>beta</code>, and no longer injects any <code>stanvars</code>
+sampling statements for them.</p>
+<p><strong>Why:</strong> the prior on <code>alpha</code> (declared as
+<code>real&lt;lower=1&gt;</code> in Stan) was on the boundary of its
+support, routinely producing divergent transitions on weakly-informative
+data. The simpler brms default also means <code>prior = NULL</code> does
+exactly what users expect.</p>
+<p><strong>Migration:</strong> legacy code that still passes
+<code>stanvars</code> containing sampling statements on
+<code>alpha</code> / <code>beta</code> to
+<code><a href="../reference/hbm_betalogitnorm.html">hbm_betalogitnorm()</a></code> now raises an informative error
+pointing users at the new mechanism
+(<code>prior = brms::set_prior("gamma(...)", class = "phi")</code>). If
+you need to reproduce the exact pre-v1.0.0 hierarchical model (e.g. to
+verify against an earlier analysis), drop down to the universal
+<code><a href="../reference/hbm_flex.html">hbm_flex()</a></code> interface, which doesn’t apply the
+<code><a href="../reference/hbm_betalogitnorm.html">hbm_betalogitnorm()</a></code> guard and accepts arbitrary
+user-declared Stan parameters. See
+<code>vignette("hbsaems-betalogitnorm-model")</code> for the
+side-by-side code listing.</p>
+</div>
+<div class="section level3">
+<h3 id="c--critical-bug-fix-sampling_variance-no-longer-silently-corrupted">2c. CRITICAL bug fix: <code>sampling_variance</code> no longer
+silently corrupted<a class="anchor" aria-label="anchor" href="#c--critical-bug-fix-sampling_variance-no-longer-silently-corrupted"></a>
+</h3>
+<p><strong>Earlier development versions:</strong> <code><a href="../reference/hbm.html">hbm()</a></code>
+with <code>sampling_variance = "D"</code> stored
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msqrt><msub><mi>D</mi><mi>i</mi></msub></msqrt><annotation encoding="application/x-tex">\sqrt{D_i}</annotation></semantics></math>
+in a hidden offset column and attached
+<code>sigma ~ 0 + offset(.hbsaems_sigma_fixed)</code> to the formula.
+However, brms applies the dpar’s link function (default
+<code>link_sigma = "log"</code> for Gaussian / Lognormal / Student /
+etc.) to the linear predictor before plugging it into the likelihood –
+so the Stan model actually computed
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>i</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msqrt><msub><mi>D</mi><mi>i</mi></msub></msqrt><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\sigma_i = \exp(\sqrt{D_i})</annotation></semantics></math>
+instead of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msqrt><msub><mi>D</mi><mi>i</mi></msub></msqrt><annotation encoding="application/x-tex">\sqrt{D_i}</annotation></semantics></math>.
+E.g.<br><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>D</mi><mi>i</mi></msub><mo>=</mo><mn>4</mn></mrow><annotation encoding="application/x-tex">D_i = 4</annotation></semantics></math>
+should have given
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>i</mi></msub><mo>=</mo><mn>2.0</mn></mrow><annotation encoding="application/x-tex">\sigma_i = 2.0</annotation></semantics></math>
+but produced
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>i</mi></msub><mo>≈</mo><mn>7.39</mn></mrow><annotation encoding="application/x-tex">\sigma_i \approx 7.39</annotation></semantics></math>
+– a catastrophic miscalibration. Same bug affected
+<code>fixed_params = list(sigma = ...)</code>.</p>
+<p><strong>Current v1.0.0 behaviour:</strong> <code><a href="../reference/hbm.html">hbm()</a></code> now
+overrides <code>link_&lt;par&gt; = "identity"</code> on the family
+object for every pinned distributional parameter, so offset values are
+passed through verbatim. No user action required – existing code
+automatically benefits from the fix. This is the single most important
+behavioural change in v1.0.0; if you have been fitting Fay-Herriot
+models with <code>sampling_variance</code> on an earlier hbsaems
+development version, your estimates were biased and we strongly
+recommend refitting.</p>
+</div>
+<div class="section level3">
+<h3 id="sae_scale-zero-variance-predictions-no-longer-corrupt-downstream-data">3. <code>sae_scale()</code>: zero-variance predictions no longer
+corrupt downstream data<a class="anchor" aria-label="anchor" href="#sae_scale-zero-variance-predictions-no-longer-corrupt-downstream-data"></a>
+</h3>
+<p><strong>Earlier development versions:</strong> when all area
+predictions were identical (e.g. in a toy fit),
+<code><a href="https://rdrr.io/r/base/scale.html" class="external-link">base::scale()</a></code> produced <code>NaN</code> throughout,
+silently corrupting <code>result_table</code>.</p>
+<p><strong>Current v1.0.0 behaviour:</strong> detects this case, emits a
+warning, and returns centred-only (or raw) predictions instead of
+<code>NaN</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="new-measurement_error-argument-ybarra-lohr-2008">4. NEW: <code>measurement_error</code> argument (Ybarra-Lohr
+2008)<a class="anchor" aria-label="anchor" href="#new-measurement_error-argument-ybarra-lohr-2008"></a>
+</h3>
+<p>When auxiliary covariates are themselves estimated from a survey and
+come with a known sampling SE, you can now declare measurement error
+without writing the brms <code><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi()</a></code> syntax by hand:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span></span>
+<span>  formula <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span><span class="op">)</span>,</span>
+<span>  data    <span class="op">=</span> <span class="va">mydata</span>,</span>
+<span>  measurement_error <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>x1 <span class="op">=</span> <span class="st">"se_x1"</span><span class="op">)</span>,   <span class="co"># x1 has known SE in se_x1 column</span></span>
+<span>  sampling_variance <span class="op">=</span> <span class="st">"D"</span>,                  <span class="co"># Fay-Herriot</span></span>
+<span>  re      <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Internally <code><a href="../reference/hbm.html">hbm()</a></code> rewrites the RHS to
+<code>mi(x1, se_x1) + x2</code> before delegating to brms. Caveat:
+measurement-error models inflate the parameter space; expect 2-5x longer
+sampling time and consider <code>adapt_delta = 0.99</code> if combining
+with smooth terms.</p>
+</div>
+<div class="section level3">
+<h3 id="new-automatic-mi-me-detection">5. NEW: automatic <code>mi() / me()</code> detection<a class="anchor" aria-label="anchor" href="#new-automatic-mi-me-detection"></a>
+</h3>
+<p>If you have always written <code>mi(...)</code> explicitly in your
+formula, <code><a href="../reference/hbm.html">hbm()</a></code> no longer requires you to set
+<code>handle_missing</code> – the call silently routes to model-based
+imputation:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Previously: had to spell out handle_missing</span></span>
+<span><span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">|</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi</a></span><span class="op">(</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi</a></span><span class="op">(</span><span class="va">x1</span><span class="op">)</span> <span class="op">+</span> <span class="va">x2</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">x1</span> <span class="op">|</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi</a></span><span class="op">(</span><span class="op">)</span> <span class="op">~</span> <span class="va">z</span><span class="op">)</span>,</span>
+<span>    data <span class="op">=</span> <span class="va">d</span>, handle_missing <span class="op">=</span> <span class="st">"model"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># v1.0.0: handle_missing inferred from formula</span></span>
+<span><span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">|</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi</a></span><span class="op">(</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi</a></span><span class="op">(</span><span class="va">x1</span><span class="op">)</span> <span class="op">+</span> <span class="va">x2</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">x1</span> <span class="op">|</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi</a></span><span class="op">(</span><span class="op">)</span> <span class="op">~</span> <span class="va">z</span><span class="op">)</span>,</span>
+<span>    data <span class="op">=</span> <span class="va">d</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

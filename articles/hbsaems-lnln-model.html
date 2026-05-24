@@ -31,7 +31,7 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item"><a class="nav-link" href="../articles/hbsaems-modelling.html">Get started</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/complete-workflow.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -47,10 +47,10 @@
     <li><a class="dropdown-item" href="../articles/hbsaems-spatial.html">Spatial models (CAR / SAR / BYM2)</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-handle-missing.html">Handling missing data</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-run_sae_app.html">Interactive Shiny dashboard</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
-    <li><a class="dropdown-item" href="../articles/complete-workflow.html">Complete workflow walk-through</a></li>
     <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Internals &amp; development</h6></li>
+    <li><a class="dropdown-item" href="../articles/ast-formula-manipulation.html">AST-based formula manipulation</a></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration guide (legacy users)</a></li>
   </ul>
 </li>
@@ -77,7 +77,7 @@
       <h1>Lognormal-Lognormal SAE Model</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/main/vignettes/hbsaems-lnln-model.Rmd" class="external-link"><code>vignettes/hbsaems-lnln-model.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/main/vignettes/articles/hbsaems-lnln-model.Rmd" class="external-link"><code>vignettes/articles/hbsaems-lnln-model.Rmd</code></a></small>
       <div class="d-none name"><code>hbsaems-lnln-model.Rmd</code></div>
     </div>
 
@@ -219,6 +219,25 @@ scale), pass <code>sampling_variance</code>:</p>
 <span>  seed <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_fh</span><span class="op">)</span></span></code></pre></div>
+<blockquote>
+<p><strong>Implementation note (v1.0.0).</strong> Under the hood,
+<code><a href="../reference/hbm_lnln.html">hbm_lnln()</a></code> stores
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msqrt><msub><mi>ψ</mi><mi>i</mi></msub></msqrt><annotation encoding="application/x-tex">\sqrt{\psi_i}</annotation></semantics></math>
+in a hidden offset column and attaches
+<code>sigma ~ 0 + offset(.hbsaems_sigma_fixed)</code> to the brms
+formula. Because brms’s default <code>link_sigma = "log"</code> would
+otherwise apply
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>⋅</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\cdot)</annotation></semantics></math>
+to the offset value (producing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>i</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msqrt><msub><mi>ψ</mi><mi>i</mi></msub></msqrt><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\sigma_i = \exp(\sqrt{\psi_i})</annotation></semantics></math>
+instead of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msqrt><msub><mi>ψ</mi><mi>i</mi></msub></msqrt><annotation encoding="application/x-tex">\sqrt{\psi_i}</annotation></semantics></math>),
+hbsaems automatically overrides the link to <code>"identity"</code>
+whenever a distributional parameter is pinned via
+<code>sampling_variance</code> or <code>fixed_params</code>. This is a
+v1.0.0 fix; earlier development versions silently miscalibrated the
+model.</p>
+</blockquote>
 <pre><code>===== Hierarchical Bayesian Model Summary =====
 
  Observations : 100
@@ -309,7 +328,7 @@ spline:</p>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The formula becomes
 <code>y_obs ~ s(x1) + x2 + x3 + (1 | district)</code>. See
-<code><a href="../articles/advanced-features.html">vignette("advanced-features")</a></code> for full coverage of
+<code>vignette("advanced-features")</code> for full coverage of
 nonlinear terms.</p>
 </div>
 <div class="section level2">

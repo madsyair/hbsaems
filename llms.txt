@@ -532,7 +532,7 @@ adjacency matrices used by the CAR / SAR / BYM2 examples.
 - [`adjacency_matrix_car`](https://madsyair.github.io/hbsaems/reference/adjacency_matrix_car.md)
   : Province-level Adjacency Matrix
 - [`adjacency_matrix_car_regency`](https://madsyair.github.io/hbsaems/reference/adjacency_matrix_car_regency.md)
-  : Regency-level Adjacency Matrix
+  : Regency-level Adjacency Matrix (Coarse Spatial Cluster)
 - [`spatial_weight_sar`](https://madsyair.github.io/hbsaems/reference/spatial_weight_sar.md)
   : Spatial Weight Matrix for Simultaneous Autoregressive Models
 
@@ -553,6 +553,8 @@ Use the modern replacements listed in each function’s documentation.
 
 - [Advanced Features: Spatial, Benchmarking, Custom Families, Smooth
   Terms](https://madsyair.github.io/hbsaems/articles/advanced-features.md):
+- [AST-based Formula Manipulation: How hbsaems Rewrites Your Formula
+  Safely](https://madsyair.github.io/hbsaems/articles/ast-formula-manipulation.md):
 - [Complete Workflow with hbsaems
   1.0.0](https://madsyair.github.io/hbsaems/articles/complete-workflow.md):
 - [Beta Logit-Normal SAE

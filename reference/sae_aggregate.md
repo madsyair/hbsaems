@@ -45,7 +45,7 @@ sae_aggregate(p1, p2, method = "mean")
 #> Small Area Estimates  [hbsae_results]
 #> --------------------------------------
 #>  Areas       : 3 
-#>  Overall RSE : 4.5 %
+#>  Overall RSE : 4.5 % 
 #>  Pred. range : 1.5 to 3.5 
 #> 
 sae_aggregate(p1, p2, method = "weighted", weights = c(0.6, 0.4))
@@ -53,7 +53,7 @@ sae_aggregate(p1, p2, method = "weighted", weights = c(0.6, 0.4))
 #> Small Area Estimates  [hbsae_results]
 #> --------------------------------------
 #>  Areas       : 3 
-#>  Overall RSE : 4.5 %
+#>  Overall RSE : 4.5 % 
 #>  Pred. range : 1.4 to 3.4 
 #> 
 ```

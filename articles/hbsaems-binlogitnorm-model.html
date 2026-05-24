@@ -31,7 +31,7 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item"><a class="nav-link" href="../articles/hbsaems-modelling.html">Get started</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/complete-workflow.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -47,10 +47,10 @@
     <li><a class="dropdown-item" href="../articles/hbsaems-spatial.html">Spatial models (CAR / SAR / BYM2)</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-handle-missing.html">Handling missing data</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-run_sae_app.html">Interactive Shiny dashboard</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
-    <li><a class="dropdown-item" href="../articles/complete-workflow.html">Complete workflow walk-through</a></li>
     <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Internals &amp; development</h6></li>
+    <li><a class="dropdown-item" href="../articles/ast-formula-manipulation.html">AST-based formula manipulation</a></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration guide (legacy users)</a></li>
   </ul>
 </li>
@@ -77,7 +77,7 @@
       <h1>Binomial Logit-Normal SAE Model</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/main/vignettes/hbsaems-binlogitnorm-model.Rmd" class="external-link"><code>vignettes/hbsaems-binlogitnorm-model.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/main/vignettes/articles/hbsaems-binlogitnorm-model.Rmd" class="external-link"><code>vignettes/articles/hbsaems-binlogitnorm-model.Rmd</code></a></small>
       <div class="d-none name"><code>hbsaems-binlogitnorm-model.Rmd</code></div>
     </div>
 
@@ -226,7 +226,7 @@ x2           -0.14      0.03    -0.20    -0.08 1.00     6814     6539
 x3            0.07      0.03     0.01     0.13 1.00     7104     6428</code></pre>
 <p>The new <code>Correlation Structures:</code> block reports the
 spatial standard deviation <code>sdcar</code>. See
-<code><a href="../articles/hbsaems-spatial.html">vignette("hbsaems-spatial")</a></code> for SAR, BYM2, and
+<code>vignette("hbsaems-spatial")</code> for SAR, BYM2, and
 weight-matrix construction.</p>
 </div>
 <div class="section level2">
@@ -281,7 +281,7 @@ Fitting imputed model 2...
 Fitting imputed model 5...</code></pre>
 <p>Posterior samples from the five imputed fits are pooled via Rubin’s
 rules in the returned <code>hbmfit</code> object. See
-<code><a href="../articles/hbsaems-handle-missing.html">vignette("hbsaems-handle-missing")</a></code> for the full
+<code>vignette("hbsaems-handle-missing")</code> for the full
 discussion.</p>
 </div>
 <div class="section level2">

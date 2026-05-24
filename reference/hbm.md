@@ -23,6 +23,7 @@ hbm(
   data,
   prior = NULL,
   fixed_params = NULL,
+  sampling_variance = NULL,
   prior_type = "default",
   hs_df = 1,
   hs_df_global = 1,
@@ -46,6 +47,7 @@ hbm(
   handle_missing = NULL,
   m = 5L,
   mice_args = list(),
+  measurement_error = NULL,
   control = list(),
   chains = 4L,
   iter = 4000L,
@@ -171,6 +173,39 @@ hbm(
   error. Typical use cases include pinning `phi` for Beta regression
   from survey design effect (`phi = ~ I(n / deff - 1)`) and pinning
   `sigma` for Fay–Herriot-style models with known sampling variance.
+
+- sampling_variance:
+
+  Optional character. Name of a column in `data` containing the
+  **known** sampling variance \\D_i\\ for each area (the Fay-Herriot
+  sugar). When supplied, \\\sigma_i = \sqrt{D_i}\\ is pinned via offset.
+  This is the canonical way to fit a Gaussian Fay-Herriot model: without
+  it, the residual \\\sigma\\ and the area-RE \\\sigma_u\\ compete to
+  explain the same variance and the model is unidentified, typically
+  producing divergent transitions. Equivalent to
+  `fixed_params = list(sigma = sqrt(data[[<col>]]))`.
+
+  **Family compatibility.** `sampling_variance` requires a continuous
+  family whose response distribution has a residual scale parameter
+  named `sigma`. Supported: `gaussian` (the canonical Fay-Herriot case),
+  `lognormal` (D must be on the log scale; see also
+  [`hbm_lnln`](https://madsyair.github.io/hbsaems/reference/hbm_lnln.md)),
+  `student`, `skew_normal`, `exgaussian`, `asym_laplace`. A helpful
+  error is thrown when an incompatible family is supplied.
+
+  **For non-Gaussian SAE families** the analogous pinning mechanism is
+  family-specific:
+
+  - **Beta**: pin the precision `phi` via the survey design effect,
+    e.g.\\ `fixed_params = list(phi = ~ I(n/deff - 1))` (Liu 2009). See
+    [`hbm_betalogitnorm`](https://madsyair.github.io/hbsaems/reference/hbm_betalogitnorm.md).
+
+  - **Binomial**: sampling variability enters through the `trials`
+    addition term, not through a separate `sigma`. See
+    [`hbm_binlogitnorm`](https://madsyair.github.io/hbsaems/reference/hbm_binlogitnorm.md).
+
+  - **Poisson, Gamma, Weibull**: variance is tied algebraically to the
+    mean – no separate scale parameter to pin.
 
 - prior_type:
 
@@ -348,6 +383,25 @@ hbm(
   `list(method = "pmm", seed = 42)`. Only used when
   `handle_missing = "multiple"`.
 
+- measurement_error:
+
+  Optional named list specifying which auxiliary variables are measured
+  with error and where to find their standard errors. The list maps
+  variable names to columns in `data` containing the SE, e.g.
+  `measurement_error = list(x1 = "se_x1", x2 = "se_x2")`. Listed
+  variables are wrapped on-the-fly with `mi(var, se_col)` in the
+  brmsformula so that brms treats them as latent variables with a
+  Gaussian measurement-error structure, following Ybarra and Lohr
+  (2008). Standard errors must be non-negative and have no missing
+  values; `measurement_error` variables must be a subset of the model's
+  auxiliary (linear) predictors. When the user has already written
+  `mi(...)` explicitly in the formula, the corresponding entries in
+  `measurement_error` are detected and not duplicated. Note that ME
+  inflates the parameter space (each *x_i* becomes latent), which slows
+  sampling and increases the risk of divergent transitions, especially
+  when combined with smooth terms (`nonlinear`). See the "Measurement
+  error" section of the SAE vignette.
+
 - control:
 
   A named list of sampler control parameters (default:
@@ -508,6 +562,46 @@ If data are Missing Not At Random (MNAR), none of the above strategies
 applies directly; sensitivity analyses and explicit missingness models
 are recommended.
 
+## How to pin distributional parameters per family
+
+hbsaems exposes three layers for pinning distributional parameters to
+known values, in increasing order of generality:
+
+1.  **Family-specific sugar** (least typing, most readable). Each
+    wrapper exposes a convenience argument that maps to a well-defined
+    Fay-Herriot-style transformation of survey design quantities:
+
+    |  |  |  |
+    |----|----|----|
+    | **Wrapper** | **Sugar argument** | **Pinned dpar** |
+    | `hbm(..., hb_sampling = "gaussian")` | `sampling_variance = "D"` | \\\sigma_i = \sqrt{D_i}\\ |
+    | [`hbm_lnln()`](https://madsyair.github.io/hbsaems/reference/hbm_lnln.md) | `sampling_variance = "psi"` | \\\sigma_i = \sqrt{\psi_i}\\ (on log scale) |
+    | [`hbm_betalogitnorm()`](https://madsyair.github.io/hbsaems/reference/hbm_betalogitnorm.md) | `n = "n", deff = "deff"` | \\\phi_i = n_i / \mathrm{deff}\_i - 1\\ (Liu 2009) |
+    | [`hbm_binlogitnorm()`](https://madsyair.github.io/hbsaems/reference/hbm_binlogitnorm.md) | `trials = "n"` | (sampling variance built into the family) |
+
+2.  **Universal `fixed_params`** (works everywhere). A named list
+    pinning any distributional parameter – accepts a column name
+    (character), a scalar (numeric of length 1), a vector of length
+    `nrow(data)`, or a one-sided formula (evaluated in `data`'s
+    environment). Examples:
+
+    - `fixed_params = list(sigma = "D")` – pin sigma to a column.
+
+    - `fixed_params = list(phi = ~ I(n / deff - 1))` – pin phi via
+      formula.
+
+    - `fixed_params = list(nu = 4)` – pin Student-t df to a scalar.
+
+3.  **Raw `stanvars`** (for power users authoring custom Stan code).
+    Direct injection of Stan code blocks – see
+    [`stanvar`](https://paulbuerkner.com/brms/reference/stanvar.html).
+
+Sugar arguments are simply thin wrappers around layer 2: they validate
+the survey-design inputs (no NAs, strictly positive) and translate to
+`fixed_params` before delegating to the universal machinery. Hence the
+conflict policy below applies uniformly to both sugar and explicit
+`fixed_params`.
+
 ## Conflict resolution between prior, prior_type, fixed_params, and stanvars
 
 `hbm()` provides four orthogonal mechanisms to influence the prior /
@@ -524,9 +618,33 @@ parameter specification of the underlying brms model:
 
 4.  `stanvars` – inject custom Stan code blocks.
 
+Plus two family-specific *sugar* arguments that translate to
+`fixed_params` internally:
+
+- `sampling_variance` (continuous families): pins \\\sigma_i =
+  \sqrt{D_i}\\, equivalent to `fixed_params$sigma = sqrt(data$D)`.
+
+- `n + deff` (`hbm_betalogitnorm`): pins \\\phi_i = n_i /
+  \mathrm{deff}\_i - 1\\, equivalent to
+  `fixed_params$phi = n / deff - 1`.
+
 Combining these without rules in mind can produce unidentified models or
-compile-time errors. `hbm()` therefore enforces the following precedence
-and conflict policy:
+compile-time errors. `hbm()` therefore enforces the following **conflict
+matrix**, where each cell describes what happens when the row and column
+inputs both target the same distributional parameter (e.g.\\ both pin
+`sigma`):
+
+|  |  |  |  |  |
+|----|----|----|----|----|
+|  | **fixed_params** | **prior** | **prior_type** | **stanvars** |
+| **sampling_variance** | error | error (transitive) | no overlap | error (transitive) |
+| **n + deff** | error | error (transitive) | no overlap | error (transitive) |
+| **fixed_params** | – | error (10b.i) | no overlap | error (10b.ii) |
+| **prior** | error (10b.i) | – | warning, user wins | no check needed |
+| **prior_type** | no overlap | warning, user wins | – | no check needed |
+| **stanvars** | error (10b.ii) | no check needed | no check needed | – |
+
+Resolution semantics in detail:
 
 - **`prior` vs `prior_type`.** If the user supplies a *global* (no
   `coef =`) prior on `class = "b"`, `"sds"`, or `"sdgp"`, `prior_type`
@@ -544,11 +662,17 @@ and conflict policy:
   Stan compile time; `hbm()` catches this and stops with a clear
   message.
 
-- **Wrapper sugar (e.g. `sampling_variance` in `hbm_lnln`).** Wrappers
-  translate their domain-specific arguments into `fixed_params` entries
-  before delegating to `hbm()`, so the same conflict policy applies
-  transitively. Supplying both `sampling_variance = "psi"` and a user
-  prior on `class = "sigma"` therefore also errors.
+- **Sugar vs `fixed_params` on the same parameter.** The sugar
+  translators (`.translate_sampling_variance()`,
+  `.translate_n_deff_to_phi()`) error out if the user has also
+  pre-populated `fixed_params` for the target parameter – there should
+  never be two pin sources for the same dpar.
+
+- **Sugar vs `prior` / `stanvars` transitively.** After the sugar -\>
+  `fixed_params` translation, the downstream `fixed_params`-vs-prior /
+  -stanvars checks fire automatically. E.g.\\ `sampling_variance = "D"`
+  plus `prior = set_prior("normal(0, 1)", class = "sigma")` errors via
+  the `fixed_params` vs `prior` rule.
 
 The intent is to fail fast and explicitly rather than silently producing
 an unidentified or mis-specified model.
@@ -580,6 +704,14 @@ of hierarchical variance parameters.
 
 - For Beta/Binomial logit-normal models, prior on the random intercept
   SD should also be on the logit scale.
+
+- **Gaussian (Fay-Herriot) only.** Always supply the known sampling
+  variance via `sampling_variance = "<col>"`. Without this, the residual
+  \\\sigma\\ and the area-RE \\\sigma_u\\ compete to explain the same
+  variance component, producing weak identifiability and divergent
+  transitions almost regardless of `adapt_delta`. This is the single
+  most common cause of divergences in Fay-Herriot fits and should be
+  checked *first* before any sampler-tuning.
 
 **3. Low effective sample size (ESS \< 1000).**
 
@@ -817,11 +949,14 @@ summary(model_car)
 #> Error: object 'model_car' not found
 
 # -- Spatial: SAR (Simultaneous Autoregressive) -------------------------------
+# spatial_weight_sar is a 100x100 row-standardised matrix with row-
+# names regency_001..regency_100, so it pairs with the fine-grained
+# "regency" column (100 levels) -- NOT with "province" (5 levels).
 data("spatial_weight_sar")
 model_sar <- do.call(hbm, c(
   list(formula     = bf(y ~ x1 + x2 + x3),
        data        = data,
-       spatial_var = "province",
+       spatial_var = "regency",
        spatial_model    = "sar",
        M           = spatial_weight_sar),
   FAST

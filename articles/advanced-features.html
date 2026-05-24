@@ -31,7 +31,7 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item"><a class="nav-link" href="../articles/hbsaems-modelling.html">Get started</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/complete-workflow.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -47,10 +47,10 @@
     <li><a class="dropdown-item" href="../articles/hbsaems-spatial.html">Spatial models (CAR / SAR / BYM2)</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-handle-missing.html">Handling missing data</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-run_sae_app.html">Interactive Shiny dashboard</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
-    <li><a class="dropdown-item" href="../articles/complete-workflow.html">Complete workflow walk-through</a></li>
     <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Internals &amp; development</h6></li>
+    <li><a class="dropdown-item" href="../articles/ast-formula-manipulation.html">AST-based formula manipulation</a></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration guide (legacy users)</a></li>
   </ul>
 </li>
@@ -77,7 +77,7 @@
       <h1>Advanced Features: Spatial, Benchmarking, Custom Families, Smooth Terms</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/main/vignettes/advanced-features.Rmd" class="external-link"><code>vignettes/advanced-features.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/main/vignettes/articles/advanced-features.Rmd" class="external-link"><code>vignettes/articles/advanced-features.Rmd</code></a></small>
       <div class="d-none name"><code>advanced-features.Rmd</code></div>
     </div>
 
@@ -96,7 +96,7 @@ fitting pipeline.</p>
 <strong>Spatial weight matrices</strong> – building from shapefiles
 + theory checks</li>
 <li>
-<strong>Multi-domain benchmarking</strong> – kecamatan to kabupaten
+<strong>Multi-domain benchmarking</strong> – district to regency
 with raking</li>
 <li>
 <strong>Fully Bayesian benchmarking</strong> – correct uncertainty
@@ -114,6 +114,9 @@ cascade)</li>
 <li>
 <strong>Prior sensitivity analysis</strong>
 (<code>prior_sensitivity</code>)</li>
+<li>
+<strong>Hierarchical area random effects</strong>
+(<code>area_var</code> as a vector)</li>
 </ol>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://madsyair.github.io/hbsaems/">hbsaems</a></span><span class="op">)</span></span></code></pre></div>
@@ -213,30 +216,32 @@ CAR, isolated areas under ICAR, etc. It also runs automatically inside
 </div>
 </div>
 <div class="section level2">
-<h2 id="multi-domain-benchmarking-kecamatan-to-kabupaten">3. Multi-domain benchmarking: kecamatan to kabupaten<a class="anchor" aria-label="anchor" href="#multi-domain-benchmarking-kecamatan-to-kabupaten"></a>
+<h2 id="multi-domain-benchmarking-district-to-regency">3. Multi-domain benchmarking: district to regency<a class="anchor" aria-label="anchor" href="#multi-domain-benchmarking-district-to-regency"></a>
 </h2>
-<p>A common SAE scenario: you have estimates per kecamatan and need them
-to roll up to a published kabupaten total from BPS.
-<code><a href="../reference/sae_benchmark.html">sae_benchmark()</a></code> with <code>method = "raking"</code> handles
-this:</p>
+<p>A common SAE scenario: you have estimates per district (kecamatan in
+Indonesian) and need them to roll up to a published regency-level
+(kabupaten in Indonesian) total – for example, from BPS, the Indonesian
+central statistics office. <code><a href="../reference/sae_benchmark.html">sae_benchmark()</a></code> with
+<code>method = "raking"</code> handles this:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Suppose we have SAE estimates per kecamatan, with a kabupaten column</span></span>
+<code class="sourceCode R"><span><span class="co"># Suppose we have SAE estimates per district, with a regency column</span></span>
+<span><span class="co"># tagging which regency each district belongs to.</span></span>
 <span><span class="va">estimates</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sae_predict.html">sae_predict</a></span><span class="op">(</span><span class="va">fit_hbm</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Official BPS totals</span></span>
-<span><span class="va">T_kab</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>Bogor <span class="op">=</span> <span class="fl">110</span>, Sukabumi <span class="op">=</span> <span class="fl">145</span>, Cianjur <span class="op">=</span> <span class="fl">145</span><span class="op">)</span></span>
+<span><span class="co"># Official regency-level totals (e.g.\ from BPS publications)</span></span>
+<span><span class="va">T_regency</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>Bogor <span class="op">=</span> <span class="fl">110</span>, Sukabumi <span class="op">=</span> <span class="fl">145</span>, Cianjur <span class="op">=</span> <span class="fl">145</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">bm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sae_benchmark.html">sae_benchmark</a></span><span class="op">(</span></span>
 <span>  predictions <span class="op">=</span> <span class="va">estimates</span>,</span>
-<span>  target      <span class="op">=</span> <span class="va">T_kab</span>,                  <span class="co"># one target per kabupaten</span></span>
-<span>  weights     <span class="op">=</span> <span class="va">data_fhnorm</span><span class="op">$</span><span class="va">populasi</span>,   <span class="co"># population per kecamatan</span></span>
-<span>  groups      <span class="op">=</span> <span class="va">data_fhnorm</span><span class="op">$</span><span class="va">kabupaten</span>,  <span class="co"># mapping kec -&gt; kab</span></span>
+<span>  target      <span class="op">=</span> <span class="va">T_regency</span>,            <span class="co"># one target per regency</span></span>
+<span>  weights     <span class="op">=</span> <span class="va">my_data</span><span class="op">$</span><span class="va">population</span>,  <span class="co"># population per district</span></span>
+<span>  groups      <span class="op">=</span> <span class="va">my_data</span><span class="op">$</span><span class="va">regency</span>,      <span class="co"># mapping district -&gt; regency</span></span>
 <span>  method      <span class="op">=</span> <span class="st">"raking"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">bm</span><span class="op">$</span><span class="va">benchmark_info</span><span class="op">$</span><span class="va">converged</span>    <span class="co"># raking with one group var: converges in 1 sweep</span></span></code></pre></div>
-<p>The adjustment factor is <em>constant within each kabupaten</em> but
-<em>different across kabupaten</em> – exactly what multi-domain
+<p>The adjustment factor is <em>constant within each regency</em> but
+<em>different across regencies</em> – exactly what multi-domain
 benchmarking requires.</p>
 <div class="section level3">
 <h3 id="unit-consistency">Unit consistency<a class="anchor" aria-label="anchor" href="#unit-consistency"></a>
@@ -332,13 +337,15 @@ smooth function:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Default: thin-plate regression spline, basis dimension chosen by mgcv</span></span>
 <span><span class="va">fit_spline</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span></span>
-<span>  formula        <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span>
-<span>  data           <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
-<span>  re             <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,       <span class="co"># area-level random effect (Fay-Herriot)</span></span>
-<span>  nonlinear      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,</span>
-<span>  nonlinear_type <span class="op">=</span> <span class="st">"spline"</span>,</span>
-<span>  spline_k       <span class="op">=</span> <span class="fl">7L</span>,                    <span class="co"># basis dim (-1 = auto)</span></span>
-<span>  spline_bs      <span class="op">=</span> <span class="st">"tp"</span>,                  <span class="co"># "tp" (default), "cr", "cs", "ps"</span></span>
+<span>  formula           <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span>
+<span>  data              <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
+<span>  re                <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,       <span class="co"># area-level random effect (Fay-Herriot)</span></span>
+<span>  sampling_variance <span class="op">=</span> <span class="st">"D"</span>,                    <span class="co"># known sampling variance (Fay-Herriot)</span></span>
+<span>  nonlinear         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,</span>
+<span>  nonlinear_type    <span class="op">=</span> <span class="st">"spline"</span>,</span>
+<span>  spline_k          <span class="op">=</span> <span class="fl">7L</span>,                    <span class="co"># basis dim (-1 = auto)</span></span>
+<span>  spline_bs         <span class="op">=</span> <span class="st">"tp"</span>,                  <span class="co"># "tp" (default), "cr", "cs", "ps"</span></span>
+<span>  control           <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>adapt_delta <span class="op">=</span> <span class="fl">0.99</span><span class="op">)</span>,</span>
 <span>  chains <span class="op">=</span> <span class="fl">2</span>, iter <span class="op">=</span> <span class="fl">2000</span>, refresh <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><strong>Choosing the basis (<code>spline_bs</code>):</strong></p>
@@ -383,14 +390,16 @@ Riutort-Mayol et al. (2023):</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># RECOMMENDED: HSGP with Matérn 5/2 covariance</span></span>
 <span><span class="va">fit_gp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span></span>
-<span>  formula        <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span><span class="op">)</span>,</span>
-<span>  data           <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
-<span>  re             <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,</span>
-<span>  nonlinear      <span class="op">=</span> <span class="st">"x1"</span>,</span>
-<span>  nonlinear_type <span class="op">=</span> <span class="st">"gp"</span>,</span>
-<span>  gp_k           <span class="op">=</span> <span class="fl">20L</span>,                  <span class="co"># basis dim — REQUIRED for n &gt; 100</span></span>
-<span>  gp_cov         <span class="op">=</span> <span class="st">"matern25"</span>,           <span class="co"># more stable than "exp_quad"</span></span>
-<span>  gp_c           <span class="op">=</span> <span class="fl">1.25</span>,                 <span class="co"># boundary scale (brms default)</span></span>
+<span>  formula           <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span><span class="op">)</span>,</span>
+<span>  data              <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
+<span>  re                <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,</span>
+<span>  sampling_variance <span class="op">=</span> <span class="st">"D"</span>,                  <span class="co"># known sampling variance (Fay-Herriot)</span></span>
+<span>  nonlinear         <span class="op">=</span> <span class="st">"x1"</span>,</span>
+<span>  nonlinear_type    <span class="op">=</span> <span class="st">"gp"</span>,</span>
+<span>  gp_k              <span class="op">=</span> <span class="fl">20L</span>,                  <span class="co"># basis dim — REQUIRED for n &gt; 100</span></span>
+<span>  gp_cov            <span class="op">=</span> <span class="st">"matern25"</span>,           <span class="co"># more stable than "exp_quad"</span></span>
+<span>  gp_c              <span class="op">=</span> <span class="fl">1.25</span>,                 <span class="co"># boundary scale (brms default)</span></span>
+<span>  control           <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>adapt_delta <span class="op">=</span> <span class="fl">0.99</span><span class="op">)</span>,</span>
 <span>  chains <span class="op">=</span> <span class="fl">2</span>, iter <span class="op">=</span> <span class="fl">2000</span>, refresh <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><strong>GP argument reference:</strong></p>
@@ -493,7 +502,7 @@ conditioning.</li>
 selection on the smooth terms.</li>
 </ul>
 <p><strong>5. Spatial random effects</strong>. See
-<code><a href="../articles/hbsaems-spatial.html">vignette("hbsaems-spatial")</a></code> for the BYM2
+<code>vignette("hbsaems-spatial")</code> for the BYM2
 recommendation.</p>
 <hr>
 </div>
@@ -650,7 +659,8 @@ the flexible factory <code><a href="../reference/hbm_flex.html">hbm_flex()</a></
 <span><span class="co">#&gt; $link               : "logit"</span></span>
 <span><span class="co">#&gt; $discrete           : FALSE</span></span>
 <span><span class="co">#&gt; $supports_mi        : TRUE</span></span>
-<span><span class="co">#&gt; $aux_param_hyperprior: function(args, data) ...   # phi ~ gamma(alpha, beta)</span></span></code></pre></div>
+<span><span class="co">#&gt; $aux_param_hyperprior: NULL                          # phi uses brms default</span></span>
+<span>                                                       <span class="co"># gamma(0.01, 0.01) since v1.0.0</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="adding-a-custom-model-tier-1-pure-metadata">Adding a custom model (Tier-1: pure metadata)<a class="anchor" aria-label="anchor" href="#adding-a-custom-model-tier-1-pure-metadata"></a>
@@ -848,17 +858,79 @@ prior is too strong for that covariate.</p>
 <span><span class="co"># 5. Predict at all areas (including non-sample)</span></span>
 <span><span class="va">est</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sae_predict.html">sae_predict</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 6. Benchmark to kabupaten totals (fully Bayesian)</span></span>
+<span><span class="co"># 6. Benchmark to regency totals (fully Bayesian)</span></span>
 <span><span class="va">T_kab</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>Bogor <span class="op">=</span> <span class="fl">110</span>, Sukabumi <span class="op">=</span> <span class="fl">145</span>, Cianjur <span class="op">=</span> <span class="fl">145</span><span class="op">)</span></span>
 <span><span class="va">bm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sae_benchmark.html">sae_benchmark</a></span><span class="op">(</span><span class="va">est</span>,</span>
 <span>                     target  <span class="op">=</span> <span class="va">T_kab</span>,</span>
 <span>                     weights <span class="op">=</span> <span class="va">my_data</span><span class="op">$</span><span class="va">populasi</span>,</span>
-<span>                     groups  <span class="op">=</span> <span class="va">my_data</span><span class="op">$</span><span class="va">kabupaten</span>,</span>
+<span>                     groups  <span class="op">=</span> <span class="va">my_data</span><span class="op">$</span><span class="va">regency</span>,</span>
 <span>                     method  <span class="op">=</span> <span class="st">"raking"</span>,</span>
 <span>                     posterior <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># 7. Use the corrected uncertainty</span></span>
 <span><span class="va">bm</span><span class="op">$</span><span class="va">result_table</span></span></code></pre></div>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="hierarchical-area-random-effects">10. Hierarchical area random effects<a class="anchor" aria-label="anchor" href="#hierarchical-area-random-effects"></a>
+</h2>
+<p>Many SAE designs have <strong>multiple geographic levels</strong> –
+e.g. regencies within provinces, or districts within counties within
+province. <code>hbsaems</code> supports this directly through the
+<code>area_var</code> argument, which now accepts a <strong>character
+vector</strong> of column names from the highest level down:</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Two-level hierarchy: regency nested within province</span></span>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm_lnln.html">hbm_lnln</a></span><span class="op">(</span></span>
+<span>  response          <span class="op">=</span> <span class="st">"y_obs"</span>,</span>
+<span>  auxiliary         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,</span>
+<span>  data              <span class="op">=</span> <span class="va">my_data</span>,</span>
+<span>  area_var          <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"province"</span>, <span class="st">"regency"</span><span class="op">)</span>,   <span class="co"># province first!</span></span>
+<span>  area_re_structure <span class="op">=</span> <span class="st">"nested"</span>,                   <span class="co"># default</span></span>
+<span>  sampling_variance <span class="op">=</span> <span class="st">"psi_i"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Internally the helper builds the brms / lme4 formula
+<code>(1 | province / regency)</code>, which Stan expands to two
+independent normal random intercepts:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>α</mi><mi>j</mi></msub><mo>∼</mo><mi>𝒩</mi><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mtext mathvariant="normal">prov</mtext><mn>2</mn></msubsup><mo stretchy="false" form="postfix">)</mo><mspace width="2.0em"></mspace><msub><mi>β</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>∼</mo><mi>𝒩</mi><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mtext mathvariant="normal">reg</mtext><mn>2</mn></msubsup><mo stretchy="false" form="postfix">)</mo><mo>,</mo></mrow><annotation encoding="application/x-tex">
+  \alpha_{j} \sim \mathcal{N}(0, \sigma_{\text{prov}}^{2}) \qquad
+  \beta_{ij}  \sim \mathcal{N}(0, \sigma_{\text{reg}}^{2}) ,
+</annotation></semantics></math></p>
+<p>so the linear predictor for area
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
+in province
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>
+becomes
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐱</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>⊤</mi></msubsup><mi>𝛃</mi><mo>+</mo><msub><mi>α</mi><mi>j</mi></msub><mo>+</mo><msub><mi>β</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\mathbf x_{ij}^\top \boldsymbol\beta + \alpha_{j} + \beta_{ij}</annotation></semantics></math>.
+This is the canonical multi-stage SAE specification (Rao &amp; Molina
+2015, Ch. 8).</p>
+<p><strong>When to use <code>"crossed"</code> instead of
+<code>"nested"</code>?</strong> Use crossed when the two grouping
+variables share levels across each other – e.g.<br><em>urban / rural</em> across <em>all</em> provinces. Pass
+<code>area_re_structure = "crossed"</code>:</p>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_crossed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm_lnln.html">hbm_lnln</a></span><span class="op">(</span></span>
+<span>  response          <span class="op">=</span> <span class="st">"y_obs"</span>,</span>
+<span>  auxiliary         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span><span class="op">)</span>,</span>
+<span>  data              <span class="op">=</span> <span class="va">my_data</span>,</span>
+<span>  area_var          <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"province"</span>, <span class="st">"urbanrural"</span><span class="op">)</span>,</span>
+<span>  area_re_structure <span class="op">=</span> <span class="st">"crossed"</span>,                   <span class="co"># NOT nested</span></span>
+<span>  sampling_variance <span class="op">=</span> <span class="st">"psi_i"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>which becomes <code>(1 | province) + (1 | urbanrural)</code>.</p>
+<p><strong>Three or more levels.</strong> The same syntax extends
+arbitrarily:</p>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/hbm_lnln.html">hbm_lnln</a></span><span class="op">(</span></span>
+<span>  response  <span class="op">=</span> <span class="st">"y"</span>,</span>
+<span>  auxiliary <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span><span class="op">)</span>,</span>
+<span>  data      <span class="op">=</span> <span class="va">my_data</span>,</span>
+<span>  area_var  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"province"</span>, <span class="st">"regency"</span>, <span class="st">"district"</span>, <span class="st">"village"</span><span class="op">)</span>,</span>
+<span>  <span class="co"># area_re_structure = "nested"   # default</span></span>
+<span>  sampling_variance <span class="op">=</span> <span class="st">"psi_i"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>produces <code>(1 | province / regency / district / village)</code>
+which brms expands to four nested random effects.</p>
 <hr>
 </div>
 <div class="section level2">

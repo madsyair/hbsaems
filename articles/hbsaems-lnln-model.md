@@ -138,6 +138,18 @@ fit_fh <- hbm_lnln(
 summary(fit_fh)
 ```
 
+> **Implementation note (v1.0.0).** Under the hood,
+> [`hbm_lnln()`](https://madsyair.github.io/hbsaems/reference/hbm_lnln.md)
+> stores $`\sqrt{\psi_i}`$ in a hidden offset column and attaches
+> `sigma ~ 0 + offset(.hbsaems_sigma_fixed)` to the brms formula.
+> Because brms’s default `link_sigma = "log"` would otherwise apply
+> $`\exp(\cdot)`$ to the offset value (producing
+> $`\sigma_i = \exp(\sqrt{\psi_i})`$ instead of $`\sqrt{\psi_i}`$),
+> hbsaems automatically overrides the link to `"identity"` whenever a
+> distributional parameter is pinned via `sampling_variance` or
+> `fixed_params`. This is a v1.0.0 fix; earlier development versions
+> silently miscalibrated the model.
+
     ===== Hierarchical Bayesian Model Summary =====
 
      Observations : 100
@@ -226,8 +238,7 @@ fit_spline <- hbm_lnln(
 ```
 
 The formula becomes `y_obs ~ s(x1) + x2 + x3 + (1 | district)`. See
-[`vignette("advanced-features")`](https://madsyair.github.io/hbsaems/articles/advanced-features.md)
-for full coverage of nonlinear terms.
+`vignette("advanced-features")` for full coverage of nonlinear terms.
 
 ## Checking convergence
 

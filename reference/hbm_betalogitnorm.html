@@ -25,7 +25,7 @@ $$\mathrm{logit}(\theta_i) = x_i^\top \boldsymbol{\beta} + u_i,
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/hbsaems-modelling.html">Get started</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/complete-workflow.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -40,10 +40,10 @@ $$\mathrm{logit}(\theta_i) = x_i^\top \boldsymbol{\beta} + u_i,
     <li><a class="dropdown-item" href="../articles/hbsaems-spatial.html">Spatial models (CAR / SAR / BYM2)</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-handle-missing.html">Handling missing data</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-run_sae_app.html">Interactive Shiny dashboard</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
-    <li><a class="dropdown-item" href="../articles/complete-workflow.html">Complete workflow walk-through</a></li>
     <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Internals &amp; development</h6></li>
+    <li><a class="dropdown-item" href="../articles/ast-formula-manipulation.html">AST-based formula manipulation</a></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration guide (legacy users)</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -81,12 +81,13 @@ $$\mathrm{logit}(\theta_i) = x_i^\top \boldsymbol{\beta} + u_i,
 <span>  n <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  deff <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  area_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  area_re_structure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nested"</span>, <span class="st">"crossed"</span><span class="op">)</span>,</span>
 <span>  spatial_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  spatial_model <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  car_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sar_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  M <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  link_phi <span class="op">=</span> <span class="st">"identity"</span>,</span>
+<span>  link_phi <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  prior <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  stanvars <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  handle_missing <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -130,7 +131,7 @@ names; corresponds to area-level covariates in SAE literature
 per-area sample size used to compute the fixed \(\phi\).  Must be
 supplied together with <code>deff</code>.  When supplied, \(\phi_i =
 n_i / \text{deff}_i - 1\) is pinned via offset.  Default: <code>NULL</code>
-(treats <code>phi</code> as random with hyperprior).</p></dd>
+(treats <code>phi</code> as random with brms's default prior).</p></dd>
 
 
 <dt id="arg-deff">deff<a class="anchor" aria-label="anchor" href="#arg-deff"></a></dt>
@@ -139,9 +140,16 @@ column.  Required when <code>n</code> is supplied (and vice versa).</p></dd>
 
 
 <dt id="arg-area-var">area_var<a class="anchor" aria-label="anchor" href="#arg-area-var"></a></dt>
-<dd><p>Character or <code>NULL</code>.  Name of the area-grouping
-column; if supplied, adds <code>(1 | area_var)</code> as a random
-intercept.</p></dd>
+<dd><p>Character vector or <code>NULL</code>.  Name(s) of the
+area-grouping column(s).  Length 1 adds an IID random intercept
+<code>(1 | area_var)</code>; length \(\geq\) 2 supports hierarchical
+areas (e.g.\ <code>c("province", "regency")</code>) – see
+<code><a href="hbm_flex.html">?hbm_flex</a></code> for the nested vs.\ crossed structures.</p></dd>
+
+
+<dt id="arg-area-re-structure">area_re_structure<a class="anchor" aria-label="anchor" href="#arg-area-re-structure"></a></dt>
+<dd><p>Either <code>"nested"</code> (default) or
+<code>"crossed"</code>; controls how multiple area columns combine.</p></dd>
 
 
 <dt id="arg-spatial-var-spatial-model-car-type-sar-type-m">spatial_var, spatial_model, car_type, sar_type, M<a class="anchor" aria-label="anchor" href="#arg-spatial-var-spatial-model-car-type-sar-type-m"></a></dt>
@@ -150,29 +158,42 @@ random-effect arguments, forwarded to <code><a href="hbm.html">hbm</a></code>.</
 
 
 <dt id="arg-link-phi">link_phi<a class="anchor" aria-label="anchor" href="#arg-link-phi"></a></dt>
-<dd><p>Character. Link function for <code>phi</code>; default
-<code>"identity"</code> when <code>phi</code> is pinned (offset must be on the
-identity scale).</p></dd>
+<dd><p>Character or <code>NULL</code>.  Link function for
+<code>phi</code>.  <strong>Default <code>NULL</code> resolves automatically</strong>:
+<code>"identity"</code> when <code>phi</code> is pinned via the survey design
+(the <code>n + deff</code> sugar or <code>fixed_params$phi</code>, both of
+which produce raw positive offsets) and <code>"log"</code> otherwise
+(the brms default for <code>phi</code> in the Beta family; keeps
+\(\phi &gt; 0\) while letting NUTS sample on \(\mathbb{R}\)).
+Manually setting <code>"identity"</code> together with an estimated
+<code>phi</code> can let NUTS propose negative values and trigger
+divergent transitions; an informative warning is emitted in that
+case.</p></dd>
 
 
 <dt id="arg-prior">prior<a class="anchor" aria-label="anchor" href="#arg-prior"></a></dt>
-<dd><p>Optional <code>brmsprior</code> object.  If <code>NULL</code>, sensible
-defaults are filled in:</p><ul><li><p><code>Intercept ~ student_t(4, 0, 10)</code></p></li>
+<dd><p>Optional <code>brmsprior</code> object.  If <code>NULL</code>,
+sensible defaults are filled in:</p><ul><li><p><code>Intercept ~ student_t(4, 0, 10)</code></p></li>
 <li><p><code>b ~ student_t(4, 0, 2.5)</code></p></li>
-<li><p><code>phi ~ gamma(alpha, beta)</code> (random mode only)</p></li>
+<li><p><code>phi</code> – brms default <code>gamma(0.01, 0.01)</code> (in
+    random mode; ignored in fixed mode).</p></li>
 </ul><p>The user may pass a partial prior: missing default classes are
-filled in automatically.</p></dd>
+filled in automatically.  To put a custom prior on <code>phi</code>
+(random mode), set <code>prior = set_prior("gamma(2, 0.5)",
+class = "phi")</code> or similar.</p></dd>
 
 
 <dt id="arg-stanvars">stanvars<a class="anchor" aria-label="anchor" href="#arg-stanvars"></a></dt>
-<dd><p>Optional <code>brmsstanvars</code> object specifying
-hyperpriors for <code>alpha</code> and <code>beta</code> when <code>phi</code> is
-random.  If <code>NULL</code> (default), <code>alpha ~ gamma(1, 1)</code> and
-<code>beta ~ gamma(1, 1)</code> are used.  The user may also supply
-custom <code><a href="https://paulbuerkner.com/brms/reference/stanvar.html" class="external-link">stanvar()</a></code> expressions to override either or both
-hyperpriors, e.g.:</p><div class="sourceCode"><pre><code><span></span>
-<span><span class="va">stanvars</span> <span class="op">=</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/stanvar.html" class="external-link">stanvar</a></span><span class="op">(</span>scode <span class="op">=</span> <span class="st">"alpha ~ gamma(2, 1);"</span>, block <span class="op">=</span> <span class="st">"model"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>           <span class="fu"><a href="https://paulbuerkner.com/brms/reference/stanvar.html" class="external-link">stanvar</a></span><span class="op">(</span>scode <span class="op">=</span> <span class="st">"beta  ~ gamma(2, 3);"</span>, block <span class="op">=</span> <span class="st">"model"</span><span class="op">)</span></span></code></pre></div></dd>
+<dd><p>Optional <code>brmsstanvars</code> object for power users
+who need to inject custom Stan code blocks (e.g.\ transformed
+data, generated quantities, model-block statements not expressible
+via the <code>prior</code> argument).  Passed through to brms verbatim.
+<strong>Note:</strong> As of v1.0.0, this wrapper no longer declares
+<code>alpha</code> or <code>beta</code> as Stan parameters, so legacy
+<code>stanvars</code> blocks containing sampling statements on
+<code>alpha</code> / <code>beta</code> (left over from the pre-v1.0.0
+hierarchical-phi construction) will now raise an informative
+error.</p></dd>
 
 
 <dt id="arg-handle-missing-m-control-chains-iter-warmup-cores-sample-prior-">handle_missing, m, control, chains, iter, warmup, cores, sample_prior, ...<a class="anchor" aria-label="anchor" href="#arg-handle-missing-m-control-chains-iter-warmup-cores-sample-prior-"></a></dt>
@@ -182,8 +203,8 @@ hyperpriors, e.g.:</p><div class="sourceCode"><pre><code><span></span>
 <dt id="arg-fixed-params">fixed_params<a class="anchor" aria-label="anchor" href="#arg-fixed-params"></a></dt>
 <dd><p>Optional named list pinning distributional
 parameters to known values.  See <code><a href="hbm.html">hbm</a></code> for the spec
-format.  Conflicts with <code>n</code> + <code>deff</code> on the <code>phi</code>
-parameter; use one or the other.</p></dd>
+format.  Allows power-user access to the same machinery used by
+the <code>n</code>/<code>deff</code> arguments.</p></dd>
 
 
 <dt id="arg-predictors">predictors<a class="anchor" aria-label="anchor" href="#arg-predictors"></a></dt>
@@ -210,10 +231,39 @@ Kept for backward compatibility; will be removed in v2.0.0.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The precision parameter \(\phi_i\) can either be pinned to a survey
-design effect (<code>n</code> + <code>deff</code>) or sampled with a hierarchical
-hyperprior (\(\phi \sim \mathrm{Gamma}(\alpha, \beta)\),
-\(\alpha \sim \mathrm{Gamma}(1,1)\), \(\beta \sim \mathrm{Gamma}(1,1)\)
-by default).</p>
+design effect (<code>n</code> + <code>deff</code>) or sampled with brms's default
+weakly-informative prior \(\phi \sim \mathrm{Gamma}(0.01, 0.01)\).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="migration-note-v-">Migration note (v1.0.0)<a class="anchor" aria-label="anchor" href="#migration-note-v-"></a></h2>
+
+
+<p>Earlier versions of this wrapper introduced a hierarchical
+construction \(\phi \sim \mathrm{Gamma}(\alpha, \beta),\,
+\alpha \sim \mathrm{Gamma}(1,1),\, \beta \sim \mathrm{Gamma}(1,1)\)
+for the random-phi mode, declaring <code>alpha</code> and <code>beta</code> as
+Stan parameters with hyperpriors injected via <code>stanvars</code>.
+Starting v1.0.0, that construction has been removed in favour of
+brms's own default prior, \(\phi \sim \mathrm{Gamma}(0.01, 0.01)\)
+with lower bound 0 (mean 1, variance 100; weakly informative on
+the precision scale).  Three reasons:</p><ul><li><p><strong>Brittle priors on alpha/beta.</strong>  The hyperprior
+        \(\mathrm{Gamma}(1,1)\) on \(\alpha\) has prior mean 1,
+        which is on the boundary of the parameter space declared
+        as <code>real&lt;lower=1&gt;</code>.  This routinely produced divergent
+        transitions when the data were not informative about phi.</p></li>
+<li><p><strong>Parameter blow-up.</strong>  Estimating two extra Stan
+        parameters per area-level model with limited data inflated
+        the effective posterior dimension and slowed convergence.</p></li>
+<li><p><strong>Cleaner brms semantics.</strong>  Letting brms apply its own
+        default \(\mathrm{Gamma}(0.01, 0.01)\) means that passing
+        <code>prior = NULL</code> now does exactly what the user expects:
+        “brms defaults”.  No surprises.</p></li>
+</ul><p><strong>If you need to reproduce the old behaviour</strong>, supply
+<code>stanvars</code> yourself to declare <code>alpha</code>, <code>beta</code> and
+their hyperpriors, and pass <code>prior = set_prior("gamma(alpha,
+beta)", class = "phi")</code>.  Pre-v1.0.0 code that supplied
+<code>stanvars</code> with hyperpriors on <code>alpha</code>/<code>beta</code>
+will now raise an informative error.</p>
     </div>
     <div class="section level2">
     <h2 id="conflict-policy">Conflict policy<a class="anchor" aria-label="anchor" href="#conflict-policy"></a></h2>
@@ -262,6 +312,7 @@ Wiley, p. 390.</p>
 <span class="r-in"><span>  data       <span class="op">=</span> <span class="va">data</span>,</span></span>
 <span class="r-in"><span>  chains <span class="op">=</span> <span class="fl">1</span>, iter <span class="op">=</span> <span class="fl">500</span>, warmup <span class="op">=</span> <span class="fl">250</span>, refresh <span class="op">=</span> <span class="fl">0</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model1</span><span class="op">)</span></span></span>
@@ -277,21 +328,29 @@ Wiley, p. 390.</p>
 <span class="r-in"><span>  data       <span class="op">=</span> <span class="va">data</span>,</span></span>
 <span class="r-in"><span>  chains <span class="op">=</span> <span class="fl">1</span>, iter <span class="op">=</span> <span class="fl">500</span>, warmup <span class="op">=</span> <span class="fl">250</span>, refresh <span class="op">=</span> <span class="fl">0</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model2</span><span class="op">)</span></span></span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model2' not found</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># -- 3. Custom hyperprior on alpha, beta -------------------------------------</span></span></span>
+<span class="r-in"><span><span class="co"># -- 3. Custom prior on phi via the standard `prior` argument ----------------</span></span></span>
+<span class="r-in"><span><span class="co">#</span></span></span>
+<span class="r-in"><span><span class="co"># Starting v1.0.0, hbm_betalogitnorm() no longer declares its own</span></span></span>
+<span class="r-in"><span><span class="co"># alpha / beta hyperparameters; phi uses brms's native default</span></span></span>
+<span class="r-in"><span><span class="co"># Gamma(0.01, 0.01).  To override that prior, pass a `brms::set_prior()`</span></span></span>
+<span class="r-in"><span><span class="co"># entry to the `prior` argument -- the legacy</span></span></span>
+<span class="r-in"><span><span class="co"># stanvar("alpha ~ gamma(...); beta ~ gamma(...)") pattern would now</span></span></span>
+<span class="r-in"><span><span class="co"># error because alpha/beta are no longer Stan parameters.</span></span></span>
 <span class="r-in"><span><span class="va">model3</span> <span class="op">&lt;-</span> <span class="fu">hbm_betalogitnorm</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  response   <span class="op">=</span> <span class="st">"y"</span>,</span></span>
 <span class="r-in"><span>  auxiliary  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  area_var   <span class="op">=</span> <span class="st">"regency"</span>,</span></span>
 <span class="r-in"><span>  data       <span class="op">=</span> <span class="va">data</span>,</span></span>
-<span class="r-in"><span>  stanvars   <span class="op">=</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/stanvar.html" class="external-link">stanvar</a></span><span class="op">(</span>scode <span class="op">=</span> <span class="st">"alpha ~ gamma(2, 1);"</span>, block <span class="op">=</span> <span class="st">"model"</span><span class="op">)</span> <span class="op">+</span></span></span>
-<span class="r-in"><span>               <span class="fu"><a href="https://paulbuerkner.com/brms/reference/stanvar.html" class="external-link">stanvar</a></span><span class="op">(</span>scode <span class="op">=</span> <span class="st">"beta  ~ gamma(2, 3);"</span>, block <span class="op">=</span> <span class="st">"model"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  prior      <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/set_prior.html" class="external-link">set_prior</a></span><span class="op">(</span><span class="st">"gamma(2, 0.5)"</span>, class <span class="op">=</span> <span class="st">"phi"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  chains <span class="op">=</span> <span class="fl">1</span>, iter <span class="op">=</span> <span class="fl">500</span>, warmup <span class="op">=</span> <span class="fl">250</span>, refresh <span class="op">=</span> <span class="fl">0</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
 <span class="r-in"><span></span></span>

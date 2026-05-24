@@ -21,7 +21,7 @@ family_key = "binomial".'></head><body>
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/hbsaems-modelling.html">Get started</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/complete-workflow.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -36,10 +36,10 @@ family_key = "binomial".'></head><body>
     <li><a class="dropdown-item" href="../articles/hbsaems-spatial.html">Spatial models (CAR / SAR / BYM2)</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-handle-missing.html">Handling missing data</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-run_sae_app.html">Interactive Shiny dashboard</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
-    <li><a class="dropdown-item" href="../articles/complete-workflow.html">Complete workflow walk-through</a></li>
     <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Internals &amp; development</h6></li>
+    <li><a class="dropdown-item" href="../articles/ast-formula-manipulation.html">AST-based formula manipulation</a></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration guide (legacy users)</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -74,6 +74,7 @@ Internally delegates to <code><a href="hbm_flex.html">hbm_flex</a></code> with
 <span>  auxiliary <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">data</span>,</span>
 <span>  area_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  area_re_structure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nested"</span>, <span class="st">"crossed"</span><span class="op">)</span>,</span>
 <span>  spatial_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  spatial_model <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  car_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -112,10 +113,16 @@ names; corresponds to area-level covariates in SAE literature
 
 
 <dt id="arg-area-var">area_var<a class="anchor" aria-label="anchor" href="#arg-area-var"></a></dt>
-<dd><p>Optional character.  Name of the column in <code>data</code>
-identifying the small area / domain.  When supplied, an IID
-area-level random effect <code>(1 | area_var)</code> is added to the
-linear predictor.  Default: <code>NULL</code>.</p></dd>
+<dd><p>Optional character vector.  Name(s) of column(s) in
+<code>data</code> identifying the small area / domain.  Length 1 fits an
+IID area-level random intercept <code>(1 | area_var)</code>; length
+\(\geq\) 2 supports hierarchical areas – see <code><a href="hbm_flex.html">?hbm_flex</a></code>
+for the nested vs.\ crossed structures.  Default: <code>NULL</code>.</p></dd>
+
+
+<dt id="arg-area-re-structure">area_re_structure<a class="anchor" aria-label="anchor" href="#arg-area-re-structure"></a></dt>
+<dd><p>Either <code>"nested"</code> (default) or
+<code>"crossed"</code>; controls how multiple area columns combine.</p></dd>
 
 
 <dt id="arg-spatial-var">spatial_var<a class="anchor" aria-label="anchor" href="#arg-spatial-var"></a></dt>
@@ -225,6 +232,7 @@ the predictors only).</p>
 <span class="r-in"><span>  data       <span class="op">=</span> <span class="va">data_binlogitnorm</span>,</span></span>
 <span class="r-in"><span>  chains <span class="op">=</span> <span class="fl">1</span>, iter <span class="op">=</span> <span class="fl">500</span>, warmup <span class="op">=</span> <span class="fl">250</span>, refresh <span class="op">=</span> <span class="fl">0</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Area column 'district' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
 <span class="r-in"><span></span></span>

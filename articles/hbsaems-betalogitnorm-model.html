@@ -31,7 +31,7 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item"><a class="nav-link" href="../articles/hbsaems-modelling.html">Get started</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/complete-workflow.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -47,10 +47,10 @@
     <li><a class="dropdown-item" href="../articles/hbsaems-spatial.html">Spatial models (CAR / SAR / BYM2)</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-handle-missing.html">Handling missing data</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-run_sae_app.html">Interactive Shiny dashboard</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
-    <li><a class="dropdown-item" href="../articles/complete-workflow.html">Complete workflow walk-through</a></li>
     <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Internals &amp; development</h6></li>
+    <li><a class="dropdown-item" href="../articles/ast-formula-manipulation.html">AST-based formula manipulation</a></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration guide (legacy users)</a></li>
   </ul>
 </li>
@@ -77,7 +77,7 @@
       <h1>Beta Logit-Normal SAE Model</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/main/vignettes/hbsaems-betalogitnorm-model.Rmd" class="external-link"><code>vignettes/hbsaems-betalogitnorm-model.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/madsyair/hbsaems/blob/main/vignettes/articles/hbsaems-betalogitnorm-model.Rmd" class="external-link"><code>vignettes/articles/hbsaems-betalogitnorm-model.Rmd</code></a></small>
       <div class="d-none name"><code>hbsaems-betalogitnorm-model.Rmd</code></div>
     </div>
 
@@ -137,10 +137,11 @@ has an information-theoretic interpretation:</p>
 to this value or <strong>sample</strong> it with a hyperprior.</p>
 </div>
 <div class="section level2">
-<h2 id="three-modes-for-phi">Three modes for
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math><a class="anchor" aria-label="anchor" href="#three-modes-for-phi"></a>
+<h2 id="two-modes-for-phi-v1-0-0">Two modes for
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>
+(v1.0.0)<a class="anchor" aria-label="anchor" href="#two-modes-for-phi-v1-0-0"></a>
 </h2>
-<p><code><a href="../reference/hbm_betalogitnorm.html">hbm_betalogitnorm()</a></code> recognises three distinct
+<p><code><a href="../reference/hbm_betalogitnorm.html">hbm_betalogitnorm()</a></code> recognises two distinct
 workflows:</p>
 <table class="table">
 <colgroup>
@@ -158,10 +159,8 @@ workflows:</p>
 <td>Random</td>
 <td>(default)</td>
 <td>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mo>∼</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\phi \sim \mathrm{Gamma}(\alpha, \beta)</annotation></semantics></math>,
-with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>,</mo><mi>β</mi></mrow><annotation encoding="application/x-tex">\alpha, \beta</annotation></semantics></math>
-themselves given priors</td>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mo>∼</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>0.01</mn><mo>,</mo><mn>0.01</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\phi \sim \mathrm{Gamma}(0.01, 0.01)</annotation></semantics></math>
+– brms default (weakly informative, mean 1, variance 100)</td>
 </tr>
 <tr class="even">
 <td>Fixed</td>
@@ -170,22 +169,33 @@ themselves given priors</td>
 </td>
 <td>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ϕ</mi><mi>i</mi></msub><mo>=</mo><msub><mi>n</mi><mi>i</mi></msub><mi>/</mi><msub><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">f</mi><mi mathvariant="normal">f</mi></mrow><mi>i</mi></msub><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\phi_i = n_i / \mathrm{deff}_i - 1</annotation></semantics></math>
-pinned via offset</td>
-</tr>
-<tr class="odd">
-<td>Custom hyperprior</td>
-<td><code>stanvars = ...</code></td>
-<td>User overrides the default
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{Gamma}(1,1)</annotation></semantics></math>
-priors on
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>,</mo><mi>β</mi></mrow><annotation encoding="application/x-tex">\alpha, \beta</annotation></semantics></math>
-</td>
+pinned via offset (Liu 2009)</td>
 </tr>
 </tbody>
 </table>
-<p>A fourth mode using the <strong>generic <code>fixed_params</code>
+<p>A third path using the <strong>generic <code>fixed_params</code>
 interface</strong> is also available for power users (see the last
 section).</p>
+<p><strong>Migration from earlier versions.</strong> Before v1.0.0, the
+random-phi mode used a hierarchical construction
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mo>∼</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\phi \sim \mathrm{Gamma}(\alpha, \beta)</annotation></semantics></math>
+with hyperpriors
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>∼</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\alpha \sim \mathrm{Gamma}(1, 1)</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mo>∼</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\beta \sim \mathrm{Gamma}(1, 1)</annotation></semantics></math>.
+That has been replaced by brms’s own default prior because (i) the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{Gamma}(1,1)</annotation></semantics></math>
+prior on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
+(declared as <code>real&lt;lower=1&gt;</code> in Stan) was on the
+boundary of its support and routinely produced divergent transitions on
+weakly-informative data; (ii) the extra hyperprior layer inflated
+posterior dimension; (iii) the new default plays cleanly with
+<code>prior = NULL</code> meaning exactly “brms defaults”. If you need
+the old construction, you can build it manually with
+<code>stanvars</code> plus a
+<code>prior = set_prior("gamma(alpha, beta)", class = "phi")</code> call
+– see <code><a href="../reference/hbm_betalogitnorm.html">?hbm_betalogitnorm</a></code> for the migration note.</p>
 </div>
 <div class="section level2">
 <h2 id="the-data">The data<a class="anchor" aria-label="anchor" href="#the-data"></a>
@@ -266,38 +276,33 @@ x3            0.08      0.04     0.00     0.16 1.00     6184     6027
 Further Distributional Parameters:
        Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
 phi      62.84     12.71    41.22    91.40 1.00     2841     3217
-alpha     1.45      0.92     0.10     3.64 1.00     2104     2519
-beta      0.04      0.03     0.00     0.11 1.00     1873     2241
 
 Draws were sampled using sampling(NUTS).</code></pre>
-<p>Note that <code>alpha</code> and <code>beta</code> (the
-hyperparameters of the Gamma prior on
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>)
-appear in the output because they are sampled in this mode. The default
-hyperpriors are
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>∼</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\alpha \sim \mathrm{Gamma}(1,1)</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mo>∼</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\beta \sim \mathrm{Gamma}(1,1)</annotation></semantics></math>.</p>
+<p>In v1.0.0,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>
+is sampled with brms’s own default prior
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>0.01</mn><mo>,</mo><mn>0.01</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{Gamma}(0.01, 0.01)</annotation></semantics></math>
+(lower bound 0) – a weakly-informative choice with prior mean 1 and
+prior variance 100. Earlier hbsaems releases declared two extra Stan
+parameters <code>alpha</code>, <code>beta</code> for a hierarchical
+hyperprior; those are gone (see the migration note in
+<code><a href="../reference/hbm_betalogitnorm.html">?hbm_betalogitnorm</a></code>).</p>
 <blockquote>
-<p><strong>Hyperprior choice for SAE applications.</strong> The default
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{Gamma}(1,1)</annotation></semantics></math>
-priors place most prior mass on
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mo>≈</mo><mn>0.5</mn><mtext mathvariant="normal">–</mtext><mn>5</mn></mrow><annotation encoding="application/x-tex">\phi \approx
-0.5\text{--}5</annotation></semantics></math>, which corresponds to very
-high within-area variability. Real survey proportions typically have
+<p><strong>Practical recommendation for SAE applications.</strong> Real
+survey proportions typically yield
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mo>∈</mo><mo stretchy="false" form="prefix">[</mo><mn>10</mn><mo>,</mo><mn>100</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">\phi \in [10, 100]</annotation></semantics></math>.
+The default
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>0.01</mn><mo>,</mo><mn>0.01</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{Gamma}(0.01, 0.01)</annotation></semantics></math>
+is sufficiently uninformative that the data dominate the posterior in
+most cases. If the posterior mean of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>
-in the range 10–100. If your fit produces a posterior mean of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>
-uncomfortably close to the default prior mean, consider widening the
-hyperpriors via the <code>stanvars</code> argument (see <em>Mode 3</em>
-below) – for example,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>∼</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>0.1</mn><mo>,</mo><mn>0.1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\alpha \sim \mathrm{Gamma}(0.1, 0.1)</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mo>∼</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>0.1</mn><mo>,</mo><mn>0.1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\beta \sim \mathrm{Gamma}(0.1, 0.1)</annotation></semantics></math>
-for a weakly-informative hierarchy. Alternatively, if you have access to
-survey design information, use <strong>Mode 2</strong> (pinned
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>)
-– generally preferred in SAE practice.</p>
+is wildly off from your prior expectations, consider the more informed
+approach of pinning
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ϕ</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\phi_i</annotation></semantics></math>
+via <strong>Mode 2</strong> below, using survey-design information
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mi>i</mi></msub><annotation encoding="application/x-tex">n_i</annotation></semantics></math>
+and design effect
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">f</mi><mi mathvariant="normal">f</mi></mrow><mi>i</mi></msub><annotation encoding="application/x-tex">\mathrm{deff}_i</annotation></semantics></math>).</p>
 </blockquote>
 </div>
 <div class="section level2">
@@ -368,74 +373,118 @@ uncertainty is no longer propagated.</li>
 </ul>
 </div>
 <div class="section level2">
-<h2 id="mode-3-custom-hyperprior-on-alpha-beta">Mode 3: custom hyperprior on
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>,</mo><mi>β</mi></mrow><annotation encoding="application/x-tex">\alpha, \beta</annotation></semantics></math><a class="anchor" aria-label="anchor" href="#mode-3-custom-hyperprior-on-alpha-beta"></a>
+<h2 id="mode-3-custom-prior-on-phi">Mode 3: custom prior on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math><a class="anchor" aria-label="anchor" href="#mode-3-custom-prior-on-phi"></a>
 </h2>
-<p>If the default
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{Gamma}(1,1)</annotation></semantics></math>
-priors on
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>β</mi><annotation encoding="application/x-tex">\beta</annotation></semantics></math>
-are too vague (or too tight) for your data, override them via
-<code>stanvars</code>:</p>
+<p>If the default brms prior
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mo>∼</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>0.01</mn><mo>,</mo><mn>0.01</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\phi \sim \mathrm{Gamma}(0.01, 0.01)</annotation></semantics></math>
+is not suitable for your data, you can override it via the
+<code>prior</code> argument:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fit_custom</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm_betalogitnorm.html">hbm_betalogitnorm</a></span><span class="op">(</span></span>
-<span>  response  <span class="op">=</span> <span class="st">"y"</span>,</span>
-<span>  auxiliary <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,</span>
-<span>  area_var   <span class="op">=</span> <span class="st">"regency"</span>,</span>
-<span>  data      <span class="op">=</span> <span class="va">data_betalogitnorm</span>,</span>
-<span>  stanvars  <span class="op">=</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/stanvar.html" class="external-link">stanvar</a></span><span class="op">(</span>scode <span class="op">=</span> <span class="st">"alpha ~ gamma(2, 1);"</span>, block <span class="op">=</span> <span class="st">"model"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>              <span class="fu"><a href="https://paulbuerkner.com/brms/reference/stanvar.html" class="external-link">stanvar</a></span><span class="op">(</span>scode <span class="op">=</span> <span class="st">"beta  ~ gamma(2, 3);"</span>, block <span class="op">=</span> <span class="st">"model"</span><span class="op">)</span>,</span>
-<span>  chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span>, warmup <span class="op">=</span> <span class="fl">2000</span>, cores <span class="op">=</span> <span class="fl">4</span>,</span>
-<span>  seed <span class="op">=</span> <span class="fl">1</span></span>
-<span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_custom</span><span class="op">)</span></span></code></pre></div>
-<pre><code>Further Distributional Parameters:
-       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-phi      54.91      9.83    37.65    76.20 1.00     3142     3674
-alpha     1.92      0.81     0.59     3.78 1.00     2871     3093
-beta      0.08      0.04     0.02     0.18 1.00     2517     2841</code></pre>
-<p>The user-supplied
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>2</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{Gamma}(2, 1)</annotation></semantics></math>
-on
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-shifts its posterior toward higher values, which in turn changes the
-posterior of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>.
-You can supply only one of the two and the other will retain its
-default; you can also pin one to a specific value via
-<code>stanvar(scode = "alpha = 1.5;", block = "tparameters")</code>.</p>
-<p>You can also override the prior on
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>
-itself (not the hyperpriors) via the <code>prior</code> argument:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_phi</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm_betalogitnorm.html">hbm_betalogitnorm</a></span><span class="op">(</span></span>
 <span>  response  <span class="op">=</span> <span class="st">"y"</span>,</span>
 <span>  auxiliary <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,</span>
-<span>  area_var   <span class="op">=</span> <span class="st">"regency"</span>,</span>
+<span>  area_var  <span class="op">=</span> <span class="st">"regency"</span>,</span>
 <span>  data      <span class="op">=</span> <span class="va">data_betalogitnorm</span>,</span>
 <span>  prior     <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/set_prior.html" class="external-link">set_prior</a></span><span class="op">(</span><span class="st">"gamma(2, 0.05)"</span>, class <span class="op">=</span> <span class="st">"phi"</span><span class="op">)</span>,</span>
 <span>  chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span>, warmup <span class="op">=</span> <span class="fl">2000</span>, cores <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  seed <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>When <code>prior</code> overrides <code>class = "phi"</code>, the
-<code>stanvars</code> machinery is not used and the default
-<code>Intercept ~ student_t(4, 0, 10)</code> and
+<pre><code>Further Distributional Parameters:
+       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+phi      54.91      9.83    37.65    76.20 1.00     3142     3674</code></pre>
+<p>The custom prior
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>2</mn><mo>,</mo><mn>0.05</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{Gamma}(2, 0.05)</annotation></semantics></math>
+has prior mean
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>2</mn><mi>/</mi><mn>0.05</mn><mo>=</mo><mn>40</mn></mrow><annotation encoding="application/x-tex">2 / 0.05 = 40</annotation></semantics></math>
+and prior variance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>2</mn><mi>/</mi><msup><mn>0.05</mn><mn>2</mn></msup><mo>=</mo><mn>800</mn></mrow><annotation encoding="application/x-tex">2 / 0.05^2 = 800</annotation></semantics></math>,
+which is a more informative choice for SAE applications where the
+analyst expects
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>
+in the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mn>10</mn><mo>,</mo><mn>100</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[10, 100]</annotation></semantics></math>
+range. When <code>prior</code> overrides <code>class = "phi"</code>, the
+default <code>Intercept ~ student_t(4, 0, 10)</code> and
 <code>b ~ student_t(4, 0, 2.5)</code> are still filled in for the other
 classes.</p>
+<div class="section level3">
+<h3 id="reproducing-the-legacy-hierarchical-hyperprior-pre-v1-0-0">Reproducing the legacy hierarchical hyperprior (pre-v1.0.0)<a class="anchor" aria-label="anchor" href="#reproducing-the-legacy-hierarchical-hyperprior-pre-v1-0-0"></a>
+</h3>
+<p>Earlier hbsaems releases used
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mo>∼</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\phi \sim \mathrm{Gamma}(\alpha,
+\beta)</annotation></semantics></math> with
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>∼</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\alpha \sim \mathrm{Gamma}(1, 1)</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mo>∼</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\beta \sim \mathrm{Gamma}(1, 1)</annotation></semantics></math>.
+<strong>Starting v1.0.0, <code><a href="../reference/hbm_betalogitnorm.html">hbm_betalogitnorm()</a></code> no longer
+declares <code>alpha</code> and <code>beta</code> as Stan
+parameters</strong>, and the wrapper will refuse the legacy
+<code>stanvar(..., scode = "alpha ~ gamma(1, 1);")</code> pattern at
+construction time with an informative error. Two reasons:</p>
+<ul>
+<li>The hyperprior
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>∼</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\alpha \sim \mathrm{Gamma}(1, 1)</annotation></semantics></math>
+had prior mean
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>1</mn><annotation encoding="application/x-tex">1</annotation></semantics></math>,
+on the boundary of the declared Stan parameter space
+(<code>real&lt;lower=1&gt;</code>). This routinely produced divergent
+transitions for weakly informative data.</li>
+<li>The phi-prior plumbing was inconsistent with brms’s standard
+<code>prior =</code> interface, making <code><a href="../reference/hbm_betalogitnorm.html">hbm_betalogitnorm()</a></code>
+harder to teach and harder to compose with other brms features.</li>
+</ul>
+<p>For new analyses use the v1.0.0-supported pattern (a non-default phi
+prior via <code>prior =</code>):</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit_strong_phi</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm_betalogitnorm.html">hbm_betalogitnorm</a></span><span class="op">(</span></span>
+<span>  response  <span class="op">=</span> <span class="st">"y"</span>,</span>
+<span>  auxiliary <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,</span>
+<span>  area_var  <span class="op">=</span> <span class="st">"regency"</span>,</span>
+<span>  data      <span class="op">=</span> <span class="va">data_betalogitnorm</span>,</span>
+<span>  prior     <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/set_prior.html" class="external-link">set_prior</a></span><span class="op">(</span><span class="st">"gamma(2, 0.05)"</span>, class <span class="op">=</span> <span class="st">"phi"</span><span class="op">)</span>,</span>
+<span>  chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span>, warmup <span class="op">=</span> <span class="fl">2000</span>, cores <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">1</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>If you specifically need to reproduce the pre-v1.0.0
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mo>∼</mo><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>α</mi><mo>,</mo><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\phi \sim \mathrm{Gamma}(\alpha, \beta)</annotation></semantics></math>
+construction (e.g. to verify that an old analysis still gives the same
+answer), you have to drop down to the universal <code><a href="../reference/hbm_flex.html">hbm_flex()</a></code>
+interface, which doesn’t do the v1.0.0 guard and accepts arbitrary Stan
+parameters:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># RECONSTRUCTION OF THE PRE-v1.0.0 HIERARCHICAL phi MODEL</span></span>
+<span><span class="co">#</span></span>
+<span><span class="co"># This is recommended only for replicating earlier results; for new</span></span>
+<span><span class="co"># analyses prefer the prior-on-phi pattern above, which is much less</span></span>
+<span><span class="co"># prone to divergent transitions.</span></span>
+<span><span class="va">fit_legacy</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm_flex.html">hbm_flex</a></span><span class="op">(</span></span>
+<span>  family_key <span class="op">=</span> <span class="st">"beta"</span>,</span>
+<span>  response   <span class="op">=</span> <span class="st">"y"</span>,</span>
+<span>  auxiliary  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,</span>
+<span>  area_var   <span class="op">=</span> <span class="st">"regency"</span>,</span>
+<span>  data       <span class="op">=</span> <span class="va">data_betalogitnorm</span>,</span>
+<span>  prior      <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/set_prior.html" class="external-link">set_prior</a></span><span class="op">(</span><span class="st">"gamma(alpha, beta)"</span>, class <span class="op">=</span> <span class="st">"phi"</span><span class="op">)</span>,</span>
+<span>  stanvars   <span class="op">=</span></span>
+<span>    <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/stanvar.html" class="external-link">stanvar</a></span><span class="op">(</span>scode <span class="op">=</span> <span class="st">"  real&lt;lower=1&gt; alpha;"</span>, block <span class="op">=</span> <span class="st">"parameters"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/stanvar.html" class="external-link">stanvar</a></span><span class="op">(</span>scode <span class="op">=</span> <span class="st">"  real&lt;lower=0&gt; beta;"</span>,  block <span class="op">=</span> <span class="st">"parameters"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>    <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/stanvar.html" class="external-link">stanvar</a></span><span class="op">(</span>scode <span class="op">=</span> <span class="st">"  alpha ~ gamma(1, 1);"</span>, block <span class="op">=</span> <span class="st">"model"</span><span class="op">)</span>     <span class="op">+</span></span>
+<span>    <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/stanvar.html" class="external-link">stanvar</a></span><span class="op">(</span>scode <span class="op">=</span> <span class="st">"  beta  ~ gamma(1, 1);"</span>, block <span class="op">=</span> <span class="st">"model"</span><span class="op">)</span>,</span>
+<span>  chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span>, warmup <span class="op">=</span> <span class="fl">2000</span>, cores <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">1</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <blockquote>
 <p><strong>Conflict policy.</strong> When
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>
 is pinned (Mode 2 or Mode 4 below), it is no longer a Stan parameter –
 it is fixed in the model formula via an offset. Supplying a
 <code>prior</code> on <code>phi</code> or a <code>stanvars</code>
-sampling statement targeting <code>phi</code>, <code>alpha</code>, or
-<code>beta</code> in this situation is a logical contradiction and is
-rejected with a clear error at construction time. This prevents silent
-surprises where the user thinks they have specified a prior that is
-actually ignored.</p>
+sampling statement targeting <code>phi</code> in this situation is a
+logical contradiction and is rejected with a clear error at construction
+time. This prevents silent surprises where the user thinks they have
+specified a prior that is actually ignored.</p>
 </blockquote>
+</div>
 </div>
 <div class="section level2">
 <h2 id="mode-4-generic-fixed_params-power-user">Mode 4: generic <code>fixed_params</code> (power user)<a class="anchor" aria-label="anchor" href="#mode-4-generic-fixed_params-power-user"></a>
@@ -444,7 +493,7 @@ actually ignored.</p>
 are syntactic sugar over a generic <code>fixed_params</code> mechanism
 that works for <strong>any</strong> parameter of <strong>any</strong>
 family. Equivalent of Mode 2:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_flex</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm_flex.html">hbm_flex</a></span><span class="op">(</span></span>
 <span>  family_key   <span class="op">=</span> <span class="st">"Beta"</span>,</span>
 <span>  response     <span class="op">=</span> <span class="st">"y"</span>,</span>
@@ -463,7 +512,7 @@ also works for custom distributions registered via
 <h2 id="checking-convergence">Checking convergence<a class="anchor" aria-label="anchor" href="#checking-convergence"></a>
 </h2>
 <p>For every fit, the standard diagnostic check is:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/convergence_check.html">convergence_check</a></span><span class="op">(</span><span class="va">fit_fixed</span><span class="op">)</span></span></code></pre></div>
 <pre><code>$rhat_max
 [1] 1.0019
@@ -491,7 +540,7 @@ priors on
 compare Modes 1 and 2 to see whether pinning
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>
 is supported by the data:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">loo_compare</span> <span class="op">&lt;-</span> <span class="fu">loo</span><span class="fu">::</span><span class="fu"><a href="https://mc-stan.org/loo/reference/loo_compare.html" class="external-link">loo_compare</a></span><span class="op">(</span></span>
 <span>  <span class="fu">loo</span><span class="fu">::</span><span class="fu"><a href="https://mc-stan.org/loo/reference/loo.html" class="external-link">loo</a></span><span class="op">(</span><span class="va">fit_random</span><span class="op">$</span><span class="va">brmsfit</span><span class="op">)</span>,</span>
 <span>  <span class="fu">loo</span><span class="fu">::</span><span class="fu"><a href="https://mc-stan.org/loo/reference/loo.html" class="external-link">loo</a></span><span class="op">(</span><span class="va">fit_fixed</span><span class="op">$</span><span class="va">brmsfit</span><span class="op">)</span></span>
@@ -508,7 +557,7 @@ model for inference.</p>
 <div class="section level2">
 <h2 id="prediction-for-new-areas">Prediction for new areas<a class="anchor" aria-label="anchor" href="#prediction-for-new-areas"></a>
 </h2>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">new_areas</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  group <span class="op">=</span> <span class="fl">51</span><span class="op">:</span><span class="fl">55</span>,</span>
 <span>  x1    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span>,</span>
@@ -536,17 +585,22 @@ with 95% credible intervals.</p>
 <strong>Mode 1 (random
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>)</strong>
 – use when <code>n</code> and <code>deff</code> are unknown or
-unreliable; produces wider posterior intervals.</li>
+unreliable; produces wider posterior intervals. Uses brms’s default
+prior
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>0.01</mn><mo>,</mo><mn>0.01</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{Gamma}(0.01, 0.01)</annotation></semantics></math>.</li>
 <li>
 <strong>Mode 2 (fixed
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>)</strong>
 – use when you have clean survey design information; produces tighter
 intervals. <em>Recommended for standard SAE work</em>.</li>
 <li>
-<strong>Mode 3 (custom hyperprior)</strong> – use when you have
-strong prior beliefs about the typical magnitude of
+<strong>Mode 3 (custom prior on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>)</strong>
+– use when you have strong prior beliefs about the typical magnitude of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>
-across areas.</li>
+(e.g.<br><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">a</mi></mrow><mo stretchy="false" form="prefix">(</mo><mn>2</mn><mo>,</mo><mn>0.05</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{Gamma}(2, 0.05)</annotation></semantics></math>
+for survey-like data expected in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mn>10</mn><mo>,</mo><mn>100</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[10, 100]</annotation></semantics></math>).</li>
 <li>
 <strong>Mode 4 (generic <code>fixed_params</code>)</strong> – use
 through <code><a href="../reference/hbm_flex.html">hbm_flex()</a></code> when building unusual models or working

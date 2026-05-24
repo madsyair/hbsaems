@@ -21,7 +21,7 @@ once and validates that the file exists."></head><body>
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/hbsaems-modelling.html">Get started</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/complete-workflow.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -36,10 +36,10 @@ once and validates that the file exists."></head><body>
     <li><a class="dropdown-item" href="../articles/hbsaems-spatial.html">Spatial models (CAR / SAR / BYM2)</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-handle-missing.html">Handling missing data</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-run_sae_app.html">Interactive Shiny dashboard</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
-    <li><a class="dropdown-item" href="../articles/complete-workflow.html">Complete workflow walk-through</a></li>
     <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Internals &amp; development</h6></li>
+    <li><a class="dropdown-item" href="../articles/ast-formula-manipulation.html">AST-based formula manipulation</a></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration guide (legacy users)</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -92,29 +92,63 @@ once and validates that the file exists.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">code</span> <span class="op">&lt;-</span> <span class="fu">read_stan_function</span><span class="op">(</span><span class="st">"loglogistic"</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">code</span> <span class="op">&lt;-</span> <span class="fu">read_stan_function</span><span class="op">(</span><span class="st">"hbsae_loglogistic"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="va">code</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> // =============================================================================</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> // inst/stan/loglogistic.stan</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> //</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> // Stan function definitions for the Loglogistic distribution.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // Stan function definitions for the Loglogistic (Fisk) distribution.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> //</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> // Parameterisation:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> //   Y ~ Loglogistic(mu, beta) with mu &gt; 0 (scale) and beta &gt; 0 (shape).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> //   PDF: f(y) = (beta / mu) * (y / mu)^(beta - 1) / [1 + (y / mu)^beta]^2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> //   CDF: F(y) = 1 / [1 + (y / mu)^(-beta)]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // IMPORTANT NAMING CONVENTION</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // ---------------------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // Since Stan 2.29, the language provides a built-in function called</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //   `loglogistic_lpdf(y | alpha, beta)`</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // (see https://mc-stan.org/docs/functions-reference/log-logistic-distribution.html).</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> //</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> // Conventions:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // brms's custom_family() will generate a target += loglogistic_lpdf(...)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // call from the family name we pass to brms::custom_family().  If we</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // reuse the bare name `loglogistic` for our custom family, Stan would</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // see TWO functions with the same signature (our user-defined one and</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // the built-in) and refuse to compile -- an unrecoverable collision.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // Solution: register the custom family under the name "hbsae_loglogistic"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // (defined in R/dist-loglogistic.R via brms_custom_loglogistic()),</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // so brms generates target += hbsae_loglogistic_lpdf(...) and there is</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // no ambiguity with the Stan built-in.  The user-facing R helpers</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // dloglogistic(), ploglogistic(), qloglogistic(), rloglogistic() KEEP</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // their natural names since they live in the R namespace, not the</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // Stan namespace.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // Parameterisation</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // ----------------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //   Y ~ Loglogistic(mu, beta) with mu &gt; 0 (scale = median) and</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //   beta &gt; 0 (shape).  This matches the Fisk parameterisation used by</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //   flexsurv and eha, and matches Stan native loglogistic_lpdf with</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //   alpha replaced by mu.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //   PDF:  f(y) = (beta / mu) * (y / mu)^(beta - 1) / [1 + (y / mu)^beta]^2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //   CDF:  F(y) = 1 / [1 + (y / mu)^(-beta)]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // Conventions</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // -----------</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> //   * VECTORISED signatures (neodistr convention: loop = FALSE in</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> //     custom_family).  lpdf / lcdf / lccdf take vectors of y and mu and</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> //     return a single accumulated log-density / log-CDF / log-CCDF.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> //   * rng remains scalar (one draw per call) since brms post-processing</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> //     does the per-observation looping in R.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> //   * Function names match brms's required pattern:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> //       &lt;name&gt;_lpdf  /  &lt;name&gt;_lcdf  /  &lt;name&gt;_lccdf  /  &lt;name&gt;_rng</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //       hbsae_loglogistic_lpdf  /  hbsae_loglogistic_lcdf  /</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //       hbsae_loglogistic_lccdf /  hbsae_loglogistic_rng</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // References</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> // ----------</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //   Bennett, S. (1983). Log-logistic regression models for survival</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //     data. JRSS-C, 32(2), 165-171.  &lt;doi:10.2307/2347295&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //   Kleiber, C., &amp; Kotz, S. (2003). Statistical Size Distributions in</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> //     Economics and Actuarial Sciences. Wiley.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> // =============================================================================</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> real loglogistic_lpdf(vector y, vector mu, real beta) {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> real hbsae_loglogistic_lpdf(vector y, vector mu, real beta) {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   int N = num_elements(y);</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vector[N] z = y ./ mu;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   // sum_i [ log(beta) - log(mu_i) + (beta - 1) log(z_i) - 2 log1p(z_i^beta) ]</span>
@@ -124,21 +158,21 @@ once and validates that the file exists.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           - 2 * sum(log1p(pow(z, beta)));</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> real loglogistic_lcdf(vector y, vector mu, real beta) {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> real hbsae_loglogistic_lcdf(vector y, vector mu, real beta) {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   int N = num_elements(y);</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vector[N] z = y ./ mu;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   // log F(y_i) = -log1p(z_i^(-beta));  return sum over i.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   return -sum(log1p(pow(z, -beta)));</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> real loglogistic_lccdf(vector y, vector mu, real beta) {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> real hbsae_loglogistic_lccdf(vector y, vector mu, real beta) {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   int N = num_elements(y);</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vector[N] z = y ./ mu;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   // log(1 - F(y_i)) = -log1p(z_i^beta);  return sum over i.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   return -sum(log1p(pow(z, beta)));</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> real loglogistic_rng(real mu, real beta) {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> real hbsae_loglogistic_rng(real mu, real beta) {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   // Inverse CDF method: q = mu * (u / (1 - u))^(1 / beta)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   real u = uniform_rng(0, 1);</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   return mu * pow(u / (1 - u), 1.0 / beta);</span>

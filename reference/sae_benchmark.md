@@ -11,6 +11,7 @@ sae_benchmark(
   predictions,
   target,
   weights = NULL,
+  target_type = c("total", "mean"),
   method = c("ratio", "difference", "raking"),
   groups = NULL,
   posterior = NULL,
@@ -36,8 +37,23 @@ sae_benchmark(
 - weights:
 
   Optional numeric vector of length equal to the number of areas in
-  `predictions`. Typical choices are population sizes or sampling
-  weights. Defaults to equal weights (`1 / n`).
+  `predictions`. In Official-Statistics practice this is normally the
+  population size \\N_i\\ of each area, so that \\\sum_i w_i
+  \hat{\theta}\_i\\ is the implied population total. When `NULL`, a safe
+  default is chosen based on `target_type`; an informational message is
+  emitted so users can see exactly which weighting was applied.
+
+- target_type:
+
+  Character. Either `"total"` (default) or `"mean"`. Consulted ONLY when
+  `weights = NULL` to choose a safe default: `"total"` sets
+  `weights = rep(1, n)` so that \\\sum_i w_i \hat{\theta}\_i = \sum_i
+  \hat{\theta}\_i\\; `"mean"` sets `weights = rep(1/n, n)` so that the
+  weighted sum equals the mean. Ignored when `weights` is supplied.
+  **Always prefer to pass explicit `weights` (typically the population
+  size \\N_i\\) in production code:** the default heuristic is provided
+  only to avoid silent scale corruption when the user forgets the
+  argument.
 
 - method:
 
@@ -165,6 +181,8 @@ p <- structure(
   class = "hbsae_results"
 )
 bm1 <- sae_benchmark(p, target = 50, method = "ratio")
+#> Using default weights for `target_type = "total"`.
+#>   For production use, pass `weights = <population size per area>` to be explicit.
 
 # Fully Bayesian mode with user-supplied draws
 set.seed(1)
@@ -173,10 +191,12 @@ draws <- matrix(rnorm(D * 4, mean = c(10, 12, 9, 11), sd = 1),
                  nrow = D, byrow = TRUE)
 bm2 <- sae_benchmark(p, target = 50, method = "ratio",
                       posterior = draws)
+#> Using default weights for `target_type = "total"`.
+#>   For production use, pass `weights = <population size per area>` to be explicit.
 bm2$result_table              # SD, RSE updated from draws
-#>   Prediction       SD RSE_percent     Q2.5      Q50    Q97.5
-#> 1   47.61905 4.300884    9.031856 38.54522 47.34989 56.05428
-#> 2   57.14286 4.312359    7.546629 48.62104 57.17462 65.55330
-#> 3   42.85714 4.399850   10.266317 34.35734 42.75895 51.93634
-#> 4   52.38095 4.229116    8.073767 43.66985 52.28960 60.65092
+#>   Prediction       SD RSE_percent      Q2.5      Q50    Q97.5
+#> 1   11.90476 1.075221    9.031856  9.636304 11.83747 14.01357
+#> 2   14.28571 1.078090    7.546629 12.155259 14.29365 16.38833
+#> 3   10.71429 1.099963   10.266317  8.589336 10.68974 12.98409
+#> 4   13.09524 1.057279    8.073767 10.917463 13.07240 15.16273
 ```

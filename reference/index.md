@@ -208,7 +208,7 @@ adjacency matrices used by the CAR / SAR / BYM2 examples.
 - [`adjacency_matrix_car`](https://madsyair.github.io/hbsaems/reference/adjacency_matrix_car.md)
   : Province-level Adjacency Matrix
 - [`adjacency_matrix_car_regency`](https://madsyair.github.io/hbsaems/reference/adjacency_matrix_car_regency.md)
-  : Regency-level Adjacency Matrix
+  : Regency-level Adjacency Matrix (Coarse Spatial Cluster)
 - [`spatial_weight_sar`](https://madsyair.github.io/hbsaems/reference/spatial_weight_sar.md)
   : Spatial Weight Matrix for Simultaneous Autoregressive Models
 

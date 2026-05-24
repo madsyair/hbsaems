@@ -17,12 +17,13 @@ hbm_betalogitnorm(
   n = NULL,
   deff = NULL,
   area_var = NULL,
+  area_re_structure = c("nested", "crossed"),
   spatial_var = NULL,
   spatial_model = NULL,
   car_type = NULL,
   sar_type = NULL,
   M = NULL,
-  link_phi = "identity",
+  link_phi = NULL,
   prior = NULL,
   stanvars = NULL,
   handle_missing = NULL,
@@ -64,8 +65,8 @@ hbm_betalogitnorm(
   Character or `NULL`. Name of the column giving the per-area sample
   size used to compute the fixed \\\phi\\. Must be supplied together
   with `deff`. When supplied, \\\phi_i = n_i / \text{deff}\_i - 1\\ is
-  pinned via offset. Default: `NULL` (treats `phi` as random with
-  hyperprior).
+  pinned via offset. Default: `NULL` (treats `phi` as random with brms's
+  default prior).
 
 - deff:
 
@@ -74,8 +75,17 @@ hbm_betalogitnorm(
 
 - area_var:
 
-  Character or `NULL`. Name of the area-grouping column; if supplied,
-  adds `(1 | area_var)` as a random intercept.
+  Character vector or `NULL`. Name(s) of the area-grouping column(s).
+  Length 1 adds an IID random intercept `(1 | area_var)`; length
+  \\\geq\\ 2 supports hierarchical areas (e.g.\\
+  `c("province", "regency")`) – see
+  [`?hbm_flex`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md)
+  for the nested vs.\\ crossed structures.
+
+- area_re_structure:
+
+  Either `"nested"` (default) or `"crossed"`; controls how multiple area
+  columns combine.
 
 - spatial_var, spatial_model, car_type, sar_type, M:
 
@@ -84,8 +94,15 @@ hbm_betalogitnorm(
 
 - link_phi:
 
-  Character. Link function for `phi`; default `"identity"` when `phi` is
-  pinned (offset must be on the identity scale).
+  Character or `NULL`. Link function for `phi`. **Default `NULL`
+  resolves automatically**: `"identity"` when `phi` is pinned via the
+  survey design (the `n + deff` sugar or `fixed_params$phi`, both of
+  which produce raw positive offsets) and `"log"` otherwise (the brms
+  default for `phi` in the Beta family; keeps \\\phi \> 0\\ while
+  letting NUTS sample on \\\mathbb{R}\\). Manually setting `"identity"`
+  together with an estimated `phi` can let NUTS propose negative values
+  and trigger divergent transitions; an informative warning is emitted
+  in that case.
 
 - prior:
 
@@ -96,23 +113,23 @@ hbm_betalogitnorm(
 
   - `b ~ student_t(4, 0, 2.5)`
 
-  - `phi ~ gamma(alpha, beta)` (random mode only)
+  - `phi` – brms default `gamma(0.01, 0.01)` (in random mode; ignored in
+    fixed mode).
 
   The user may pass a partial prior: missing default classes are filled
-  in automatically.
+  in automatically. To put a custom prior on `phi` (random mode), set
+  `prior = set_prior("gamma(2, 0.5)", class = "phi")` or similar.
 
 - stanvars:
 
-  Optional `brmsstanvars` object specifying hyperpriors for `alpha` and
-  `beta` when `phi` is random. If `NULL` (default),
-  `alpha ~ gamma(1, 1)` and `beta ~ gamma(1, 1)` are used. The user may
-  also supply custom
-  [`stanvar()`](https://paulbuerkner.com/brms/reference/stanvar.html)
-  expressions to override either or both hyperpriors, e.g.:
-
-
-      stanvars = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-                 stanvar(scode = "beta  ~ gamma(2, 3);", block = "model")
+  Optional `brmsstanvars` object for power users who need to inject
+  custom Stan code blocks (e.g.\\ transformed data, generated
+  quantities, model-block statements not expressible via the `prior`
+  argument). Passed through to brms verbatim. **Note:** As of v1.0.0,
+  this wrapper no longer declares `alpha` or `beta` as Stan parameters,
+  so legacy `stanvars` blocks containing sampling statements on `alpha`
+  / `beta` (left over from the pre-v1.0.0 hierarchical-phi construction)
+  will now raise an informative error.
 
 - handle_missing, m, control, chains, iter, warmup, cores, sample_prior,
   ...:
@@ -124,8 +141,8 @@ hbm_betalogitnorm(
 
   Optional named list pinning distributional parameters to known values.
   See [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md) for
-  the spec format. Conflicts with `n` + `deff` on the `phi` parameter;
-  use one or the other.
+  the spec format. Allows power-user access to the same machinery used
+  by the `n`/`deff` arguments.
 
 - predictors:
 
@@ -151,9 +168,39 @@ An object of class `hbmfit`.
 ## Details
 
 The precision parameter \\\phi_i\\ can either be pinned to a survey
-design effect (`n` + `deff`) or sampled with a hierarchical hyperprior
-(\\\phi \sim \mathrm{Gamma}(\alpha, \beta)\\, \\\alpha \sim
-\mathrm{Gamma}(1,1)\\, \\\beta \sim \mathrm{Gamma}(1,1)\\ by default).
+design effect (`n` + `deff`) or sampled with brms's default
+weakly-informative prior \\\phi \sim \mathrm{Gamma}(0.01, 0.01)\\.
+
+## Migration note (v1.0.0)
+
+Earlier versions of this wrapper introduced a hierarchical construction
+\\\phi \sim \mathrm{Gamma}(\alpha, \beta),\\ \alpha \sim
+\mathrm{Gamma}(1,1),\\ \beta \sim \mathrm{Gamma}(1,1)\\ for the
+random-phi mode, declaring `alpha` and `beta` as Stan parameters with
+hyperpriors injected via `stanvars`. Starting v1.0.0, that construction
+has been removed in favour of brms's own default prior, \\\phi \sim
+\mathrm{Gamma}(0.01, 0.01)\\ with lower bound 0 (mean 1, variance 100;
+weakly informative on the precision scale). Three reasons:
+
+- **Brittle priors on alpha/beta.** The hyperprior
+  \\\mathrm{Gamma}(1,1)\\ on \\\alpha\\ has prior mean 1, which is on
+  the boundary of the parameter space declared as `real<lower=1>`. This
+  routinely produced divergent transitions when the data were not
+  informative about phi.
+
+- **Parameter blow-up.** Estimating two extra Stan parameters per
+  area-level model with limited data inflated the effective posterior
+  dimension and slowed convergence.
+
+- **Cleaner brms semantics.** Letting brms apply its own default
+  \\\mathrm{Gamma}(0.01, 0.01)\\ means that passing `prior = NULL` now
+  does exactly what the user expects: “brms defaults”. No surprises.
+
+**If you need to reproduce the old behaviour**, supply `stanvars`
+yourself to declare `alpha`, `beta` and their hyperpriors, and pass
+`prior = set_prior("gamma(alpha, beta)", class = "phi")`. Pre-v1.0.0
+code that supplied `stanvars` with hyperpriors on `alpha`/`beta` will
+now raise an informative error.
 
 ## Conflict policy
 
@@ -204,6 +251,7 @@ model1 <- hbm_betalogitnorm(
   data       = data,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
+#> Warning: Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 summary(model1)
@@ -219,21 +267,29 @@ model2 <- hbm_betalogitnorm(
   data       = data,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
+#> Warning: Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 summary(model2)
 #> Error: object 'model2' not found
 
-# -- 3. Custom hyperprior on alpha, beta -------------------------------------
+# -- 3. Custom prior on phi via the standard `prior` argument ----------------
+#
+# Starting v1.0.0, hbm_betalogitnorm() no longer declares its own
+# alpha / beta hyperparameters; phi uses brms's native default
+# Gamma(0.01, 0.01).  To override that prior, pass a `brms::set_prior()`
+# entry to the `prior` argument -- the legacy
+# stanvar("alpha ~ gamma(...); beta ~ gamma(...)") pattern would now
+# error because alpha/beta are no longer Stan parameters.
 model3 <- hbm_betalogitnorm(
   response   = "y",
   auxiliary  = c("x1", "x2", "x3"),
   area_var   = "regency",
   data       = data,
-  stanvars   = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-               stanvar(scode = "beta  ~ gamma(2, 3);", block = "model"),
+  prior      = brms::set_prior("gamma(2, 0.5)", class = "phi"),
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
+#> Warning: Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 

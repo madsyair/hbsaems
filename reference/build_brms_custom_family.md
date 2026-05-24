@@ -21,7 +21,8 @@ build_brms_custom_family(
   loop = FALSE,
   log_lik = NULL,
   posterior_predict = NULL,
-  posterior_epred = NULL
+  posterior_epred = NULL,
+  use_stan_native = FALSE
 )
 ```
 
@@ -82,6 +83,14 @@ build_brms_custom_family(
   [`conditional_effects()`](https://paulbuerkner.com/brms/reference/conditional_effects.brmsfit.html)).
   Signature `function(prep)`.
 
+- use_stan_native:
+
+  Logical. If `TRUE`, no `stanvars` block is attached – the
+  `<name>_lpdf` function is assumed to exist as a Stan **built-in**
+  (e.g.\\ `loglogistic_lpdf` in Stan \\\geq\\ 2.29). When `FALSE` (the
+  default), the function definition is loaded from
+  `inst/stan/<name>.stan`.
+
 ## Value
 
 A list with two elements:
@@ -96,7 +105,8 @@ A list with two elements:
 
   A
   [`brms::stanvars`](https://paulbuerkner.com/brms/reference/stanvar.html)
-  object with the Stan code in the `functions` block.
+  object with the Stan code in the `functions` block, or `NULL` when
+  `use_stan_native = TRUE`.
 
 ## Details
 
@@ -115,14 +125,16 @@ wrap the returned object in a function and call it lazily.
 library(hbsaems)
 library(brms)
 
-# Build the loglogistic family from inst/stan/loglogistic.stan
+# Build the loglogistic family.  Stan code is loaded from
+# inst/stan/hbsae_loglogistic.stan — the `hbsae_` prefix avoids
+# collision with Stan's BUILT-IN `loglogistic_lpdf` (Stan >= 2.29).
 ll <- build_brms_custom_family(
-  name  = "loglogistic",
-  dpars = c("mu", "beta"),
-  links = c("log", "log"),
-  lb    = c(0,    0),
-  ub    = c(NA,   NA),
-  type  = "real"
+  name             = "hbsae_loglogistic",
+  dpars            = c("mu", "beta"),
+  links            = c("log", "log"),
+  lb               = c(0,    0),
+  ub               = c(NA,   NA),
+  type             = "real"
 )
 class(ll$custom_family)
 #> [1] "customfamily" "brmsfamily"   "family"      

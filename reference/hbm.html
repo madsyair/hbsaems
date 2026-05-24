@@ -23,7 +23,7 @@ priors, and three strategies for handling missing data in auxiliary
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/hbsaems-modelling.html">Get started</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/complete-workflow.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -38,10 +38,10 @@ priors, and three strategies for handling missing data in auxiliary
     <li><a class="dropdown-item" href="../articles/hbsaems-spatial.html">Spatial models (CAR / SAR / BYM2)</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-handle-missing.html">Handling missing data</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-run_sae_app.html">Interactive Shiny dashboard</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
-    <li><a class="dropdown-item" href="../articles/complete-workflow.html">Complete workflow walk-through</a></li>
     <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Internals &amp; development</h6></li>
+    <li><a class="dropdown-item" href="../articles/ast-formula-manipulation.html">AST-based formula manipulation</a></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration guide (legacy users)</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -85,6 +85,7 @@ priors, and three strategies for handling missing data in auxiliary
 <span>  <span class="va">data</span>,</span>
 <span>  prior <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fixed_params <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sampling_variance <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  prior_type <span class="op">=</span> <span class="st">"default"</span>,</span>
 <span>  hs_df <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  hs_df_global <span class="op">=</span> <span class="fl">1</span>,</span>
@@ -108,6 +109,7 @@ priors, and three strategies for handling missing data in auxiliary
 <span>  handle_missing <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  m <span class="op">=</span> <span class="fl">5L</span>,</span>
 <span>  mice_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  measurement_error <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  chains <span class="op">=</span> <span class="fl">4L</span>,</span>
 <span>  iter <span class="op">=</span> <span class="fl">4000L</span>,</span>
@@ -236,6 +238,36 @@ an explicit prior is an error.  Typical use cases include pinning
 <code>phi</code> for Beta regression from survey design effect
 (<code>phi = ~ I(n / deff - 1)</code>) and pinning <code>sigma</code> for
 Fay–Herriot-style models with known sampling variance.</p></dd>
+
+
+<dt id="arg-sampling-variance">sampling_variance<a class="anchor" aria-label="anchor" href="#arg-sampling-variance"></a></dt>
+<dd><p>Optional character.  Name of a column in
+  <code>data</code> containing the <strong>known</strong> sampling variance
+  \(D_i\) for each area (the Fay-Herriot sugar).  When supplied,
+  \(\sigma_i = \sqrt{D_i}\) is pinned via offset.  This is the
+  canonical way to fit a Gaussian Fay-Herriot model: without it, the
+  residual \(\sigma\) and the area-RE \(\sigma_u\) compete to
+  explain the same variance and the model is unidentified, typically
+  producing divergent transitions.  Equivalent to
+  <code>fixed_params = list(sigma = sqrt(data[[&lt;col&gt;]]))</code>.</p>
+<p><strong>Family compatibility.</strong> <code>sampling_variance</code> requires a
+  continuous family whose response distribution has a residual scale
+  parameter named <code>sigma</code>.  Supported: <code>gaussian</code> (the
+  canonical Fay-Herriot case), <code>lognormal</code> (D must be on the
+  log scale; see also <code><a href="hbm_lnln.html">hbm_lnln</a></code>), <code>student</code>,
+  <code>skew_normal</code>, <code>exgaussian</code>, <code>asym_laplace</code>.  A
+  helpful error is thrown when an incompatible family is supplied.</p>
+<p><strong>For non-Gaussian SAE families</strong> the analogous pinning
+  mechanism is family-specific:</p><ul><li><p><strong>Beta</strong>: pin the precision <code>phi</code> via the survey
+          design effect, e.g.\ <code>fixed_params = list(phi = ~ I(n/deff - 1))</code>
+          (Liu 2009).  See <code><a href="hbm_betalogitnorm.html">hbm_betalogitnorm</a></code>.</p></li>
+<li><p><strong>Binomial</strong>: sampling variability enters through the
+          <code>trials</code> addition term, not through a separate
+          <code>sigma</code>.  See <code><a href="hbm_binlogitnorm.html">hbm_binlogitnorm</a></code>.</p></li>
+<li><p><strong>Poisson, Gamma, Weibull</strong>: variance is tied
+          algebraically to the mean – no separate scale parameter
+          to pin.</p></li>
+</ul></dd>
 
 
 <dt id="arg-prior-type">prior_type<a class="anchor" aria-label="anchor" href="#arg-prior-type"></a></dt>
@@ -422,6 +454,27 @@ other strategies.</p></dd>
 <code>handle_missing = "multiple"</code>.</p></dd>
 
 
+<dt id="arg-measurement-error">measurement_error<a class="anchor" aria-label="anchor" href="#arg-measurement-error"></a></dt>
+<dd><p>Optional named list specifying which
+auxiliary variables are measured with error and where to find
+their standard errors.  The list maps variable names to columns
+in <code>data</code> containing the SE, e.g.
+<code>measurement_error = list(x1 = "se_x1", x2 = "se_x2")</code>.
+Listed variables are wrapped on-the-fly with <code>mi(var, se_col)</code>
+in the brmsformula so that brms treats them as latent variables
+with a Gaussian measurement-error structure, following Ybarra and
+Lohr (2008).  Standard errors must be non-negative and have no
+missing values; <code>measurement_error</code> variables must be a
+subset of the model's auxiliary (linear) predictors.  When the
+user has already written <code>mi(...)</code> explicitly in the
+formula, the corresponding entries in <code>measurement_error</code>
+are detected and not duplicated.  Note that ME inflates the
+parameter space (each <em>x_i</em> becomes latent), which slows
+sampling and increases the risk of divergent transitions,
+especially when combined with smooth terms (<code>nonlinear</code>).
+See the "Measurement error" section of the SAE vignette.</p></dd>
+
+
 <dt id="arg-control">control<a class="anchor" aria-label="anchor" href="#arg-control"></a></dt>
 <dd><p>A named list of sampler control parameters
 (default: <code><a href="https://rdrr.io/r/base/list.html" class="external-link">list()</a></code>).  Passed directly to <code><a href="https://paulbuerkner.com/brms/reference/brm.html" class="external-link">brm</a></code>.</p></dd>
@@ -572,6 +625,32 @@ applies directly; sensitivity analyses and explicit missingness models are
 recommended.</p>
     </div>
     <div class="section level2">
+    <h2 id="how-to-pin-distributional-parameters-per-family">How to pin distributional parameters per family<a class="anchor" aria-label="anchor" href="#how-to-pin-distributional-parameters-per-family"></a></h2>
+
+
+<p><span class="pkg">hbsaems</span> exposes three layers for pinning distributional
+parameters to known values, in increasing order of generality:</p><ol><li><p><strong>Family-specific sugar</strong> (least typing, most readable).
+        Each wrapper exposes a convenience argument that maps to a
+        well-defined Fay-Herriot-style transformation of survey
+        design quantities:</p><table class="table table"><tr><td><strong>Wrapper</strong></td><td><strong>Sugar argument</strong></td><td><strong>Pinned dpar</strong></td></tr><tr><td><code>hbm(..., hb_sampling = "gaussian")</code></td><td><code>sampling_variance = "D"</code></td><td>\(\sigma_i = \sqrt{D_i}\)</td></tr><tr><td><code><a href="hbm_lnln.html">hbm_lnln()</a></code></td><td><code>sampling_variance = "psi"</code></td><td>\(\sigma_i = \sqrt{\psi_i}\)  (on log scale)</td></tr><tr><td><code><a href="hbm_betalogitnorm.html">hbm_betalogitnorm()</a></code></td><td><code>n = "n", deff = "deff"</code></td><td>\(\phi_i = n_i / \mathrm{deff}_i - 1\)  (Liu 2009)</td></tr><tr><td><code><a href="hbm_binlogitnorm.html">hbm_binlogitnorm()</a></code></td><td><code>trials = "n"</code></td><td>(sampling variance built into the family)</td></tr></table></li>
+<li><p><strong>Universal <code>fixed_params</code></strong> (works everywhere).
+        A named list pinning any distributional parameter – accepts
+        a column name (character), a scalar (numeric of length 1),
+        a vector of length <code>nrow(data)</code>, or a one-sided
+        formula (evaluated in <code>data</code>'s environment).  Examples:</p><ul><li><p><code>fixed_params = list(sigma = "D")</code> – pin sigma to a column.</p></li>
+<li><p><code>fixed_params = list(phi   = ~ I(n / deff - 1))</code> – pin phi via formula.</p></li>
+<li><p><code>fixed_params = list(nu    = 4)</code> – pin Student-t df to a scalar.</p></li>
+</ul></li>
+<li><p><strong>Raw <code>stanvars</code></strong> (for power users authoring
+        custom Stan code).  Direct injection of Stan code blocks –
+        see <code><a href="https://paulbuerkner.com/brms/reference/stanvar.html" class="external-link">stanvar</a></code>.</p></li>
+</ol><p>Sugar arguments are simply thin wrappers around layer 2: they
+validate the survey-design inputs (no NAs, strictly positive) and
+translate to <code>fixed_params</code> before delegating to the universal
+machinery.  Hence the conflict policy below applies uniformly to
+both sugar and explicit <code>fixed_params</code>.</p>
+    </div>
+    <div class="section level2">
     <h2 id="conflict-resolution-between-prior-prior-type-fixed-params-and-stanvars">Conflict resolution between prior, prior_type, fixed_params, and stanvars<a class="anchor" aria-label="anchor" href="#conflict-resolution-between-prior-prior-type-fixed-params-and-stanvars"></a></h2>
 
 
@@ -584,9 +663,19 @@ prior / parameter specification of the underlying <span class="pkg">brms</span> 
 <li><p><code>fixed_params</code> – pin distributional parameters to known
                                 values via the offset trick.</p></li>
 <li><p><code>stanvars</code>     – inject custom Stan code blocks.</p></li>
-</ol><p>Combining these without rules in mind can produce unidentified models
+</ol><p>Plus two family-specific <em>sugar</em> arguments that translate to
+<code>fixed_params</code> internally:</p><ul><li><p><code>sampling_variance</code> (continuous families): pins
+        \(\sigma_i = \sqrt{D_i}\), equivalent to
+        <code>fixed_params$sigma = sqrt(data$D)</code>.</p></li>
+<li><p><code>n + deff</code> (<code>hbm_betalogitnorm</code>): pins
+        \(\phi_i = n_i / \mathrm{deff}_i - 1\), equivalent to
+        <code>fixed_params$phi = n / deff - 1</code>.</p></li>
+</ul><p>Combining these without rules in mind can produce unidentified models
 or compile-time errors.  <code>hbm()</code> therefore enforces the
-following precedence and conflict policy:</p><ul><li><p><strong><code>prior</code> vs <code>prior_type</code>.</strong>  If the user
+following <strong>conflict matrix</strong>, where each cell describes what
+happens when the row and column inputs both target the same
+distributional parameter (e.g.\ both pin <code>sigma</code>):</p>
+<table class="table table"><tr><td></td><td><strong>fixed_params</strong></td><td><strong>prior</strong></td><td><strong>prior_type</strong></td><td><strong>stanvars</strong></td></tr><tr><td><strong>sampling_variance</strong></td><td>error</td><td>error (transitive)</td><td>no overlap</td><td>error (transitive)</td></tr><tr><td><strong>n + deff</strong></td><td>error</td><td>error (transitive)</td><td>no overlap</td><td>error (transitive)</td></tr><tr><td><strong>fixed_params</strong></td><td>–</td><td>error (10b.i)</td><td>no overlap</td><td>error (10b.ii)</td></tr><tr><td><strong>prior</strong></td><td>error (10b.i)</td><td>–</td><td>warning, user wins</td><td>no check needed</td></tr><tr><td><strong>prior_type</strong></td><td>no overlap</td><td>warning, user wins</td><td>–</td><td>no check needed</td></tr><tr><td><strong>stanvars</strong></td><td>error (10b.ii)</td><td>no check needed</td><td>no check needed</td><td>–</td></tr></table><p>Resolution semantics in detail:</p><ul><li><p><strong><code>prior</code> vs <code>prior_type</code>.</strong>  If the user
         supplies a <em>global</em> (no <code>coef =</code>) prior on
         <code>class = "b"</code>, <code>"sds"</code>, or <code>"sdgp"</code>,
         <code>prior_type</code> is silently dropped for that class and a
@@ -601,13 +690,18 @@ following precedence and conflict policy:</p><ul><li><p><strong><code>prior</cod
         as above: a sampling statement in <code>stanvars</code> that
         targets a pinned parameter would fail at Stan compile time;
         <code>hbm()</code> catches this and stops with a clear message.</p></li>
-<li><p><strong>Wrapper sugar (e.g. <code>sampling_variance</code> in
-        <code>hbm_lnln</code>).</strong>  Wrappers translate their domain-specific
-        arguments into <code>fixed_params</code> entries before delegating
-        to <code>hbm()</code>, so the same conflict policy applies
-        transitively.  Supplying both <code>sampling_variance =
-        "psi"</code> and a user prior on <code>class = "sigma"</code> therefore
-        also errors.</p></li>
+<li><p><strong>Sugar vs <code>fixed_params</code> on the same parameter.</strong>
+        The sugar translators (<code>.translate_sampling_variance()</code>,
+        <code>.translate_n_deff_to_phi()</code>) error out if the user has
+        also pre-populated <code>fixed_params</code> for the target
+        parameter – there should never be two pin sources for the
+        same dpar.</p></li>
+<li><p><strong>Sugar vs <code>prior</code> / <code>stanvars</code> transitively.</strong>
+        After the sugar -&gt; <code>fixed_params</code> translation, the
+        downstream <code>fixed_params</code>-vs-prior / -stanvars checks
+        fire automatically.  E.g.\ <code>sampling_variance = "D"</code>
+        plus <code>prior = set_prior("normal(0, 1)", class = "sigma")</code>
+        errors via the <code>fixed_params</code> vs <code>prior</code> rule.</p></li>
 </ul><p>The intent is to fail fast and explicitly rather than silently
 producing an unidentified or mis-specified model.</p>
     </div>
@@ -630,6 +724,15 @@ divergent transitions.</p>
         class = "sd")</code>.</p></li>
 <li><p>For Beta/Binomial logit-normal models, prior on the random
         intercept SD should also be on the logit scale.</p></li>
+<li><p><strong>Gaussian (Fay-Herriot) only.</strong>  Always supply the
+        known sampling variance via <code>sampling_variance =
+        "&lt;col&gt;"</code>.  Without this, the residual \(\sigma\) and the
+        area-RE \(\sigma_u\) compete to explain the same variance
+        component, producing weak identifiability and divergent
+        transitions almost regardless of <code>adapt_delta</code>.  This
+        is the single most common cause of divergences in
+        Fay-Herriot fits and should be checked <em>first</em> before
+        any sampler-tuning.</p></li>
 </ul><p><strong>3. Low effective sample size (ESS &lt; 1000).</strong></p><ul><li><p>Increase <code>iter</code> (e.g.\ to <code>6000</code>); this is the
         single most reliable fix.</p></li>
 <li><p>Centre and scale the auxiliary variables before fitting.</p></li>
@@ -845,11 +948,14 @@ Software</em>, 45(3), 1–67.</p>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model_car' not found</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># -- Spatial: SAR (Simultaneous Autoregressive) -------------------------------</span></span></span>
+<span class="r-in"><span><span class="co"># spatial_weight_sar is a 100x100 row-standardised matrix with row-</span></span></span>
+<span class="r-in"><span><span class="co"># names regency_001..regency_100, so it pairs with the fine-grained</span></span></span>
+<span class="r-in"><span><span class="co"># "regency" column (100 levels) -- NOT with "province" (5 levels).</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"spatial_weight_sar"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">model_sar</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">hbm</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>formula     <span class="op">=</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>       data        <span class="op">=</span> <span class="va">data</span>,</span></span>
-<span class="r-in"><span>       spatial_var <span class="op">=</span> <span class="st">"province"</span>,</span></span>
+<span class="r-in"><span>       spatial_var <span class="op">=</span> <span class="st">"regency"</span>,</span></span>
 <span class="r-in"><span>       spatial_model    <span class="op">=</span> <span class="st">"sar"</span>,</span></span>
 <span class="r-in"><span>       M           <span class="op">=</span> <span class="va">spatial_weight_sar</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  <span class="va">FAST</span></span></span>

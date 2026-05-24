@@ -19,7 +19,7 @@ retyping the full hbm call."></head><body>
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/hbsaems-modelling.html">Get started</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/complete-workflow.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -34,10 +34,10 @@ retyping the full hbm call."></head><body>
     <li><a class="dropdown-item" href="../articles/hbsaems-spatial.html">Spatial models (CAR / SAR / BYM2)</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-handle-missing.html">Handling missing data</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-run_sae_app.html">Interactive Shiny dashboard</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
-    <li><a class="dropdown-item" href="../articles/complete-workflow.html">Complete workflow walk-through</a></li>
     <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Internals &amp; development</h6></li>
+    <li><a class="dropdown-item" href="../articles/ast-formula-manipulation.html">AST-based formula manipulation</a></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration guide (legacy users)</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -135,6 +135,26 @@ automatically retries with <code>newdata = object$data</code> (the data
 frame stored on the original <code>hbmfit</code>).  Pass an explicit
 <code>newdata</code> to override this behaviour.</p>
     </div>
+    <div class="section level2">
+    <h2 id="fixed-parameter-columns">Fixed-parameter columns<a class="anchor" aria-label="anchor" href="#fixed-parameter-columns"></a></h2>
+
+
+<p>Models fitted with <code>sampling_variance</code>, <code>n</code> + <code>deff</code>
+(in <code>hbm_betalogitnorm</code>), or <code>fixed_params</code> carry hidden
+offset columns named <code>.hbsaems_&lt;par&gt;_fixed</code> in their data
+frames.  When <code>update_hbm</code> receives a <code>newdata</code> that
+<em>does not</em> have these columns, brms refuses to refit with
+<em>"variables can neither be found in 'data' nor in 'data2'"</em>.
+<code>update_hbm</code> now detects this case and:</p><ul><li><p>warns the user when offset columns are present in the
+        original data but missing in <code>newdata</code>;</p></li>
+<li><p>either copies the columns over from the original
+        <code>object$data</code> (when <code>nrow(newdata) ==
+        nrow(object$data)</code>, which is the typical "same areas,
+        updated covariates" case), or</p></li>
+<li><p>raises an informative error pointing the user to either
+        supply the columns in <code>newdata</code> explicitly or refit
+        from scratch with a fresh <code><a href="hbm.html">hbm()</a></code> call.</p></li>
+</ul></div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>

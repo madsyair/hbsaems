@@ -21,7 +21,7 @@ use the modelling functions never have to install them."></head><body>
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/hbsaems-modelling.html">Get started</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/complete-workflow.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
@@ -36,10 +36,10 @@ use the modelling functions never have to install them."></head><body>
     <li><a class="dropdown-item" href="../articles/hbsaems-spatial.html">Spatial models (CAR / SAR / BYM2)</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-handle-missing.html">Handling missing data</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-run_sae_app.html">Interactive Shiny dashboard</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
-    <li><a class="dropdown-item" href="../articles/complete-workflow.html">Complete workflow walk-through</a></li>
     <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Internals &amp; development</h6></li>
+    <li><a class="dropdown-item" href="../articles/ast-formula-manipulation.html">AST-based formula manipulation</a></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration guide (legacy users)</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -117,15 +117,13 @@ summary of which dependencies are installed and which are missing.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> OPTIONAL (used by individual panels):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   [OK ] shinyWidgets    -- Picker inputs in Data Exploration and Diagnostics tabs (falls back to selectInput)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   [OK ] readxl          -- Reading .xls / .xlsx uploads (falls back to .csv only)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   [x  ] energy          -- Distance correlation in scatter plot (falls back to Pearson / Spearman)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   [x  ] minerva         -- MIC correlation in scatter plot (falls back to Pearson / Spearman)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [OK ] energy          -- Distance correlation in scatter plot (falls back to Pearson / Spearman)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   [OK ] minerva         -- MIC correlation in scatter plot (falls back to Pearson / Spearman)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   [OK ] sf              -- Build spatial weight matrix from shapefile (falls back to manual matrix upload)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   [OK ] spdep           -- Neighbour computation for spatial weights (paired with sf)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   [OK ] bridgesampling  -- Bayes factor in model_compare (LOO and WAIC remain available)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> !  Some optional features will be disabled.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Run:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    install.packages(c("energy", "minerva"))</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    All dependencies installed.  Ready to launch.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

@@ -24,6 +24,7 @@ hbm_flex(
   data,
   addition_var = NULL,
   area_var = NULL,
+  area_re_structure = c("nested", "crossed"),
   spatial_var = NULL,
   spatial_model = NULL,
   car_type = NULL,
@@ -31,6 +32,7 @@ hbm_flex(
   M = NULL,
   prior = NULL,
   fixed_params = NULL,
+  sampling_variance = NULL,
   prior_type = "default",
   hs_df = 1,
   hs_df_global = 1,
@@ -99,9 +101,27 @@ hbm_flex(
 
 - area_var:
 
-  Character or `NULL`. Name of the column in `data` identifying the
-  areas; if supplied, adds `(1 | area_var)` as an IID random intercept
-  (Fay-Herriot).
+  Character vector or `NULL`. Name(s) of the column(s) in `data`
+  identifying the areas. Three usage modes:
+
+  - Length 1 (default behaviour): a single area-level random intercept
+    `(1 | area_var)`.
+
+  - Length \\\geq\\ 2 with `area_re_structure = "nested"` (default): a
+    hierarchy of areas given from the *highest* to the *lowest* level,
+    e.g. `c("province", "regency")` yields `(1 | province / regency)`
+    which brms expands to `(1 | province) + (1 | province:regency)`.
+    This is the canonical multi-stage SAE setup.
+
+  - Length \\\geq\\ 2 with `area_re_structure = "crossed"`: non-nested
+    levels, e.g.\\ adding separate effects for
+    `(1 | province) + (1 | urbanrural)`. Use only when the levels are
+    truly crossed rather than hierarchically nested.
+
+- area_re_structure:
+
+  Either `"nested"` (default) or `"crossed"`. Only consulted when
+  `area_var` has length \\\geq\\ 2. See above.
 
 - spatial_var, spatial_model, car_type, sar_type, M:
 
@@ -128,6 +148,21 @@ hbm_flex(
   See [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md) for
   the spec format. Allows power-user access to the generic
   fixed-parameter machinery (works with custom families too).
+
+- sampling_variance:
+
+  Optional character. Name of a column in `data` containing the
+  **known** sampling variance \\D_i\\ for each area (the Fay-Herriot
+  sugar). When supplied, \\\sigma_i = \sqrt{D_i}\\ is pinned via offset.
+  Forwarded to
+  [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md), where a
+  family-compatibility check ensures the family exposes a residual SD
+  parameter named `sigma` (gaussian, lognormal, student, skew_normal,
+  exgaussian, asym_laplace). Incompatible families (beta, binomial,
+  poisson, etc.) raise an explicit error pointing at the family-specific
+  alternative. See
+  [`?hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md) for
+  details.
 
 - nonlinear:
 
@@ -276,6 +311,7 @@ fit <- hbm_flex(
   data       = data_lnln,
   chains = 2, iter = 1000, refresh = 0
 )
+#> Warning: Area column 'district' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 # }

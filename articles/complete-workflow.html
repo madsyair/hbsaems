@@ -31,9 +31,9 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item"><a class="nav-link" href="../articles/hbsaems-modelling.html">Get started</a></li>
+<li class="active nav-item"><a class="nav-link" href="../articles/complete-workflow.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="active nav-item dropdown">
+<li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><hr class="dropdown-divider"></li>
@@ -47,10 +47,10 @@
     <li><a class="dropdown-item" href="../articles/hbsaems-spatial.html">Spatial models (CAR / SAR / BYM2)</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-handle-missing.html">Handling missing data</a></li>
     <li><a class="dropdown-item" href="../articles/hbsaems-run_sae_app.html">Interactive Shiny dashboard</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
-    <li><a class="dropdown-item" href="../articles/complete-workflow.html">Complete workflow walk-through</a></li>
     <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Internals &amp; development</h6></li>
+    <li><a class="dropdown-item" href="../articles/ast-formula-manipulation.html">AST-based formula manipulation</a></li>
     <li><a class="dropdown-item" href="../articles/migration-guide.html">Migration guide (legacy users)</a></li>
   </ul>
 </li>
@@ -88,18 +88,39 @@
 <p>A typical Bayesian SAE workflow with <code>hbsaems</code> v1.0.0
 follows seven steps, each backed by a single primary function.</p>
 <div class="section level2">
+<h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a>
+</h2>
+<p>For deeper coverage of topics beyond this introductory workflow, see
+the <strong>articles on the package website</strong>:</p>
+<p><a href="https://madsyair.github.io/hbsaems/articles/" class="uri">https://madsyair.github.io/hbsaems/articles/</a></p>
+<p>The articles cover:</p>
+<ul>
+<li>Distribution-specific walkthroughs (Beta logit-normal, binomial
+logit-normal, lognormal-lognormal)</li>
+<li>Spatial models (CAR / SAR / BYM2)</li>
+<li>Handling missing data (deletion, multiple imputation, joint Bayesian
+imputation)</li>
+<li>The interactive Shiny dashboard</li>
+<li>Advanced features (custom families, benchmarking, smooth terms)</li>
+<li>AST-based formula manipulation (internals)</li>
+<li>Migration guide for users coming from earlier versions</li>
+</ul>
+</div>
+<div class="section level2">
 <h2 id="prior-predictive-check">1. Prior predictive check<a class="anchor" aria-label="anchor" href="#prior-predictive-check"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"data_fhnorm"</span><span class="op">)</span></span>
 <span><span class="va">model_prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span></span>
-<span>  formula      <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span>
-<span>  data         <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
-<span>  re           <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,       <span class="co"># area-level random effect (Fay-Herriot)</span></span>
-<span>  sample_prior <span class="op">=</span> <span class="st">"only"</span>,</span>
-<span>  prior        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>    <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/set_prior.html" class="external-link">prior</a></span><span class="op">(</span><span class="fu">normal</span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span>, class <span class="op">=</span> <span class="st">"b"</span><span class="op">)</span>,</span>
-<span>    <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/set_prior.html" class="external-link">prior</a></span><span class="op">(</span><span class="fu">normal</span><span class="op">(</span><span class="fl">0</span>, <span class="fl">5</span><span class="op">)</span>, class <span class="op">=</span> <span class="st">"Intercept"</span><span class="op">)</span></span>
+<span>  formula           <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span>
+<span>  data              <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
+<span>  re                <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,    <span class="co"># area-level random effect (Fay-Herriot)</span></span>
+<span>  sampling_variance <span class="op">=</span> <span class="st">"D"</span>,                 <span class="co"># KNOWN sampling variance D_i</span></span>
+<span>  sample_prior      <span class="op">=</span> <span class="st">"only"</span>,</span>
+<span>  prior             <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/set_prior.html" class="external-link">prior</a></span><span class="op">(</span><span class="fu">normal</span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span>,  class <span class="op">=</span> <span class="st">"b"</span><span class="op">)</span>,</span>
+<span>    <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/set_prior.html" class="external-link">prior</a></span><span class="op">(</span><span class="fu">normal</span><span class="op">(</span><span class="fl">10</span>, <span class="fl">5</span><span class="op">)</span>, class <span class="op">=</span> <span class="st">"Intercept"</span><span class="op">)</span>,</span>
+<span>    <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/set_prior.html" class="external-link">prior</a></span><span class="op">(</span><span class="fu">normal</span><span class="op">(</span><span class="fl">0</span>, <span class="fl">2</span><span class="op">)</span>,  class <span class="op">=</span> <span class="st">"sd"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span>,</span>
 <span>  chains <span class="op">=</span> <span class="fl">2</span>, iter <span class="op">=</span> <span class="fl">1000</span></span>
 <span><span class="op">)</span></span>
@@ -107,18 +128,42 @@ follows seven steps, each backed by a single primary function.</p>
 <span>                  data         <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
 <span>                  response_var <span class="op">=</span> <span class="st">"y"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pc</span><span class="op">)</span></span></code></pre></div>
+<p>The <code>sampling_variance = "D"</code> argument is the
+<strong>defining feature</strong> of a Fay-Herriot model: the sampling
+variance is treated as from the design (it is not estimated), so brms
+pins the observation-level to . Omitting this argument makes the model
+unidentified because the residual and the area-RE would compete to
+explain the same variance, typically producing divergent transitions and
+very wide credible intervals.</p>
 </div>
 <div class="section level2">
 <h2 id="fit-the-model">2. Fit the model<a class="anchor" aria-label="anchor" href="#fit-the-model"></a>
 </h2>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span></span>
-<span>  formula <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span>
-<span>  data    <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
-<span>  re      <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,              <span class="co"># area-level random effect (Fay-Herriot)</span></span>
-<span>  chains  <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span>, warmup <span class="op">=</span> <span class="fl">2000</span>, cores <span class="op">=</span> <span class="fl">2</span></span>
+<span>  formula           <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span>
+<span>  data              <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
+<span>  re                <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,       <span class="co"># area-level random effect (Fay-Herriot)</span></span>
+<span>  sampling_variance <span class="op">=</span> <span class="st">"D"</span>,                    <span class="co"># known sampling variance from survey</span></span>
+<span>  control           <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>adapt_delta <span class="op">=</span> <span class="fl">0.99</span><span class="op">)</span>,</span>
+<span>  chains            <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span>, warmup <span class="op">=</span> <span class="fl">2000</span>, cores <span class="op">=</span> <span class="fl">2</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></code></pre></div>
+<p>Two settings deserve attention:</p>
+<ul>
+<li>
+<strong><code>sampling_variance = "D"</code></strong> – the column
+in holds the known sampling variance for each area; translates this into
+an offset on the observation-level standard deviation so brms / Stan
+never tries to estimate it.</li>
+<li>
+<strong><code>adapt_delta = 0.99</code></strong> – Fay-Herriot
+likelihoods can produce mild funnel geometry between and the area random
+effects when many areas have small . Raising from the brms default 0.95
+to 0.99 buys a more conservative leapfrog step and eliminates the
+occasional divergent transition without re-parameterising the
+model.</li>
+</ul>
 </div>
 <div class="section level2">
 <h2 id="convergence-diagnostics">3. Convergence diagnostics<a class="anchor" aria-label="anchor" href="#convergence-diagnostics"></a>
@@ -144,9 +189,13 @@ follows seven steps, each backed by a single primary function.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span><span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
 <span>              re <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,</span>
+<span>              sampling_variance <span class="op">=</span> <span class="st">"D"</span>,</span>
+<span>              control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>adapt_delta <span class="op">=</span> <span class="fl">0.99</span><span class="op">)</span>,</span>
 <span>              chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span><span class="op">)</span></span>
 <span><span class="va">model3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span><span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span><span class="op">)</span>,      data <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
 <span>              re <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,</span>
+<span>              sampling_variance <span class="op">=</span> <span class="st">"D"</span>,</span>
+<span>              control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>adapt_delta <span class="op">=</span> <span class="fl">0.99</span><span class="op">)</span>,</span>
 <span>              chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/model_compare.html">model_compare</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">model2</span><span class="op">)</span></span>

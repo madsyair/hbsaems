@@ -336,18 +336,18 @@ had and gain extras.
 
 Continue with one of the family-specific vignettes:
 
-- [`vignette("hbsaems-betalogitnorm-model")`](https://madsyair.github.io/hbsaems/articles/hbsaems-betalogitnorm-model.md)
-  – Beta likelihood with optional pinned $`\phi`$ from `n` + `deff`.
-- [`vignette("hbsaems-binlogitnorm-model")`](https://madsyair.github.io/hbsaems/articles/hbsaems-binlogitnorm-model.md)
-  – binomial logit-normal for counts out of trials.
-- [`vignette("hbsaems-lnln-model")`](https://madsyair.github.io/hbsaems/articles/hbsaems-lnln-model.md)
-  – lognormal-lognormal model and Fay-Herriot variant.
-- [`vignette("hbsaems-spatial")`](https://madsyair.github.io/hbsaems/articles/hbsaems-spatial.md)
-  – CAR / SAR / BYM2 spatial random effects.
-- [`vignette("hbsaems-handle-missing")`](https://madsyair.github.io/hbsaems/articles/hbsaems-handle-missing.md)
-  – three strategies for missing data (`deleted`, `multiple`, `model`).
-- [`vignette("hbsaems-run_sae_app")`](https://madsyair.github.io/hbsaems/articles/hbsaems-run_sae_app.md)
-  – launching the bundled Shiny GUI for interactive modelling.
+- `vignette("hbsaems-betalogitnorm-model")` – Beta likelihood with
+  optional pinned $`\phi`$ from `n` + `deff`.
+- `vignette("hbsaems-binlogitnorm-model")` – binomial logit-normal for
+  counts out of trials.
+- `vignette("hbsaems-lnln-model")` – lognormal-lognormal model and
+  Fay-Herriot variant.
+- `vignette("hbsaems-spatial")` – CAR / SAR / BYM2 spatial random
+  effects.
+- `vignette("hbsaems-handle-missing")` – three strategies for missing
+  data (`deleted`, `multiple`, `model`).
+- `vignette("hbsaems-run_sae_app")` – launching the bundled Shiny GUI
+  for interactive modelling.
 
 ## References
 

@@ -8,19 +8,40 @@ library(hbsaems)
 A typical Bayesian SAE workflow with `hbsaems` v1.0.0 follows seven
 steps, each backed by a single primary function.
 
+## See also
+
+For deeper coverage of topics beyond this introductory workflow, see the
+**articles on the package website**:
+
+<https://madsyair.github.io/hbsaems/articles/>
+
+The articles cover:
+
+- Distribution-specific walkthroughs (Beta logit-normal, binomial
+  logit-normal, lognormal-lognormal)
+- Spatial models (CAR / SAR / BYM2)
+- Handling missing data (deletion, multiple imputation, joint Bayesian
+  imputation)
+- The interactive Shiny dashboard
+- Advanced features (custom families, benchmarking, smooth terms)
+- AST-based formula manipulation (internals)
+- Migration guide for users coming from earlier versions
+
 ## 1. Prior predictive check
 
 ``` r
 
 data("data_fhnorm")
 model_prior <- hbm(
-  formula      = brms::bf(y ~ x1 + x2 + x3),
-  data         = data_fhnorm,
-  re           = ~ (1 | regency),       # area-level random effect (Fay-Herriot)
-  sample_prior = "only",
-  prior        = c(
-    brms::prior(normal(0, 1), class = "b"),
-    brms::prior(normal(0, 5), class = "Intercept")
+  formula           = brms::bf(y ~ x1 + x2 + x3),
+  data              = data_fhnorm,
+  re                = ~ (1 | regency),    # area-level random effect (Fay-Herriot)
+  sampling_variance = "D",                 # KNOWN sampling variance D_i
+  sample_prior      = "only",
+  prior             = c(
+    brms::prior(normal(0, 1),  class = "b"),
+    brms::prior(normal(10, 5), class = "Intercept"),
+    brms::prior(normal(0, 2),  class = "sd")
   ),
   chains = 2, iter = 1000
 )
@@ -30,18 +51,39 @@ pc <- prior_check(model_prior,
 plot(pc)
 ```
 
+The `sampling_variance = "D"` argument is the **defining feature** of a
+Fay-Herriot model: the sampling variance is treated as from the design
+(it is not estimated), so brms pins the observation-level to . Omitting
+this argument makes the model unidentified because the residual and the
+area-RE would compete to explain the same variance, typically producing
+divergent transitions and very wide credible intervals.
+
 ## 2. Fit the model
 
 ``` r
 
 model <- hbm(
-  formula = brms::bf(y ~ x1 + x2 + x3),
-  data    = data_fhnorm,
-  re      = ~ (1 | regency),              # area-level random effect (Fay-Herriot)
-  chains  = 4, iter = 4000, warmup = 2000, cores = 2
+  formula           = brms::bf(y ~ x1 + x2 + x3),
+  data              = data_fhnorm,
+  re                = ~ (1 | regency),       # area-level random effect (Fay-Herriot)
+  sampling_variance = "D",                    # known sampling variance from survey
+  control           = list(adapt_delta = 0.99),
+  chains            = 4, iter = 4000, warmup = 2000, cores = 2
 )
 summary(model)
 ```
+
+Two settings deserve attention:
+
+- **`sampling_variance = "D"`** – the column in holds the known sampling
+  variance for each area; translates this into an offset on the
+  observation-level standard deviation so brms / Stan never tries to
+  estimate it.
+- **`adapt_delta = 0.99`** – Fay-Herriot likelihoods can produce mild
+  funnel geometry between and the area random effects when many areas
+  have small . Raising from the brms default 0.95 to 0.99 buys a more
+  conservative leapfrog step and eliminates the occasional divergent
+  transition without re-parameterising the model.
 
 ## 3. Convergence diagnostics
 
@@ -69,9 +111,13 @@ plot(gof, type = "pp_check")
 
 model2 <- hbm(brms::bf(y ~ x1 + x2), data = data_fhnorm,
               re = ~ (1 | regency),
+              sampling_variance = "D",
+              control = list(adapt_delta = 0.99),
               chains = 4, iter = 4000)
 model3 <- hbm(brms::bf(y ~ x1),      data = data_fhnorm,
               re = ~ (1 | regency),
+              sampling_variance = "D",
+              control = list(adapt_delta = 0.99),
               chains = 4, iter = 4000)
 
 model_compare(model, model2)

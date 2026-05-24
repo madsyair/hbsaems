@@ -142,9 +142,8 @@ summary(fit_car)
     x3            0.07      0.03     0.01     0.13 1.00     7104     6428
 
 The new `Correlation Structures:` block reports the spatial standard
-deviation `sdcar`. See
-[`vignette("hbsaems-spatial")`](https://madsyair.github.io/hbsaems/articles/hbsaems-spatial.md)
-for SAR, BYM2, and weight-matrix construction.
+deviation `sdcar`. See `vignette("hbsaems-spatial")` for SAR, BYM2, and
+weight-matrix construction.
 
 ## Custom prior on a coefficient
 
@@ -206,8 +205,7 @@ fit_miss <- hbm_binlogitnorm(
 
 Posterior samples from the five imputed fits are pooled via Rubin’s
 rules in the returned `hbmfit` object. See
-[`vignette("hbsaems-handle-missing")`](https://madsyair.github.io/hbsaems/articles/hbsaems-handle-missing.md)
-for the full discussion.
+`vignette("hbsaems-handle-missing")` for the full discussion.
 
 ## Convergence and prediction
 

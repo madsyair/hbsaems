@@ -45,19 +45,34 @@ so the precision is large when the effective sample size $`n_i /
 \mathrm{deff}_i`$ is large. `hbsaems` lets you either **pin** $`\phi_i`$
 to this value or **sample** it with a hyperprior.
 
-## Three modes for $`\phi`$
+## Two modes for $`\phi`$ (v1.0.0)
 
 [`hbm_betalogitnorm()`](https://madsyair.github.io/hbsaems/reference/hbm_betalogitnorm.md)
-recognises three distinct workflows:
+recognises two distinct workflows:
 
 | Mode | Trigger | Description |
 |----|----|----|
-| Random | (default) | $`\phi \sim \mathrm{Gamma}(\alpha, \beta)`$, with $`\alpha, \beta`$ themselves given priors |
-| Fixed | `n = "n"` + `deff = "deff"` | $`\phi_i = n_i / \mathrm{deff}_i - 1`$ pinned via offset |
-| Custom hyperprior | `stanvars = ...` | User overrides the default $`\mathrm{Gamma}(1,1)`$ priors on $`\alpha, \beta`$ |
+| Random | (default) | $`\phi \sim \mathrm{Gamma}(0.01, 0.01)`$ – brms default (weakly informative, mean 1, variance 100) |
+| Fixed | `n = "n"` + `deff = "deff"` | $`\phi_i = n_i / \mathrm{deff}_i - 1`$ pinned via offset (Liu 2009) |
 
-A fourth mode using the **generic `fixed_params` interface** is also
+A third path using the **generic `fixed_params` interface** is also
 available for power users (see the last section).
+
+**Migration from earlier versions.** Before v1.0.0, the random-phi mode
+used a hierarchical construction
+$`\phi \sim \mathrm{Gamma}(\alpha, \beta)`$ with hyperpriors
+$`\alpha \sim \mathrm{Gamma}(1, 1)`$ and
+$`\beta \sim \mathrm{Gamma}(1, 1)`$. That has been replaced by brms’s
+own default prior because (i) the $`\mathrm{Gamma}(1,1)`$ prior on
+$`\alpha`$ (declared as `real<lower=1>` in Stan) was on the boundary of
+its support and routinely produced divergent transitions on
+weakly-informative data; (ii) the extra hyperprior layer inflated
+posterior dimension; (iii) the new default plays cleanly with
+`prior = NULL` meaning exactly “brms defaults”. If you need the old
+construction, you can build it manually with `stanvars` plus a
+`prior = set_prior("gamma(alpha, beta)", class = "phi")` call – see
+[`?hbm_betalogitnorm`](https://madsyair.github.io/hbsaems/reference/hbm_betalogitnorm.md)
+for the migration note.
 
 ## The data
 
@@ -140,28 +155,24 @@ summary(fit_random)
     Further Distributional Parameters:
            Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
     phi      62.84     12.71    41.22    91.40 1.00     2841     3217
-    alpha     1.45      0.92     0.10     3.64 1.00     2104     2519
-    beta      0.04      0.03     0.00     0.11 1.00     1873     2241
 
     Draws were sampled using sampling(NUTS).
 
-Note that `alpha` and `beta` (the hyperparameters of the Gamma prior on
-$`\phi`$) appear in the output because they are sampled in this mode.
-The default hyperpriors are $`\alpha \sim \mathrm{Gamma}(1,1)`$ and
-$`\beta \sim \mathrm{Gamma}(1,1)`$.
+In v1.0.0, $`\phi`$ is sampled with brms’s own default prior
+$`\mathrm{Gamma}(0.01, 0.01)`$ (lower bound 0) – a weakly-informative
+choice with prior mean 1 and prior variance 100. Earlier hbsaems
+releases declared two extra Stan parameters `alpha`, `beta` for a
+hierarchical hyperprior; those are gone (see the migration note in
+[`?hbm_betalogitnorm`](https://madsyair.github.io/hbsaems/reference/hbm_betalogitnorm.md)).
 
-> **Hyperprior choice for SAE applications.** The default
-> $`\mathrm{Gamma}(1,1)`$ priors place most prior mass on $`\phi \approx
-> 0.5\text{--}5`$, which corresponds to very high within-area
-> variability. Real survey proportions typically have $`\phi`$ in the
-> range 10–100. If your fit produces a posterior mean of $`\phi`$
-> uncomfortably close to the default prior mean, consider widening the
-> hyperpriors via the `stanvars` argument (see *Mode 3* below) – for
-> example, $`\alpha \sim \mathrm{Gamma}(0.1, 0.1)`$ and
-> $`\beta \sim \mathrm{Gamma}(0.1, 0.1)`$ for a weakly-informative
-> hierarchy. Alternatively, if you have access to survey design
-> information, use **Mode 2** (pinned $`\phi`$) – generally preferred in
-> SAE practice.
+> **Practical recommendation for SAE applications.** Real survey
+> proportions typically yield $`\phi \in [10, 100]`$. The default
+> $`\mathrm{Gamma}(0.01, 0.01)`$ is sufficiently uninformative that the
+> data dominate the posterior in most cases. If the posterior mean of
+> $`\phi`$ is wildly off from your prior expectations, consider the more
+> informed approach of pinning $`\phi_i`$ via **Mode 2** below, using
+> survey-design information ($`n_i`$ and design effect
+> $`\mathrm{deff}_i`$).
 
 ## Mode 2: $`\phi`$ pinned from survey design
 
@@ -221,48 +232,18 @@ Observations:
   $`[0.28, 0.40]`$ vs $`[0.28, 0.43]`$ in Mode 1), since $`\phi`$
   uncertainty is no longer propagated.
 
-## Mode 3: custom hyperprior on $`\alpha, \beta`$
+## Mode 3: custom prior on $`\phi`$
 
-If the default $`\mathrm{Gamma}(1,1)`$ priors on $`\alpha`$ and
-$`\beta`$ are too vague (or too tight) for your data, override them via
-`stanvars`:
-
-``` r
-
-fit_custom <- hbm_betalogitnorm(
-  response  = "y",
-  auxiliary = c("x1", "x2", "x3"),
-  area_var   = "regency",
-  data      = data_betalogitnorm,
-  stanvars  = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-              stanvar(scode = "beta  ~ gamma(2, 3);", block = "model"),
-  chains = 4, iter = 4000, warmup = 2000, cores = 4,
-  seed = 1
-)
-summary(fit_custom)
-```
-
-    Further Distributional Parameters:
-           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-    phi      54.91      9.83    37.65    76.20 1.00     3142     3674
-    alpha     1.92      0.81     0.59     3.78 1.00     2871     3093
-    beta      0.08      0.04     0.02     0.18 1.00     2517     2841
-
-The user-supplied $`\mathrm{Gamma}(2, 1)`$ on $`\alpha`$ shifts its
-posterior toward higher values, which in turn changes the posterior of
-$`\phi`$. You can supply only one of the two and the other will retain
-its default; you can also pin one to a specific value via
-`stanvar(scode = "alpha = 1.5;", block = "tparameters")`.
-
-You can also override the prior on $`\phi`$ itself (not the hyperpriors)
-via the `prior` argument:
+If the default brms prior $`\phi \sim \mathrm{Gamma}(0.01, 0.01)`$ is
+not suitable for your data, you can override it via the `prior`
+argument:
 
 ``` r
 
 fit_phi <- hbm_betalogitnorm(
   response  = "y",
   auxiliary = c("x1", "x2", "x3"),
-  area_var   = "regency",
+  area_var  = "regency",
   data      = data_betalogitnorm,
   prior     = brms::set_prior("gamma(2, 0.05)", class = "phi"),
   chains = 4, iter = 4000, warmup = 2000, cores = 4,
@@ -270,17 +251,92 @@ fit_phi <- hbm_betalogitnorm(
 )
 ```
 
-When `prior` overrides `class = "phi"`, the `stanvars` machinery is not
-used and the default `Intercept ~ student_t(4, 0, 10)` and
+    Further Distributional Parameters:
+           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+    phi      54.91      9.83    37.65    76.20 1.00     3142     3674
+
+The custom prior $`\mathrm{Gamma}(2, 0.05)`$ has prior mean
+$`2 / 0.05 = 40`$ and prior variance $`2 / 0.05^2 = 800`$, which is a
+more informative choice for SAE applications where the analyst expects
+$`\phi`$ in the $`[10, 100]`$ range. When `prior` overrides
+`class = "phi"`, the default `Intercept ~ student_t(4, 0, 10)` and
 `b ~ student_t(4, 0, 2.5)` are still filled in for the other classes.
+
+### Reproducing the legacy hierarchical hyperprior (pre-v1.0.0)
+
+Earlier hbsaems releases used $`\phi \sim \mathrm{Gamma}(\alpha,
+\beta)`$ with $`\alpha \sim \mathrm{Gamma}(1, 1)`$ and
+$`\beta \sim \mathrm{Gamma}(1, 1)`$. **Starting v1.0.0,
+[`hbm_betalogitnorm()`](https://madsyair.github.io/hbsaems/reference/hbm_betalogitnorm.md)
+no longer declares `alpha` and `beta` as Stan parameters**, and the
+wrapper will refuse the legacy
+`stanvar(..., scode = "alpha ~ gamma(1, 1);")` pattern at construction
+time with an informative error. Two reasons:
+
+- The hyperprior $`\alpha \sim \mathrm{Gamma}(1, 1)`$ had prior mean
+  $`1`$, on the boundary of the declared Stan parameter space
+  (`real<lower=1>`). This routinely produced divergent transitions for
+  weakly informative data.
+- The phi-prior plumbing was inconsistent with brms’s standard `prior =`
+  interface, making
+  [`hbm_betalogitnorm()`](https://madsyair.github.io/hbsaems/reference/hbm_betalogitnorm.md)
+  harder to teach and harder to compose with other brms features.
+
+For new analyses use the v1.0.0-supported pattern (a non-default phi
+prior via `prior =`):
+
+``` r
+
+fit_strong_phi <- hbm_betalogitnorm(
+  response  = "y",
+  auxiliary = c("x1", "x2", "x3"),
+  area_var  = "regency",
+  data      = data_betalogitnorm,
+  prior     = brms::set_prior("gamma(2, 0.05)", class = "phi"),
+  chains = 4, iter = 4000, warmup = 2000, cores = 4,
+  seed = 1
+)
+```
+
+If you specifically need to reproduce the pre-v1.0.0
+$`\phi \sim \mathrm{Gamma}(\alpha, \beta)`$ construction (e.g. to verify
+that an old analysis still gives the same answer), you have to drop down
+to the universal
+[`hbm_flex()`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md)
+interface, which doesn’t do the v1.0.0 guard and accepts arbitrary Stan
+parameters:
+
+``` r
+
+# RECONSTRUCTION OF THE PRE-v1.0.0 HIERARCHICAL phi MODEL
+#
+# This is recommended only for replicating earlier results; for new
+# analyses prefer the prior-on-phi pattern above, which is much less
+# prone to divergent transitions.
+fit_legacy <- hbm_flex(
+  family_key = "beta",
+  response   = "y",
+  auxiliary  = c("x1", "x2", "x3"),
+  area_var   = "regency",
+  data       = data_betalogitnorm,
+  prior      = brms::set_prior("gamma(alpha, beta)", class = "phi"),
+  stanvars   =
+    brms::stanvar(scode = "  real<lower=1> alpha;", block = "parameters") +
+    brms::stanvar(scode = "  real<lower=0> beta;",  block = "parameters") +
+    brms::stanvar(scode = "  alpha ~ gamma(1, 1);", block = "model")     +
+    brms::stanvar(scode = "  beta  ~ gamma(1, 1);", block = "model"),
+  chains = 4, iter = 4000, warmup = 2000, cores = 4,
+  seed = 1
+)
+```
 
 > **Conflict policy.** When $`\phi`$ is pinned (Mode 2 or Mode 4 below),
 > it is no longer a Stan parameter – it is fixed in the model formula
 > via an offset. Supplying a `prior` on `phi` or a `stanvars` sampling
-> statement targeting `phi`, `alpha`, or `beta` in this situation is a
-> logical contradiction and is rejected with a clear error at
-> construction time. This prevents silent surprises where the user
-> thinks they have specified a prior that is actually ignored.
+> statement targeting `phi` in this situation is a logical contradiction
+> and is rejected with a clear error at construction time. This prevents
+> silent surprises where the user thinks they have specified a prior
+> that is actually ignored.
 
 ## Mode 4: generic `fixed_params` (power user)
 
@@ -383,12 +439,15 @@ $`(0,1)`$), with 95% credible intervals.
 ## Summary: which mode should I use?
 
 - **Mode 1 (random $`\phi`$)** – use when `n` and `deff` are unknown or
-  unreliable; produces wider posterior intervals.
+  unreliable; produces wider posterior intervals. Uses brms’s default
+  prior $`\mathrm{Gamma}(0.01, 0.01)`$.
 - **Mode 2 (fixed $`\phi`$)** – use when you have clean survey design
   information; produces tighter intervals. *Recommended for standard SAE
   work*.
-- **Mode 3 (custom hyperprior)** – use when you have strong prior
-  beliefs about the typical magnitude of $`\phi`$ across areas.
+- **Mode 3 (custom prior on $`\phi`$)** – use when you have strong prior
+  beliefs about the typical magnitude of $`\phi`$ (e.g.  
+  $`\mathrm{Gamma}(2, 0.05)`$ for survey-like data expected in
+  $`[10, 100]`$).
 - **Mode 4 (generic `fixed_params`)** – use through
   [`hbm_flex()`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md)
   when building unusual models or working with custom distributions.

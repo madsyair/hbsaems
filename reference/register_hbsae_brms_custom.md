@@ -118,8 +118,16 @@ families](https://paulbuerkner.com/brms/articles/brms_customfamilies.html).
 library(hbsaems)
 library(brms)
 
-# Loglogistic (built in to hbsaems 1.0.0; this just shows the registration mechanism)
+# Loglogistic (built in to hbsaems 1.0.0; this just shows the
+# registration mechanism).  We use a key with a "_user" suffix to
+# avoid shadowing the built-in "loglogistic" entry, and unregister
+# at the end so re-running this example block keeps the registry
+# clean.
 ll <- brms_custom_loglogistic()
+if ("loglogistic_user" %in% list_hbsae_models()) {
+  # Idempotent rerun: remove any previous registration first.
+  rm("loglogistic_user", envir = hbsaems:::.hbsae_model_env)
+}
 register_hbsae_brms_custom(
   key             = "loglogistic_user",
   custom_family   = ll$custom_family,
@@ -129,5 +137,8 @@ register_hbsae_brms_custom(
 )
 "loglogistic_user" %in% list_hbsae_models()
 #> [1] TRUE
+
+# Cleanup so the registry is unchanged after the example runs.
+rm("loglogistic_user", envir = hbsaems:::.hbsae_model_env)
 # }
 ```

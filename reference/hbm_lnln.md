@@ -14,6 +14,7 @@ hbm_lnln(
   auxiliary = NULL,
   data,
   area_var = NULL,
+  area_re_structure = c("nested", "crossed"),
   spatial_var = NULL,
   spatial_model = NULL,
   car_type = NULL,
@@ -48,9 +49,18 @@ hbm_lnln(
 
 - area_var:
 
-  Optional character. Name of a column in `data` identifying the small
-  area / domain. When supplied, an IID area-level random effect
-  `(1 | area_var)` is added to the formula. Default: `NULL`.
+  Optional character vector. Name(s) of a column (or columns) in `data`
+  identifying the small area / domain. Length 1 adds an IID area-level
+  random intercept `(1 | area_var)`; length \\\geq\\ 2 supports
+  hierarchical areas – see
+  [`?hbm_flex`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md)
+  for the nested vs.\\ crossed structures. Default: `NULL`.
+
+- area_re_structure:
+
+  Either `"nested"` (default) or `"crossed"`. Controls how multiple area
+  columns combine. See
+  [`?hbm_flex`](https://madsyair.github.io/hbsaems/reference/hbm_flex.md).
 
 - spatial_var:
 
@@ -181,6 +191,7 @@ fit1 <- hbm_lnln(
   data       = data_lnln,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
+#> Warning: Area column 'district' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
@@ -194,6 +205,7 @@ fit2 <- hbm_lnln(
   data         = data_lnln,
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
+#> Warning: Area column 'district' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 # }
