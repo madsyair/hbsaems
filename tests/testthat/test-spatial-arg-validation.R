@@ -3,7 +3,17 @@
 # Added in v1.0.0 to catch typos like `car_type = "bym2"` without
 # `spatial_model = "car"`.
 
+# Datasets used by the migrated tests.  Loaded at test-file scope so
+# the tests can reference them without depending on helper-dev-setup.R.
+utils::data("adjacency_matrix_car", package = "hbsaems", envir = environment())
+utils::data("data_fhnorm", package = "hbsaems", envir = environment())
+utils::data("data_lnln", package = "hbsaems", envir = environment())
+utils::data("spatial_weight_sar", package = "hbsaems", envir = environment())
+data <- data_fhnorm
+adjacency_matrix <- adjacency_matrix_car
+spatial_weight <- spatial_weight_sar
 test_that("car_type without spatial_model='car' is rejected", {
+  testthat::skip_if_not_installed("brms")
   data(data_fhnorm)
   expect_error(
     hbm(formula = brms::bf(y ~ x1 + x2),
@@ -14,6 +24,7 @@ test_that("car_type without spatial_model='car' is rejected", {
 })
 
 test_that("car_type with spatial_model='sar' is rejected", {
+  testthat::skip_if_not_installed("brms")
   data(data_fhnorm)
   data(spatial_weight_sar)
   expect_error(
@@ -28,6 +39,7 @@ test_that("car_type with spatial_model='sar' is rejected", {
 })
 
 test_that("sar_type without spatial_model='sar' is rejected", {
+  testthat::skip_if_not_installed("brms")
   data(data_fhnorm)
   expect_error(
     hbm(formula  = brms::bf(y ~ x1 + x2),
@@ -38,6 +50,7 @@ test_that("sar_type without spatial_model='sar' is rejected", {
 })
 
 test_that("sar_type with spatial_model='car' is rejected", {
+  testthat::skip_if_not_installed("brms")
   data(data_fhnorm)
   data(adjacency_matrix_car)
   expect_error(
@@ -52,6 +65,7 @@ test_that("sar_type with spatial_model='car' is rejected", {
 })
 
 test_that("spatial_var alone (no spatial_model) is rejected", {
+  testthat::skip_if_not_installed("brms")
   data(data_fhnorm)
   expect_error(
     hbm(formula     = brms::bf(y ~ x1 + x2),
@@ -62,6 +76,7 @@ test_that("spatial_var alone (no spatial_model) is rejected", {
 })
 
 test_that("spatial_model alone (no spatial_var) is rejected", {
+  testthat::skip_if_not_installed("brms")
   data(data_fhnorm)
   data(adjacency_matrix_car)
   expect_error(
@@ -80,6 +95,7 @@ test_that("spatial_model alone (no spatial_var) is rejected", {
 # ============================================================================
 
 test_that("Old `sre` argument emits deprecation warning and maps to spatial_var", {
+  testthat::skip_if_not_installed("brms")
   data(data_fhnorm)
   expect_warning(
     expect_error(
@@ -94,6 +110,7 @@ test_that("Old `sre` argument emits deprecation warning and maps to spatial_var"
 })
 
 test_that("Old `sre_type` argument emits deprecation warning", {
+  testthat::skip_if_not_installed("brms")
   data(data_fhnorm)
   data(adjacency_matrix_car)
   expect_warning(
@@ -110,6 +127,7 @@ test_that("Old `sre_type` argument emits deprecation warning", {
 })
 
 test_that("Passing both `sre` and `spatial_var` errors", {
+  testthat::skip_if_not_installed("brms")
   data(data_fhnorm)
   expect_error(
     hbm(formula     = brms::bf(y ~ x1 + x2),
@@ -121,6 +139,7 @@ test_that("Passing both `sre` and `spatial_var` errors", {
 })
 
 test_that("Passing both `sre_type` and `spatial_model` errors", {
+  testthat::skip_if_not_installed("brms")
   data(data_fhnorm)
   expect_error(
     hbm(formula       = brms::bf(y ~ x1 + x2),
@@ -137,30 +156,34 @@ test_that("Passing both `sre_type` and `spatial_model` errors", {
 # ============================================================================
 
 test_that("Old `group` arg in wrapper emits deprecation warning", {
+  testthat::skip_if_not_installed("brms")
   data(data_lnln)
-  # We expect either the deprecation warning OR an immediate error
-  # because the actual Stan compile won't run in this test environment.
-  # Just check that the deprecation message appears in the captured warnings.
+  # We do NOT run a real Stan fit here.  Mock brms::brm so the test only
+  # exercises the deprecation-warning code path in hbm_lnln() and the
+  # downstream wrappers.  The full integration variant (which actually
+  # compiles a Stan model with the deprecated arg) lives in
+  # tests/testthat/dev-tests/test-hbm-lnln.R.
+  testthat::local_mocked_bindings(brm = .brm_stub, .package = "brms")
+
   warnings_captured <- character()
-  result <- tryCatch(
+  tryCatch(
     withCallingHandlers(
       hbm_lnln(response  = "y_obs",
                auxiliary = c("x1", "x2"),
                group     = "district",   # deprecated
-               data      = data_lnln,
-               chains = 1, iter = 10, refresh = 0,
-               sample_prior = "only"),
+               data      = data_lnln),
       warning = function(w) {
         warnings_captured <<- c(warnings_captured, conditionMessage(w))
         invokeRestart("muffleWarning")
       }
     ),
-    error = function(e) conditionMessage(e)
+    error = function(e) NULL    # downstream errors are fine; we just need warning
   )
   expect_true(any(grepl("Argument `group` is deprecated", warnings_captured)))
 })
 
 test_that("Passing both `group` and `area_var` errors in wrapper", {
+  testthat::skip_if_not_installed("brms")
   data(data_lnln)
   expect_error(
     hbm_lnln(response  = "y_obs",

@@ -40,10 +40,15 @@
 #' @param predictors \strong{Deprecated.}  Use \code{auxiliary} instead.
 #'   Kept for backward compatibility; will be removed in v2.0.0.
 #' @param data A \code{data.frame}.
-#' @param area_var Optional character.  Name of a column in \code{data}
-#'   identifying the small area / domain.  When supplied, an IID
-#'   area-level random effect \code{(1 | area_var)} is added to the
-#'   formula.  Default: \code{NULL}.
+#' @param area_var Optional character vector.  Name(s) of a column (or
+#'   columns) in \code{data} identifying the small area / domain.
+#'   Length 1 adds an IID area-level random intercept
+#'   \code{(1 | area_var)}; length \eqn{\geq} 2 supports hierarchical
+#'   areas -- see \code{?hbm_flex} for the nested vs.\ crossed
+#'   structures.  Default: \code{NULL}.
+#' @param area_re_structure Either \code{"nested"} (default) or
+#'   \code{"crossed"}.  Controls how multiple area columns combine.
+#'   See \code{?hbm_flex}.
 #' @param spatial_var Optional character.  Name of a column in \code{data}
 #'   identifying the spatial cluster (e.g. province).  Must be supplied
 #'   together with \code{spatial_model} and \code{M}.  Default: \code{NULL}.
@@ -133,6 +138,7 @@ hbm_lnln <- function(response,
                      auxiliary         = NULL,
                      data,
                      area_var          = NULL,
+                     area_re_structure = c("nested", "crossed"),
                      spatial_var       = NULL,
                      spatial_model     = NULL,
                      car_type          = NULL,
@@ -195,41 +201,26 @@ hbm_lnln <- function(response,
     sampling_variance <- sampling_var
   }
 
-  # -- 1. If sampling_variance provided, translate to fixed_params ----------
-  if (!is.null(sampling_variance)) {
-    if (!is.character(sampling_variance) || length(sampling_variance) != 1L)
-      stop("`sampling_variance` must be a single column name (character).",
-           call. = FALSE)
-    if (!sampling_variance %in% names(data))
-      stop(sprintf("`sampling_variance = \"%s\"` not found in `data`.",
-                    sampling_variance),
-           call. = FALSE)
-    psi <- data[[sampling_variance]]
-    if (any(is.na(psi) | psi <= 0))
-      stop("`sampling_variance` must contain finite, strictly positive values.",
-           call. = FALSE)
+  # -- 1. Forward sampling_variance to hbm_flex / hbm ----------------------
+  # The Fay-Herriot sugar `sampling_variance = "<col>"` is handled
+  # centrally in hbm() (which performs family validation and translates
+  # to fixed_params$sigma).  We simply pass it through; no duplicate
+  # translation here.
 
-    # Refuse conflict with user-supplied fixed_params on the same param
-    if (is.list(fixed_params) && "sigma" %in% names(fixed_params))
-      stop("Cannot supply both `sampling_variance` and `fixed_params$sigma`. ",
-           "Pick one.", call. = FALSE)
+  area_re_structure <- match.arg(area_re_structure)
 
-    # sigma = sqrt(psi)
-    fp <- fixed_params %||% list()
-    fp$sigma <- sqrt(psi)
-    fixed_params <- fp
-  }
-
-  hbm_flex(family_key    = "lognormal",
-           response      = response,
-           auxiliary     = auxiliary,
-           data          = data,
-           area_var      = area_var,
-           spatial_var   = spatial_var,
-           spatial_model = spatial_model,
-           car_type      = car_type,
-           sar_type      = sar_type,
-           M             = M,
-           fixed_params  = fixed_params,
+  hbm_flex(family_key        = "lognormal",
+           response          = response,
+           auxiliary         = auxiliary,
+           data              = data,
+           area_var          = area_var,
+           area_re_structure = area_re_structure,
+           spatial_var       = spatial_var,
+           spatial_model     = spatial_model,
+           car_type          = car_type,
+           sar_type          = sar_type,
+           M                 = M,
+           fixed_params      = fixed_params,
+           sampling_variance = sampling_variance,
            ...)
 }

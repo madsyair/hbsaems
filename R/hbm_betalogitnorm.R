@@ -11,11 +11,17 @@
 #       Rao & Molina 2015).
 #
 #   (2) RANDOM mode -- if neither `n` nor `deff` is supplied, `phi` is
-#       given a hierarchical hyperprior:
+#       sampled with brms's own default prior:
+#         phi ~ gamma(0.01, 0.01)        (weakly informative, lower bound 0)
+#       As of v1.0.0 the pre-existing hierarchical construction
 #         phi   ~ gamma(alpha, beta)
-#         alpha ~ gamma(1, 1)              (default; overridable via stanvars)
-#         beta  ~ gamma(1, 1)              (default; overridable via stanvars)
-#       This matches the pattern of the original GitHub hbsaems package.
+#         alpha ~ gamma(1, 1)
+#         beta  ~ gamma(1, 1)
+#       has been removed because the prior on alpha (real<lower=1>) was
+#       on the boundary of its support, producing divergent transitions
+#       on weakly-informative data.  Users who need that construction
+#       can still build it manually via the `stanvars` + `prior`
+#       arguments (see the migration note in ?hbm_betalogitnorm).
 #
 # Both modes also feed the generic `fixed_params` machinery in hbm() so
 # that power users (and custom-distribution authors) can pin `phi`
@@ -33,10 +39,39 @@
 #'        \quad u_i \sim \mathcal{N}(0, \sigma_u^2).}
 #'
 #' The precision parameter \eqn{\phi_i} can either be pinned to a survey
-#' design effect (\code{n} + \code{deff}) or sampled with a hierarchical
-#' hyperprior (\eqn{\phi \sim \mathrm{Gamma}(\alpha, \beta)},
-#' \eqn{\alpha \sim \mathrm{Gamma}(1,1)}, \eqn{\beta \sim \mathrm{Gamma}(1,1)}
-#' by default).
+#' design effect (\code{n} + \code{deff}) or sampled with brms's default
+#' weakly-informative prior \eqn{\phi \sim \mathrm{Gamma}(0.01, 0.01)}.
+#'
+#' @section Migration note (v1.0.0):
+#' Earlier versions of this wrapper introduced a hierarchical
+#' construction \eqn{\phi \sim \mathrm{Gamma}(\alpha, \beta),\,
+#' \alpha \sim \mathrm{Gamma}(1,1),\, \beta \sim \mathrm{Gamma}(1,1)}
+#' for the random-phi mode, declaring \code{alpha} and \code{beta} as
+#' Stan parameters with hyperpriors injected via \code{stanvars}.
+#' Starting v1.0.0, that construction has been removed in favour of
+#' brms's own default prior, \eqn{\phi \sim \mathrm{Gamma}(0.01, 0.01)}
+#' with lower bound 0 (mean 1, variance 100; weakly informative on
+#' the precision scale).  Three reasons:
+#' \itemize{
+#'   \item \strong{Brittle priors on alpha/beta.}  The hyperprior
+#'         \eqn{\mathrm{Gamma}(1,1)} on \eqn{\alpha} has prior mean 1,
+#'         which is on the boundary of the parameter space declared
+#'         as \code{real<lower=1>}.  This routinely produced divergent
+#'         transitions when the data were not informative about phi.
+#'   \item \strong{Parameter blow-up.}  Estimating two extra Stan
+#'         parameters per area-level model with limited data inflated
+#'         the effective posterior dimension and slowed convergence.
+#'   \item \strong{Cleaner brms semantics.}  Letting brms apply its own
+#'         default \eqn{\mathrm{Gamma}(0.01, 0.01)} means that passing
+#'         \code{prior = NULL} now does exactly what the user expects:
+#'         \dQuote{brms defaults}.  No surprises.
+#' }
+#' \strong{If you need to reproduce the old behaviour}, supply
+#' \code{stanvars} yourself to declare \code{alpha}, \code{beta} and
+#' their hyperpriors, and pass \code{prior = set_prior("gamma(alpha,
+#' beta)", class = "phi")}.  Pre-v1.0.0 code that supplied
+#' \code{stanvars} with hyperpriors on \code{alpha}/\code{beta}
+#' will now raise an informative error.
 #'
 #' @param response Character. Name of the response column (must lie strictly
 #'   between 0 and 1).
@@ -54,45 +89,54 @@
 #'   per-area sample size used to compute the fixed \eqn{\phi}.  Must be
 #'   supplied together with \code{deff}.  When supplied, \eqn{\phi_i =
 #'   n_i / \text{deff}_i - 1} is pinned via offset.  Default: \code{NULL}
-#'   (treats \code{phi} as random with hyperprior).
+#'   (treats \code{phi} as random with brms's default prior).
 #' @param deff Character or \code{NULL}.  Name of the design-effect
 #'   column.  Required when \code{n} is supplied (and vice versa).
-#' @param area_var Character or \code{NULL}.  Name of the area-grouping
-#'   column; if supplied, adds \code{(1 | area_var)} as a random
-#'   intercept.
+#' @param area_var Character vector or \code{NULL}.  Name(s) of the
+#'   area-grouping column(s).  Length 1 adds an IID random intercept
+#'   \code{(1 | area_var)}; length \eqn{\geq} 2 supports hierarchical
+#'   areas (e.g.\ \code{c("province", "regency")}) -- see
+#'   \code{?hbm_flex} for the nested vs.\ crossed structures.
+#' @param area_re_structure Either \code{"nested"} (default) or
+#'   \code{"crossed"}; controls how multiple area columns combine.
 #' @param spatial_var,spatial_model,car_type,sar_type,M Spatial
 #'   random-effect arguments, forwarded to \code{\link{hbm}}.
 #' @param group \strong{Deprecated.}  Use \code{area_var} instead.
 #' @param sre \strong{Deprecated.}  Use \code{spatial_var} instead.
 #' @param sre_type \strong{Deprecated.}  Use \code{spatial_model} instead.
-#' @param link_phi Character. Link function for \code{phi}; default
-#'   \code{"identity"} when \code{phi} is pinned (offset must be on the
-#'   identity scale).
-#' @param prior Optional \code{brmsprior} object.  If \code{NULL}, sensible
-#'   defaults are filled in:
+#' @param link_phi Character or \code{NULL}.  Link function for
+#'   \code{phi}.  \strong{Default \code{NULL} resolves automatically}:
+#'   \code{"identity"} when \code{phi} is pinned via the survey design
+#'   (the \code{n + deff} sugar or \code{fixed_params$phi}, both of
+#'   which produce raw positive offsets) and \code{"log"} otherwise
+#'   (the brms default for \code{phi} in the Beta family; keeps
+#'   \eqn{\phi > 0} while letting NUTS sample on \eqn{\mathbb{R}}).
+#'   Manually setting \code{"identity"} together with an estimated
+#'   \code{phi} can let NUTS propose negative values and trigger
+#'   divergent transitions; an informative warning is emitted in that
+#'   case.
+#' @param prior Optional \code{brmsprior} object.  If \code{NULL},
+#'   sensible defaults are filled in:
 #'   \itemize{
 #'     \item \code{Intercept ~ student_t(4, 0, 10)}
 #'     \item \code{b ~ student_t(4, 0, 2.5)}
-#'     \item \code{phi ~ gamma(alpha, beta)} (random mode only)
+#'     \item \code{phi} -- brms default \code{gamma(0.01, 0.01)} (in
+#'       random mode; ignored in fixed mode).
 #'   }
 #'   The user may pass a partial prior: missing default classes are
-#'   filled in automatically.
-#' @param stanvars Optional \code{brmsstanvars} object specifying
-#'   hyperpriors for \code{alpha} and \code{beta} when \code{phi} is
-#'   random.  If \code{NULL} (default), \code{alpha ~ gamma(1, 1)} and
-#'   \code{beta ~ gamma(1, 1)} are used.  The user may also supply
-#'   custom \code{stanvar()} expressions to override either or both
-#'   hyperpriors, e.g.:
-#'   \preformatted{
-#'   stanvars = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-#'              stanvar(scode = "beta  ~ gamma(2, 3);", block = "model")
-#'   }
-#' @param fixed_params Optional named list pinning distributional
-#'   parameters to known values.  See \code{\link{hbm}} for the spec
-#'   format.  Conflicts with \code{n} + \code{deff} on the \code{phi}
-#'   parameter; use one or the other.
-#' @param predictors \strong{Deprecated.}  Use \code{auxiliary} instead.
-#'   Kept for backward compatibility; will be removed in v2.0.0.
+#'   filled in automatically.  To put a custom prior on \code{phi}
+#'   (random mode), set \code{prior = set_prior("gamma(2, 0.5)",
+#'   class = "phi")} or similar.
+#' @param stanvars Optional \code{brmsstanvars} object for power users
+#'   who need to inject custom Stan code blocks (e.g.\ transformed
+#'   data, generated quantities, model-block statements not expressible
+#'   via the \code{prior} argument).  Passed through to brms verbatim.
+#'   \strong{Note:} As of v1.0.0, this wrapper no longer declares
+#'   \code{alpha} or \code{beta} as Stan parameters, so legacy
+#'   \code{stanvars} blocks containing sampling statements on
+#'   \code{alpha} / \code{beta} (left over from the pre-v1.0.0
+#'   hierarchical-phi construction) will now raise an informative
+#'   error.
 #' @param handle_missing,m,control,chains,iter,warmup,cores,sample_prior,...
 #'   Passed through to \code{\link{hbm}}.
 #'
@@ -146,14 +190,20 @@
 #' )
 #' summary(model2)
 #'
-#' # -- 3. Custom hyperprior on alpha, beta -------------------------------------
+#' # -- 3. Custom prior on phi via the standard `prior` argument ----------------
+#' #
+#' # Starting v1.0.0, hbm_betalogitnorm() no longer declares its own
+#' # alpha / beta hyperparameters; phi uses brms's native default
+#' # Gamma(0.01, 0.01).  To override that prior, pass a `brms::set_prior()`
+#' # entry to the `prior` argument -- the legacy
+#' # stanvar("alpha ~ gamma(...); beta ~ gamma(...)") pattern would now
+#' # error because alpha/beta are no longer Stan parameters.
 #' model3 <- hbm_betalogitnorm(
 #'   response   = "y",
 #'   auxiliary  = c("x1", "x2", "x3"),
 #'   area_var   = "regency",
 #'   data       = data,
-#'   stanvars   = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-#'                stanvar(scode = "beta  ~ gamma(2, 3);", block = "model"),
+#'   prior      = brms::set_prior("gamma(2, 0.5)", class = "phi"),
 #'   chains = 1, iter = 500, warmup = 250, refresh = 0
 #' )
 #'
@@ -187,12 +237,13 @@ hbm_betalogitnorm <- function(response,
                               n              = NULL,
                               deff           = NULL,
                               area_var       = NULL,
+                              area_re_structure = c("nested", "crossed"),
                               spatial_var    = NULL,
                               spatial_model  = NULL,
                               car_type       = NULL,
                               sar_type       = NULL,
                               M              = NULL,
-                              link_phi       = "identity",
+                              link_phi       = NULL,
                               prior          = NULL,
                               stanvars       = NULL,
                               handle_missing = NULL,
@@ -268,8 +319,14 @@ hbm_betalogitnorm <- function(response,
   if (!is.null(deff) && !(deff %in% names(data)))
     stop(sprintf("`deff = \"%s\"` is not a column in `data`.", deff),
          call. = FALSE)
-  if (!is.null(area_var) && !(area_var %in% names(data)))
-    stop(sprintf("`area_var = \"%s\"` is not a column in `data`.", area_var),
+  area_re_structure <- match.arg(area_re_structure)
+  .check_area_var_columns(area_var, data)
+
+  # Validate spatial_var, if supplied, refers to an actual column.  Without
+  # this guard, the error only surfaces inside brms with a less-friendly
+  # message ("variables can neither be found in 'data' nor in 'data2'").
+  if (!is.null(spatial_var) && !(spatial_var %in% names(data)))
+    stop(sprintf("Spatial variable '%s' not found in `data`.", spatial_var),
          call. = FALSE)
 
   # Response support: strictly in (0, 1)
@@ -281,90 +338,112 @@ hbm_betalogitnorm <- function(response,
   # -- 2. Build fixed_params for phi (if survey-design mode) ------------------
   # Mode (1): user supplied n + deff -> compute phi_fixed and merge into
   # the (possibly already-populated) fixed_params list.  If user has also
-  # supplied fixed_params$phi directly, that is a conflict.
+  # supplied fixed_params$phi directly, that is a conflict.  Validation
+  # and translation live in the centralised helper
+  # `.translate_n_deff_to_phi()`.
   if (is.null(fixed_params)) fixed_params <- list()
   if (!is.list(fixed_params))
     stop("`fixed_params` must be a named list (or NULL).", call. = FALSE)
 
-  if (!is.null(n) && !is.null(deff)) {
-    if ("phi" %in% names(fixed_params))
-      stop("Cannot supply both `n` + `deff` (which pin phi via survey ",
-           "design) and `fixed_params$phi`.  Pick one.",
-           call. = FALSE)
-    nvec    <- data[[n]]
-    deffvec <- data[[deff]]
-    if (anyNA(nvec) || anyNA(deffvec))
-      stop("Missing values detected in `n` or `deff`; cannot fix phi.",
-           call. = FALSE)
-    if (any(nvec <= 0 | deffvec <= 0))
-      stop("`n` and `deff` must be strictly positive.", call. = FALSE)
-    phi_vec <- nvec / deffvec - 1
-    if (any(phi_vec <= 0))
-      stop("Computed phi = n/deff - 1 contains non-positive values; ",
-           "check `n` and `deff`.", call. = FALSE)
-    fixed_params$phi <- phi_vec
-  }
+  fixed_params <- .translate_n_deff_to_phi(
+    fixed_params = fixed_params,
+    n            = n,
+    deff         = deff,
+    data         = data
+  )
 
-  # -- 3. Build stanvars for the alpha / beta hyperpriors (random mode only) --
-  # In random mode, phi ~ gamma(alpha, beta) where alpha, beta are themselves
-  # given gamma(1, 1) priors by default.  Users may override one or both
-  # via the `stanvars` argument.
-  if (length(fixed_params) == 0L) {
-    # Declare alpha, beta as Stan parameters
-    parameters_block <- brms::stanvar(
-      scode = paste0(
-        "  real<lower=1> alpha;\n",
-        "  real<lower=0> beta;\n"
-      ),
-      block = "parameters"
-    )
-    # Detect which of alpha/beta the user has already specified a hyperprior for
-    existing_vars <- .extract_model_block_vars(stanvars)
-    to_add <- list()
-    if (!"alpha" %in% existing_vars) {
-      to_add[[length(to_add) + 1L]] <- brms::stanvar(
-        scode = "  alpha ~ gamma(1, 1);", block = "model"
-      )
+  # ----------------------------------------------------------------------
+  # (v1.0.0): Resolve link_phi conditional on the mode.
+  #
+  # Two modes are supported:
+  #
+  #   (a) FIXED mode  -- phi is pinned via offset (sugar `n + deff`, or
+  #                       direct `fixed_params$phi`).  The offset must
+  #                       be on the SAME SCALE as the linear predictor
+  #                       for phi.  Since the offset values are the raw
+  #                       precision `n/deff - 1` (strictly positive,
+  #                       no log involved), we need `link_phi = "identity"`.
+  #
+  #   (b) RANDOM mode -- phi is unconstrained and given a `gamma(alpha, beta)`
+  #                       hyperprior.  brms's default link for `phi` is
+  #                       "log", which keeps phi positive without manual
+  #                       constraints.  Forcing "identity" here would
+  #                       allow NUTS to propose negative `phi`, triggering
+  #                       `log(0)` likelihood evaluations and divergent
+  #                       transitions.  We therefore default to "log".
+  #
+  # The user can still override both via the explicit argument.
+  # ----------------------------------------------------------------------
+  if (is.null(link_phi)) {
+    if ("phi" %in% names(fixed_params)) {
+      link_phi <- "identity"   # fixed-design / Liu (2009) mode
+    } else {
+      link_phi <- "log"        # random / hyperprior mode -- brms default
     }
-    if (!"beta" %in% existing_vars) {
-      to_add[[length(to_add) + 1L]] <- brms::stanvar(
-        scode = "  beta  ~ gamma(1, 1);", block = "model"
-      )
-    }
-    default_model_block <- if (length(to_add) > 0L)
-      Reduce(`+`, to_add)
-    else
-      NULL
-
-    # Combine: declared parameters + (user stanvars OR default) + missing default
-    combined <- parameters_block
-    if (!is.null(stanvars))            combined <- combined + stanvars
-    if (!is.null(default_model_block)) combined <- combined + default_model_block
-    stanvars_final <- combined
   } else {
-    # Fixed mode: alpha/beta hyperprior machinery is irrelevant.
-    # If the user has supplied stanvars containing hyperpriors for alpha/beta,
-    # those statements would refer to undeclared Stan parameters and fail at
-    # compile time -- refuse early with a clear error.
-    if (!is.null(stanvars)) {
-      hyperprior_vars <- intersect(
-        .extract_model_block_vars(stanvars),
-        c("alpha", "beta")
+    # User-supplied: warn if it looks unsafe for the active mode.
+    if (link_phi == "identity" && !"phi" %in% names(fixed_params))
+      warning(
+        "`link_phi = \"identity\"` is being applied with `phi` ESTIMATED ",
+        "(random mode).  The NUTS sampler may propose negative phi and ",
+        "produce divergent transitions.  Consider `link_phi = \"log\"` ",
+        "instead, or supply `n` + `deff` to pin phi via the survey ",
+        "design.", call. = FALSE
       )
-      if (length(hyperprior_vars) > 0L) {
-        stop(
-          "`stanvars` contains a hyperprior on `",
-          paste(hyperprior_vars, collapse = "`, `"),
-          "`, but `phi` is pinned via `n` + `deff` (or `fixed_params$phi`). ",
-          "Hyperpriors on alpha/beta are only meaningful when `phi` is ",
-          "sampled.  Remove the stanvars block, or remove `n`+`deff`/",
-          "`fixed_params$phi` to let phi be sampled.",
-          call. = FALSE
-        )
-      }
-    }
-    stanvars_final <- stanvars
   }
+
+  # -- 3. Stanvars (random mode + fixed mode share the same plumbing now) ----
+  # In v1.0.0+, the random-phi mode uses brms's own default prior
+  # `phi ~ gamma(0.01, 0.01)` instead of the earlier hierarchical
+  # `phi ~ gamma(alpha, beta), alpha ~ gamma(1,1), beta ~ gamma(1,1)`
+  # construction.  Consequently this wrapper no longer declares custom
+  # Stan parameters (alpha, beta) or injects default hyperprior sampling
+  # statements -- there is nothing for the wrapper to add.
+  #
+  # If the user supplies their own `stanvars` (for power-user Stan code
+  # blocks, e.g. transformed data, generated quantities), we still pass
+  # it through verbatim.  In fixed-phi mode we also guard against
+  # legacy code that supplied alpha/beta hyperpriors: those statements
+  # now refer to undeclared Stan parameters and would fail to compile.
+  if (length(fixed_params) > 0L && !is.null(stanvars)) {
+    legacy_hyperprior_vars <- intersect(
+      .extract_model_block_vars(stanvars),
+      c("alpha", "beta")
+    )
+    if (length(legacy_hyperprior_vars) > 0L) {
+      stop(
+        "`stanvars` contains a sampling statement targeting `",
+        paste(legacy_hyperprior_vars, collapse = "`, `"),
+        "`, but `phi` is pinned via `n` + `deff` (or `fixed_params$phi`). ",
+        "These statements are also a leftover of the pre-v1.0.0 hierarchical ",
+        "phi ~ gamma(alpha, beta) construction, which has been replaced by ",
+        "brms's default `phi ~ gamma(0.01, 0.01)`.  Remove the stanvars ",
+        "block, or remove `n`+`deff`/`fixed_params$phi`.",
+        call. = FALSE
+      )
+    }
+  } else if (length(fixed_params) == 0L && !is.null(stanvars)) {
+    # Random-phi mode: warn (don't error) if user is still passing legacy
+    # alpha/beta hyperpriors -- those Stan parameters no longer exist,
+    # so the stanvars would not compile.  Better to fail loudly here.
+    legacy_hyperprior_vars <- intersect(
+      .extract_model_block_vars(stanvars),
+      c("alpha", "beta")
+    )
+    if (length(legacy_hyperprior_vars) > 0L) {
+      stop(
+        "`stanvars` contains a sampling statement on `",
+        paste(legacy_hyperprior_vars, collapse = "`, `"),
+        "`, but this convenience wrapper no longer declares those as ",
+        "Stan parameters.  As of v1.0.0, `phi` uses brms's default ",
+        "prior `gamma(0.01, 0.01)`.  To use a different prior, supply ",
+        "it via the `prior` argument, e.g. ",
+        "`prior = brms::set_prior(\"gamma(2, 0.5)\", class = \"phi\")`.",
+        call. = FALSE
+      )
+    }
+  }
+  stanvars_final <- stanvars
 
   # -- 4. Merge user-supplied prior with sensible Beta defaults ---------------
   adjusted_prior <- .merge_betalogitnorm_priors(
@@ -373,10 +452,7 @@ hbm_betalogitnorm <- function(response,
   )
 
   # -- 5. Build random-effect formula -----------------------------------------
-  re_formula <- if (!is.null(area_var))
-    stats::as.formula(paste0("~ (1 | ", area_var, ")"))
-  else
-    NULL
+  re_formula <- .build_area_re_formula(area_var, structure = area_re_structure)
 
   # -- 6. Hand off to hbm() ----------------------------------------------------
   fixed_effects   <- paste(auxiliary, collapse = " + ")
@@ -446,14 +522,18 @@ hbm_betalogitnorm <- function(response,
     any(p$class == cls & (is.na(p$coef) | p$coef == ""))
   }
 
+  # Hbsaems-curated defaults for the regression coefficients.  We do NOT
+  # add an explicit prior on `phi` in random mode any more; instead we
+  # let brms apply its own default `gamma(0.01, 0.01)` (weakly informative,
+  # mean 1, variance 100) via `brms::get_prior(family = Beta())`.  This
+  # matches the user's reasonable expectation that "no explicit prior" =
+  # "brms default".  The pre-v1.0.0 \eqn{\phi \sim \mathrm{Gamma}(\alpha,
+  # \beta)} construction with hierarchical alpha/beta hyperpriors is gone:
+  # see NEWS for the migration note.
   defaults <- c(
     brms::set_prior("student_t(4, 0, 10)",  class = "Intercept"),
     brms::set_prior("student_t(4, 0, 2.5)", class = "b")
   )
-  if (!phi_is_fixed) {
-    defaults <- c(defaults,
-                  brms::set_prior("gamma(alpha, beta)", class = "phi"))
-  }
 
   if (is.null(user_prior)) return(defaults)
 
@@ -468,7 +548,7 @@ hbm_betalogitnorm <- function(response,
     out <- c(out, brms::set_prior("student_t(4, 0, 10)",  class = "Intercept"))
   if (!has_class(out, "b"))
     out <- c(out, brms::set_prior("student_t(4, 0, 2.5)", class = "b"))
-  if (!phi_is_fixed && !has_class(out, "phi"))
-    out <- c(out, brms::set_prior("gamma(alpha, beta)",   class = "phi"))
+  # `phi`: rely on brms default unless the user supplied an explicit prior;
+  # we don't add anything ourselves.
   out
 }

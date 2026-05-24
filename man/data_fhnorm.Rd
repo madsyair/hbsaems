@@ -8,23 +8,27 @@
 A data frame with 100 rows and 9 variables:
 \describe{
   \item{\code{y}}{Direct (survey) estimator of the area mean.}
-  \item{\code{D}}{Sampling variance of the direct estimator.}
-  \item{\code{x1}, \code{x2}, \code{x3}}{Auxiliary covariates at the area
-    level.}
-  \item{\code{theta_true}}{True area-level latent value.}
-  \item{\code{u}}{True area-level random effect.}
-  \item{\code{regency}}{Regency identifier (\code{"regency_001"} ..
-    \code{"regency_100"}) used as the IID random-effect grouping
-    variable.  Use with \code{re = ~ (1 | regency)} or as
-    \code{area_var = "regency"} in the wrapper functions.}
-  \item{\code{province}}{Province identifier (\code{"province_01"} ..
-    \code{"province_05"}) used as the spatial random-effect grouping
-    variable for CAR or SAR models.  Use with
-    \code{spatial_var = "province"} and \code{M = adjacency_matrix_car}.}
+  \item{\code{D}}{Sampling variance of the direct estimator (KNOWN
+    from the survey design; treat as input, not as a parameter).}
+  \item{\code{x1}, \code{x2}, \code{x3}}{Auxiliary covariates at the
+    area level, simulated from \eqn{\mathcal{N}(0, 1)}.}
+  \item{\code{theta_true}}{True area-level latent value
+    \eqn{\theta_i}.}
+  \item{\code{u}}{True area-level random effect \eqn{u_i}.}
+  \item{\code{regency}}{Regency identifier (\code{"regency_001"}
+    through \code{"regency_100"}) used as the IID random-effect
+    grouping variable.  Use with \code{re = ~ (1 | regency)} or
+    \code{area_var = "regency"}.}
+  \item{\code{province}}{Province identifier (\code{"province_01"}
+    through \code{"province_05"}) -- 20 regencies per province.
+    Used as the spatial random-effect grouping variable for CAR /
+    SAR / BYM2 examples; also serves as the higher level in the
+    hierarchical-area example
+    \code{area_var = c("province", "regency")}.}
 }
 }
 \source{
-Simulated.
+Simulated.  Reproducible script in \code{data-raw/data_fhnorm.R}.
 }
 \usage{
 data_fhnorm
@@ -32,6 +36,32 @@ data_fhnorm
 \description{
 A simulated dataset for 100 regencies under the Fay-Herriot Normal
 small-area model.  Used as the running example throughout the package
-documentation and vignettes.
+documentation and vignettes.  The simulation is engineered so that the
+canonical Fay-Herriot fit
+(\code{hbm(..., sampling_variance = "D")}) converges with default
+brms / Stan settings -- no divergent transitions, no manual
+tuning required.
+}
+\details{
+\strong{Generative model.}  For each regency \eqn{i = 1, \ldots, 100},
+\deqn{
+  y_i = \theta_i + \varepsilon_i, \quad
+  \varepsilon_i \sim \mathcal{N}(0, D_i)
+}
+\deqn{
+  \theta_i = 10 + 0.8 \, x_{1i} - 0.5 \, x_{2i} + 0.3 \, x_{3i} + u_i,
+  \quad u_i \sim \mathcal{N}(0, \sigma_u^2)
+}
+with auxiliary covariates \eqn{x_j \sim \mathcal{N}(0, 1)} (already
+standardised), area RE SD \eqn{\sigma_u = 1}, and \strong{known}
+sampling variances \eqn{D_i \sim \mathrm{Gamma}(\mathrm{shape} = 4,
+\mathrm{rate} = 4)} -- a realistic spread (\eqn{\approx [0.2, 3.0]})
+that mirrors varying sample sizes across regencies.
+
+\strong{Important: pass \code{D} as the sampling variance.}  In any
+fit on this dataset, supply \code{sampling_variance = "D"}; otherwise
+the residual \eqn{\sigma} and the area-RE \eqn{\sigma_u} compete to
+explain the same variance, producing weak identifiability and
+divergent transitions.
 }
 \keyword{datasets}

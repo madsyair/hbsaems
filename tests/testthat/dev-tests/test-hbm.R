@@ -20,23 +20,6 @@ test_that("Function returns a model object", {
   expect_named(model_hbm, c("model", "handle_missing", "data"), ignore.order = TRUE)
 })
 
-# Test the formula
-test_that("Function throws an error when formula is not suitble", {
-  .dev_skip()
-  
-  expect_error(hbm(123, 
-                   data = data))
-  
-  expect_error(hbm(brms::bf(y ~ x1 + x2 + x4),  
-                   data = data),
-               "Missing variables in data:.*x4")
-  
-  expect_error(hbm(brms::bf(z ~ x1 + x2 + x3), 
-                   data = data),
-               "Missing variables in data:.*z")
-})
-
-# Test the prior argument
 test_that("Function throws an error when prior is invalid", {
   .dev_skip()
   
@@ -74,7 +57,6 @@ test_that("Function throws an error when prior is invalid", {
   )
 })
 
-# Test the re formula 
 test_that("Function throws an error when re formula is not ~(1|group)", {
   .dev_skip()
   
@@ -97,10 +79,135 @@ test_that("Function throws an error when re formula is not ~(1|group)", {
                   "hbmfit")
 })
 
-# Test the handle missing
-test_that("Function throws an error when handle missing does not fit with the condition", {
+test_that("Function runs correctly with valid handle_missing strategies", {
   .dev_skip()
   
+  # Deleted: only response is missing
+  data_miss1 <- data
+  data_miss1$y[1] <- NA
+  
+  data_miss2 <- data
+  data_miss2$y[1] <- NA
+  data_miss2$x1[2] <- NA
+  
+  expect_error(hbm(brms::bf(y ~ x1 + x2), data = data_miss2, handle_missing = "deleted"))
+  
+  fit_deleted <- suppressWarnings(hbm(brms::bf(y ~ x1 + x2), 
+                                      data = data_miss1, 
+                                      handle_missing = "deleted"))
+  expect_s3_class(fit_deleted, "hbmfit")
+  
+  # Model: response and predictor is missing, and formula includes mi()
+  data_miss2 <- data
+  data_miss2$x1[2] <- NA
+  
+  fit_model <- suppressWarnings(hbm(brms::bf(y|mi() ~ mi(x1) + x2) + brms::bf(x1|mi() ~ x2) , 
+                                    data = data_miss2,  re= ~(1|group), 
+                                    handle_missing = "model"))
+  expect_s3_class(fit_model, "hbmfit")
+  
+  # Multiple: any missing, and method handles multiple imputation internally
+  data_miss3 <- data
+  data_miss3$y[1] <- NA
+  data_miss3$x2[3] <- NA
+  
+  fit_multiple <- suppressWarnings(hbm(brms::bf(y ~ x1 + x2),
+                                       data = data_miss3,
+                                       handle_missing = "multiple",
+                                       m = 2))  # use fewer imputations to keep test fast
+  expect_s3_class(fit_multiple, "hbmfit")
+})
+
+test_that("Function returns a model object for logit normal missing data and handle with 'deleted' option", {
+  .dev_skip()
+  
+  data_miss <- data_binlogitnorm
+  data_miss$y[1] <- NA
+  
+  model_logit <- suppressWarnings(hbm(brms::bf(y | trials(n) ~ x1 + x2),
+                                      hb_sampling = "binomial",
+                                      hb_link = "logit",
+                                      data = data_miss,
+                                      handle_missing = "multiple"))
+  expect_s3_class(model_logit, "hbmfit")
+})
+
+test_that("Function supports spatial random effects", {
+  .dev_skip()
+  
+  suppressWarnings({
+    model_logit <- hbm(brms::bf(y ~ x1 + x2),
+                       sre = "sre",
+                       sre_type = "car",
+                       M = adjacency_matrix,
+                       data = data)
+    expect_s3_class(model_logit, "hbmfit")
+  })
+  
+  suppressWarnings({
+    model_sar <- hbm(brms::bf(y ~ x1 + x2),
+                       sre_type = "sar",
+                       M = spatial_weight,
+                       data = data)
+    expect_s3_class(model_sar, "hbmfit")
+  })
+  
+  suppressWarnings({
+    model_sar2 <- hbm(brms::bf(y ~ x1 + x2),
+                     sre_type = "sar",
+                     sar_type = "lag",
+                     M = spatial_weight,
+                     data = data)
+    expect_s3_class(model_sar2, "hbmfit")
+  })
+})
+
+test_that("Function supports spatial random effects without specified parameter", {
+  .dev_skip()
+  
+  suppressWarnings({
+    model_logit <- hbm(brms::bf(y ~ x1 + x2),
+                       sre = "sre",
+                       M = adjacency_matrix,
+                       data = data)
+    expect_s3_class(model_logit, "hbmfit")
+  })
+})
+
+test_that("Function supports spatial random effects with missing value in sre", {
+  .dev_skip()
+  
+  data_missing_sre <- data
+  data_missing_sre$sre[1] <- NA
+  
+  model <- suppressWarnings(hbm(brms::bf(y ~ x1 + x2),
+                                sre = "sre",
+                                sre_type = "car",
+                                M = adjacency_matrix,
+                                data = data_missing_sre))
+  expect_s3_class(model, "hbmfit")
+})
+
+test_that("Function supports with the number of dimensions greater than the number of locations sre", {
+  .dev_skip()
+  
+  data_adj_dim <- data
+  data_adj_dim$sre <- rep(1:4)
+  
+  model <- suppressWarnings(hbm(brms::bf(y ~ x1 + x2),
+                                sre = "sre",
+                                sre_type = "car",
+                                car_type = "icar",
+                                M = adjacency_matrix,
+                                data = data_adj_dim))
+  expect_s3_class(model, "hbmfit")
+})
+
+
+# === Migrated back from main tests (ghost-variable dependence) ===
+test_that("Function throws an error when handle missing does not fit with the condition", {
+  .dev_skip()
+  testthat::skip_if_not_installed("brms")
   # Data Dummy For Misisng Data
   # Missing at response
   data_miss1 <- data
@@ -141,95 +248,26 @@ test_that("Function throws an error when handle missing does not fit with the co
                    handle_missing = "deleted"))
 })
 
-suppressWarnings(library(mice))
-test_that("Function runs correctly with valid handle_missing strategies", {
-  .dev_skip()
-  
-  # Deleted: only response is missing
-  data_miss1 <- data
-  data_miss1$y[1] <- NA
-  
-  data_miss2 <- data
-  data_miss2$y[1] <- NA
-  data_miss2$x1[2] <- NA
-  
-  expect_error(hbm(brms::bf(y ~ x1 + x2), data = data_miss2, handle_missing = "deleted"))
-  
-  fit_deleted <- suppressWarnings(hbm(brms::bf(y ~ x1 + x2), 
-                                      data = data_miss1, 
-                                      handle_missing = "deleted"))
-  expect_s3_class(fit_deleted, "hbmfit")
-  
-  # Model: response and predictor is missing, and formula includes mi()
-  data_miss2 <- data
-  data_miss2$x1[2] <- NA
-  
-  fit_model <- suppressWarnings(hbm(brms::bf(y|mi() ~ mi(x1) + x2) + brms::bf(x1|mi() ~ x2) , 
-                                    data = data_miss2,  re= ~(1|group), 
-                                    handle_missing = "model"))
-  expect_s3_class(fit_model, "hbmfit")
-  
-  # Multiple: any missing, and method handles multiple imputation internally
-  data_miss3 <- data
-  data_miss3$y[1] <- NA
-  data_miss3$x2[3] <- NA
-  
-  fit_multiple <- suppressWarnings(hbm(brms::bf(y ~ x1 + x2),
-                                       data = data_miss3,
-                                       handle_missing = "multiple",
-                                       m = 2))  # use fewer imputations to keep test fast
-  expect_s3_class(fit_multiple, "hbmfit")
-})
 
-# Expected result
-test_that("Function returns a model object for logit normal missing data and handle with 'deleted' option", {
+# === Re-migrated from main (require real fits) ===
+test_that("Function throws an error when formula is not suitble", {
   .dev_skip()
+  testthat::skip_if_not_installed("brms")
+  expect_error(hbm(123, 
+                   data = data))
   
-  data_miss <- data_binlogitnorm
-  data_miss$y[1] <- NA
+  expect_error(hbm(brms::bf(y ~ x1 + x2 + x4),  
+                   data = data),
+               "Missing variables in data:.*x4")
   
-  model_logit <- suppressWarnings(hbm(brms::bf(y | trials(n) ~ x1 + x2),
-                                      hb_sampling = "binomial",
-                                      hb_link = "logit",
-                                      data = data_miss,
-                                      handle_missing = "multiple"))
-  expect_s3_class(model_logit, "hbmfit")
-})
-
-# Validate spatial effect
-test_that("Function supports spatial random effects", {
-  .dev_skip()
-  
-  suppressWarnings({
-    model_logit <- hbm(brms::bf(y ~ x1 + x2),
-                       sre = "sre",
-                       sre_type = "car",
-                       M = adjacency_matrix,
-                       data = data)
-    expect_s3_class(model_logit, "hbmfit")
-  })
-  
-  suppressWarnings({
-    model_sar <- hbm(brms::bf(y ~ x1 + x2),
-                       sre_type = "sar",
-                       M = spatial_weight,
-                       data = data)
-    expect_s3_class(model_sar, "hbmfit")
-  })
-  
-  suppressWarnings({
-    model_sar2 <- hbm(brms::bf(y ~ x1 + x2),
-                     sre_type = "sar",
-                     sar_type = "lag",
-                     M = spatial_weight,
-                     data = data)
-    expect_s3_class(model_sar2, "hbmfit")
-  })
+  expect_error(hbm(brms::bf(z ~ x1 + x2 + x3), 
+                   data = data),
+               "Missing variables in data:.*z")
 })
 
 test_that("Function throws error for invalid spatial random effect", {
   .dev_skip()
-  
+  testthat::skip_if_not_installed("brms")
   expect_error(hbm(brms::bf(y ~ x1 + x2),
                    sre = "invalid",
                    sre_type = "car",
@@ -238,22 +276,9 @@ test_that("Function throws error for invalid spatial random effect", {
                "Variable 'invalid' not found in the data.")
 })
 
-
-test_that("Function supports spatial random effects without specified parameter", {
-  .dev_skip()
-  
-  suppressWarnings({
-    model_logit <- hbm(brms::bf(y ~ x1 + x2),
-                       sre = "sre",
-                       M = adjacency_matrix,
-                       data = data)
-    expect_s3_class(model_logit, "hbmfit")
-  })
-})
-
 test_that("Function throws error for invalid car type", {
   .dev_skip()
-  
+  testthat::skip_if_not_installed("brms")
   expect_error(hbm(brms::bf(y ~ x1 + x2),
                    sre = "sre",
                    sre_type = "car",
@@ -263,24 +288,9 @@ test_that("Function throws error for invalid car type", {
                "'car_type' should be one of 'escar', 'esicar', 'icar', 'bym2'")
 })
 
-
-test_that("Function supports spatial random effects with missing value in sre", {
-  .dev_skip()
-  
-  data_missing_sre <- data
-  data_missing_sre$sre[1] <- NA
-  
-  model <- suppressWarnings(hbm(brms::bf(y ~ x1 + x2),
-                                sre = "sre",
-                                sre_type = "car",
-                                M = adjacency_matrix,
-                                data = data_missing_sre))
-  expect_s3_class(model, "hbmfit")
-})
-
 test_that("Function throws error for invalid spatial random effect type", {
   .dev_skip()
-  
+  testthat::skip_if_not_installed("brms")
   expect_error(hbm(brms::bf(y ~ x1 + x2),
                    sre = "sre",
                    sre_type = "invalid",
@@ -291,6 +301,7 @@ test_that("Function throws error for invalid spatial random effect type", {
 
 test_that("Function throws error for spatial random effect type = sar", {
   .dev_skip()
+  testthat::skip_if_not_installed("brms")
   expect_error(hbm(brms::bf(y ~ x1 + x2),
                    hb_sampling = "Beta",
                    sre = "sre",
@@ -300,11 +311,9 @@ test_that("Function throws error for spatial random effect type = sar", {
                "Currently, only families gaussian and student support SAR structures.")
 })
 
-
-# adj matrix
 test_that("Function throws error when adjacency matrix is incorrect", {
   .dev_skip()
-  
+  testthat::skip_if_not_installed("brms")
   adjacency_matrix_wrong <- matrix(c(
     0, 1, 1,
     1, 0, 0
@@ -364,23 +373,9 @@ test_that("Function throws error when adjacency matrix is incorrect", {
   ))
 })
 
-test_that("Function supports with the number of dimensions greater than the number of locations sre", {
-  .dev_skip()
-  
-  data_adj_dim <- data
-  data_adj_dim$sre <- rep(1:4)
-  
-  model <- suppressWarnings(hbm(brms::bf(y ~ x1 + x2),
-                                sre = "sre",
-                                sre_type = "car",
-                                car_type = "icar",
-                                M = adjacency_matrix,
-                                data = data_adj_dim))
-  expect_s3_class(model, "hbmfit")
-})
-
 test_that("Function to check error in SAR model", {
   .dev_skip()
+  testthat::skip_if_not_installed("brms")
   expect_error(suppressWarnings(
     hbm(
       formula = bf(y ~ x1 + x2 + x3),  
@@ -402,5 +397,3 @@ test_that("Function to check error in SAR model", {
     ))
 
 })
-
-

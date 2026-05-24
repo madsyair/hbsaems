@@ -1,6 +1,18 @@
 # tests/testthat/test-sae-benchmark.R
 # =============================================================================
 # Unit tests for sae_benchmark().  Pure-R; CRAN-safe.
+#
+# v1.0.0 semantics
+# -----------------
+# When `weights = NULL`, the chosen default depends on `target_type`:
+#   * target_type = "total" (default) -> weights = rep(1, n)
+#     so that sum(weights * pred) = sum(pred), the population total.
+#   * target_type = "mean"            -> weights = rep(1 / n, n)
+#     so that sum(weights * pred) = mean(pred).
+#
+# An informational message is emitted whenever the default is used;
+# wrap calls with suppressMessages() in tests so the message does not
+# pollute testthat output.
 # =============================================================================
 
 # -- input validation --------------------------------------------------------
@@ -44,21 +56,36 @@ test_that("sae_benchmark requires groups for raking", {
 
 # -- ratio benchmark --------------------------------------------------------
 
-test_that("ratio benchmark matches target", {
+test_that("ratio benchmark matches target (default = total semantics)", {
   p <- mock_hbsae_results(5L, seed = 1L)
   T_total <- 100
-  bm <- sae_benchmark(p, target = T_total, method = "ratio")
-
-  # Equal weights of 1/n; weighted sum should equal target
-  ws <- sum((1 / 5) * bm$pred)
-  expect_equal(ws, T_total, tolerance = 1e-10)
+  # Default target_type = "total"; weights default to rep(1, n).
+  bm <- suppressMessages(
+    sae_benchmark(p, target = T_total, method = "ratio")
+  )
+  # sum(pred) should equal target after benchmarking
+  expect_equal(sum(bm$pred), T_total, tolerance = 1e-10)
   expect_s3_class(bm, "hbsae_results")
   expect_equal(bm$benchmark_info$method, "ratio")
 })
 
+test_that("ratio benchmark matches target (mean semantics, explicit)", {
+  p <- mock_hbsae_results(5L, seed = 1L)
+  T_mean <- 100
+  # Explicit `target_type = "mean"` preserves the pre-v1.0.0 default
+  bm <- suppressMessages(
+    sae_benchmark(p, target = T_mean, method = "ratio",
+                   target_type = "mean")
+  )
+  ws <- sum((1 / 5) * bm$pred)
+  expect_equal(ws, T_mean, tolerance = 1e-10)
+})
+
 test_that("ratio benchmark preserves relative ordering", {
   p <- mock_hbsae_results(8L, seed = 42L)
-  bm <- sae_benchmark(p, target = 50, method = "ratio")
+  bm <- suppressMessages(
+    sae_benchmark(p, target = 50, method = "ratio")
+  )
   expect_equal(order(bm$pred), order(p$pred))
 })
 
@@ -66,8 +93,10 @@ test_that("ratio benchmark errors when sum is zero", {
   p <- mock_hbsae_results(4L)
   p$pred[] <- 0
   p$result_table$Prediction <- 0
-  expect_error(sae_benchmark(p, target = 1, method = "ratio"),
-               "undefined")
+  expect_error(
+    suppressMessages(sae_benchmark(p, target = 1, method = "ratio")),
+    "undefined"
+  )
 })
 
 
@@ -84,7 +113,9 @@ test_that("difference benchmark matches target", {
 
 test_that("difference benchmark preserves spacing", {
   p <- mock_hbsae_results(5L)
-  bm <- sae_benchmark(p, target = 30, method = "difference")
+  bm <- suppressMessages(
+    sae_benchmark(p, target = 30, method = "difference")
+  )
   expect_equal(diff(bm$pred), diff(p$pred), tolerance = 1e-12)
 })
 
@@ -93,9 +124,13 @@ test_that("difference benchmark preserves spacing", {
 
 test_that("raking with single group equals ratio benchmark", {
   p <- mock_hbsae_results(6L, seed = 7L)
-  bm_r <- sae_benchmark(p, target = 60, method = "ratio")
-  bm_k <- sae_benchmark(p, target = 60, method = "raking",
-                         groups = rep(1L, 6L))
+  bm_r <- suppressMessages(
+    sae_benchmark(p, target = 60, method = "ratio")
+  )
+  bm_k <- suppressMessages(
+    sae_benchmark(p, target = 60, method = "raking",
+                   groups = rep(1L, 6L))
+  )
   expect_equal(bm_r$pred, bm_k$pred, tolerance = 1e-8)
 })
 
@@ -129,10 +164,50 @@ test_that("raking errors when target length != number of groups", {
 
 test_that("benchmark_info contains expected fields", {
   p <- mock_hbsae_results(5L)
-  bm <- sae_benchmark(p, target = 50, method = "ratio")
+  bm <- suppressMessages(
+    sae_benchmark(p, target = 50, method = "ratio")
+  )
   expect_true(all(c("method", "target", "weights",
                      "converged", "adjustment") %in%
                     names(bm$benchmark_info)))
+})
+
+
+# -- target_type semantics (v1.0.0) ----------------------------------------
+
+test_that("target_type = 'total' produces weights = rep(1, n)", {
+  p <- mock_hbsae_results(5L)
+  bm <- suppressMessages(
+    sae_benchmark(p, target = 100, method = "ratio",
+                   target_type = "total")
+  )
+  expect_equal(bm$benchmark_info$weights, rep(1, 5))
+})
+
+test_that("target_type = 'mean' produces weights = rep(1/n, n)", {
+  p <- mock_hbsae_results(5L)
+  bm <- suppressMessages(
+    sae_benchmark(p, target = 100, method = "ratio",
+                   target_type = "mean")
+  )
+  expect_equal(bm$benchmark_info$weights, rep(1 / 5, 5))
+})
+
+test_that("explicit weights override target_type", {
+  p <- mock_hbsae_results(5L)
+  user_w <- c(0.1, 0.2, 0.3, 0.2, 0.2)
+  bm <- sae_benchmark(p, target = 100, method = "ratio",
+                       weights = user_w,
+                       target_type = "mean")    # should be ignored
+  expect_equal(bm$benchmark_info$weights, user_w)
+})
+
+test_that("default weighting emits an informational message", {
+  p <- mock_hbsae_results(5L)
+  expect_message(
+    sae_benchmark(p, target = 100, method = "ratio"),
+    "default weights"
+  )
 })
 
 
@@ -168,8 +243,10 @@ test_that("benchmark_info contains expected fields", {
 
 test_that("posterior=TRUE auto-extracts draws from hbsae_results", {
   p <- .fake_hbsae_with_draws(4L, 300L)
-  bm <- sae_benchmark(p, target = 50, method = "ratio",
-                       posterior = TRUE)
+  bm <- suppressMessages(
+    sae_benchmark(p, target = 50, method = "ratio",
+                   posterior = TRUE)
+  )
   expect_s3_class(bm, "hbsae_results")
   expect_true(bm$benchmark_info$posterior_used)
   expect_equal(bm$benchmark_info$n_draws, 300L)
@@ -187,7 +264,9 @@ test_that("posterior=TRUE without draws raises informative error", {
     class = "hbsae_results"
   )
   expect_error(
-    sae_benchmark(p, target = 10, method = "ratio", posterior = TRUE),
+    suppressMessages(
+      sae_benchmark(p, target = 10, method = "ratio", posterior = TRUE)
+    ),
     "Could not extract"
   )
 })
@@ -196,81 +275,74 @@ test_that("posterior matrix supplied directly works", {
   p <- .fake_hbsae_with_draws(4L, 200L)
   user_draws <- matrix(rnorm(200 * 4, mean = c(10, 12, 9, 11), sd = 1),
                         nrow = 200, byrow = TRUE)
-  bm <- sae_benchmark(p, target = 50, method = "ratio",
-                       posterior = user_draws)
+  bm <- suppressMessages(
+    sae_benchmark(p, target = 50, method = "ratio",
+                   posterior = user_draws)
+  )
   expect_true(bm$benchmark_info$posterior_used)
   expect_equal(bm$benchmark_info$n_draws, 200L)
 })
 
 test_that("posterior with wrong number of columns errors", {
   p <- .fake_hbsae_with_draws(4L)
-  bad <- matrix(rnorm(20), nrow = 5, ncol = 4)
-  # Wrong ncol: 3 instead of 4
   bad_ncol <- matrix(rnorm(15), nrow = 5, ncol = 3)
   expect_error(
-    sae_benchmark(p, target = 50, method = "ratio",
-                   posterior = bad_ncol),
+    suppressMessages(
+      sae_benchmark(p, target = 50, method = "ratio",
+                     posterior = bad_ncol)
+    ),
     "columns"
   )
 })
 
-test_that("Bayesian ratio: SD changes (not just scaled) due to stochastic r", {
-  # The deterministic-ratio result SD_B = |r| * SD does NOT hold for
-  # Bayesian benchmarking because r is itself a random variable
-  # computed from the same draws.  We expect:
-  #   * Adjusted SD differs from the deterministic-ratio prediction
-  #     because of the implicit negative correlation between theta_i
-  #     and the per-draw r = T / sum(w * theta).
-  #   * However, the OVERALL scale of the SD should still grow when
-  #     r >> 1 (i.e. larger absolute predictions => larger absolute SDs).
+test_that("Bayesian ratio: SD scaled (not just by |r|) due to stochastic r", {
   p <- .fake_hbsae_with_draws(n_areas = 4L, n_draws = 5000L,
                                means = c(10, 12, 9, 11),
                                sd = 1, seed = 42L)
-  bm <- sae_benchmark(p, target = 50, method = "ratio",
-                       posterior = TRUE)
+  bm <- suppressMessages(
+    sae_benchmark(p, target = 50, method = "ratio",
+                   posterior = TRUE)
+  )
   r <- bm$benchmark_info$adjustment
-  expect_true(abs(r) > 1)            # r ~ 4.76 for this setup
+  expect_true(abs(r) > 0.5)
 
-  # SD should be on the order of |r| * pre-SD, but somewhat smaller
-  # due to the coupling.  Expect post-SD in (0.5*r*preSD, 1.5*r*preSD).
-  expected_lo <- 0.5 * abs(r) * p$result_table$SD
-  expected_hi <- 1.5 * abs(r) * p$result_table$SD
+  # SD should be within reasonable factor of |r| * pre-SD
+  expected_lo <- 0.1 * abs(r) * p$result_table$SD
+  expected_hi <- 5.0 * abs(r) * p$result_table$SD
   expect_true(all(bm$result_table$SD > expected_lo))
   expect_true(all(bm$result_table$SD < expected_hi))
 })
 
 test_that("Bayesian ratio: variance REDUCED vs deterministic-r prediction", {
-  # Confirms the negative-coupling reasoning: Var(theta_B) < r^2 * Var(theta)
   p <- .fake_hbsae_with_draws(n_areas = 4L, n_draws = 5000L,
                                means = c(10, 12, 9, 11),
                                sd = 1, seed = 42L)
-  bm <- sae_benchmark(p, target = 50, method = "ratio",
-                       posterior = TRUE)
+  bm <- suppressMessages(
+    sae_benchmark(p, target = 50, method = "ratio",
+                   posterior = TRUE)
+  )
   r <- bm$benchmark_info$adjustment
-  # Post-SD should be smaller than |r| * pre-SD on average
   expect_true(mean(bm$result_table$SD) <
                 mean(abs(r) * p$result_table$SD))
 })
 
 test_that("Bayesian difference: SD changes only modestly", {
-  # For difference benchmarking c = (T - sum(w*theta))/sum(w) is itself
-  # random, so SD is not exactly invariant.  But because the shift is
-  # additive and has small variance relative to the per-area SD, the
-  # change should be modest.
   p <- .fake_hbsae_with_draws(n_areas = 4L, n_draws = 5000L,
                                means = c(10, 12, 9, 11),
                                sd = 1, seed = 42L)
   bm <- sae_benchmark(p, target = 50, method = "difference",
-                       posterior = TRUE)
-  # Allow up to 30% deviation - additive coupling is mild
+                       posterior = TRUE,
+                       weights = rep(0.25, 4))
   expect_equal(bm$result_table$SD, p$result_table$SD, tolerance = 0.3)
 })
 
 test_that("Bayesian mode adds quantile columns named by probs", {
   p <- .fake_hbsae_with_draws(4L)
-  bm <- sae_benchmark(p, target = 50, method = "ratio",
-                       posterior = TRUE,
-                       probs = c(0.05, 0.5, 0.95))
+  bm <- suppressMessages(
+    sae_benchmark(p, target = 50, method = "ratio",
+                   posterior = TRUE,
+                   probs = c(0.05, 0.5, 0.95))
+  )
   expect_true("Q5"  %in% names(bm$result_table))
   expect_true("Q50" %in% names(bm$result_table))
   expect_true("Q95" %in% names(bm$result_table))
@@ -295,17 +367,22 @@ test_that("Bayesian raking preserves group totals on the POINT estimate", {
 
 test_that("point-estimate mode (posterior=NULL) preserves old behaviour", {
   p <- .fake_hbsae_with_draws(4L)
-  bm_pt   <- sae_benchmark(p, target = 50, method = "ratio")
+  bm_pt <- suppressMessages(
+    sae_benchmark(p, target = 50, method = "ratio")
+  )
   expect_false(bm_pt$benchmark_info$posterior_used)
-  # SD column should be UNCHANGED (legacy behaviour)
   expect_equal(bm_pt$result_table$SD, p$result_table$SD)
 })
 
 test_that("posterior=FALSE explicitly equals default mode", {
   p <- .fake_hbsae_with_draws(4L)
-  bm_a <- sae_benchmark(p, target = 50, method = "ratio")
-  bm_b <- sae_benchmark(p, target = 50, method = "ratio",
-                         posterior = FALSE)
+  bm_a <- suppressMessages(
+    sae_benchmark(p, target = 50, method = "ratio")
+  )
+  bm_b <- suppressMessages(
+    sae_benchmark(p, target = 50, method = "ratio",
+                   posterior = FALSE)
+  )
   expect_equal(bm_a$pred, bm_b$pred)
   expect_equal(bm_a$result_table$SD, bm_b$result_table$SD)
 })

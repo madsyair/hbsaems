@@ -36,7 +36,6 @@ test_that("Function returns a model object", {
   expect_s3_class(model, "hbmfit")
 })
 
-# Prior implementation
 test_that("Function to check prior implementation", {
   .dev_skip()
   model <- suppressWarnings(hbm_betalogitnorm(response = "y",
@@ -136,126 +135,6 @@ test_that("Function to check prior implementation", {
   )
 })
 
-# Error checking
-# 1. Parameter existence
-test_that("Function to check the existence of parameters", {
-  .dev_skip()
-  expect_error(hbm_betalogitnorm(response = "invalid", 
-                        predictors = c("x1", "x2", "x3"), 
-                        data = data,
-                        "Variable 'invalid' not found in the 'data'."))
-  
-  expect_error(hbm_betalogitnorm(response = "y", 
-                        predictors = c("invalid1", "invalid2"), 
-                        n = "n",
-                        deff = "deff",
-                        data = data,
-                        "Variable 'invalid1, invalid2' not found in the 'data'."))
-  
-  expect_error(hbm_betalogitnorm(response = "y", 
-                        predictors = c("x1", "x2", "x3"), 
-                        n = "invalid",
-                        deff = "deff",
-                        data = data,
-                        "Variable 'invalid' not found in the 'data'."))
-  
-  expect_error(hbm_betalogitnorm(response = "y", 
-                        predictors = c("x1", "x2", "x3"), 
-                        n = "n",
-                        deff = "invalid",
-                        data = data,
-                        "Variable 'invalid' not found in the 'data'."))
-  
-  expect_error(hbm_betalogitnorm(response = "y", 
-                                 predictors = c("x1", "x2", "x3"), 
-                                 group = "invalid",
-                                 data = data,
-                                 "Variable 'invalid' not found in the 'data'."))
-  
-  expect_error(hbm_betalogitnorm(response = "y", 
-                                 predictors = c("x1", "x2", "x3"), 
-                                 sre = "invalid",
-                                 sre_type = "car",
-                                 car_type = "escar",
-                                 data = data,
-                                 "Variable 'invalid' not found in the 'data'."))
-  
-  expect_error(hbm_betalogitnorm(response = "y", 
-                        predictors = c("x1", "x2"), 
-                        n = "n",
-                        data = data,
-                        "Both variables 'n' and 'deff' must be specified or undefined simultaneously."))
-  
-  expect_error(hbm_betalogitnorm(response = "y", 
-                                 predictors = c("x1", "x2", "x3"), 
-                                 deff = "deff",
-                                 data = data,
-                                 "Both variables 'n' and 'deff' must be specified or undefined simultaneously."))
-})
-
-## 2. Check for response values
-test_that("Function to check response value", {
-  .dev_skip()
-  data_wrong1 <- data
-  data_wrong1$y[1] <- 2
-  expect_error(hbm_betalogitnorm(response = "y", 
-                        predictors = c("x1", "x2"), 
-                        data = data_wrong1,
-                        "Response variable must be between 0 and 1."))
-})
-
-# check all possible phi conditions
-test_that("Function stops when response variable not found", {
-  .dev_skip()
-  data_wrong2 <- data
-  data_wrong2$n[1] <- NA
-  expect_error(hbm_betalogitnorm(response = "y", 
-                                 predictors = c("x1", "x2"), 
-                                 n = "n",
-                                 deff = "deff",
-                                 data = data_wrong2,
-                                 "Missing values detected in either 'n' or 'deff'."))
-  
-  data_wrong3 <- data
-  data_wrong3$deff[1] <- NA
-  expect_error(hbm_betalogitnorm(response = "y", 
-                                 predictors = c("x1", "x2"), 
-                                 n = "n",
-                                 deff = "deff",
-                                 data = data_wrong3,
-                                 "Missing values detected in either 'n' or 'deff'."))
-  
-  data_wrong4 <- data
-  data_wrong4$n[1] <- -1
-  expect_error(hbm_betalogitnorm(response = "y", 
-                                 predictors = c("x1", "x2"), 
-                                 n = "n",
-                                 deff = "deff",
-                                 data = data_wrong4,
-                                 "Both 'n' and 'deff' must be strictly positive values."))
-  
-  data_wrong5 <- data
-  data_wrong5$deff[1] <- -1
-  expect_error(hbm_betalogitnorm(response = "y", 
-                                 predictors = c("x1", "x2"), 
-                                 n = "n",
-                                 deff = "deff",
-                                 data = data_wrong5,
-                                 "Both 'n' and 'deff' must be strictly positive values."))
-  
-  data_wrong6 <- data
-  data_wrong6$n[1] <- 1
-  data_wrong6$deff[1] <- 2
-  expect_error(hbm_betalogitnorm(response = "y", 
-                                 predictors = c("x1", "x2"), 
-                                 n = "n",
-                                 deff = "deff",
-                                 data = data_wrong6,
-                                 "The phi value should be positive, but we found phi <=0. Check your n and deff values again."))
-  
-})
-
-# Missing value
 test_that("Function throws an error when handle missing does not fit with the condition", {
   .dev_skip()
   
@@ -296,7 +175,6 @@ test_that("Function throws an error when handle missing does not fit with the co
     
 })
 
-# Validate spatial effect
 test_that("Function supports spatial random effects", {
   .dev_skip()
   model1 <- suppressWarnings(hbm_betalogitnorm(response = "y", 
@@ -358,6 +236,8 @@ test_that("Function supports spatial random effects", {
   
 })
 
+
+# === Re-migrated from main (require real fits) ===
 test_that("Function to check for errors in spatial effect models", {
   .dev_skip()
   expect_error(hbm_betalogitnorm(response = "y", 
@@ -401,7 +281,6 @@ test_that("Function to check for errors in spatial effect models", {
 
 })
 
-# Checking the adjacency matrix
 test_that("Function throws error when adjacency matrix is incorrect", {
   .dev_skip()
   adjacency_matrix_wrong <- matrix(c(0, 1, 1,

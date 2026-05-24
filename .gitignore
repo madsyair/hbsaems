@@ -25,6 +25,3 @@ src/*.dll
 # Local-only test outputs
 docs_test/
 _pkgdown_test.yml
-docs
-/doc/
-/Meta/

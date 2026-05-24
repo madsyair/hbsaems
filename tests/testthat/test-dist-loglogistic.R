@@ -88,18 +88,21 @@ test_that("brms_custom_loglogistic returns expected structure", {
   expect_named(ll, c("custom_family", "stanvars_family"))
   expect_s3_class(ll$custom_family,    "customfamily")
   expect_s3_class(ll$stanvars_family,  "stanvars")
-  expect_equal(ll$custom_family$name,  "loglogistic")
+  # Stan-side family name is prefixed with `hbsae_` to avoid colliding
+  # with Stan's built-in `loglogistic_lpdf` (Stan >= 2.29).  The R-side
+  # registry key remains "loglogistic" (see registry test below).
+  expect_equal(ll$custom_family$name,  "hbsae_loglogistic")
   expect_equal(ll$custom_family$dpars, c("mu", "beta"))
 })
 
 test_that("read_stan_function loads loglogistic Stan code", {
-  code <- read_stan_function("loglogistic")
+  code <- read_stan_function("hbsae_loglogistic")
   expect_type(code, "character")
-  # Verify essential function names are defined
-  expect_true(grepl("real loglogistic_lpdf",  code))
-  expect_true(grepl("real loglogistic_lcdf",  code))
-  expect_true(grepl("real loglogistic_lccdf", code))
-  expect_true(grepl("real loglogistic_rng",   code))
+  # Verify essential function names are defined (with the `hbsae_` prefix)
+  expect_true(grepl("real hbsae_loglogistic_lpdf",  code))
+  expect_true(grepl("real hbsae_loglogistic_lcdf",  code))
+  expect_true(grepl("real hbsae_loglogistic_lccdf", code))
+  expect_true(grepl("real hbsae_loglogistic_rng",   code))
 })
 
 test_that("read_stan_function errors on unknown distribution", {
@@ -110,7 +113,7 @@ test_that("read_stan_function errors on unknown distribution", {
 test_that("build_brms_custom_family validates first dpar is 'mu'", {
   testthat::skip_if_not_installed("brms")
   expect_error(
-    build_brms_custom_family("loglogistic", dpars = c("foo", "bar"),
+    build_brms_custom_family("hbsae_loglogistic", dpars = c("foo", "bar"),
                               links = c("log", "log")),
     "First entry of `dpars`"
   )
@@ -163,7 +166,9 @@ test_that("brms_custom_shifted_loglogistic returns expected structure", {
   expect_named(sll, c("custom_family", "stanvars_family"))
   expect_s3_class(sll$custom_family,   "customfamily")
   expect_s3_class(sll$stanvars_family, "stanvars")
-  expect_equal(sll$custom_family$name,  "shifted_loglogistic")
+  # Stan-side family name prefixed with `hbsae_` for consistency.  See
+  # the loglogistic test above.
+  expect_equal(sll$custom_family$name,  "hbsae_shifted_loglogistic")
   expect_equal(sll$custom_family$dpars, c("mu", "sigma", "xi"))
 })
 

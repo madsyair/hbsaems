@@ -86,11 +86,25 @@ prior_check <- function(model, data, response_var, ndraws_ppc = 50, ...) {
   brms_model <- if (is.hbmfit(model)) model$model else model
   observed   <- data[[response_var]]
 
+  # -- Multivariate handling ----------------------------------------------------
+  # For multivariate brms models (e.g.\ joint mi() imputation),
+  # posterior_predict() returns a 3-D array with one slice per
+  # response and pp_check() requires a `resp` argument to disambiguate.
+  # Detect the multivariate case and pass `resp = response_var`
+  # automatically.
+  is_mv <- tryCatch(
+    !is.null(brms_model$formula$forms),
+    error = function(e) FALSE
+  )
+
   # Prior predictive draws
+  pp_args <- list(object   = brms_model,
+                  ndraws   = ndraws_ppc,
+                  draw_ids = seq_len(ndraws_ppc))
+  if (is_mv) pp_args$resp <- response_var
+
   draws <- tryCatch(
-    brms::posterior_predict(brms_model,
-                            ndraws   = ndraws_ppc,
-                            draw_ids = seq_len(ndraws_ppc)),
+    do.call(brms::posterior_predict, pp_args),
     error = function(e) {
       stop("Failed to generate prior predictive draws: ", e$message,
            "\nDid you fit the model with sample_prior = 'only'?",
@@ -99,8 +113,10 @@ prior_check <- function(model, data, response_var, ndraws_ppc = 50, ...) {
   )
 
   # Plot
+  ppc_args <- list(object = brms_model, ndraws = ndraws_ppc)
+  if (is_mv) ppc_args$resp <- response_var
   ppc_plot <- tryCatch(
-    brms::pp_check(brms_model, ndraws = ndraws_ppc),
+    do.call(brms::pp_check, ppc_args),
     error = function(e) {
       message("pp_check() failed: ", e$message)
       NULL

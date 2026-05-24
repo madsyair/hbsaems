@@ -130,10 +130,22 @@ model_compare.hbmfit <- function(model, model2 = NULL,
   } else NULL
 
   # ---- Posterior predictive check -------------------------------------------
-  pp_chk <- if ("pp_check" %in% plot_types)
-    tryCatch(brms::pp_check(brms1, ndraws = ndraws_ppc),
+  # For multivariate brms models (joint mi() imputation), pp_check() needs
+  # a `resp` argument to disambiguate; we default to the first response
+  # if the user did not pass one via `...`.
+  pp_chk <- if ("pp_check" %in% plot_types) {
+    dot_args <- list(...)
+    pp_args  <- list(object = brms1, ndraws = ndraws_ppc)
+    is_mv <- !is.null(brms1$formula$forms)
+    if (is_mv && is.null(dot_args$resp)) {
+      # Pick the first response from the multivariate formula.
+      first_form <- brms1$formula$forms[[1L]]$formula
+      first_resp <- as.character(first_form[[2L]])[1L]
+      pp_args$resp <- first_resp
+    }
+    tryCatch(do.call(brms::pp_check, pp_args),
              error = function(e) NULL)
-  else NULL
+  } else NULL
 
   # ---- Parameter plot -------------------------------------------------------
   params_plot <- if ("params" %in% plot_types)

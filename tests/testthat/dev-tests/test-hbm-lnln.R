@@ -23,58 +23,6 @@ test_that("Function returns a model object", {
   })
 })
 
-# Variable not exist
-test_that("Function stops when response variable not found", {
-  .dev_skip()
-  expect_error(
-    hbm_lnln(
-      response = "invalid_var",
-      predictors = c("x1", "x2", "x3"),
-      data = data
-    ),
-    "Response variable not found"
-  )
-})
-
-test_that("Function stops when predictor variable not found", {
-  .dev_skip()
-  expect_error(
-    hbm_lnln(
-      response = "y_obs",
-      predictors = c("invalid", "x2", "x3"),
-      data = data
-    ),
-    "One or more predictor variables not found"
-  )
-})
-
-# Validate response variable
-test_that("Function throws error when response has zero or negative values", {
-  .dev_skip()
-  data_invalid1 <- data
-  data_invalid1$y_obs[1] <- -1 # Inject invalid response
-  data_invalid2 <- data
-  data_invalid2$y_obs[1] <- 0 # Inject invalid response
-
-  expect_error(
-    hbm_lnln(
-      response = "y_obs",
-      predictors = c("x1", "x2", "x3"),
-      data = data_invalid1
-    ),
-    "contains zero or negative values"
-  )
-  expect_error(
-    hbm_lnln(
-      response = "y_obs",
-      predictors = c("x1", "x2", "x3"),
-      data = data_invalid2
-    ),
-    "contains zero or negative values"
-  )
-})
-
-# Validate prior
 test_that("Function accepts valid priors", {
   .dev_skip()
   suppressWarnings({
@@ -91,20 +39,6 @@ test_that("Function accepts valid priors", {
   expect_s3_class(model, "hbmfit")
 })
 
-test_that("Function throws error for invalid prior", {
-  .dev_skip()
-  expect_error(
-    hbm_lnln(
-      response = "y_obs",
-      predictors = c("x1", "x2", "x3"),
-      data = data,
-      prior = "invalid_prior"
-    ),
-    "Argument 'prior' must be a 'brmsprior' object."
-  )
-})
-
-# Validate random effects
 test_that("Function supports random effects", {
   .dev_skip()
   suppressWarnings({
@@ -118,20 +52,6 @@ test_that("Function supports random effects", {
   })
 })
 
-test_that("Function throws error for invalid random effect variable", {
-  .dev_skip()
-  expect_error(
-    hbm_lnln(
-      response = "y_obs",
-      predictors = c("x1", "x2", "x3"),
-      group = "invalid_group",
-      data = data
-    ),
-    "Variable 'invalid_group' not found in the data."
-  )
-})
-
-# Validate handle missing
 test_that("Function support handle missing data with 'model' method", {
   .dev_skip()
   data_missing1 <- data
@@ -198,8 +118,74 @@ test_that("Function support handle missing data with 'multiple' method", {
   expect_s3_class(model, "hbmfit")
 })
 
+test_that("Function supports spatial random effects", {
+  .dev_skip()
+  suppressWarnings({
+    model <- hbm_lnln(
+      response = "y_obs",
+      predictors = c("x1", "x2", "x3"),
+      group = "group",
+      sre = "sre",
+      sre_type = "car",
+      M = M,
+      data = data
+    )
+    expect_s3_class(model, "hbmfit")
+  })
+})
+
+test_that("Function supports spatial random effects without specified parameter", {
+  .dev_skip()
+  suppressWarnings({
+    model <- hbm_lnln(
+      response = "y_obs",
+      predictors = c("x1", "x2", "x3"),
+      sre = "sre",
+      sre_type = "car",
+      M = M,
+      data = data
+    )
+    expect_s3_class(model, "hbmfit")
+  })
+})
+
+test_that("Function supports spatial random effects with missing value in sre", {
+  .dev_skip()
+  data_missing1 <- data
+  data_missing1$area[1] <- NA
+  
+  model <- suppressWarnings(hbm_lnln(
+    response = "y_obs",
+    predictors = c("x1", "x2", "x3"),
+    sre = "sre",
+    sre_type = "car",
+    M = M,
+    data = data
+  ))
+  expect_s3_class(model, "hbmfit")
+})
+
+test_that("Function supports with the number of dimensions greater than the number of locations sre", {
+  .dev_skip()
+  data2 <- data
+  data2$sre <- rep(1:4) 
+  
+  suppressWarnings({
+    model <- hbm_lnln(
+      response = "y_obs",
+      predictors = c("x1", "x2", "x3"),
+      sre = "sre",
+      sre_type = "car",
+      car_type = "icar",
+      M = M,
+      data = data2
+    )
+    expect_s3_class(model, "hbmfit")
+  })
+})
 
 
+# === Migrated back from main tests (ghost-variable dependence) ===
 test_that("Function throws an error when handle missing does not fit with the condition", {
   .dev_skip()
   data_missing1 <- data
@@ -215,21 +201,68 @@ test_that("Function throws an error when handle missing does not fit with the co
   ))
 })
 
-# Validate spatial effect
-test_that("Function supports spatial random effects", {
+
+# === Re-migrated from main (require real fits) ===
+test_that("Function stops when response variable not found", {
   .dev_skip()
-  suppressWarnings({
-    model <- hbm_lnln(
+  expect_error(
+    hbm_lnln(
+      response = "invalid_var",
+      predictors = c("x1", "x2", "x3"),
+      data = data
+    ),
+    "Response variable not found"
+  )
+})
+
+test_that("Function stops when predictor variable not found", {
+  .dev_skip()
+  expect_error(
+    hbm_lnln(
+      response = "y_obs",
+      predictors = c("invalid", "x2", "x3"),
+      data = data
+    ),
+    "One or more predictor variables not found"
+  )
+})
+
+test_that("Function throws error when response has zero or negative values", {
+  .dev_skip()
+  data_invalid1 <- data
+  data_invalid1$y_obs[1] <- -1 # Inject invalid response
+  data_invalid2 <- data
+  data_invalid2$y_obs[1] <- 0 # Inject invalid response
+
+  expect_error(
+    hbm_lnln(
       response = "y_obs",
       predictors = c("x1", "x2", "x3"),
-      group = "group",
-      sre = "sre",
-      sre_type = "car",
-      M = M,
+      data = data_invalid1
+    ),
+    "contains zero or negative values"
+  )
+  expect_error(
+    hbm_lnln(
+      response = "y_obs",
+      predictors = c("x1", "x2", "x3"),
+      data = data_invalid2
+    ),
+    "contains zero or negative values"
+  )
+})
+
+test_that("Function throws error for invalid random effect variable", {
+  .dev_skip()
+  expect_error(
+    hbm_lnln(
+      response = "y_obs",
+      predictors = c("x1", "x2", "x3"),
+      group = "invalid_group",
       data = data
-    )
-    expect_s3_class(model, "hbmfit")
-  })
+    ),
+    "Variable 'invalid_group' not found in the data."
+  )
 })
 
 test_that("Function throws error for invalid spatial random effect", {
@@ -249,21 +282,6 @@ test_that("Function throws error for invalid spatial random effect", {
   )
 })
 
-test_that("Function supports spatial random effects without specified parameter", {
-  .dev_skip()
-  suppressWarnings({
-    model <- hbm_lnln(
-      response = "y_obs",
-      predictors = c("x1", "x2", "x3"),
-      sre = "sre",
-      sre_type = "car",
-      M = M,
-      data = data
-    )
-    expect_s3_class(model, "hbmfit")
-  })
-})
-
 test_that("Function throws error for invalid car type", {
   .dev_skip()
   expect_error(
@@ -278,23 +296,6 @@ test_that("Function throws error for invalid car type", {
     ),
     "'car_type' should be one of 'escar', 'esicar', 'icar', 'bym2'"
   )
-})
-
-
-test_that("Function supports spatial random effects with missing value in sre", {
-  .dev_skip()
-  data_missing1 <- data
-  data_missing1$area[1] <- NA
-  
-  model <- suppressWarnings(hbm_lnln(
-    response = "y_obs",
-    predictors = c("x1", "x2", "x3"),
-    sre = "sre",
-    sre_type = "car",
-    M = M,
-    data = data
-  ))
-  expect_s3_class(model, "hbmfit")
 })
 
 test_that("Function throws error for invalid spatial random effect type", {
@@ -329,7 +330,6 @@ test_that("Function throws error for spatial random effect type = sar", {
   )
 })
 
-# adj matrix
 test_that("Function throws error when adjacency matrix is incorrect", {
   .dev_skip()
   adjacency_matrix_wrong <- matrix(c(
@@ -426,23 +426,4 @@ test_that("Function throws error when adjacency matrix is incorrect", {
     ),
     "Dimensions of 'M' for CAR terms must be equal to the number of observations.",
   )
-})
-
-test_that("Function supports with the number of dimensions greater than the number of locations sre", {
-  .dev_skip()
-  data2 <- data
-  data2$sre <- rep(1:4) 
-  
-  suppressWarnings({
-    model <- hbm_lnln(
-      response = "y_obs",
-      predictors = c("x1", "x2", "x3"),
-      sre = "sre",
-      sre_type = "car",
-      car_type = "icar",
-      M = M,
-      data = data2
-    )
-    expect_s3_class(model, "hbmfit")
-  })
 })

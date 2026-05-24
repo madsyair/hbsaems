@@ -193,29 +193,29 @@ fit_lnln <- hbm_lnln(
 
 ### Fungsi alur kerja
 
-| Fungsi | Tujuan | Mengganti (lama) |
-|----|----|----|
-| `convergence_check()` | Diagnostik konvergensi MCMC: $\hat R$, ESS, Geweke, Heidelberger, Raftery | `hbcc()` |
-| `model_compare()` | Perbandingan model LOO/WAIC/Bayes-factor dan posterior predictive checks | `hbmc()` |
-| `model_compare_all()` | Pemeringkatan multi-model analog dengan `loo_compare` | – |
-| `model_average()` | Rata-rata model Bayesian (bobot manual, stacking, atau pseudo-BMA+ via `loo`) | – |
-| `prior_check()` | Prior predictive checks | `hbpc()` |
-| `prior_sensitivity()` | Diagnostik sensitivitas prior dengan power-scaling (`priorsense`) | – |
-| `sae_predict()` | Prediksi SAE in-sample dan out-of-sample | `hbsae()` |
-| `sae_benchmark()` | Benchmarking design-consistent | – |
+| Fungsi                | Tujuan                                                                        | Mengganti (lama) |
+|-----------------------|-------------------------------------------------------------------------------|------------------|
+| `convergence_check()` | Diagnostik konvergensi MCMC: $\hat R$, ESS, Geweke, Heidelberger, Raftery     | `hbcc()`         |
+| `model_compare()`     | Perbandingan model LOO/WAIC/Bayes-factor dan posterior predictive checks      | `hbmc()`         |
+| `model_compare_all()` | Pemeringkatan multi-model analog dengan `loo_compare`                         | –                |
+| `model_average()`     | Rata-rata model Bayesian (bobot manual, stacking, atau pseudo-BMA+ via `loo`) | –                |
+| `prior_check()`       | Prior predictive checks                                                       | `hbpc()`         |
+| `prior_sensitivity()` | Diagnostik sensitivitas prior dengan power-scaling (`priorsense`)             | –                |
+| `sae_predict()`       | Prediksi SAE in-sample dan out-of-sample                                      | `hbsae()`        |
+| `sae_benchmark()`     | Benchmarking design-consistent                                                | –                |
 
 ### Fungsi pendukung
 
-| Fungsi | Tujuan |
-|----|----|
-| `check_data()` | Pemeriksaan integritas data (missing, duplikat, ukuran sampel) |
-| `check_spatial_weight()` | Pemeriksaan kompatibilitas teoretis matriks bobot spasial |
-| `build_spatial_weight()` | Membangun matriks adjacency / row-standardised |
-| `is_converged()` | Pemeriksaan konvergensi ya/tidak cepat |
-| `posterior_interval()` | Selang kredibel dari draws posterior |
-| `posterior_draws()` | Ekstrak draws posterior sebagai data frame panjang |
-| `hbm_info()` | Inspeksi spek model, prior, pengaturan sampler |
-| `hbm_warnings()` | Tampilkan peringatan pas model |
+| Fungsi                   | Tujuan                                                         |
+|--------------------------|----------------------------------------------------------------|
+| `check_data()`           | Pemeriksaan integritas data (missing, duplikat, ukuran sampel) |
+| `check_spatial_weight()` | Pemeriksaan kompatibilitas teoretis matriks bobot spasial      |
+| `build_spatial_weight()` | Membangun matriks adjacency / row-standardised                 |
+| `is_converged()`         | Pemeriksaan konvergensi ya/tidak cepat                         |
+| `posterior_interval()`   | Selang kredibel dari draws posterior                           |
+| `posterior_draws()`      | Ekstrak draws posterior sebagai data frame panjang             |
+| `hbm_info()`             | Inspeksi spek model, prior, pengaturan sampler                 |
+| `hbm_warnings()`         | Tampilkan peringatan pas model                                 |
 
 ## Distribusi kustom
 
@@ -252,18 +252,18 @@ pemodelan:
 browseVignettes("hbsaems")
 ```
 
-| Vignette | Topik |
-|----|----|
-| `complete-workflow` | Contoh Fay-Herriot end-to-end dengan alur Bayesian penuh |
-| `hbsaems-modelling` | Konsep pemodelan dan API tiga-lapis |
-| `hbsaems-betalogitnorm-model` | Beta logit-normal untuk proporsi |
-| `hbsaems-binlogitnorm-model` | Binomial logit-normal untuk count |
-| `hbsaems-lnln-model` | Varian Fay-Herriot lognormal-lognormal |
-| `hbsaems-spatial` | Model spasial CAR / SAR / BYM2 |
-| `hbsaems-handle-missing` | Tiga strategi data hilang |
-| `advanced-features` | Prior shrinkage, spline, family kustom |
-| `hbsaems-run_sae_app` | Menggunakan aplikasi Shiny |
-| `migration-guide` | Migrasi dari v0.x ke v1.0.0 |
+| Vignette                      | Topik                                                    |
+|-------------------------------|----------------------------------------------------------|
+| `complete-workflow`           | Contoh Fay-Herriot end-to-end dengan alur Bayesian penuh |
+| `hbsaems-modelling`           | Konsep pemodelan dan API tiga-lapis                      |
+| `hbsaems-betalogitnorm-model` | Beta logit-normal untuk proporsi                         |
+| `hbsaems-binlogitnorm-model`  | Binomial logit-normal untuk count                        |
+| `hbsaems-lnln-model`          | Varian Fay-Herriot lognormal-lognormal                   |
+| `hbsaems-spatial`             | Model spasial CAR / SAR / BYM2                           |
+| `hbsaems-handle-missing`      | Tiga strategi data hilang                                |
+| `advanced-features`           | Prior shrinkage, spline, family kustom                   |
+| `hbsaems-run_sae_app`         | Menggunakan aplikasi Shiny                               |
+| `migration-guide`             | Migrasi dari v0.x ke v1.0.0                              |
 
 ## Migrasi dari v0.x
 

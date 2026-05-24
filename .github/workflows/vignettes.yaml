@@ -1,9 +1,16 @@
-# vignettes.yaml -- targeted check that all vignettes build cleanly.
+# vignettes.yaml -- targeted check that all vignettes AND pkgdown
+# articles render cleanly.
 #
 # This complements R-CMD-check.yaml: where the latter runs the full
-# package check on five OS/R combinations, this workflow only builds
-# the vignettes on Linux R-release, which is much faster and gives
-# tight feedback when a vignette breaks.
+# package check on five OS/R combinations, this workflow only renders
+# the documentation on Linux R-release, which is much faster and gives
+# tight feedback when an Rmd breaks.
+#
+# Covers BOTH:
+#   * vignettes/*.Rmd       -- the CRAN vignette (complete-workflow)
+#   * vignettes/articles/*  -- the pkgdown-only articles
+#
+# Catches articles broken at the .Rmd level before pkgdown.yaml runs.
 on:
   push:
     branches: [main, master]
@@ -28,13 +35,19 @@ jobs:
       R_KEEP_PKG_SOURCE: yes
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: r-lib/actions/setup-pandoc@v2
-      - uses: r-lib/actions/setup-r@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
 
-      - uses: r-lib/actions/setup-r-dependencies@v2
+      - name: Setup R dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: |
             any::rmarkdown
@@ -42,15 +55,61 @@ jobs:
             local::.
           needs: vignettes
 
-      - name: Build all vignettes
+      - name: Render CRAN vignettes
         run: |
-          dir.create("vignettes_out", showWarnings = FALSE)
-          rmd_files <- list.files("vignettes", "\\.Rmd$", full.names = TRUE)
-          for (f in rmd_files) {
-            cat("=== Rendering:", basename(f), "===\n")
-            rmarkdown::render(f, output_dir = "vignettes_out", quiet = TRUE)
+          dir.create("vignettes_out/cran", recursive = TRUE,
+                      showWarnings = FALSE)
+          # Top level: only complete-workflow.Rmd, the CRAN vignette.
+          rmd_files <- list.files(
+            "vignettes", "\\.Rmd$", full.names = TRUE
+          )
+          if (length(rmd_files) == 0L) {
+            stop("No CRAN vignettes found in vignettes/", call. = FALSE)
           }
-          cat("All vignettes rendered successfully.\n")
+          for (f in rmd_files) {
+            cat("=== Rendering CRAN vignette:", basename(f), "===\n")
+            rmarkdown::render(f, output_dir = "vignettes_out/cran",
+                               quiet = TRUE)
+          }
+          cat("All CRAN vignettes rendered.\n")
+        shell: Rscript {0}
+
+      - name: Render pkgdown-only articles
+        run: |
+          # vignettes/articles/*.Rmd is the pkgdown convention for
+          # "rendered on the website but not bundled into the CRAN
+          # tarball".  We still render them in CI to catch breakage
+          # before pkgdown.yaml.
+          articles_dir <- "vignettes/articles"
+          if (!dir.exists(articles_dir)) {
+            cat("No vignettes/articles/ directory -- skipping.\n")
+          } else {
+            dir.create("vignettes_out/articles", recursive = TRUE,
+                        showWarnings = FALSE)
+            rmd_files <- list.files(
+              articles_dir, "\\.Rmd$", full.names = TRUE
+            )
+            cat("Found", length(rmd_files), "pkgdown articles.\n")
+            failed <- character(0L)
+            for (f in rmd_files) {
+              cat("=== Rendering article:", basename(f), "===\n")
+              res <- tryCatch(
+                rmarkdown::render(f, output_dir = "vignettes_out/articles",
+                                   quiet = TRUE),
+                error = function(e) {
+                  failed <<- c(failed, basename(f))
+                  cat("FAILED:", conditionMessage(e), "\n")
+                  NULL
+                }
+              )
+            }
+            if (length(failed) > 0L) {
+              stop("The following articles failed to render: ",
+                   paste(failed, collapse = ", "),
+                   call. = FALSE)
+            }
+            cat("All pkgdown articles rendered.\n")
+          }
         shell: Rscript {0}
 
       - name: Upload rendered HTML
@@ -58,4 +117,5 @@ jobs:
         if: always()
         with:
           name: vignettes-html
-          path: vignettes_out/*.html
+          path: vignettes_out/
+          retention-days: 7

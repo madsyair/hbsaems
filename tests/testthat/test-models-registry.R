@@ -93,21 +93,77 @@ test_that("register_hbsae_model adds a new family", {
   expect_equal(spec$link,   "log")
 })
 
-test_that("register_hbsae_model rejects duplicate without overwrite", {
+test_that("register_hbsae_model rejects built-in duplicate without overwrite", {
+  # v1.0.0: built-in protection fires before generic duplicate check, so
+  # the error message mentions "built-in" specifically.
   expect_error(
     register_hbsae_model(key = "lognormal", family = "lognormal"),
+    "built-in hbsaems family"
+  )
+})
+
+test_that("register_hbsae_model rejects user-registered duplicate without overwrite", {
+  # Register a non-built-in custom first
+  register_hbsae_model(key = "test_dup_check_v100", family = "gaussian")
+  on.exit({
+    if (exists("test_dup_check_v100",
+                envir = hbsaems:::.hbsae_model_env, inherits = FALSE))
+      rm("test_dup_check_v100", envir = hbsaems:::.hbsae_model_env)
+  })
+  # Now try to re-register without overwrite -- should hit the duplicate
+  # check, not the built-in protection.
+  expect_error(
+    register_hbsae_model(key = "test_dup_check_v100", family = "gaussian"),
     "already registered"
   )
 })
 
-test_that("register_hbsae_model allows overwrite = TRUE", {
+test_that("register_hbsae_model allows overwrite = TRUE (with warning)", {
   on.exit({
     # Restore original lognormal spec
     hbsaems:::.init_model_registry()
+    hbsaems:::.register_builtin_custom_families()
   })
-  expect_silent(
+  # v1.0.0: built-in overrides now emit a warning so the choice is conscious.
+  expect_warning(
     register_hbsae_model(key = "lognormal", family = "lognormal",
-                          overwrite = TRUE)
+                          overwrite = TRUE),
+    "Overwriting built-in family"
+  )
+})
+
+test_that("register_hbsae_model refuses to overwrite built-in without overwrite=TRUE", {
+  expect_error(
+    register_hbsae_model(key = "gaussian", family = "gaussian"),
+    "is a built-in hbsaems family"
+  )
+})
+
+test_that("register_hbsae_model rejects invalid key (with spaces / leading digit)", {
+  expect_error(
+    register_hbsae_model(key = "my key", family = "gaussian"),
+    "must be a valid R identifier"
+  )
+  expect_error(
+    register_hbsae_model(key = "3factor", family = "gaussian"),
+    "must be a valid R identifier"
+  )
+  expect_error(
+    register_hbsae_model(key = "", family = "gaussian"),
+    "must not be an empty string"
+  )
+})
+
+test_that("register_hbsae_model validates response_check_msg", {
+  expect_error(
+    register_hbsae_model(key = "test_v100", family = "gaussian",
+                          response_check_msg = 42),
+    "must be NULL or a single character string"
+  )
+  expect_error(
+    register_hbsae_model(key = "test_v100", family = "gaussian",
+                          response_check_msg = c("a", "b")),
+    "must be NULL or a single character string"
   )
 })
 

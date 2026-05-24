@@ -69,8 +69,16 @@
 #' library(hbsaems)
 #' library(brms)
 #'
-#' # Loglogistic (built in to hbsaems 1.0.0; this just shows the registration mechanism)
+#' # Loglogistic (built in to hbsaems 1.0.0; this just shows the
+#' # registration mechanism).  We use a key with a "_user" suffix to
+#' # avoid shadowing the built-in "loglogistic" entry, and unregister
+#' # at the end so re-running this example block keeps the registry
+#' # clean.
 #' ll <- brms_custom_loglogistic()
+#' if ("loglogistic_user" %in% list_hbsae_models()) {
+#'   # Idempotent rerun: remove any previous registration first.
+#'   rm("loglogistic_user", envir = hbsaems:::.hbsae_model_env)
+#' }
 #' register_hbsae_brms_custom(
 #'   key             = "loglogistic_user",
 #'   custom_family   = ll$custom_family,
@@ -79,6 +87,9 @@
 #'   response_check_msg = "Loglogistic response must be positive."
 #' )
 #' "loglogistic_user" %in% list_hbsae_models()
+#'
+#' # Cleanup so the registry is unchanged after the example runs.
+#' rm("loglogistic_user", envir = hbsaems:::.hbsae_model_env)
 #' }
 #'
 #' @seealso \code{\link{register_hbsae_model}},
@@ -96,12 +107,68 @@ register_hbsae_brms_custom <- function(key,
                                        overwrite          = FALSE) {
 
   # ---- Input validation ----------------------------------------------------
-  stopifnot(is.character(key), length(key) == 1L, nzchar(key))
+  if (!is.character(key) || length(key) != 1L || !nzchar(key))
+    stop("`key` must be a single non-empty character string.",
+         call. = FALSE)
+  # Registry keys are stored as environment bindings, so they must be
+  # syntactically valid R names.  Reject whitespace, leading digits,
+  # punctuation that would force backtick quoting.
+  if (!identical(make.names(key), key))
+    stop("`key` must be a valid R identifier (no spaces, special chars, ",
+         "or leading digits).  Got: ", shQuote(key), call. = FALSE)
   if (!inherits(custom_family, "customfamily"))
     stop("`custom_family` must be a brms::custom_family() object.",
          call. = FALSE)
   if (!inherits(stanvars, "stanvars"))
     stop("`stanvars` must be a brms::stanvars object.", call. = FALSE)
+  if (!is.null(response_check) && !is.function(response_check))
+    stop("`response_check` must be a function or NULL.", call. = FALSE)
+  if (!is.null(response_check_msg) &&
+      (!is.character(response_check_msg) ||
+       length(response_check_msg) != 1L))
+    stop("`response_check_msg` must be NULL or a single character string.",
+         call. = FALSE)
+  if (!is.logical(supports_mi) || length(supports_mi) != 1L)
+    stop("`supports_mi` must be a single logical value.", call. = FALSE)
+  if (!is.logical(discrete) || length(discrete) != 1L)
+    stop("`discrete` must be a single logical value.", call. = FALSE)
+  if (!is.logical(overwrite) || length(overwrite) != 1L)
+    stop("`overwrite` must be a single logical value.", call. = FALSE)
+
+  # ---- Built-in family override warning -----------------------------------
+  # Skip this check when called from .register_builtin_custom_families()
+  # during package load (chicken-and-egg: those calls ARE the source of
+  # the built-in registrations).  The internal option is set inside that
+  # function and cleared via on.exit().
+  if (!isTRUE(getOption("hbsaems.in_builtin_registration", default = FALSE))) {
+    builtin_keys <- .builtin_keys()
+    if (key %in% builtin_keys) {
+      if (!overwrite)
+        stop("Model '", key, "' is a built-in hbsaems family.  Refusing to ",
+             "overwrite without `overwrite = TRUE`.", call. = FALSE)
+      warning("Overwriting built-in family '", key, "' with a custom brms ",
+              "family.  This loses package-curated defaults.",
+              call. = FALSE)
+    }
+
+    # ---- brms-native family shadow warning -----------------------------------
+    # If the user picks a key that ALREADY exists as a brms-native family
+    # (e.g.\ they accidentally pick "gamma" or "weibull"), the custom-family
+    # path in hbm() will shadow the native one at lookup time (case b is
+    # checked before case a in .resolve_family_object).  That is sometimes
+    # desired (the user really does want to replace brms's likelihood) but
+    # is more often a silent mistake.  We warn so the choice is conscious.
+    if (.is_brms_native_family(key) && !key %in% builtin_keys) {
+      warning("Key '", key, "' is the name of a brms-native family.  Your ",
+              "custom brms family will SHADOW the native one whenever ",
+              "users call `hbm(hb_sampling = '", key, "')`.  If you ",
+              "actually want the native family, drop this registration; ",
+              "if you want to extend the native family, prefix the key ",
+              "with 'hbsae_' (or similar) to make the shadowing intent ",
+              "obvious downstream.",
+              call. = FALSE)
+    }
+  }
 
   # ---- Build the model spec ------------------------------------------------
   # We store the custom_family object IN the spec under `$family` so the

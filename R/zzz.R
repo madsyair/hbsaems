@@ -20,7 +20,16 @@
 # Called from .onLoad; kept in zzz.R for clarity.  Each family is
 # auto-registered with the canonical key it shipped with so the user can
 # refer to it by string in hbm()/hbm_flex() without any setup.
+#
+# v1.0.0: We set the internal option `hbsaems.in_builtin_registration` to
+# TRUE so register_hbsae_brms_custom() knows to skip its built-in
+# override-protection check.  Without this, the chicken-and-egg case
+# (the function refuses to register `loglogistic` because that name is
+# already on the built-in list) would block first-time package load.
 .register_builtin_custom_families <- function() {
+  old <- getOption("hbsaems.in_builtin_registration", default = FALSE)
+  options(hbsaems.in_builtin_registration = TRUE)
+  on.exit(options(hbsaems.in_builtin_registration = old))
 
   # Loglogistic
   if (!exists("loglogistic", envir = .hbsae_model_env, inherits = FALSE)) {

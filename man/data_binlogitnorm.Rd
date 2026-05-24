@@ -17,9 +17,10 @@ A data frame with 100 rows and 14 variables:
   \item{\code{psi_i}}{Sampling variance.}
   \item{\code{y_obs}, \code{p_obs}}{Observed (direct) values.}
   \item{\code{district}}{District identifier (\code{"district_001"} ..
-    \code{"district_100"}).}
+    \code{"district_100"}) -- the 100 small areas to estimate.}
   \item{\code{regency}}{Regency identifier (\code{"regency_01"} ..
-    \code{"regency_05"}) -- spatial cluster level.  Pair with
+    \code{"regency_05"}) -- coarse spatial-cluster level (5 regencies
+    each containing 20 districts).  Pair with
     \code{adjacency_matrix_car_regency}.}
 }
 }

@@ -49,6 +49,16 @@
 #' @export
 run_sae_app <- function(check_deps = TRUE) {
 
+  # -- Early check: shiny itself must be installed.  shiny is in Suggests
+  # because the modelling functions don't need it; an informative error
+  # here is much better than the cryptic "could not find function runApp"
+  # downstream.
+  if (!requireNamespace("shiny", quietly = TRUE)) {
+    stop("The 'shiny' package is required to launch the GUI but is not ",
+         "installed.  Install it with: install.packages('shiny').",
+         call. = FALSE)
+  }
+
   if (check_deps) {
     dep <- check_shiny_deps(verbose = FALSE)
 
@@ -79,6 +89,11 @@ run_sae_app <- function(check_deps = TRUE) {
     # in-UI banner.  Setting a global option keeps it process-local and
     # survives across reactive contexts.
     options(hbsaems.shiny_missing_optional = dep$optional_missing)
+  } else {
+    # User opted out of dependency checking.  Clear any stale state from
+    # a previous launch so the app does not display a misleading
+    # missing-package banner.
+    options(hbsaems.shiny_missing_optional = character(0L))
   }
 
   app_dir <- system.file("shiny/sae_app", package = "hbsaems")

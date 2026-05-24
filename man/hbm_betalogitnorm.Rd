@@ -11,12 +11,13 @@ hbm_betalogitnorm(
   n = NULL,
   deff = NULL,
   area_var = NULL,
+  area_re_structure = c("nested", "crossed"),
   spatial_var = NULL,
   spatial_model = NULL,
   car_type = NULL,
   sar_type = NULL,
   M = NULL,
-  link_phi = "identity",
+  link_phi = NULL,
   prior = NULL,
   stanvars = NULL,
   handle_missing = NULL,
@@ -49,49 +50,65 @@ names; corresponds to area-level covariates in SAE literature
 per-area sample size used to compute the fixed \eqn{\phi}.  Must be
 supplied together with \code{deff}.  When supplied, \eqn{\phi_i =
 n_i / \text{deff}_i - 1} is pinned via offset.  Default: \code{NULL}
-(treats \code{phi} as random with hyperprior).}
+(treats \code{phi} as random with brms's default prior).}
 
 \item{deff}{Character or \code{NULL}.  Name of the design-effect
 column.  Required when \code{n} is supplied (and vice versa).}
 
-\item{area_var}{Character or \code{NULL}.  Name of the area-grouping
-column; if supplied, adds \code{(1 | area_var)} as a random
-intercept.}
+\item{area_var}{Character vector or \code{NULL}.  Name(s) of the
+area-grouping column(s).  Length 1 adds an IID random intercept
+\code{(1 | area_var)}; length \eqn{\geq} 2 supports hierarchical
+areas (e.g.\ \code{c("province", "regency")}) -- see
+\code{?hbm_flex} for the nested vs.\ crossed structures.}
+
+\item{area_re_structure}{Either \code{"nested"} (default) or
+\code{"crossed"}; controls how multiple area columns combine.}
 
 \item{spatial_var, spatial_model, car_type, sar_type, M}{Spatial
 random-effect arguments, forwarded to \code{\link{hbm}}.}
 
-\item{link_phi}{Character. Link function for \code{phi}; default
-\code{"identity"} when \code{phi} is pinned (offset must be on the
-identity scale).}
+\item{link_phi}{Character or \code{NULL}.  Link function for
+\code{phi}.  \strong{Default \code{NULL} resolves automatically}:
+\code{"identity"} when \code{phi} is pinned via the survey design
+(the \code{n + deff} sugar or \code{fixed_params$phi}, both of
+which produce raw positive offsets) and \code{"log"} otherwise
+(the brms default for \code{phi} in the Beta family; keeps
+\eqn{\phi > 0} while letting NUTS sample on \eqn{\mathbb{R}}).
+Manually setting \code{"identity"} together with an estimated
+\code{phi} can let NUTS propose negative values and trigger
+divergent transitions; an informative warning is emitted in that
+case.}
 
-\item{prior}{Optional \code{brmsprior} object.  If \code{NULL}, sensible
-defaults are filled in:
+\item{prior}{Optional \code{brmsprior} object.  If \code{NULL},
+sensible defaults are filled in:
 \itemize{
   \item \code{Intercept ~ student_t(4, 0, 10)}
   \item \code{b ~ student_t(4, 0, 2.5)}
-  \item \code{phi ~ gamma(alpha, beta)} (random mode only)
+  \item \code{phi} -- brms default \code{gamma(0.01, 0.01)} (in
+    random mode; ignored in fixed mode).
 }
 The user may pass a partial prior: missing default classes are
-filled in automatically.}
+filled in automatically.  To put a custom prior on \code{phi}
+(random mode), set \code{prior = set_prior("gamma(2, 0.5)",
+class = "phi")} or similar.}
 
-\item{stanvars}{Optional \code{brmsstanvars} object specifying
-hyperpriors for \code{alpha} and \code{beta} when \code{phi} is
-random.  If \code{NULL} (default), \code{alpha ~ gamma(1, 1)} and
-\code{beta ~ gamma(1, 1)} are used.  The user may also supply
-custom \code{stanvar()} expressions to override either or both
-hyperpriors, e.g.:
-\preformatted{
-stanvars = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-           stanvar(scode = "beta  ~ gamma(2, 3);", block = "model")
-}}
+\item{stanvars}{Optional \code{brmsstanvars} object for power users
+who need to inject custom Stan code blocks (e.g.\ transformed
+data, generated quantities, model-block statements not expressible
+via the \code{prior} argument).  Passed through to brms verbatim.
+\strong{Note:} As of v1.0.0, this wrapper no longer declares
+\code{alpha} or \code{beta} as Stan parameters, so legacy
+\code{stanvars} blocks containing sampling statements on
+\code{alpha} / \code{beta} (left over from the pre-v1.0.0
+hierarchical-phi construction) will now raise an informative
+error.}
 
 \item{handle_missing, m, control, chains, iter, warmup, cores, sample_prior, ...}{Passed through to \code{\link{hbm}}.}
 
 \item{fixed_params}{Optional named list pinning distributional
 parameters to known values.  See \code{\link{hbm}} for the spec
-format.  Conflicts with \code{n} + \code{deff} on the \code{phi}
-parameter; use one or the other.}
+format.  Allows power-user access to the same machinery used by
+the \code{n}/\code{deff} arguments.}
 
 \item{predictors}{\strong{Deprecated.}  Use \code{auxiliary} instead.
 Kept for backward compatibility; will be removed in v2.0.0.}
@@ -115,11 +132,42 @@ the response \eqn{y_i \in (0, 1)} is modelled as
 }
 \details{
 The precision parameter \eqn{\phi_i} can either be pinned to a survey
-design effect (\code{n} + \code{deff}) or sampled with a hierarchical
-hyperprior (\eqn{\phi \sim \mathrm{Gamma}(\alpha, \beta)},
-\eqn{\alpha \sim \mathrm{Gamma}(1,1)}, \eqn{\beta \sim \mathrm{Gamma}(1,1)}
-by default).
+design effect (\code{n} + \code{deff}) or sampled with brms's default
+weakly-informative prior \eqn{\phi \sim \mathrm{Gamma}(0.01, 0.01)}.
 }
+\section{Migration note (v1.0.0)}{
+
+Earlier versions of this wrapper introduced a hierarchical
+construction \eqn{\phi \sim \mathrm{Gamma}(\alpha, \beta),\,
+\alpha \sim \mathrm{Gamma}(1,1),\, \beta \sim \mathrm{Gamma}(1,1)}
+for the random-phi mode, declaring \code{alpha} and \code{beta} as
+Stan parameters with hyperpriors injected via \code{stanvars}.
+Starting v1.0.0, that construction has been removed in favour of
+brms's own default prior, \eqn{\phi \sim \mathrm{Gamma}(0.01, 0.01)}
+with lower bound 0 (mean 1, variance 100; weakly informative on
+the precision scale).  Three reasons:
+\itemize{
+  \item \strong{Brittle priors on alpha/beta.}  The hyperprior
+        \eqn{\mathrm{Gamma}(1,1)} on \eqn{\alpha} has prior mean 1,
+        which is on the boundary of the parameter space declared
+        as \code{real<lower=1>}.  This routinely produced divergent
+        transitions when the data were not informative about phi.
+  \item \strong{Parameter blow-up.}  Estimating two extra Stan
+        parameters per area-level model with limited data inflated
+        the effective posterior dimension and slowed convergence.
+  \item \strong{Cleaner brms semantics.}  Letting brms apply its own
+        default \eqn{\mathrm{Gamma}(0.01, 0.01)} means that passing
+        \code{prior = NULL} now does exactly what the user expects:
+        \dQuote{brms defaults}.  No surprises.
+}
+\strong{If you need to reproduce the old behaviour}, supply
+\code{stanvars} yourself to declare \code{alpha}, \code{beta} and
+their hyperpriors, and pass \code{prior = set_prior("gamma(alpha,
+beta)", class = "phi")}.  Pre-v1.0.0 code that supplied
+\code{stanvars} with hyperpriors on \code{alpha}/\code{beta}
+will now raise an informative error.
+}
+
 \section{Conflict policy}{
 
 When the precision parameter \eqn{\phi} is pinned via \code{n} +
@@ -170,14 +218,20 @@ model2 <- hbm_betalogitnorm(
 )
 summary(model2)
 
-# -- 3. Custom hyperprior on alpha, beta -------------------------------------
+# -- 3. Custom prior on phi via the standard `prior` argument ----------------
+#
+# Starting v1.0.0, hbm_betalogitnorm() no longer declares its own
+# alpha / beta hyperparameters; phi uses brms's native default
+# Gamma(0.01, 0.01).  To override that prior, pass a `brms::set_prior()`
+# entry to the `prior` argument -- the legacy
+# stanvar("alpha ~ gamma(...); beta ~ gamma(...)") pattern would now
+# error because alpha/beta are no longer Stan parameters.
 model3 <- hbm_betalogitnorm(
   response   = "y",
   auxiliary  = c("x1", "x2", "x3"),
   area_var   = "regency",
   data       = data,
-  stanvars   = stanvar(scode = "alpha ~ gamma(2, 1);", block = "model") +
-               stanvar(scode = "beta  ~ gamma(2, 3);", block = "model"),
+  prior      = brms::set_prior("gamma(2, 0.5)", class = "phi"),
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
 

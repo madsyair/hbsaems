@@ -3,7 +3,7 @@
 \docType{data}
 \name{adjacency_matrix_car_regency}
 \alias{adjacency_matrix_car_regency}
-\title{Regency-level Adjacency Matrix}
+\title{Regency-level Adjacency Matrix (Coarse Spatial Cluster)}
 \format{
 A binary symmetric \eqn{5 \times 5} matrix with row- and
   column-names \code{regency_01} .. \code{regency_05}; entries are
@@ -17,8 +17,17 @@ adjacency_matrix_car_regency
 }
 \description{
 A small example adjacency matrix used for fitting Conditional
-Autoregressive (CAR) random effects on the **regency** level.
-Pairs with \code{data_binlogitnorm} and \code{data_lnln}, whose
-\code{regency} column has matching labels.
+Autoregressive (CAR) random effects on the **regency** (coarse
+spatial-cluster, kabupaten) level.  Pairs with \code{data_binlogitnorm}
+and \code{data_lnln}, whose \code{regency} column has matching labels.
+}
+\note{
+The naming \code{regency_01..05} (two-digit suffix) is reserved
+  in this package for the COARSE 5-level cluster used by
+  \code{data_binlogitnorm} and \code{data_lnln}.  The 100-level FINE
+  regency column in \code{data_fhnorm} and \code{data_betalogitnorm}
+  uses three-digit suffixes (\code{regency_001..100}) and pairs with
+  the larger \code{spatial_weight_sar} matrix.  See
+  \code{vignette("hbsaems-spatial")} for the naming convention.
 }
 \keyword{datasets}

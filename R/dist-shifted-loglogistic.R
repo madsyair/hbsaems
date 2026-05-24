@@ -3,8 +3,13 @@
 # Shifted (3-parameter) Loglogistic distribution -- R-side d/p/q/r helpers,
 # brms post-processing companions, and the custom-family wrapper.
 #
-# The Stan-side function definitions live in
-# inst/stan/shifted_loglogistic.stan.
+# Stan-side
+# ---------
+# The Stan function definitions live in
+# inst/stan/hbsae_shifted_loglogistic.stan; their names are prefixed with
+# `hbsae_` (e.g.\ `hbsae_shifted_loglogistic_lpdf`) for consistency with
+# the loglogistic family and to avoid potential symbol collisions with
+# future Stan built-ins.
 # =============================================================================
 
 
@@ -267,7 +272,10 @@ posterior_epred_shifted_loglogistic <- function(prep) {
 #' @export
 brms_custom_shifted_loglogistic <- function() {
   build_brms_custom_family(
-    name              = "shifted_loglogistic",
+    # Prefixed with `hbsae_` for consistency with the loglogistic family
+    # and to leave the bare `shifted_loglogistic` namespace open should
+    # Stan ever ship a built-in with that name.
+    name              = "hbsae_shifted_loglogistic",
     dpars             = c("mu", "sigma", "xi"),
     links             = c("identity", "log", "identity"),
     lb                = c(NA, 0, NA),

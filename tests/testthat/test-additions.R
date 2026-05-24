@@ -553,3 +553,1798 @@ test_that(".merge_prior_type: user_prior=NULL passthrough", {
   type_p <- brms::set_prior("horseshoe(1)", class = "b")
   expect_identical(hbsaems:::.merge_prior_type(NULL, type_p), type_p)
 })
+
+
+# ---------------------------------------------------------------------------
+# 10. Hierarchical area_var helper
+# ---------------------------------------------------------------------------
+
+test_that(".build_area_re_formula: NULL -> NULL", {
+  expect_null(hbsaems:::.build_area_re_formula(NULL))
+  expect_null(hbsaems:::.build_area_re_formula(character(0)))
+})
+
+test_that(".build_area_re_formula: single column -> (1 | x)", {
+  f <- hbsaems:::.build_area_re_formula("regency")
+  expect_s3_class(f, "formula")
+  expect_match(deparse1(f), "(1 | regency)", fixed = TRUE)
+})
+
+test_that(".build_area_re_formula: nested two-level -> (1 | a/b)", {
+  f <- hbsaems:::.build_area_re_formula(c("province", "regency"),
+                                          structure = "nested")
+  # R may format the formula with or without surrounding spaces around '/'.
+  # Both `province / regency` and `province/regency` are valid forms of the
+  # same RE structure.  Use a regex that tolerates either.
+  expect_match(deparse1(f),
+               "province\\s*/\\s*regency",
+               perl = TRUE)
+})
+
+test_that(".build_area_re_formula: crossed two-level -> (1|a) + (1|b)", {
+  f <- hbsaems:::.build_area_re_formula(c("province", "regency"),
+                                          structure = "crossed")
+  d <- deparse1(f)
+  # Match either spaced or compact formulations
+  expect_match(d, "\\(1\\s*\\|\\s*province\\)", perl = TRUE)
+  expect_match(d, "\\(1\\s*\\|\\s*regency\\)",  perl = TRUE)
+  expect_match(d, "\\+", fixed = FALSE)
+})
+
+test_that(".build_area_re_formula: rejects empty strings", {
+  expect_error(hbsaems:::.build_area_re_formula(c("province", "")),
+               "empty strings")
+})
+
+test_that(".build_area_re_formula: rejects non-character", {
+  expect_error(hbsaems:::.build_area_re_formula(c(1, 2)),
+               "character vector")
+})
+
+test_that(".check_area_var_columns: catches missing columns", {
+  df <- data.frame(province = 1:4, regency = letters[1:4])
+  expect_error(hbsaems:::.check_area_var_columns("bogus", df),
+               "not found in")
+  expect_error(hbsaems:::.check_area_var_columns(c("province", "nonexistent"), df),
+               "not found in")
+})
+
+test_that(".check_area_var_columns: silent on valid columns", {
+  df <- data.frame(province = rep(c("A","B"), 5),
+                    regency  = rep(letters[1:5], 2))
+  expect_silent(hbsaems:::.check_area_var_columns(c("province", "regency"), df))
+})
+
+test_that(".check_area_var_columns: warns on too-many-levels heuristic", {
+  df <- data.frame(province = sample(1:6, 100, TRUE),
+                    pretend_continuous = runif(100))
+  expect_warning(
+    hbsaems:::.check_area_var_columns(
+      c("province", "pretend_continuous"), df),
+    "more like a continuous covariate"
+  )
+})
+
+
+# ---------------------------------------------------------------------------
+# 11. hbm() Fay-Herriot sampling_variance sugar
+# ---------------------------------------------------------------------------
+
+test_that("hbm(): sampling_variance translates to fixed_params$sigma", {
+  data("data_fhnorm")
+
+  # We test the input-translation logic only; do NOT actually fit a model.
+  expect_error(
+    hbm(formula = brms::bf(y ~ x1),
+        data = data_fhnorm,
+        re   = ~ (1 | regency),
+        sampling_variance = "nonexistent_col"),
+    "not found in"
+  )
+})
+
+test_that("hbm(): sampling_variance conflicts with fixed_params$sigma", {
+  data("data_fhnorm")
+  expect_error(
+    hbm(formula = brms::bf(y ~ x1),
+        data = data_fhnorm,
+        re   = ~ (1 | regency),
+        sampling_variance = "D",
+        fixed_params = list(sigma = 0.5)),
+    "Cannot supply both"
+  )
+})
+
+test_that("hbm(): sampling_variance rejects non-positive or NA", {
+  data("data_fhnorm")
+  bad <- data_fhnorm
+  bad$D[1] <- -1
+  expect_error(
+    hbm(formula = brms::bf(y ~ x1),
+        data = bad,
+        re   = ~ (1 | regency),
+        sampling_variance = "D"),
+    "strictly positive"
+  )
+})
+
+
+# ---------------------------------------------------------------------------
+# 12. hbm() sampling_variance: family compatibility validation
+# ---------------------------------------------------------------------------
+
+test_that("sampling_variance rejected for Beta family", {
+  data("data_fhnorm")
+  # Force a beta family to test the rejection — y won't actually be in
+  # (0,1) but the check fires BEFORE brms touches the data.
+  expect_error(
+    hbm(formula = brms::bf(y ~ x1),
+        data   = data_fhnorm,
+        re     = ~ (1 | regency),
+        hb_sampling = "beta",
+        sampling_variance = "D"),
+    "residual SD parameter named"
+  )
+})
+
+test_that("sampling_variance rejected for Binomial family", {
+  data("data_fhnorm")
+  expect_error(
+    hbm(formula = brms::bf(y ~ x1),
+        data   = data_fhnorm,
+        re     = ~ (1 | regency),
+        hb_sampling = "binomial",
+        sampling_variance = "D"),
+    "residual SD parameter named"
+  )
+})
+
+test_that("sampling_variance rejected for Poisson family", {
+  data("data_fhnorm")
+  expect_error(
+    hbm(formula = brms::bf(y ~ x1),
+        data   = data_fhnorm,
+        re     = ~ (1 | regency),
+        hb_sampling = "poisson",
+        sampling_variance = "D"),
+    "residual SD parameter named"
+  )
+})
+
+test_that("sampling_variance error message lists compatible families", {
+  data("data_fhnorm")
+  err <- tryCatch(
+    hbm(formula = brms::bf(y ~ x1),
+        data   = data_fhnorm,
+        re     = ~ (1 | regency),
+        hb_sampling = "negbinomial",
+        sampling_variance = "D"),
+    error = conditionMessage
+  )
+  # Error message must mention all compatible families
+  for (fam in c("gaussian", "lognormal", "student"))
+    expect_match(err, fam, fixed = TRUE)
+})
+
+test_that("sampling_variance error message suggests Beta alternative", {
+  data("data_fhnorm")
+  err <- tryCatch(
+    hbm(formula = brms::bf(y ~ x1),
+        data   = data_fhnorm,
+        re     = ~ (1 | regency),
+        hb_sampling = "beta",
+        sampling_variance = "D"),
+    error = conditionMessage
+  )
+  # Beta alternative should be mentioned: phi via design effect
+  expect_match(err, "phi", fixed = TRUE)
+  expect_match(err, "deff", fixed = TRUE)
+})
+
+# Note: tests verifying that sampling_variance is ACCEPTED for student /
+# lognormal families compile Stan and have been moved to
+# tests/testthat/dev-tests/test-sampling-variance-compile.R.
+
+
+# ---------------------------------------------------------------------------
+# 13. Centralized sugar translators
+# ---------------------------------------------------------------------------
+
+test_that(".translate_sampling_variance: NULL passthrough", {
+  fp <- list(nu = 4)
+  out <- hbsaems:::.translate_sampling_variance(fp, NULL, data.frame())
+  expect_identical(out, fp)
+})
+
+test_that(".translate_sampling_variance: adds sigma to fixed_params", {
+  df <- data.frame(D = c(0.5, 1.0, 1.5))
+  out <- hbsaems:::.translate_sampling_variance(
+    fixed_params = NULL, sampling_variance = "D", data = df)
+  expect_named(out, "sigma")
+  expect_equal(out$sigma, sqrt(df$D), tolerance = 1e-12)
+})
+
+test_that(".translate_sampling_variance: preserves existing fixed_params", {
+  df <- data.frame(D = c(0.5, 1.0))
+  out <- hbsaems:::.translate_sampling_variance(
+    fixed_params = list(nu = 4), sampling_variance = "D", data = df)
+  expect_named(out, c("nu", "sigma"))
+  expect_equal(out$nu, 4)
+})
+
+test_that(".translate_sampling_variance: refuses conflict with fixed_params$sigma", {
+  df <- data.frame(D = c(0.5, 1.0))
+  expect_error(
+    hbsaems:::.translate_sampling_variance(
+      fixed_params = list(sigma = 0.5),
+      sampling_variance = "D", data = df),
+    "Cannot supply both"
+  )
+})
+
+test_that(".translate_sampling_variance: catches missing column", {
+  expect_error(
+    hbsaems:::.translate_sampling_variance(
+      NULL, "bogus", data.frame(x = 1:3)),
+    "not found"
+  )
+})
+
+test_that(".translate_sampling_variance: catches non-positive", {
+  expect_error(
+    hbsaems:::.translate_sampling_variance(
+      NULL, "D", data.frame(D = c(0.5, -1, 1))),
+    "strictly positive"
+  )
+})
+
+test_that(".translate_n_deff_to_phi: NULL passthrough when either missing", {
+  df <- data.frame(n = 1:3, deff = 1:3)
+  expect_identical(
+    hbsaems:::.translate_n_deff_to_phi(list(), NULL, "deff", df),
+    list())
+  expect_identical(
+    hbsaems:::.translate_n_deff_to_phi(list(), "n", NULL, df),
+    list())
+})
+
+test_that(".translate_n_deff_to_phi: computes phi = n/deff - 1", {
+  df <- data.frame(n = c(100, 200, 300), deff = c(2, 4, 5))
+  out <- hbsaems:::.translate_n_deff_to_phi(NULL, "n", "deff", df)
+  expect_named(out, "phi")
+  expect_equal(out$phi, c(49, 49, 59), tolerance = 1e-12)
+})
+
+test_that(".translate_n_deff_to_phi: catches non-positive phi result", {
+  df <- data.frame(n = c(10, 5), deff = c(20, 5))   # phi = -0.5, 0 -> bad
+  expect_error(
+    hbsaems:::.translate_n_deff_to_phi(NULL, "n", "deff", df),
+    "non-positive"
+  )
+})
+
+test_that(".translate_n_deff_to_phi: conflicts with fixed_params$phi", {
+  df <- data.frame(n = c(100, 200), deff = c(2, 4))
+  expect_error(
+    hbsaems:::.translate_n_deff_to_phi(
+      list(phi = 10), "n", "deff", df),
+    "Cannot supply both"
+  )
+})
+
+# Note: an end-to-end integration test for `hbm_betalogitnorm` with
+# `n + deff` is in tests/testthat/dev-tests/test-sampling-variance-compile.R
+# (compiles a Stan model).
+
+
+# ---------------------------------------------------------------------------
+# 14. Comprehensive conflict matrix: sampling_variance vs fixed_params/prior/stanvars
+# ---------------------------------------------------------------------------
+#
+# 8 conflict scenarios for the Fay-Herriot sugar `sampling_variance`:
+#   1. NULL fixed_params           --> AMAN (pass)   [compile -- dev-tests]
+#   2. fixed_params$sigma supplied  --> ERROR  (validation, here)
+#   3. fixed_params on other dpar   --> MERGE (pass) [compile -- dev-tests]
+#   4. prior on class "sigma"       --> ERROR  (conflict downstream, here)
+#   5. stanvars sampling sigma      --> ERROR  (conflict downstream, here)
+#   6. (Beta) n+deff + fp$phi       --> ERROR  (validation, here)
+#   7. (Beta) n+deff + prior on phi --> ERROR  (conflict downstream, here)
+#   8. fixed_params$sigma = "D" identical to sampling_variance --> ERROR (here)
+#
+#   Cases 1 and 3 (successful flows that reach Stan) live in
+#   tests/testthat/dev-tests/test-sampling-variance-compile.R.
+# ---------------------------------------------------------------------------
+
+test_that("Case 2: sampling_variance + fixed_params$sigma --> ERROR", {
+  data("data_fhnorm")
+  expect_error(
+    hbm(brms::bf(y ~ x1), data = data_fhnorm, re = ~ (1 | regency),
+        sampling_variance = "D",
+        fixed_params = list(sigma = 0.5)),
+    "Cannot supply both"
+  )
+})
+
+test_that("Case 4: sampling_variance + prior(class='sigma') --> ERROR", {
+  data("data_fhnorm")
+  expect_error(
+    hbm(brms::bf(y ~ x1), data = data_fhnorm, re = ~ (1 | regency),
+        sampling_variance = "D",
+        prior = brms::set_prior("normal(0, 1)", class = "sigma"),
+        chains = 1, iter = 1, refresh = 0),
+    "pinned via.*fixed_params"
+  )
+})
+
+test_that("Case 5: sampling_variance + stanvars sampling sigma --> ERROR", {
+  data("data_fhnorm")
+  expect_error(
+    hbm(brms::bf(y ~ x1), data = data_fhnorm, re = ~ (1 | regency),
+        sampling_variance = "D",
+        stanvars = brms::stanvar(scode = "sigma ~ gamma(1, 1);",
+                                   block = "model"),
+        chains = 1, iter = 1, refresh = 0),
+    "sampling statement.*sigma.*pinned"
+  )
+})
+
+test_that("Case 6: hbm_betalogitnorm n+deff + fixed_params$phi --> ERROR", {
+  data("data_betalogitnorm")
+  expect_error(
+    hbm_betalogitnorm(response  = "y",
+                       auxiliary = "x1",
+                       data      = data_betalogitnorm,
+                       n         = "n",
+                       deff      = "deff",
+                       fixed_params = list(phi = 10)),
+    "Cannot supply both"
+  )
+})
+
+test_that("Case 7: hbm_betalogitnorm n+deff + prior on phi --> ERROR", {
+  skip_if_not_installed("brms")
+  data("data_betalogitnorm")
+  # When n+deff is set, phi becomes pinned; a prior on phi must error.
+  err <- tryCatch(
+    hbm_betalogitnorm(response  = "y",
+                       auxiliary = "x1",
+                       data      = data_betalogitnorm,
+                       n         = "n",
+                       deff      = "deff",
+                       prior = brms::set_prior("gamma(1, 1)", class = "phi"),
+                       chains = 1, iter = 1, refresh = 0),
+    error = function(e) conditionMessage(e)
+  )
+  # Either downstream conflict OR a clean error pointing at phi
+  expect_match(err, "phi", fixed = TRUE,
+               label = paste("Got:", substr(err, 1, 200)))
+})
+
+test_that("Case 8: sampling_variance + fixed_params$sigma=col_name (redundant) --> ERROR", {
+  data("data_fhnorm")
+  expect_error(
+    hbm(brms::bf(y ~ x1), data = data_fhnorm, re = ~ (1 | regency),
+        sampling_variance = "D",
+        fixed_params = list(sigma = "D")),
+    "Cannot supply both"
+  )
+})
+
+
+# ---------------------------------------------------------------------------
+# 15. Conflict matrix: hbm_lnln (pass-through wrapper)
+# ---------------------------------------------------------------------------
+
+test_that("hbm_lnln: sampling_variance + fixed_params$sigma --> ERROR transitively", {
+  data("data_lnln")
+  expect_error(
+    hbm_lnln(response  = "y_obs",
+             auxiliary = c("x1", "x2"),
+             data      = data_lnln,
+             area_var  = "regency",
+             sampling_variance = "psi_i",
+             fixed_params = list(sigma = 0.5)),
+    "Cannot supply both"
+  )
+})
+
+test_that("hbm_lnln: sampling_variance + prior(class='sigma') --> ERROR", {
+  skip_if_not_installed("brms")
+  data("data_lnln")
+  expect_error(
+    hbm_lnln(response  = "y_obs",
+             auxiliary = c("x1", "x2"),
+             data      = data_lnln,
+             area_var  = "regency",
+             sampling_variance = "psi_i",
+             prior = brms::set_prior("normal(0, 1)", class = "sigma"),
+             chains = 1, iter = 1, refresh = 0),
+    "pinned via.*fixed_params"
+  )
+})
+
+
+# ---------------------------------------------------------------------------
+# 16. Helper-level direct conflict tests
+# ---------------------------------------------------------------------------
+
+test_that(".translate_sampling_variance: detects redundant fp$sigma=col_name", {
+  df <- data.frame(D = c(0.5, 1.0, 1.5))
+  expect_error(
+    hbsaems:::.translate_sampling_variance(
+      list(sigma = "D"), "D", df),
+    "Cannot supply both"
+  )
+})
+
+test_that(".translate_sampling_variance: empty list is OK", {
+  df <- data.frame(D = c(0.5, 1.0))
+  out <- hbsaems:::.translate_sampling_variance(list(), "D", df)
+  expect_named(out, "sigma")
+})
+
+
+# ---------------------------------------------------------------------------
+# 17. P0-A: sae_benchmark default weights
+# ---------------------------------------------------------------------------
+
+test_that("sae_benchmark: target_type='total' uses weights = rep(1, n)", {
+  # Build a minimal hbsae_results object
+  pred <- c(2, 3, 5)
+  res <- structure(
+    list(
+      result_table = data.frame(area = 1:3, Prediction = pred),
+      pred = pred,
+      rse_model = c(0.1, 0.1, 0.1)
+    ),
+    class = "hbsae_results"
+  )
+
+  target <- 100   # population total
+  out <- suppressMessages(
+    sae_benchmark(res, target = target, method = "ratio",
+                   target_type = "total")
+  )
+  # ratio r = target / sum(pred) = 100 / 10 = 10
+  expect_equal(out$benchmark_info$adjustment, 10, tolerance = 1e-8)
+  expect_equal(out$result_table$Prediction, pred * 10, tolerance = 1e-8)
+})
+
+test_that("sae_benchmark: target_type='mean' uses weights = rep(1/n, n)", {
+  pred <- c(2, 3, 5)
+  res <- structure(
+    list(
+      result_table = data.frame(area = 1:3, Prediction = pred),
+      pred = pred,
+      rse_model = c(0.1, 0.1, 0.1)
+    ),
+    class = "hbsae_results"
+  )
+
+  target_mean <- 10   # i.e. all predictions should scale to mean=10
+  out <- suppressMessages(
+    sae_benchmark(res, target = target_mean, method = "ratio",
+                   target_type = "mean")
+  )
+  # mean(pred) = 10/3.  r = 10 / (10/3) = 3
+  expect_equal(out$benchmark_info$adjustment, 3, tolerance = 1e-8)
+})
+
+test_that("sae_benchmark: explicit weights override default", {
+  pred <- c(2, 3, 5)
+  res <- structure(
+    list(
+      result_table = data.frame(area = 1:3, Prediction = pred),
+      pred = pred,
+      rse_model = c(0.1, 0.1, 0.1)
+    ),
+    class = "hbsae_results"
+  )
+  w <- c(1000, 2000, 3000)
+  target <- 20000
+  out <- sae_benchmark(res, target = target, weights = w,
+                        method = "ratio")
+  # r = 20000 / sum(w * pred) = 20000 / (2000 + 6000 + 15000) = 20000/23000
+  expect_equal(out$benchmark_info$adjustment, 20000 / 23000, tolerance = 1e-8)
+})
+
+
+# ---------------------------------------------------------------------------
+# 18. P0-B: hbm_betalogitnorm conditional link_phi
+# ---------------------------------------------------------------------------
+
+test_that("hbm_betalogitnorm: link_phi = 'identity' warning in random mode", {
+  skip_if_not_installed("brms")
+  # Mock brms::brm to avoid Stan compile -- we only need the warning path
+  testthat::local_mocked_bindings(brm = .brm_stub, .package = "brms")
+
+  data("data_betalogitnorm")
+  expect_warning(
+    out <- tryCatch(
+      hbm_betalogitnorm(
+        response  = "y",
+        auxiliary = "x1",
+        data      = data_betalogitnorm,
+        area_var  = "province",    # silences "no area RE" + repeating levels
+        link_phi  = "identity"     # user-supplied AND random mode
+      ),
+      error = function(e) conditionMessage(e)
+    ),
+    "may propose negative phi"
+  )
+})
+
+
+# ---------------------------------------------------------------------------
+# 19. P0-C: sae_scale zero-variance fix
+# ---------------------------------------------------------------------------
+
+test_that("sae_scale: zero-variance prediction does not produce NaN", {
+  pred <- rep(5, 5)
+  res <- structure(
+    list(
+      result_table = data.frame(area = 1:5, Prediction = pred),
+      pred = pred,
+      rse_model = rep(0.1, 5)
+    ),
+    class = "hbsae_results"
+  )
+  expect_warning(
+    out <- sae_scale(res, center = TRUE, scale = TRUE),
+    "zero variance"
+  )
+  # After fix: not NaN; centred to 0 since all values equal mean
+  expect_false(any(is.nan(out$pred)))
+  expect_equal(out$pred, rep(0, 5))
+})
+
+
+# ---------------------------------------------------------------------------
+# 20. P1-A: measurement_error validator
+# ---------------------------------------------------------------------------
+
+test_that(".validate_measurement_error: NULL is OK", {
+  expect_null(hbsaems:::.validate_measurement_error(NULL, c("x1"), data.frame()))
+})
+
+test_that(".validate_measurement_error: requires named list", {
+  expect_error(
+    hbsaems:::.validate_measurement_error(list("se_x"), "x1", data.frame()),
+    "named list"
+  )
+  expect_error(
+    hbsaems:::.validate_measurement_error("not a list", "x1", data.frame()),
+    "named list"
+  )
+})
+
+test_that(".validate_measurement_error: variables must be in auxiliary", {
+  expect_error(
+    hbsaems:::.validate_measurement_error(
+      list(x99 = "se_x99"), c("x1", "x2"), data.frame()),
+    "must also appear in"
+  )
+})
+
+test_that(".validate_measurement_error: SE column must exist in data", {
+  expect_error(
+    hbsaems:::.validate_measurement_error(
+      list(x1 = "nonexistent_se"), "x1",
+      data.frame(x1 = 1:3)),
+    "not found in"
+  )
+})
+
+test_that(".validate_measurement_error: SE must be non-negative", {
+  df <- data.frame(x1 = 1:3, se_x1 = c(0.1, -0.5, 0.2))
+  expect_error(
+    hbsaems:::.validate_measurement_error(list(x1 = "se_x1"), "x1", df),
+    "non-negative"
+  )
+})
+
+test_that(".validate_measurement_error: SE must have no NA", {
+  df <- data.frame(x1 = 1:3, se_x1 = c(0.1, NA, 0.2))
+  expect_error(
+    hbsaems:::.validate_measurement_error(list(x1 = "se_x1"), "x1", df),
+    "NA values"
+  )
+})
+
+
+# ---------------------------------------------------------------------------
+# 21. P1-A: .apply_measurement_error formula rewriter
+# ---------------------------------------------------------------------------
+
+test_that(".apply_measurement_error: rewrites bare variable to mi(var, se)", {
+  fml <- y ~ x1 + x2
+  out <- hbsaems:::.apply_measurement_error(
+    fml, list(x1 = "se_x1"))
+  out_str <- paste(deparse(out), collapse = " ")
+  expect_match(out_str, "mi(x1, se_x1)", fixed = TRUE)
+  # x2 unchanged
+  expect_match(out_str, "\\+ x2", perl = TRUE)
+})
+
+test_that(".apply_measurement_error: NULL passthrough", {
+  fml <- y ~ x1 + x2
+  expect_equal(hbsaems:::.apply_measurement_error(fml, NULL), fml)
+})
+
+test_that(".apply_measurement_error: does not touch s(x) terms", {
+  fml <- y ~ s(x1) + x2
+  out <- hbsaems:::.apply_measurement_error(fml, list(x1 = "se_x1"))
+  out_str <- paste(deparse(out), collapse = " ")
+  expect_match(out_str, "s(x1)", fixed = TRUE)
+  # Should NOT replace inside s() — that would break brms
+  expect_false(grepl("s(mi(x1", out_str, fixed = TRUE))
+})
+
+
+# ---------------------------------------------------------------------------
+# 22. P1-B: .formula_has_mi detector
+# ---------------------------------------------------------------------------
+
+test_that(".formula_has_mi: detects mi() in plain formula", {
+  expect_true(hbsaems:::.formula_has_mi(y ~ mi(x1, se_x1)))
+})
+
+test_that(".formula_has_mi: detects me() too", {
+  expect_true(hbsaems:::.formula_has_mi(y ~ me(x1, se_x1)))
+})
+
+test_that(".formula_has_mi: FALSE on plain formula", {
+  expect_false(hbsaems:::.formula_has_mi(y ~ x1 + x2))
+})
+
+test_that(".formula_has_mi: NULL is FALSE", {
+  expect_false(hbsaems:::.formula_has_mi(NULL))
+})
+
+test_that(".formula_has_mi: detects mi() in brmsformula", {
+  skip_if_not_installed("brms")
+  bf <- brms::bf(y ~ mi(x1, se_x1))
+  expect_true(hbsaems:::.formula_has_mi(bf))
+})
+
+
+# ---------------------------------------------------------------------------
+# 23. P1-A + P1-B: hbm() measurement_error integration (validation only)
+# ---------------------------------------------------------------------------
+
+test_that("hbm: measurement_error must be named list", {
+  data("data_fhnorm")
+  expect_error(
+    hbm(brms::bf(y ~ x1), data = data_fhnorm,
+        measurement_error = c("se_x1")),
+    "named list"
+  )
+})
+
+test_that("hbm: measurement_error variable must be in formula", {
+  data("data_fhnorm")
+  d <- data_fhnorm
+  d$se_bogus <- 0.1
+  expect_error(
+    hbm(brms::bf(y ~ x1), data = d,
+        measurement_error = list(x99 = "se_bogus")),
+    "must also appear in"
+  )
+})
+
+
+# ---------------------------------------------------------------------------
+# 24. P2-A: .extract_response_names — robust LHS parsing
+# ---------------------------------------------------------------------------
+
+test_that(".extract_response_names: bare name", {
+  expr <- quote(y)
+  expect_equal(hbsaems:::.extract_response_names(expr), "y")
+})
+
+test_that(".extract_response_names: transformation log(y)", {
+  expr <- quote(log(y))
+  expect_equal(hbsaems:::.extract_response_names(expr), "y")
+})
+
+test_that(".extract_response_names: y | mi() strips addition", {
+  expr <- quote(y | mi())
+  expect_equal(hbsaems:::.extract_response_names(expr), "y")
+})
+
+test_that(".extract_response_names: y | trials(n) returns only y", {
+  expr <- quote(y | trials(n))
+  expect_equal(hbsaems:::.extract_response_names(expr), "y")
+})
+
+test_that(".extract_response_names: y | trials(n) + cens(censored)", {
+  # Multiple addition terms chained -- still only y
+  expr <- quote(y | trials(n) + cens(censored))
+  expect_equal(hbsaems:::.extract_response_names(expr), "y")
+})
+
+test_that(".extract_response_names: NULL is empty character", {
+  expect_equal(hbsaems:::.extract_response_names(NULL), character(0))
+})
+
+test_that(".parse_hbm_formula: trials(n) does NOT pollute response_var", {
+  skip_if_not_installed("brms")
+  fml <- brms::bf(y | trials(n) ~ x1 + x2, family = binomial())
+  out <- hbsaems:::.parse_hbm_formula(fml)
+  expect_equal(out$response_var, "y")
+  # n must appear in auxiliary_vars (as a covariate / data column)
+  expect_true("n" %in% out$auxiliary_vars || "n" %in% all.vars(fml$formula))
+})
+
+test_that(".parse_hbm_formula: mi() on LHS keeps response clean", {
+  skip_if_not_installed("brms")
+  fml <- brms::bf(y | mi() ~ mi(x1) + x2)
+  out <- hbsaems:::.parse_hbm_formula(fml)
+  expect_equal(out$response_var, "y")
+})
+
+
+# ---------------------------------------------------------------------------
+# 25. P1-C: AST-based formula rewrite robustness
+# ---------------------------------------------------------------------------
+
+test_that(".replace_nl_in_formula: bare variable replaced", {
+  fml <- y ~ x1 + x2
+  out <- hbsaems:::.replace_nl_in_formula(fml, "x1", "spline")
+  out_str <- paste(deparse(out), collapse = " ")
+  expect_match(out_str, "s(x1", fixed = TRUE)
+  # x2 left alone
+  expect_match(out_str, "\\+ x2", perl = TRUE)
+})
+
+test_that(".replace_nl_in_formula: I() wrapper protects content", {
+  # I(x1/1000) should NOT be turned into I(s(x1)/1000)
+  fml <- y ~ I(x1 / 1000) + x2
+  out <- hbsaems:::.replace_nl_in_formula(fml, "x1", "spline")
+  out_str <- paste(deparse(out), collapse = " ")
+  # The I() expression must remain intact
+  expect_match(out_str, "I(x1/1000)", fixed = TRUE)
+  # And we must NOT have created s(x1) inside the I()
+  expect_false(grepl("I(s(x1", out_str, fixed = TRUE))
+})
+
+test_that(".replace_nl_in_formula: interaction x1:x2 left alone", {
+  fml <- y ~ x1:x2
+  out <- hbsaems:::.replace_nl_in_formula(fml, "x1", "spline")
+  out_str <- paste(deparse(out), collapse = " ")
+  # Interaction term preserved bare
+  expect_match(out_str, "x1:x2", fixed = TRUE)
+  # No spurious s(x1)
+  expect_false(grepl("s(x1)", out_str, fixed = TRUE))
+})
+
+test_that(".replace_nl_in_formula: NULL nonlinear passes through", {
+  fml <- y ~ x1 + x2
+  out <- hbsaems:::.replace_nl_in_formula(fml, NULL, "spline")
+  # Should be equivalent to the input
+  expect_equal(deparse(out), deparse(fml))
+})
+
+test_that(".apply_measurement_error: AST-based, I() and s() preserved", {
+  # Combine I() transformation and spline wrapper — both must be left alone,
+  # only bare x1 rewritten
+  fml <- y ~ x1 + I(x1 / 1000) + s(x1) + x2
+  out <- hbsaems:::.apply_measurement_error(
+    fml, list(x1 = "se_x1"))
+  out_str <- paste(deparse(out), collapse = " ")
+  # Bare x1 -> mi(x1, se_x1)
+  expect_match(out_str, "mi(x1, se_x1)", fixed = TRUE)
+  # I() preserved
+  expect_match(out_str, "I(x1/1000)", fixed = TRUE)
+  # s() preserved (NOT rewritten as s(mi(x1, ...)))
+  expect_match(out_str, "s(x1)", fixed = TRUE)
+  expect_false(grepl("s(mi(", out_str, fixed = TRUE))
+  # x2 untouched
+  expect_match(out_str, "\\+ x2", perl = TRUE)
+})
+
+test_that(".apply_measurement_error: multiple variables", {
+  fml <- y ~ x1 + x2 + x3
+  out <- hbsaems:::.apply_measurement_error(
+    fml,
+    list(x1 = "se_x1", x2 = "se_x2"))
+  out_str <- paste(deparse(out), collapse = " ")
+  expect_match(out_str, "mi(x1, se_x1)", fixed = TRUE)
+  expect_match(out_str, "mi(x2, se_x2)", fixed = TRUE)
+  expect_match(out_str, "\\+ x3", perl = TRUE)
+})
+
+test_that(".apply_measurement_error: interaction term left alone", {
+  fml <- y ~ x1 + x1:x2
+  out <- hbsaems:::.apply_measurement_error(
+    fml, list(x1 = "se_x1"))
+  out_str <- paste(deparse(out), collapse = " ")
+  expect_match(out_str, "mi(x1, se_x1)", fixed = TRUE)
+  # Interaction term left alone — brms does not support mi() in interaction
+  expect_match(out_str, "x1:x2", fixed = TRUE)
+})
+
+
+# ---------------------------------------------------------------------------
+# 26. P3-A: stub-based mock fits (no Stan compile)
+# ---------------------------------------------------------------------------
+
+test_that(".brm_stub returns brmsfit-shaped object without Stan", {
+  out <- .brm_stub(
+    formula = y ~ x1,
+    data    = data.frame(y = 1:5, x1 = 1:5),
+    family  = list(family = "gaussian", link = "identity")
+  )
+  expect_s3_class(out, "brmsfit")
+  expect_true(out$.stubbed)
+  expect_equal(out$family$family, "gaussian")
+})
+
+test_that(".hbm_stub returns hbmfit-shaped object without Stan", {
+  out <- .hbm_stub(
+    formula = y ~ x1,
+    data    = data.frame(y = 1:5, x1 = 1:5)
+  )
+  expect_s3_class(out, "hbmfit")
+  expect_s3_class(out$model, "brmsfit")
+  expect_true(out$.stubbed)
+})
+
+test_that(".replace_nl_in_formula: random-intercept term left alone", {
+  # (1 | group) appears in many SAE formulas; terms() should treat it
+  # as one opaque term label, and our helper must NOT try to rewrite
+  # the bare "group" inside it.
+  fml <- y ~ x1 + (1 | group)
+  out <- tryCatch(
+    hbsaems:::.replace_nl_in_formula(fml, "x1", "spline"),
+    error = function(e) NULL
+  )
+  # Either the helper successfully rewrites x1 -> s(x1) AND keeps
+  # (1 | group), or it falls back to returning the input unchanged.
+  # We accept both -- what we MUST NOT see is a corrupted formula
+  # like `s(x1) + (1 | s(group))`.
+  if (!is.null(out)) {
+    out_str <- paste(deparse(out), collapse = " ")
+    expect_false(grepl("s(group", out_str, fixed = TRUE))
+  }
+  succeed()
+})
+
+test_that(".replace_nl_in_formula: -1 (no intercept) preserved", {
+  fml <- y ~ -1 + x1 + x2
+  out <- hbsaems:::.replace_nl_in_formula(fml, "x1", "spline")
+  out_str <- paste(deparse(out), collapse = " ")
+  # The no-intercept must survive AST roundtrip
+  expect_match(out_str, "- 1", fixed = TRUE)
+  # And x1 was rewritten
+  expect_match(out_str, "s(x1", fixed = TRUE)
+})
+
+
+# ---------------------------------------------------------------------------
+# 22. data2 collision fix (v1.0.0): user-supplied data2 via `...` no longer
+# crashes hbm() when spatial_model is also active.
+# ---------------------------------------------------------------------------
+
+test_that("hbm: user data2 + spatial_model merges correctly (no collision)", {
+  skip_if_not_installed("brms")
+  testthat::local_mocked_bindings(brm = .brm_stub, .package = "brms")
+
+  data <- data.frame(y = 1:5, x1 = stats::rnorm(5),
+                      regency = factor(1:5))
+  W <- matrix(0, 5, 5)
+  W[upper.tri(W)] <- 1
+  W <- W + t(W)
+  rownames(W) <- colnames(W) <- as.character(1:5)
+
+  # Should NOT throw 'formal argument "data2" matched by multiple actual arguments'
+  expect_no_error(
+    suppressWarnings(
+      hbm(formula     = brms::bf(y ~ x1),
+          data        = data,
+          spatial_model = "car",
+          spatial_var = "regency",
+          M           = W,
+          data2       = list(extra_aux = 1:5))
+    )
+  )
+})
+
+test_that("hbm: user data2 alone (no spatial_model) passes through", {
+  skip_if_not_installed("brms")
+  testthat::local_mocked_bindings(brm = .brm_stub, .package = "brms")
+
+  data <- data.frame(y = 1:5, x1 = stats::rnorm(5))
+  expect_no_error(
+    suppressWarnings(
+      hbm(formula = brms::bf(y ~ x1),
+          data    = data,
+          data2   = list(extra_aux = matrix(1:25, 5, 5)))
+    )
+  )
+})
+
+test_that("hbm: user data2 must be a list", {
+  data <- data.frame(y = 1:5, x1 = stats::rnorm(5))
+  expect_error(
+    suppressWarnings(
+      hbm(formula = brms::bf(y ~ x1),
+          data    = data,
+          data2   = "not a list")
+    ),
+    "must be a named list"
+  )
+})
+
+test_that("hbm: passing internally-managed args via ... is rejected", {
+  data <- data.frame(y = 1:5, x1 = stats::rnorm(5))
+
+  # save_pars is set internally and should not be overridable
+  expect_error(
+    suppressWarnings(
+      hbm(formula   = brms::bf(y ~ x1),
+          data      = data,
+          save_pars = brms::save_pars(latent = TRUE))
+    ),
+    "conflict with values hbm\\(\\) sets internally"
+  )
+})
+
+
+# ---------------------------------------------------------------------------
+# 23. Identity-link override for pinned distributional parameters (v1.0.0)
+# ---------------------------------------------------------------------------
+# Critical correctness bug: brms applies the dpar's LINK FUNCTION to the
+# linear predictor before plugging it into the likelihood.  For Gaussian
+# the default link_sigma = "log", so `sigma ~ 0 + offset(sqrt(D))` was
+# producing `sigma = exp(sqrt(D))` rather than `sigma = sqrt(D)`.
+# hbm() now overrides link_<par> = "identity" for every pinned dpar.
+# ---------------------------------------------------------------------------
+
+test_that("hbm: sampling_variance forces link_sigma = 'identity'", {
+  skip_if_not_installed("brms")
+  captured <- NULL
+  testthat::local_mocked_bindings(
+    brm = function(formula, data, ...) {
+      captured <<- formula
+      structure(list(), class = "brmsfit")
+    },
+    .package = "brms"
+  )
+
+  d <- data.frame(y = 1:5, x1 = stats::rnorm(5),
+                   D = c(4.0, 2.25, 3.24, 4.84, 2.89),
+                   area = factor(1:5))
+
+  suppressWarnings(
+    hbm(formula = brms::bf(y ~ x1),
+        data    = d,
+        re      = ~ (1 | area),
+        sampling_variance = "D")
+  )
+
+  # Resolve family object regardless of whether formula is univariate
+  # or multivariate
+  fam <- if (!is.null(captured$forms))
+    captured$forms[[1]]$family
+  else
+    captured$family
+
+  expect_equal(fam$link_sigma, "identity")
+})
+
+test_that("hbm: fixed_params$sigma also forces link_sigma = 'identity'", {
+  skip_if_not_installed("brms")
+  captured <- NULL
+  testthat::local_mocked_bindings(
+    brm = function(formula, data, ...) {
+      captured <<- formula
+      structure(list(), class = "brmsfit")
+    },
+    .package = "brms"
+  )
+
+  d <- data.frame(y = 1:5, x1 = stats::rnorm(5),
+                   D = c(4.0, 2.25, 3.24, 4.84, 2.89),
+                   area = factor(1:5))
+
+  suppressWarnings(
+    hbm(formula = brms::bf(y ~ x1),
+        data    = d,
+        re      = ~ (1 | area),
+        fixed_params = list(sigma = "D"))
+  )
+
+  fam <- if (!is.null(captured$forms))
+    captured$forms[[1]]$family
+  else
+    captured$family
+
+  expect_equal(fam$link_sigma, "identity")
+})
+
+test_that("hbm: pinned sigma value passed through correctly (sqrt(D) not exp(sqrt(D)))", {
+  skip_if_not_installed("brms")
+
+  # Trace the actual data sent to brm
+  captured_data <- NULL
+  testthat::local_mocked_bindings(
+    brm = function(formula, data, ...) {
+      captured_data <<- data
+      structure(list(), class = "brmsfit")
+    },
+    .package = "brms"
+  )
+
+  d <- data.frame(y = 1:5, x1 = stats::rnorm(5),
+                   D = c(4.0, 2.25, 3.24, 4.84, 2.89),
+                   area = factor(1:5))
+  expected_sigma <- sqrt(d$D)
+
+  suppressWarnings(
+    hbm(formula = brms::bf(y ~ x1),
+        data    = d,
+        re      = ~ (1 | area),
+        sampling_variance = "D")
+  )
+
+  # Stored values must equal sqrt(D) on the natural scale (NOT log-scale)
+  expect_equal(captured_data$.hbsaems_sigma_fixed, expected_sigma,
+                tolerance = 1e-10)
+
+  # NO sigma values should have been silently log-transformed
+  expect_false(all(captured_data$.hbsaems_sigma_fixed <
+                     log(expected_sigma) + 0.1))
+})
+
+
+# ---------------------------------------------------------------------------
+# 24. .add_fixed_pforms multivariate (mi()) compatibility (v1.0.0)
+# ---------------------------------------------------------------------------
+# Bug: `bform + brms::lf(rhs)` does not work for multivariate
+# brmsformulas (mvbrmsformula) because brms cannot disambiguate which
+# response the dpar applies to.  The fix supplies `resp = <primary>`.
+# ---------------------------------------------------------------------------
+
+test_that("hbm: mi() formula + sampling_variance composes correctly", {
+  skip_if_not_installed("brms")
+  captured <- NULL
+  testthat::local_mocked_bindings(
+    brm = function(formula, data, ...) {
+      captured <<- formula
+      structure(list(), class = "brmsfit")
+    },
+    .package = "brms"
+  )
+
+  d <- data.frame(
+    y    = c(10, 12, NA, 11, 9),
+    x1   = c(1, NA, 3, 4, 5),
+    x2   = stats::rnorm(5),
+    D    = c(4, 2.25, 3.24, 4.84, 2.89),
+    area = factor(1:5)
+  )
+
+  fml <- brms::bf(y | mi() ~ mi(x1) + x2) + brms::bf(x1 | mi() ~ x2)
+
+  expect_no_error(
+    suppressMessages(suppressWarnings(
+      hbm(formula = fml, data = d, re = ~ (1 | area),
+          sampling_variance = "D")
+    ))
+  )
+
+  # Multivariate formula must be assembled correctly
+  expect_true(!is.null(captured$forms))
+  # Length must be at least 3: y, x1, sigma offset
+  fnames <- vapply(captured$forms,
+                    function(f) as.character(f$resp), character(1L))
+  expect_true("y" %in% fnames)
+  expect_true("x1" %in% fnames)
+})
+
+test_that(".add_fixed_pforms supplies resp= for multivariate formulas", {
+  skip_if_not_installed("brms")
+
+  # Manually craft a multivariate bform and a fake processed list
+  bform_mv <- brms::bf(y ~ x) + brms::bf(z ~ x)
+  d <- data.frame(y = 1:5, z = 6:10, x = stats::rnorm(5))
+
+  processed <- list(
+    resolved  = list(sigma = rep(0.5, 5)),
+    col_names = list(sigma = "fake_sig_col")
+  )
+
+  # Should not throw
+  expect_no_error(
+    out <- hbsaems:::.add_fixed_pforms(bform_mv, processed)
+  )
+
+  # Result should be mvbrmsformula
+  expect_s3_class(out, "mvbrmsformula")
+})
+
+
+
+# ---------------------------------------------------------------------------
+# 25. update_hbm() preservation of hbsaems offset columns (v1.0.0)
+# ---------------------------------------------------------------------------
+
+test_that("update_hbm: newdata without offset col + same nrow -> warn & copy", {
+  skip_if_not_installed("brms")
+  testthat::local_mocked_bindings(
+    brm = function(formula, data, ...)
+      structure(list(data = data, formula = formula),
+                class = c("brmsfit", "list")),
+    .package = "brms"
+  )
+
+  data1 <- data.frame(
+    y = c(10, 12, 8, 11, 9),
+    x1 = stats::rnorm(5),
+    D = c(4, 2.25, 3.24, 4.84, 2.89),
+    area = factor(1:5)
+  )
+  fit <- suppressWarnings(
+    hbm(formula = brms::bf(y ~ x1), data = data1,
+        re = ~ (1 | area), sampling_variance = "D")
+  )
+
+  data2 <- data.frame(
+    y    = c(11, 13, 9, 12, 10),
+    x1   = stats::rnorm(5),
+    D    = c(3, 2, 4, 3.5, 2.5),
+    area = factor(1:5)
+  )
+
+  captured_newdata <- NULL
+  testthat::local_mocked_bindings(
+    "update.brmsfit" = function(object, newdata = NULL, ...) {
+      captured_newdata <<- newdata
+      object
+    },
+    .package = "brms"
+  )
+
+  expect_warning(
+    update_hbm(fit, newdata = data2),
+    "missing hbsaems offset column"
+  )
+
+  # The offset column must have been auto-copied
+  expect_true(".hbsaems_sigma_fixed" %in% names(captured_newdata))
+})
+
+test_that("update_hbm: newdata without offset col + different nrow -> error", {
+  skip_if_not_installed("brms")
+  testthat::local_mocked_bindings(
+    brm = function(formula, data, ...)
+      structure(list(data = data, formula = formula),
+                class = c("brmsfit", "list")),
+    .package = "brms"
+  )
+
+  data1 <- data.frame(
+    y = c(10, 12, 8, 11, 9),
+    x1 = stats::rnorm(5),
+    D = c(4, 2.25, 3.24, 4.84, 2.89),
+    area = factor(1:5)
+  )
+  fit <- suppressWarnings(
+    hbm(formula = brms::bf(y ~ x1), data = data1,
+        re = ~ (1 | area), sampling_variance = "D")
+  )
+
+  data3 <- data.frame(
+    y    = 1:6,
+    x1   = stats::rnorm(6),
+    area = factor(1:6)
+  )
+
+  expect_error(
+    update_hbm(fit, newdata = data3),
+    "cannot safely copy"
+  )
+})
+
+test_that("update_hbm: no offset col in original -> no special handling", {
+  skip_if_not_installed("brms")
+  testthat::local_mocked_bindings(
+    brm = function(formula, data, ...)
+      structure(list(data = data, formula = formula),
+                class = c("brmsfit", "list")),
+    .package = "brms"
+  )
+
+  data1 <- data.frame(
+    y = c(10, 12, 8, 11, 9),
+    x1 = stats::rnorm(5),
+    area = factor(1:5)
+  )
+  # NO sampling_variance, NO fixed_params
+  fit <- suppressWarnings(
+    hbm(formula = brms::bf(y ~ x1), data = data1,
+        re = ~ (1 | area))
+  )
+
+  data2 <- data1
+  data2$y <- data2$y + 1
+
+  # Should NOT issue a warning since there are no offset columns
+  testthat::local_mocked_bindings(
+    "update.brmsfit" = function(object, ...) object,
+    .package = "brms"
+  )
+  expect_no_warning(update_hbm(fit, newdata = data2))
+})
+
+
+# ---------------------------------------------------------------------------
+# 26. hbm_flex area_var vector validation (v1.0.0)
+# ---------------------------------------------------------------------------
+
+test_that("hbm_flex: partially-invalid area_var vector -> friendly error", {
+  skip_if_not_installed("brms")
+  d <- data.frame(y = stats::rnorm(5, 5, 1), x1 = stats::rnorm(5),
+                   province = factor(rep(1:2, length.out = 5)))
+  # NO "regency" column
+  expect_error(
+    hbm_flex(family_key = "lognormal", response = "y",
+             auxiliary = "x1", data = d,
+             area_var = c("province", "regency_INVALID")),
+    "Area variable\\(s\\) not found"
+  )
+})
+
+# ---------------------------------------------------------------------------
+# 27. Nested area_var syntax in re validator (v1.0.0)
+# ---------------------------------------------------------------------------
+
+test_that("hbm: nested re formula `(1 | x/y)` accepted by validator", {
+  skip_if_not_installed("brms")
+  testthat::local_mocked_bindings(
+    brm = function(formula, data, ...)
+      structure(list(formula = formula),
+                class = c("brmsfit", "list")),
+    .package = "brms"
+  )
+  d <- data.frame(y = stats::rnorm(5), x1 = stats::rnorm(5),
+                   province = factor(rep(1:2, length.out = 5)),
+                   regency = factor(1:5))
+
+  expect_no_error(
+    suppressWarnings(suppressMessages(
+      hbm(formula = brms::bf(y ~ x1), data = d,
+          re = ~ (1 | province/regency))
+    ))
+  )
+})
+
+test_that("hbm: nested re formula propagated through hbm_flex", {
+  skip_if_not_installed("brms")
+  captured <- NULL
+  testthat::local_mocked_bindings(
+    brm = function(formula, data, ...) {
+      captured <<- formula
+      structure(list(formula = formula),
+                class = c("brmsfit", "list"))
+    },
+    .package = "brms"
+  )
+  d <- data.frame(y = stats::rnorm(5, 5, 1), x1 = stats::rnorm(5),
+                   province = factor(rep(1:2, length.out = 5)),
+                   regency = factor(1:5))
+
+  suppressMessages(suppressWarnings(
+    hbm_flex(family_key = "lognormal", response = "y",
+             auxiliary = "x1", data = d,
+             area_var = c("province", "regency"),
+             area_re_structure = "nested",
+             chains = 1, iter = 1)
+  ))
+
+  expect_match(paste(deparse(captured$formula), collapse = " "),
+                "province/regency")
+})
+
+# ---------------------------------------------------------------------------
+# 28. sae_aggregate weights validation (v1.0.0)
+# ---------------------------------------------------------------------------
+
+test_that("sae_aggregate: zero-sum weights -> error (not NaN)", {
+  p1 <- structure(
+    list(result_table = data.frame(Prediction = 1:3,
+                                     RSE_percent = c(5, 5, 5)),
+         rse_model = 5, pred = 1:3),
+    class = "hbsae_results"
+  )
+  p2 <- structure(
+    list(result_table = data.frame(Prediction = 2:4,
+                                     RSE_percent = c(4, 4, 4)),
+         rse_model = 4, pred = 2:4),
+    class = "hbsae_results"
+  )
+
+  expect_error(
+    sae_aggregate(p1, p2, method = "weighted", weights = c(0, 0)),
+    "must sum to a positive value"
+  )
+})
+
+test_that("sae_aggregate: non-finite weights -> error", {
+  p1 <- structure(
+    list(result_table = data.frame(Prediction = 1:3,
+                                     RSE_percent = c(5, 5, 5)),
+         rse_model = 5, pred = 1:3),
+    class = "hbsae_results"
+  )
+  p2 <- structure(
+    list(result_table = data.frame(Prediction = 2:4,
+                                     RSE_percent = c(4, 4, 4)),
+         rse_model = 4, pred = 2:4),
+    class = "hbsae_results"
+  )
+
+  expect_error(
+    sae_aggregate(p1, p2, method = "weighted", weights = c(NA, 0.5)),
+    "must be finite"
+  )
+  expect_error(
+    sae_aggregate(p1, p2, method = "weighted", weights = c(Inf, 0.5)),
+    "must be finite"
+  )
+})
+
+# ---------------------------------------------------------------------------
+# 29. sae_transform length validation (v1.0.0)
+# ---------------------------------------------------------------------------
+
+test_that("sae_transform: reducer function returning scalar -> error", {
+  p <- structure(
+    list(result_table = data.frame(Prediction = c(1, 2, 3),
+                                     RSE_percent = c(5, 5, 5)),
+         rse_model = 5, pred = c(1, 2, 3)),
+    class = "hbsae_results"
+  )
+
+  expect_error(
+    sae_transform(p, fun = sum),
+    "1 value\\(s\\) but 3 were expected"
+  )
+})
+
+test_that("sae_transform: non-numeric return -> error", {
+  p <- structure(
+    list(result_table = data.frame(Prediction = c(1, 2, 3),
+                                     RSE_percent = c(5, 5, 5)),
+         rse_model = 5, pred = c(1, 2, 3)),
+    class = "hbsae_results"
+  )
+
+  expect_error(
+    sae_transform(p, fun = as.character),
+    "must return a numeric vector"
+  )
+})
+
+test_that("sae_transform: element-wise function works", {
+  p <- structure(
+    list(result_table = data.frame(Prediction = c(1, 2, 3),
+                                     RSE_percent = c(5, 5, 5)),
+         rse_model = 5, pred = c(1, 2, 3)),
+    class = "hbsae_results"
+  )
+
+  out <- sae_transform(p, fun = exp)
+  expect_equal(out$pred, exp(c(1, 2, 3)))
+  expect_equal(out$result_table$Prediction, exp(c(1, 2, 3)))
+})
+
+
+# ---------------------------------------------------------------------------
+# 30. is_converged() returns NA when no finite Rhat (v1.0.0)
+# ---------------------------------------------------------------------------
+
+test_that("is_converged: all-NA Rhat -> NA + warning, not silent TRUE", {
+  hbcc <- structure(
+    list(rhat_ess = matrix(
+      c(NA_real_, NA_real_, NA_real_, NA_real_, NA_real_, NA_real_),
+      ncol = 3,
+      dimnames = list(c("a", "b"),
+                       c("Rhat", "Bulk_ESS", "Tail_ESS"))
+    )),
+    class = "hbcc_results"
+  )
+
+  expect_warning(
+    result <- is_converged(hbcc, threshold = 1.1),
+    "All stored R-hat values are NA"
+  )
+  expect_true(is.na(result))
+})
+
+test_that("is_converged: rejects non-numeric threshold", {
+  hbcc <- structure(
+    list(rhat_ess = matrix(c(1.001, 1.002, 100, 100, 100, 100),
+                            ncol = 3,
+                            dimnames = list(c("a", "b"),
+                                            c("Rhat","Bulk_ESS","Tail_ESS")))),
+    class = "hbcc_results"
+  )
+
+  expect_error(is_converged(hbcc, threshold = "1.1"),
+               "must be a single finite positive number")
+  expect_error(is_converged(hbcc, threshold = NULL),
+               "must be a single finite positive number")
+  expect_error(is_converged(hbcc, threshold = -1),
+               "must be a single finite positive number")
+  expect_error(is_converged(hbcc, threshold = c(1.1, 1.05)),
+               "must be a single finite positive number")
+})
+
+test_that("is_converged: valid threshold + good Rhat -> TRUE", {
+  hbcc <- structure(
+    list(rhat_ess = matrix(c(1.001, 1.002, 100, 100, 100, 100),
+                            ncol = 3,
+                            dimnames = list(c("a","b"),
+                                            c("Rhat","Bulk_ESS","Tail_ESS")))),
+    class = "hbcc_results"
+  )
+  expect_true(is_converged(hbcc, threshold = 1.1))
+  expect_true(is_converged(hbcc, threshold = 1.05))
+  # Strict threshold below max Rhat
+  expect_false(is_converged(hbcc, threshold = 1.0015))
+})
+
+# ---------------------------------------------------------------------------
+# 31. sae_benchmark target validation (v1.0.0)
+# ---------------------------------------------------------------------------
+
+test_that("sae_benchmark: NA target -> error", {
+  preds <- structure(
+    list(result_table = data.frame(Prediction = c(10, 20, 30),
+                                     RSE_percent = c(5, 5, 5)),
+         rse_model = 5, pred = c(10, 20, 30)),
+    class = "hbsae_results"
+  )
+  expect_error(
+    sae_benchmark(preds, target = NA_real_),
+    "must be finite"
+  )
+})
+
+test_that("sae_benchmark: Inf target -> error", {
+  preds <- structure(
+    list(result_table = data.frame(Prediction = c(10, 20, 30),
+                                     RSE_percent = c(5, 5, 5)),
+         rse_model = 5, pred = c(10, 20, 30)),
+    class = "hbsae_results"
+  )
+  expect_error(
+    sae_benchmark(preds, target = Inf),
+    "must be finite"
+  )
+})
+
+test_that("sae_benchmark: NaN in pred -> error", {
+  preds <- structure(
+    list(result_table = data.frame(Prediction = c(10, NaN, 30),
+                                     RSE_percent = c(5, 5, 5)),
+         rse_model = 5, pred = c(10, NaN, 30)),
+    class = "hbsae_results"
+  )
+  expect_error(
+    sae_benchmark(preds, target = 60),
+    "non-finite value"
+  )
+})
+
+# ---------------------------------------------------------------------------
+# 32. Models-registry: beta family no longer has legacy aux_param_hyperprior (v1.0.0)
+# ---------------------------------------------------------------------------
+
+test_that("registry: beta family no longer ships legacy aux_param_hyperprior", {
+  spec <- hbsaems:::.get_model("beta")
+  expect_false(is.function(spec$aux_param_hyperprior),
+                info = "beta family should NOT have aux_param_hyperprior in v1.0.0")
+})
+
+test_that("registry: custom families can still register aux_param_hyperprior", {
+  # Register a custom model with a callback
+  register_hbsae_model(
+    key                  = "test_aux_v1_0_0",
+    family               = "gaussian",
+    link                 = "identity",
+    discrete             = FALSE,
+    supports_mi          = TRUE,
+    aux_param_hyperprior = function(args, data) NULL
+  )
+  spec <- hbsaems:::.get_model("test_aux_v1_0_0")
+  expect_true(is.function(spec$aux_param_hyperprior))
+  # Cleanup
+  rm("test_aux_v1_0_0", envir = hbsaems:::.hbsae_model_env)
+})
+
+
+# ---------------------------------------------------------------------------
+# 33. dloglogistic NA propagation (v1.0.0)
+# ---------------------------------------------------------------------------
+
+test_that("dloglogistic propagates NA inputs (matches base R convention)", {
+  # Single NA -> single NA (was 0 in earlier versions)
+  expect_true(is.na(dloglogistic(NA, mu = 1, beta = 1)))
+
+  # Vectorised: NA at one position, real values at others
+  out <- dloglogistic(c(NA, 1, 2), mu = 1, beta = 1)
+  expect_equal(length(out), 3L)
+  expect_true(is.na(out[1L]))
+  expect_true(is.finite(out[2L]))
+  expect_true(is.finite(out[3L]))
+  expect_equal(out[2L], 0.25)  # f(1; 1, 1) = 1/4
+
+  # NA in mu / beta should also propagate
+  expect_true(is.na(dloglogistic(1, mu = NA, beta = 1)))
+  expect_true(is.na(dloglogistic(1, mu = 1, beta = NA)))
+})
+
+test_that("dloglogistic returns 0 for x <= 0 (support is positive reals)", {
+  expect_equal(dloglogistic(0, mu = 1, beta = 1), 0)
+  expect_equal(dloglogistic(-1, mu = 1, beta = 1), 0)
+  # Mixed: negative AND positive AND NA
+  out <- dloglogistic(c(-1, 0, 1, NA), mu = 1, beta = 1)
+  expect_equal(out[1L], 0)
+  expect_equal(out[2L], 0)
+  expect_equal(out[3L], 0.25)
+  expect_true(is.na(out[4L]))
+})
+
+
+# ---------------------------------------------------------------------------
+# 34. run_sae_app() graceful failure when shiny not installed (v1.0.0)
+# ---------------------------------------------------------------------------
+
+test_that("run_sae_app: informative error when shiny is missing", {
+  # Mock out requireNamespace to simulate shiny being absent
+  testthat::local_mocked_bindings(
+    requireNamespace = function(package, ...) {
+      if (package == "shiny") return(FALSE)
+      base::requireNamespace(package, ...)
+    },
+    .package = "base"
+  )
+
+  expect_error(
+    run_sae_app(),
+    "'shiny' package is required"
+  )
+})
+
+
+# ---------------------------------------------------------------------------
+# 35. Conflict protection: custom brms registration vs built-in (v1.0.0)
+# ---------------------------------------------------------------------------
+
+test_that("register_hbsae_brms_custom: refuses to overwrite built-in custom families", {
+  skip_if_not_installed("brms")
+  fam <- brms::custom_family("hbsae_test", dpars = "mu",
+                              links = "identity", type = "real")
+  sv  <- brms::stanvar(scode = "// dummy", block = "functions")
+
+  # loglogistic IS a built-in hbsaems custom family (registered in .onLoad)
+  expect_error(
+    register_hbsae_brms_custom(key = "loglogistic", custom_family = fam,
+                                stanvars = sv),
+    "built-in hbsaems family"
+  )
+
+  # shifted_loglogistic likewise
+  expect_error(
+    register_hbsae_brms_custom(key = "shifted_loglogistic",
+                                custom_family = fam, stanvars = sv),
+    "built-in hbsaems family"
+  )
+})
+
+test_that("register_hbsae_brms_custom: warns on built-in custom overwrite=TRUE", {
+  skip_if_not_installed("brms")
+  fam <- brms::custom_family("hbsae_test", dpars = "mu",
+                              links = "identity", type = "real")
+  sv  <- brms::stanvar(scode = "// dummy", block = "functions")
+
+  expect_warning(
+    register_hbsae_brms_custom(key = "loglogistic", custom_family = fam,
+                                stanvars = sv, overwrite = TRUE),
+    "Overwriting built-in family"
+  )
+
+  # Restore the package-curated loglogistic
+  hbsaems:::.init_model_registry()
+  hbsaems:::.register_builtin_custom_families()
+})
+
+test_that("register_hbsae_brms_custom: warns when shadowing a brms-native family", {
+  skip_if_not_installed("brms")
+  fam <- brms::custom_family("hbsae_test", dpars = "mu",
+                              links = "identity", type = "real")
+  sv  <- brms::stanvar(scode = "// dummy", block = "functions")
+
+  # "weibull" is brms-native but not in hbsaems built-ins; should warn shadow
+  expect_warning(
+    register_hbsae_brms_custom(key = "weibull", custom_family = fam,
+                                stanvars = sv),
+    "brms-native family"
+  )
+  # Cleanup
+  if (exists("weibull", envir = hbsaems:::.hbsae_model_env, inherits = FALSE))
+    rm("weibull", envir = hbsaems:::.hbsae_model_env)
+})
+
+test_that("register_hbsae_model: refuses to overwrite built-in custom families too", {
+  # Previously only protected brms-native names (gaussian, beta, etc.).
+  # Now also protects loglogistic / shifted_loglogistic.
+  expect_error(
+    register_hbsae_model(key = "loglogistic", family = "gaussian"),
+    "built-in hbsaems family"
+  )
+})
+
+test_that(".init_model_registry: cleans up custom registrations on reset", {
+  # Register a temporary custom family
+  register_hbsae_model(key = "test_reset_v1_0_0", family = "gaussian")
+  expect_true(exists("test_reset_v1_0_0",
+                      envir = hbsaems:::.hbsae_model_env,
+                      inherits = FALSE))
+
+  # Reset should remove non-builtin entries
+  hbsaems:::.init_model_registry()
+  expect_false(exists("test_reset_v1_0_0",
+                       envir = hbsaems:::.hbsae_model_env,
+                       inherits = FALSE))
+
+  # But built-ins (including custom builtins) should be intact after
+  # the full reset + .register_builtin_custom_families() pipeline.
+  hbsaems:::.register_builtin_custom_families()
+  expect_true(exists("loglogistic",
+                      envir = hbsaems:::.hbsae_model_env,
+                      inherits = FALSE))
+  expect_true(exists("gaussian",
+                      envir = hbsaems:::.hbsae_model_env,
+                      inherits = FALSE))
+})
+
+test_that(".is_brms_native_family: distinguishes brms families from arbitrary names", {
+  skip_if_not_installed("brms")
+  # Native families
+  expect_true(hbsaems:::.is_brms_native_family("gaussian"))
+  expect_true(hbsaems:::.is_brms_native_family("weibull"))
+  expect_true(hbsaems:::.is_brms_native_family("Beta"))
+
+  # Non-native
+  expect_false(hbsaems:::.is_brms_native_family("loglogistic"))
+  expect_false(hbsaems:::.is_brms_native_family("nonexistent_dist"))
+
+  # Defensive: invalid inputs
+  expect_false(hbsaems:::.is_brms_native_family(NULL))
+  expect_false(hbsaems:::.is_brms_native_family(c("a", "b")))
+  expect_false(hbsaems:::.is_brms_native_family(42))
+})
+
+
+# ---------------------------------------------------------------------------
+# 36. AST formula manipulation: offset() preservation (v1.0.0)
+# ---------------------------------------------------------------------------
+# Regression: stats::terms() strips offset() into a separate `offset`
+# attribute rather than including it in term.labels.  Previously, our
+# .replace_nl_in_formula() and .apply_measurement_error() helpers
+# silently dropped offsets when reassembling the formula.
+
+test_that(".replace_nl_in_formula preserves offset() terms", {
+  fml_in <- y ~ x1 + offset(log(pop)) + x2
+  fml_out <- hbsaems:::.replace_nl_in_formula(
+    fml_in, nonlinear = "x1", nonlinear_type = "spline"
+  )
+  # Both the spline AND the offset must survive
+  expect_match(deparse(fml_out), "s\\(x1\\)")
+  expect_match(deparse(fml_out), "offset\\(log\\(pop\\)\\)")
+})
+
+test_that(".apply_measurement_error preserves offset() terms", {
+  fml_in <- brms::bf(y ~ x1 + offset(log(pop)) + x2)
+  fml_out <- hbsaems:::.apply_measurement_error(
+    fml_in, list(x1 = "se_x1")
+  )
+  expect_match(deparse(fml_out$formula), "mi\\(x1, se_x1\\)")
+  expect_match(deparse(fml_out$formula), "offset\\(log\\(pop\\)\\)")
+})
+
+# ---------------------------------------------------------------------------
+# 37. AST formula manipulation: substring/wrapper safety (v1.0.0)
+# ---------------------------------------------------------------------------
+
+test_that(".replace_nl_in_formula: substring-name safety", {
+  # x1 is a substring of x10 and x11; naive regex would corrupt them.
+  fml_in <- y ~ x1 + x10 + x11
+  fml_out <- hbsaems:::.replace_nl_in_formula(
+    fml_in, nonlinear = "x1", nonlinear_type = "spline"
+  )
+  out_str <- deparse(fml_out)
+  expect_match(out_str, "s\\(x1\\)")
+  expect_match(out_str, "x10")     # not s(x10), not s(x1)0
+  expect_match(out_str, "x11")
+  # Negative: x10 must NOT have been corrupted to s(x1)0
+  expect_false(grepl("s\\(x1\\)0", out_str))
+})
+
+test_that(".replace_nl_in_formula: wrapped variables left alone", {
+  # All these should KEEP their wrappers, and the bare x2 (if present)
+  # gets the spline applied.
+  for (fml_in in list(
+    y ~ x1 + I(x2 / 100) + x3,
+    y ~ x1 + poly(x2, 2)  + x3,
+    y ~ x1 + me(x2, se_x2) + x3,
+    y ~ x1 + s(x2)        + x3      # already a spline
+  )) {
+    fml_out <- hbsaems:::.replace_nl_in_formula(
+      fml_in, nonlinear = "x2", nonlinear_type = "spline"
+    )
+    out_str <- deparse(fml_out)
+    # Original wrapper must survive in some form
+    # (this is loose: we just need to assert the rewrite isn't destructive)
+    if (grepl("I\\(", deparse(fml_in)))
+      expect_match(out_str, "I\\(x2/100\\)|I\\(x2 / 100\\)|I\\(x2/100\\)")
+    if (grepl("poly", deparse(fml_in)))
+      expect_match(out_str, "poly\\(x2, 2\\)")
+    if (grepl("me\\(", deparse(fml_in)))
+      expect_match(out_str, "me\\(x2, se_x2\\)")
+  }
+})
+
+test_that(".replace_nl_in_formula: interaction terms NOT touched", {
+  # brms does not reliably fit s(x1):x2; the AST rewrite is conservative
+  # and leaves interactions alone.
+  fml_in <- y ~ x1 + x1:x2 + x3
+  fml_out <- hbsaems:::.replace_nl_in_formula(
+    fml_in, nonlinear = "x1", nonlinear_type = "spline"
+  )
+  out_str <- deparse(fml_out)
+  expect_match(out_str, "s\\(x1\\)")
+  expect_match(out_str, "x1:x2")   # preserved
+})
+
+test_that(".extract_response_names: handles brms addition operators", {
+  # Bare response
+  expect_equal(hbsaems:::.extract_response_names(quote(y)), "y")
+  # mi() addition wrapper
+  expect_equal(hbsaems:::.extract_response_names(quote(y | mi())), "y")
+  # trials() — n is NOT a response
+  expect_equal(hbsaems:::.extract_response_names(quote(y | trials(n))), "y")
+  # cens()
+  expect_equal(hbsaems:::.extract_response_names(quote(y | cens(c))), "y")
+  # cbind multiple responses
+  expect_equal(hbsaems:::.extract_response_names(quote(cbind(s, f) | trials(n))),
+               c("s", "f"))
+  # NULL guard
+  expect_equal(hbsaems:::.extract_response_names(NULL), character(0L))
+})
+
+test_that(".build_area_re_formula: correct rendering of hierarchies", {
+  # Single
+  expect_equal(deparse(hbsaems:::.build_area_re_formula("province")),
+               "~(1 | province)")
+  # Nested 2-level
+  expect_equal(deparse(hbsaems:::.build_area_re_formula(
+    c("province", "regency"), "nested")),
+               "~(1 | province/regency)")
+  # Crossed 2-level
+  expect_equal(deparse(hbsaems:::.build_area_re_formula(
+    c("province", "regency"), "crossed")),
+               "~(1 | province) + (1 | regency)")
+  # NULL / empty
+  expect_null(hbsaems:::.build_area_re_formula(NULL))
+  expect_null(hbsaems:::.build_area_re_formula(character(0L)))
+  # Error on bad input
+  expect_error(hbsaems:::.build_area_re_formula(42),
+               "character vector")
+  expect_error(hbsaems:::.build_area_re_formula(c("a", "")),
+               "empty strings")
+})

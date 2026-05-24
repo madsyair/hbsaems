@@ -18,6 +18,7 @@ hbm(
   data,
   prior = NULL,
   fixed_params = NULL,
+  sampling_variance = NULL,
   prior_type = "default",
   hs_df = 1,
   hs_df_global = 1,
@@ -41,6 +42,7 @@ hbm(
   handle_missing = NULL,
   m = 5L,
   mice_args = list(),
+  measurement_error = NULL,
   control = list(),
   chains = 4L,
   iter = 4000L,
@@ -134,6 +136,38 @@ an explicit prior is an error.  Typical use cases include pinning
 \code{phi} for Beta regression from survey design effect
 (\code{phi = ~ I(n / deff - 1)}) and pinning \code{sigma} for
 Fay--Herriot-style models with known sampling variance.}
+
+\item{sampling_variance}{Optional character.  Name of a column in
+  \code{data} containing the \strong{known} sampling variance
+  \eqn{D_i} for each area (the Fay-Herriot sugar).  When supplied,
+  \eqn{\sigma_i = \sqrt{D_i}} is pinned via offset.  This is the
+  canonical way to fit a Gaussian Fay-Herriot model: without it, the
+  residual \eqn{\sigma} and the area-RE \eqn{\sigma_u} compete to
+  explain the same variance and the model is unidentified, typically
+  producing divergent transitions.  Equivalent to
+  \code{fixed_params = list(sigma = sqrt(data[[<col>]]))}.
+
+  \strong{Family compatibility.} \code{sampling_variance} requires a
+  continuous family whose response distribution has a residual scale
+  parameter named \code{sigma}.  Supported: \code{gaussian} (the
+  canonical Fay-Herriot case), \code{lognormal} (D must be on the
+  log scale; see also \code{\link{hbm_lnln}}), \code{student},
+  \code{skew_normal}, \code{exgaussian}, \code{asym_laplace}.  A
+  helpful error is thrown when an incompatible family is supplied.
+
+  \strong{For non-Gaussian SAE families} the analogous pinning
+  mechanism is family-specific:
+  \itemize{
+    \item \strong{Beta}: pin the precision \code{phi} via the survey
+          design effect, e.g.\ \code{fixed_params = list(phi = ~ I(n/deff - 1))}
+          (Liu 2009).  See \code{\link{hbm_betalogitnorm}}.
+    \item \strong{Binomial}: sampling variability enters through the
+          \code{trials} addition term, not through a separate
+          \code{sigma}.  See \code{\link{hbm_binlogitnorm}}.
+    \item \strong{Poisson, Gamma, Weibull}: variance is tied
+          algebraically to the mean -- no separate scale parameter
+          to pin.
+  }}
 
 \item{prior_type}{Character.  Global-local shrinkage prior applied to all
   regression coefficients (\code{class = "b"}).  One of:
@@ -269,6 +303,25 @@ other strategies.}
 \code{\link[mice]{mice}}, for example
 \code{list(method = "pmm", seed = 42)}.  Only used when
 \code{handle_missing = "multiple"}.}
+
+\item{measurement_error}{Optional named list specifying which
+auxiliary variables are measured with error and where to find
+their standard errors.  The list maps variable names to columns
+in \code{data} containing the SE, e.g.
+\code{measurement_error = list(x1 = "se_x1", x2 = "se_x2")}.
+Listed variables are wrapped on-the-fly with \code{mi(var, se_col)}
+in the brmsformula so that brms treats them as latent variables
+with a Gaussian measurement-error structure, following Ybarra and
+Lohr (2008).  Standard errors must be non-negative and have no
+missing values; \code{measurement_error} variables must be a
+subset of the model's auxiliary (linear) predictors.  When the
+user has already written \code{mi(...)} explicitly in the
+formula, the corresponding entries in \code{measurement_error}
+are detected and not duplicated.  Note that ME inflates the
+parameter space (each \emph{x_i} becomes latent), which slows
+sampling and increases the risk of divergent transitions,
+especially when combined with smooth terms (\code{nonlinear}).
+See the "Measurement error" section of the SAE vignette.}
 
 \item{control}{A named list of sampler control parameters
 (default: \code{list()}).  Passed directly to \code{\link[brms]{brm}}.}
@@ -408,6 +461,48 @@ If data are Missing Not At Random (MNAR), none of the above strategies
 applies directly; sensitivity analyses and explicit missingness models are
 recommended.
 }
+\section{How to pin distributional parameters per family}{
+
+\pkg{hbsaems} exposes three layers for pinning distributional
+parameters to known values, in increasing order of generality:
+\enumerate{
+  \item \strong{Family-specific sugar} (least typing, most readable).
+        Each wrapper exposes a convenience argument that maps to a
+        well-defined Fay-Herriot-style transformation of survey
+        design quantities:
+        \tabular{lll}{
+          \strong{Wrapper} \tab \strong{Sugar argument} \tab \strong{Pinned dpar} \cr
+          \code{hbm(..., hb_sampling = "gaussian")} \tab \code{sampling_variance = "D"}
+            \tab \eqn{\sigma_i = \sqrt{D_i}} \cr
+          \code{hbm_lnln()}                        \tab \code{sampling_variance = "psi"}
+            \tab \eqn{\sigma_i = \sqrt{\psi_i}}  (on log scale) \cr
+          \code{hbm_betalogitnorm()}               \tab \code{n = "n", deff = "deff"}
+            \tab \eqn{\phi_i = n_i / \mathrm{deff}_i - 1}  (Liu 2009) \cr
+          \code{hbm_binlogitnorm()}                \tab \code{trials = "n"}
+            \tab (sampling variance built into the family) \cr
+        }
+  \item \strong{Universal \code{fixed_params}} (works everywhere).
+        A named list pinning any distributional parameter -- accepts
+        a column name (character), a scalar (numeric of length 1),
+        a vector of length \code{nrow(data)}, or a one-sided
+        formula (evaluated in \code{data}'s environment).  Examples:
+        \itemize{
+          \item \code{fixed_params = list(sigma = "D")} -- pin sigma to a column.
+          \item \code{fixed_params = list(phi   = ~ I(n / deff - 1))} -- pin phi via formula.
+          \item \code{fixed_params = list(nu    = 4)} -- pin Student-t df to a scalar.
+        }
+  \item \strong{Raw \code{stanvars}} (for power users authoring
+        custom Stan code).  Direct injection of Stan code blocks --
+        see \code{\link[brms]{stanvar}}.
+}
+
+Sugar arguments are simply thin wrappers around layer 2: they
+validate the survey-design inputs (no NAs, strictly positive) and
+translate to \code{fixed_params} before delegating to the universal
+machinery.  Hence the conflict policy below applies uniformly to
+both sugar and explicit \code{fixed_params}.
+}
+
 \section{Conflict resolution between prior, prior_type, fixed_params, and stanvars}{
 
 \code{hbm()} provides four orthogonal mechanisms to influence the
@@ -422,9 +517,35 @@ prior / parameter specification of the underlying \pkg{brms} model:
                                 values via the offset trick.
   \item \code{stanvars}     -- inject custom Stan code blocks.
 }
+
+Plus two family-specific \emph{sugar} arguments that translate to
+\code{fixed_params} internally:
+\itemize{
+  \item \code{sampling_variance} (continuous families): pins
+        \eqn{\sigma_i = \sqrt{D_i}}, equivalent to
+        \code{fixed_params$sigma = sqrt(data$D)}.
+  \item \code{n + deff} (\code{hbm_betalogitnorm}): pins
+        \eqn{\phi_i = n_i / \mathrm{deff}_i - 1}, equivalent to
+        \code{fixed_params$phi = n / deff - 1}.
+}
+
 Combining these without rules in mind can produce unidentified models
 or compile-time errors.  \code{hbm()} therefore enforces the
-following precedence and conflict policy:
+following \strong{conflict matrix}, where each cell describes what
+happens when the row and column inputs both target the same
+distributional parameter (e.g.\ both pin \code{sigma}):
+
+\tabular{lllll}{
+                                 \tab \strong{fixed_params} \tab \strong{prior} \tab \strong{prior_type} \tab \strong{stanvars} \cr
+  \strong{sampling_variance}    \tab error                 \tab error (transitive) \tab no overlap        \tab error (transitive) \cr
+  \strong{n + deff}              \tab error                 \tab error (transitive) \tab no overlap        \tab error (transitive) \cr
+  \strong{fixed_params}          \tab --                    \tab error (10b.i)      \tab no overlap        \tab error (10b.ii)     \cr
+  \strong{prior}                 \tab error (10b.i)         \tab --                 \tab warning, user wins\tab no check needed     \cr
+  \strong{prior_type}            \tab no overlap            \tab warning, user wins \tab --                 \tab no check needed     \cr
+  \strong{stanvars}              \tab error (10b.ii)        \tab no check needed    \tab no check needed   \tab --                  \cr
+}
+
+Resolution semantics in detail:
 \itemize{
   \item \strong{\code{prior} vs \code{prior_type}.}  If the user
         supplies a \emph{global} (no \code{coef =}) prior on
@@ -441,13 +562,18 @@ following precedence and conflict policy:
         as above: a sampling statement in \code{stanvars} that
         targets a pinned parameter would fail at Stan compile time;
         \code{hbm()} catches this and stops with a clear message.
-  \item \strong{Wrapper sugar (e.g. \code{sampling_variance} in
-        \code{hbm_lnln}).}  Wrappers translate their domain-specific
-        arguments into \code{fixed_params} entries before delegating
-        to \code{hbm()}, so the same conflict policy applies
-        transitively.  Supplying both \code{sampling_variance =
-        "psi"} and a user prior on \code{class = "sigma"} therefore
-        also errors.
+  \item \strong{Sugar vs \code{fixed_params} on the same parameter.}
+        The sugar translators (\code{.translate_sampling_variance()},
+        \code{.translate_n_deff_to_phi()}) error out if the user has
+        also pre-populated \code{fixed_params} for the target
+        parameter -- there should never be two pin sources for the
+        same dpar.
+  \item \strong{Sugar vs \code{prior} / \code{stanvars} transitively.}
+        After the sugar -> \code{fixed_params} translation, the
+        downstream \code{fixed_params}-vs-prior / -stanvars checks
+        fire automatically.  E.g.\ \code{sampling_variance = "D"}
+        plus \code{prior = set_prior("normal(0, 1)", class = "sigma")}
+        errors via the \code{fixed_params} vs \code{prior} rule.
 }
 The intent is to fail fast and explicitly rather than silently
 producing an unidentified or mis-specified model.
@@ -477,6 +603,15 @@ divergent transitions.
         class = "sd")}.
   \item For Beta/Binomial logit-normal models, prior on the random
         intercept SD should also be on the logit scale.
+  \item \strong{Gaussian (Fay-Herriot) only.}  Always supply the
+        known sampling variance via \code{sampling_variance =
+        "<col>"}.  Without this, the residual \eqn{\sigma} and the
+        area-RE \eqn{\sigma_u} compete to explain the same variance
+        component, producing weak identifiability and divergent
+        transitions almost regardless of \code{adapt_delta}.  This
+        is the single most common cause of divergences in
+        Fay-Herriot fits and should be checked \emph{first} before
+        any sampler-tuning.
 }
 
 \strong{3. Low effective sample size (ESS < 1000).}
@@ -652,11 +787,14 @@ model_car <- do.call(hbm, c(
 summary(model_car)
 
 # -- Spatial: SAR (Simultaneous Autoregressive) -------------------------------
+# spatial_weight_sar is a 100x100 row-standardised matrix with row-
+# names regency_001..regency_100, so it pairs with the fine-grained
+# "regency" column (100 levels) -- NOT with "province" (5 levels).
 data("spatial_weight_sar")
 model_sar <- do.call(hbm, c(
   list(formula     = bf(y ~ x1 + x2 + x3),
        data        = data,
-       spatial_var = "province",
+       spatial_var = "regency",
        spatial_model    = "sar",
        M           = spatial_weight_sar),
   FAST

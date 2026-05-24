@@ -44,13 +44,41 @@
 #'   parameters to known values.  See \code{\link{hbm}} for the spec
 #'   format.  Allows power-user access to the generic fixed-parameter
 #'   machinery (works with custom families too).
+#' @param sampling_variance Optional character.  Name of a column in
+#'   \code{data} containing the \strong{known} sampling variance
+#'   \eqn{D_i} for each area (the Fay-Herriot sugar).  When supplied,
+#'   \eqn{\sigma_i = \sqrt{D_i}} is pinned via offset.  Forwarded to
+#'   \code{\link{hbm}}, where a family-compatibility check ensures the
+#'   family exposes a residual SD parameter named \code{sigma}
+#'   (gaussian, lognormal, student, skew_normal, exgaussian,
+#'   asym_laplace).  Incompatible families (beta, binomial, poisson,
+#'   etc.) raise an explicit error pointing at the family-specific
+#'   alternative.  See \code{?hbm} for details.
 #' @param data A \code{data.frame}.
 #' @param addition_var Character or \code{NULL}.  Name of the addition term
 #'   variable (e.g.\ trials for binomial).  Required when the family spec
 #'   has \code{has_addition_term = TRUE}.
-#' @param area_var Character or \code{NULL}.  Name of the column in
-#'   \code{data} identifying the areas; if supplied, adds
-#'   \code{(1 | area_var)} as an IID random intercept (Fay-Herriot).
+#' @param area_var Character vector or \code{NULL}.  Name(s) of the
+#'   column(s) in \code{data} identifying the areas.  Three usage modes:
+#'   \itemize{
+#'     \item Length 1 (default behaviour): a single area-level random
+#'           intercept \code{(1 | area_var)}.
+#'     \item Length \eqn{\geq} 2 with \code{area_re_structure = "nested"}
+#'           (default): a hierarchy of areas given from the
+#'           \emph{highest} to the \emph{lowest} level, e.g.
+#'           \code{c("province", "regency")} yields
+#'           \code{(1 | province / regency)} which brms expands to
+#'           \code{(1 | province) + (1 | province:regency)}.  This is
+#'           the canonical multi-stage SAE setup.
+#'     \item Length \eqn{\geq} 2 with \code{area_re_structure = "crossed"}:
+#'           non-nested levels, e.g.\ adding separate effects for
+#'           \code{(1 | province) + (1 | urbanrural)}.  Use only when
+#'           the levels are truly crossed rather than hierarchically
+#'           nested.
+#'   }
+#' @param area_re_structure Either \code{"nested"} (default) or
+#'   \code{"crossed"}.  Only consulted when \code{area_var} has length
+#'   \eqn{\geq} 2.  See above.
 #' @param spatial_var,spatial_model,car_type,sar_type,M Spatial
 #'   random-effect arguments forwarded to \code{\link{hbm}}.  See
 #'   \code{?hbm} for a full description.
@@ -153,6 +181,7 @@ hbm_flex <- function(family_key,
                           data,
                           addition_var    = NULL,
                           area_var        = NULL,
+                          area_re_structure = c("nested", "crossed"),
                           spatial_var     = NULL,
                           spatial_model   = NULL,
                           car_type        = NULL,
@@ -161,6 +190,8 @@ hbm_flex <- function(family_key,
                           prior           = NULL,
                           # Fixed-value distributional parameters
                           fixed_params    = NULL,
+                          # Fay-Herriot sampling variance (continuous families)
+                          sampling_variance = NULL,
                           # Shrinkage priors
                           prior_type      = "default",
                           hs_df           = 1,
@@ -221,6 +252,8 @@ hbm_flex <- function(family_key,
   if (is.null(auxiliary))
     stop("`auxiliary` (auxiliary variables) is required.", call. = FALSE)
 
+  area_re_structure <- match.arg(area_re_structure)
+
   # -- 0b. Deprecated aliases (v1.0.0): group -> area_var,
   #         sre -> spatial_var, sre_type -> spatial_model
   if (!is.null(group)) {
@@ -268,12 +301,26 @@ hbm_flex <- function(family_key,
                  paste(missing_aux, collapse = ", ")),
          call. = FALSE)
 
-  if (!is.null(area_var) && !(area_var %in% names(data)))
-    stop(sprintf("Area variable '%s' not found in 'data'.", area_var),
-         call. = FALSE)
-  if (!is.null(spatial_var) && !(spatial_var %in% names(data)))
-    stop(sprintf("Spatial variable '%s' not found in 'data'.", spatial_var),
-         call. = FALSE)
+  # area_var may be a length-1 OR length>=2 character vector (the latter
+  # for nested/crossed area structures), so use set-difference rather than
+  # the scalar `%in%` check which would fail with R 4.2+ on length>1
+  # logical coercion in `&&`.
+  if (!is.null(area_var)) {
+    missing_area <- setdiff(area_var, names(data))
+    if (length(missing_area) > 0L)
+      stop(sprintf("Area variable(s) not found in 'data': %s",
+                   paste(shQuote(missing_area), collapse = ", ")),
+           call. = FALSE)
+  }
+  if (!is.null(spatial_var)) {
+    # spatial_var is always length-1 by API design, but use the same
+    # robust idiom defensively.
+    missing_sp <- setdiff(spatial_var, names(data))
+    if (length(missing_sp) > 0L)
+      stop(sprintf("Spatial variable(s) not found in 'data': %s",
+                   paste(shQuote(missing_sp), collapse = ", ")),
+           call. = FALSE)
+  }
 
   # -- 3. Addition-term variable (e.g. trials for binomial) ------------------
   if (isTRUE(spec$has_addition_term)) {
@@ -379,10 +426,12 @@ hbm_flex <- function(family_key,
   base_formula <- brms::bf(stats::as.formula(fml_str))
 
   # -- 9. Random-effect formula ---------------------------------------------
-  formula_re <- if (!is.null(area_var))
-    stats::as.formula(paste("~", paste0("(1 | ", area_var, ")")))
-  else
-    NULL
+  # `area_var` may be a single column or a vector describing a hierarchy
+  # (highest level first, e.g. c("province", "regency")).  See
+  # ?hbm_flex's @param area_var for the supported structures.
+  .check_area_var_columns(area_var, data)
+  formula_re <- .build_area_re_formula(area_var,
+                                        structure = area_re_structure)
 
   # -- 10. Family-specific default priors -----------------------------------
   fam_priors <- if (is.function(spec$default_priors))
@@ -427,6 +476,7 @@ hbm_flex <- function(family_key,
     M               = M,
     prior           = effective_prior,
     fixed_params    = fixed_params,           # forward fixed params
+    sampling_variance = sampling_variance,    # Fay-Herriot sugar — family-validated inside hbm()
     stanvars        = stanvars,
     prior_type      = prior_type,
     hs_df           = hs_df,

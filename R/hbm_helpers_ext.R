@@ -458,10 +458,23 @@
 }
 
 
-#' Replace bare variable names in a formula RHS with smooth terms
+#' Replace bare variable names in a formula RHS with smooth terms (AST-based)
 #'
-#' Uses a Perl word-boundary pattern to avoid partial substitutions
-#' (e.g. replacing "x1" inside "x10" or "mi(x1)").
+#' \strong{Implementation note.}  Earlier development versions used a
+#' Perl-flavoured regular expression on a deparsed RHS string.  That
+#' approach was fragile against legal but unusual brms / R syntax such
+#' as \code{I(x1 / 1000)}, interactions \code{x1:x2}, offsets
+#' \code{offset(log(pop))}, and condition-on syntax \code{y | trials(n)}.
+#'
+#' We now manipulate the formula via its \emph{abstract syntax tree}:
+#' the RHS is decomposed using \code{stats::terms()}, every top-level
+#' term whose stripped expression equals the target variable name is
+#' rewritten via \code{stats::reformulate()}.  Terms that contain the
+#' target inside a function call (e.g.\ \code{I(x1/1000)},
+#' \code{s(x1)}, \code{mi(x1, se_x1)}) are LEFT ALONE -- the user has
+#' explicitly wrapped them and we do not second-guess.  Interaction
+#' terms (\code{x1:x2}, \code{x1*x2}) are likewise preserved bare since
+#' brms cannot fit \code{s(x1):x2} or \code{s(x1:x2)} reliably.
 #'
 #' @noRd
 .replace_nl_in_formula <- function(fml, nonlinear, nonlinear_type,
@@ -471,20 +484,72 @@
                                     gp_cov    = "exp_quad",
                                     gp_c      = NULL) {
 
-  fml_str   <- paste(deparse(fml), collapse = " ")
-  tilde_pos <- regexpr("~", fml_str, fixed = TRUE)
-  lhs       <- substr(fml_str, 1L, tilde_pos - 1L)
-  rhs       <- substr(fml_str, tilde_pos + 1L, nchar(fml_str))
+  if (is.null(nonlinear) || length(nonlinear) == 0L) return(fml)
 
-  for (var in nonlinear) {
-    nl_term <- .build_nonlinear_term(var, nonlinear_type, spline_k,
-                                       spline_bs, gp_k, gp_cov, gp_c)
-    # Word-boundary replacement in RHS only to avoid touching LHS or mi() terms
-    pattern <- paste0("(?<![a-zA-Z0-9_.])", var, "(?![a-zA-Z0-9_.])")
-    rhs     <- gsub(pattern, nl_term, rhs, perl = TRUE)
+  # Decompose RHS into top-level terms.  `terms()` returns each term's
+  # full expression unchanged (it does NOT expand interactions or
+  # transformations); we use it purely as a robust tokeniser.
+  tt <- tryCatch(stats::terms(fml, keep.order = TRUE),
+                  error = function(e) NULL)
+  if (is.null(tt)) {
+    # If terms() can't parse (e.g. on a multivariate brmsformula),
+    # fall back to leaving the formula untouched -- safer than a
+    # silently corrupt rewrite.
+    return(fml)
   }
 
-  stats::as.formula(paste(trimws(lhs), "~", trimws(rhs)))
+  term_labels <- attr(tt, "term.labels")
+  has_intercept <- attr(tt, "intercept") == 1L
+  response_lang <- if (length(fml) == 3L) fml[[2L]] else NULL
+  env <- environment(fml)
+
+  # `terms()` strips offset() terms into a separate `offset` attribute
+  # (integer positions into `variables`), so they would otherwise be
+  # dropped on reassembly.  Pull them back out as character strings to
+  # paste into the RHS verbatim.  Without this, a formula like
+  # `y ~ x1 + offset(log(pop))` would lose the offset on rewrite.
+  offset_idx <- attr(tt, "offset")
+  offset_strs <- character(0L)
+  if (!is.null(offset_idx) && length(offset_idx) > 0L) {
+    vars <- attr(tt, "variables")  # a call: list(...)
+    # `vars` is `list(y, x1, offset(log(pop)))`; index 1 is `list`,
+    # response is at 2 (if any), so offset positions are absolute.
+    offset_strs <- vapply(offset_idx, function(i)
+      deparse(vars[[i + 1L]], width.cutoff = 500L),
+      character(1L))
+  }
+
+  # For each top-level term, decide whether to rewrite.
+  new_term_labels <- vapply(term_labels, function(tl) {
+    # The simplest case: term IS the bare variable name.
+    if (tl %in% nonlinear) {
+      return(.build_nonlinear_term(tl, nonlinear_type, spline_k,
+                                     spline_bs, gp_k, gp_cov, gp_c))
+    }
+    # Otherwise: leave alone.  Either it doesn't reference the target,
+    # or it does so inside a wrapper (I(), mi(), s(), :, *, etc.).
+    tl
+  }, character(1L))
+
+  # Reassemble.  reformulate() handles intercept, response, environment.
+  # We splice the preserved offset terms back into the RHS.
+  all_labels <- c(new_term_labels, offset_strs)
+  rhs_str <- if (length(all_labels) == 0L) {
+    if (has_intercept) "1" else "0"
+  } else {
+    paste(all_labels, collapse = " + ")
+  }
+  if (!has_intercept) rhs_str <- paste(rhs_str, "- 1")
+
+  if (!is.null(response_lang)) {
+    new_fml <- stats::as.formula(
+      paste(deparse(response_lang, width.cutoff = 500L), "~", rhs_str),
+      env = env
+    )
+  } else {
+    new_fml <- stats::as.formula(paste("~", rhs_str), env = env)
+  }
+  new_fml
 }
 
 
@@ -503,24 +568,42 @@
 #' @param gp_k           Integer or NA. Default NA (exact GP).
 #' @param gp_cov         Character. Default \code{"exp_quad"}.
 #' @param gp_c           Numeric or NULL. HSGP boundary scale.
+#' @param measurement_error A named list mapping auxiliary variable names
+#'   to the data column holding their standard error
+#'   (\code{list(x1 = "se_x1")}).  Each listed variable is wrapped with
+#'   \code{mi(<var>, <se_col>)} so brms treats it as a latent
+#'   measurement-error covariate (Ybarra and Lohr 2008).  Variables not
+#'   listed are passed through unchanged.  Default \code{NULL}.
 #' @return A single character string, e.g. \code{"x2 + x3 + s(x1, k = 8)"}.
 #' @noRd
-.build_wrapper_rhs <- function(auxiliary      = NULL,
-                                nonlinear      = NULL,
-                                nonlinear_type = "spline",
-                                spline_k       = -1L,
-                                spline_bs      = "tp",
-                                gp_k           = NA_integer_,
-                                gp_cov         = "exp_quad",
-                                gp_c           = NULL) {
+.build_wrapper_rhs <- function(auxiliary         = NULL,
+                                nonlinear         = NULL,
+                                nonlinear_type    = "spline",
+                                spline_k          = -1L,
+                                spline_bs         = "tp",
+                                gp_k              = NA_integer_,
+                                gp_cov            = "exp_quad",
+                                gp_c              = NULL,
+                                measurement_error = NULL) {
 
   # Remove from the linear set any variable also listed as nonlinear
   linear_vars <- setdiff(auxiliary, nonlinear)
 
   parts <- character(0L)
 
-  if (length(linear_vars) > 0L)
-    parts <- c(parts, paste(linear_vars, collapse = " + "))
+  if (length(linear_vars) > 0L) {
+    # (v1.0.0): variables listed in `measurement_error` are wrapped with
+    # mi(var, se_col); the rest pass through bare.
+    me_names <- names(measurement_error)
+    linear_terms <- vapply(linear_vars, function(v) {
+      if (!is.null(me_names) && v %in% me_names) {
+        sprintf("mi(%s, %s)", v, measurement_error[[v]])
+      } else {
+        v
+      }
+    }, character(1L))
+    parts <- c(parts, paste(linear_terms, collapse = " + "))
+  }
 
   if (!is.null(nonlinear) && length(nonlinear) > 0L) {
     nl_terms <- vapply(
@@ -587,13 +670,56 @@
 }
 
 
+#' Extract the bare response-variable name(s) from a formula LHS
+#'
+#' Walks the LHS expression and returns only the names that play the
+#' role of a response.  brms LHS syntax is a mini-DSL with several
+#' "addition" wrappers (\code{trials()}, \code{mi()}, \code{cens()},
+#' \code{weights()}, \code{vreal()}, \code{vint()}, \code{rate()},
+#' \code{trunc()}, etc.) whose arguments name OTHER columns -- those
+#' should NOT be picked up as responses.
+#'
+#' The walker handles:
+#' \itemize{
+#'   \item Bare names: \code{y} -> \code{"y"}.
+#'   \item Transformations: \code{log(y)} -> \code{"y"}.
+#'   \item Addition terms: \code{y | mi()}, \code{y | trials(n)}
+#'         -> only \code{"y"} (NOT \code{"n"}).
+#'   \item Multiple addition terms chained with \code{+}.
+#' }
+#'
+#' Multivariate brmsformulas (\code{bf(y1 ~ ...) + bf(y2 ~ ...)}) are
+#' handled by the caller, which calls this helper once per sub-formula.
+#'
+#' @param lhs A language object (the LHS of a formula).
+#' @return Character vector of response-column names.
+#' @keywords internal
+#' @noRd
+.extract_response_names <- function(lhs) {
+  if (is.null(lhs)) return(character(0L))
+
+  # Strip the addition operator `|` recursively, keeping only the LEFT
+  # branch each time (the right branch contains addition wrappers like
+  # mi(), trials(), cens(), ... whose arguments are NOT responses).
+  while (is.call(lhs) && identical(lhs[[1L]], as.name("|"))) {
+    lhs <- lhs[[2L]]
+  }
+
+  # What remains may be a bare name, a transformation, or a sum of
+  # responses (rare but legal in brms via cbind() for multinomial / etc.).
+  all.vars(lhs)
+}
+
+
 # .parse_hbm_formula() -- Section 1 of hbm() (v1.0.0)
 #
 # Normalises any of formula(), bf(), brmsformula(), bform() into the four
 # objects required by the rest of hbm():
 #   $main_formula   -- a base R formula (used for var extraction)
 #   $all_formulas   -- a bf() object (used by brms)
-#   $response_var   -- character of LHS variable(s)
+#   $response_var   -- character of LHS variable(s) -- ONLY the response
+#                       columns (addition-arg columns like trials(n) are
+#                       NOT included here)
 #   $auxiliary_vars -- character of RHS variable(s)
 .parse_hbm_formula <- function(formula) {
   if (length(class(formula)) > 1L && class(formula)[2L] == "bform") {
@@ -612,10 +738,426 @@
          call. = FALSE)
   }
 
+  # Aggregate responses across all sub-formulas of an mvbrmsformula so
+  # that downstream missing-value detection sees every response column.
+  if (inherits(all_formulas, "mvbrmsformula") &&
+      !is.null(all_formulas$forms)) {
+    response_var <- unique(unlist(lapply(all_formulas$forms, function(f) {
+      lhs <- if (length(f$formula) == 3L) f$formula[[2L]] else NULL
+      .extract_response_names(lhs)
+    })))
+  } else {
+    lhs <- if (length(main_formula) == 3L) main_formula[[2L]] else NULL
+    response_var <- .extract_response_names(lhs)
+  }
+
   list(
     main_formula   = main_formula,
     all_formulas   = all_formulas,
-    response_var   = all.vars(main_formula[[2L]]),
-    auxiliary_vars = all.vars(main_formula[[3L]])
+    response_var   = response_var,
+    auxiliary_vars = all.vars(main_formula[[length(main_formula)]])
   )
+}
+
+
+# =============================================================================
+# G.  HIERARCHICAL AREA RANDOM-EFFECT BUILDER
+# =============================================================================
+#
+# Construct a brms / lme4-style random-effects formula from a hierarchy of
+# area identifiers.  Used by hbm_flex() and all hbm_* wrappers so that
+# users can pass either a single area column ("regency") or a vector
+# describing nested or crossed hierarchies (e.g. c("province", "regency"))
+# without manually writing out the RE formula.
+# =============================================================================
+
+#' Build a random-effects formula from area-level columns
+#'
+#' Translates a character vector of column names into the appropriate
+#' brms / lme4 random-intercept syntax.  Supports two structures:
+#'
+#' \itemize{
+#'   \item \code{structure = "nested"} (default for length \eqn{\geq} 2):
+#'         lower levels are nested within higher ones.  For
+#'         \code{c("province", "regency")} the helper produces
+#'         \code{~ (1 | province / regency)}, which brms expands to
+#'         \code{(1 | province) + (1 | province:regency)}.
+#'   \item \code{structure = "crossed"}: each level contributes an
+#'         independent IID random intercept:
+#'         \code{~ (1 | province) + (1 | regency)}.
+#' }
+#'
+#' For a single-element \code{area_var} both structures collapse to
+#' \code{~ (1 | area_var)}.
+#'
+#' @param area_var Character vector of column names, ordered from the
+#'   \strong{highest} level down to the \strong{lowest} (e.g.
+#'   \code{c("province", "regency", "district")}).  \code{NULL} returns
+#'   \code{NULL}.
+#' @param structure Either \code{"nested"} or \code{"crossed"}.
+#'   For a single \code{area_var} the argument has no effect.
+#'
+#' @return A one-sided \code{formula} or \code{NULL}.
+#' @keywords internal
+#' @noRd
+.build_area_re_formula <- function(area_var, structure = c("nested", "crossed")) {
+  if (is.null(area_var) || length(area_var) == 0L) return(NULL)
+  if (!is.character(area_var))
+    stop("`area_var` must be a character vector of column names.",
+         call. = FALSE)
+  if (any(!nzchar(area_var)))
+    stop("`area_var` must not contain empty strings.", call. = FALSE)
+  structure <- match.arg(structure)
+
+  if (length(area_var) == 1L) {
+    expr <- paste0("(1 | ", area_var, ")")
+  } else if (structure == "nested") {
+    expr <- paste0("(1 | ", paste(area_var, collapse = " / "), ")")
+  } else {  # crossed
+    expr <- paste(sprintf("(1 | %s)", area_var), collapse = " + ")
+  }
+  stats::as.formula(paste("~", expr))
+}
+
+
+#' Validate hierarchical area_var columns exist and are convertible to factors
+#'
+#' Issues a clean error message when any column is missing from `data`
+#' and a warning when a column contains many levels relative to row count
+#' (heuristic for typos like passing a continuous variable as an area).
+#'
+#' @param area_var Character vector of column names.
+#' @param data data.frame.
+#' @param max_levels_ratio Numeric.  When \code{n_levels(col) / nrow(data)}
+#'   exceeds this ratio, warn -- often a sign the column was meant to be
+#'   a continuous covariate, not an area identifier.  Default 0.5.
+#' @keywords internal
+#' @noRd
+.check_area_var_columns <- function(area_var, data, max_levels_ratio = 0.5) {
+  if (is.null(area_var) || length(area_var) == 0L) return(invisible(NULL))
+
+  missing_cols <- area_var[!area_var %in% names(data)]
+  if (length(missing_cols) > 0L)
+    stop("`area_var` column(s) not found in `data`: ",
+         paste(shQuote(missing_cols), collapse = ", "),
+         call. = FALSE)
+
+  for (col in area_var) {
+    n_lev <- length(unique(stats::na.omit(data[[col]])))
+    if (n_lev > max_levels_ratio * nrow(data) && n_lev > 5L)
+      warning(sprintf(
+        "Area column '%s' has %d unique levels for %d rows -- looks ",
+        col, n_lev, nrow(data)),
+        "more like a continuous covariate than a grouping factor. ",
+        "Did you mean to put this in `auxiliary` instead?",
+        call. = FALSE)
+  }
+  invisible(NULL)
+}
+
+
+# =============================================================================
+# H.  FAMILY-SPECIFIC SUGAR -> fixed_params TRANSLATORS
+# =============================================================================
+#
+# These helpers translate user-facing sugar arguments (e.g. `sampling_variance`,
+# `n + deff`) into entries of the universal `fixed_params` list.  Centralising
+# the translations here ensures:
+#
+#   1.  Single source of truth for each translation rule
+#       (no duplicated logic across hbm_flex / hbm_lnln / hbm_betalogitnorm).
+#   2.  Consistent conflict checks against user-supplied `fixed_params`.
+#   3.  Consistent error messages.
+#
+# Each helper takes the current `fixed_params` list plus the sugar inputs
+# and returns the (possibly augmented) list.  Calls upstream of the
+# universal `.process_fixed_params()` machinery in hbm().
+# =============================================================================
+
+#' Translate `sampling_variance = "<col>"` to `fixed_params$sigma`.
+#'
+#' Continuous-family Fay-Herriot sugar.  Pins
+#' \eqn{\sigma_i = \sqrt{D_i}} via offset, where \eqn{D_i} is the
+#' supplied column.  Errors if a conflicting \code{fixed_params$sigma}
+#' is already set.
+#'
+#' @param fixed_params Current fixed_params list (or NULL).
+#' @param sampling_variance Character column name or NULL.
+#' @param data data.frame.
+#' @return Updated fixed_params list.
+#' @keywords internal
+#' @noRd
+.translate_sampling_variance <- function(fixed_params,
+                                          sampling_variance,
+                                          data) {
+  if (is.null(sampling_variance)) return(fixed_params)
+
+  if (!is.character(sampling_variance) || length(sampling_variance) != 1L)
+    stop("`sampling_variance` must be a single column name (character).",
+         call. = FALSE)
+  if (!sampling_variance %in% names(data))
+    stop(sprintf("`sampling_variance = \"%s\"` not found in `data`.",
+                  sampling_variance),
+         call. = FALSE)
+
+  psi <- data[[sampling_variance]]
+  if (any(is.na(psi)) || any(psi <= 0))
+    stop("`sampling_variance` must contain finite, strictly positive values.",
+         call. = FALSE)
+
+  if (is.list(fixed_params) && "sigma" %in% names(fixed_params))
+    stop("Cannot supply both `sampling_variance` and `fixed_params$sigma`. ",
+         "Pick one.", call. = FALSE)
+
+  fp <- fixed_params %||% list()
+  fp$sigma <- sqrt(psi)
+  fp
+}
+
+
+#' Translate `n` + `deff` to `fixed_params$phi` (Beta sugar).
+#'
+#' Beta Fay-Herriot sugar following Liu (2009).  Computes
+#' \eqn{\phi_i = n_i / \mathrm{deff}_i - 1} and pins it via
+#' \code{fixed_params$phi}.  Errors if a conflicting
+#' \code{fixed_params$phi} is already set, or if either input column
+#' contains missing / non-positive values.
+#'
+#' @param fixed_params Current fixed_params list (or NULL).
+#' @param n            Character column name for sample size, or NULL.
+#' @param deff         Character column name for design effect, or NULL.
+#' @param data         data.frame.
+#' @return Updated fixed_params list.
+#' @keywords internal
+#' @noRd
+.translate_n_deff_to_phi <- function(fixed_params, n, deff, data) {
+  if (is.null(n) || is.null(deff)) return(fixed_params)
+
+  if (!is.character(n) || length(n) != 1L)
+    stop("`n` must be a single column name (character).", call. = FALSE)
+  if (!is.character(deff) || length(deff) != 1L)
+    stop("`deff` must be a single column name (character).", call. = FALSE)
+  if (!n %in% names(data))
+    stop(sprintf("`n = \"%s\"` not found in `data`.", n), call. = FALSE)
+  if (!deff %in% names(data))
+    stop(sprintf("`deff = \"%s\"` not found in `data`.", deff), call. = FALSE)
+
+  if (is.list(fixed_params) && "phi" %in% names(fixed_params))
+    stop("Cannot supply both `n` + `deff` (which pin phi via survey ",
+         "design) and `fixed_params$phi`.  Pick one.",
+         call. = FALSE)
+
+  nvec    <- data[[n]]
+  deffvec <- data[[deff]]
+  if (anyNA(nvec) || anyNA(deffvec))
+    stop("Missing values detected in `n` or `deff`; cannot fix phi.",
+         call. = FALSE)
+  if (any(nvec <= 0 | deffvec <= 0))
+    stop("`n` and `deff` must be strictly positive.", call. = FALSE)
+  phi_vec <- nvec / deffvec - 1
+  if (any(phi_vec <= 0))
+    stop("Computed phi = n/deff - 1 contains non-positive values; ",
+         "check `n` and `deff`.", call. = FALSE)
+
+  fp <- fixed_params %||% list()
+  fp$phi <- phi_vec
+  fp
+}
+
+
+# =============================================================================
+# I.  MEASUREMENT-ERROR VALIDATION (Ybarra-Lohr 2008)
+# =============================================================================
+#
+# Validates the structure and contents of the `measurement_error` argument
+# used by hbm() and the hbm_* wrappers.  Called once near the top of the
+# fit function so that user-facing errors are clear and consistent.
+# =============================================================================
+
+#' Validate a measurement_error specification
+#'
+#' Checks that:
+#' \enumerate{
+#'   \item \code{measurement_error} is a named list whose names refer to
+#'         columns in \code{auxiliary} (the linear predictors).
+#'   \item Every listed standard-error column actually exists in
+#'         \code{data}.
+#'   \item Every standard-error column is non-negative and free of
+#'         missing values.
+#' }
+#'
+#' @param measurement_error Named list (\code{list(var = "se_col")}) or
+#'   \code{NULL}.
+#' @param auxiliary Character vector of auxiliary variable names.
+#' @param data data.frame.
+#' @return Returns \code{measurement_error} invisibly; called for its
+#'   side effect of stopping on invalid input.
+#' @keywords internal
+#' @noRd
+.validate_measurement_error <- function(measurement_error, auxiliary, data) {
+  if (is.null(measurement_error)) return(invisible(NULL))
+
+  if (!is.list(measurement_error) || is.null(names(measurement_error)) ||
+      any(!nzchar(names(measurement_error))))
+    stop("`measurement_error` must be a named list, e.g. ",
+         "list(x1 = \"se_x1\", x2 = \"se_x2\").",
+         call. = FALSE)
+
+  bad_vars <- setdiff(names(measurement_error), auxiliary)
+  if (length(bad_vars) > 0L)
+    stop("Variables in `measurement_error` must also appear in ",
+         "`auxiliary`. Unmatched: ",
+         paste(shQuote(bad_vars), collapse = ", "), ".",
+         call. = FALSE)
+
+  for (v in names(measurement_error)) {
+    se_col <- measurement_error[[v]]
+    if (!is.character(se_col) || length(se_col) != 1L)
+      stop(sprintf(
+        "measurement_error[['%s']] must be a single column name (character).",
+        v), call. = FALSE)
+    if (!(se_col %in% names(data)))
+      stop(sprintf(
+        "Standard-error column \"%s\" (for variable '%s') not found in `data`.",
+        se_col, v), call. = FALSE)
+    se_vals <- data[[se_col]]
+    if (!is.numeric(se_vals))
+      stop(sprintf(
+        "Standard-error column \"%s\" must be numeric.", se_col),
+        call. = FALSE)
+    if (anyNA(se_vals))
+      stop(sprintf(
+        "Standard-error column \"%s\" contains NA values.", se_col),
+        call. = FALSE)
+    if (any(se_vals < 0))
+      stop(sprintf(
+        "Standard-error column \"%s\" contains negative values; standard errors must be non-negative.",
+        se_col),
+        call. = FALSE)
+  }
+  invisible(measurement_error)
+}
+
+
+#' Detect mi() or me() in a brmsformula
+#'
+#' Returns TRUE if the formula (or any of its bf() components) syntactically
+#' references the brms missing-indicator / measurement-error functions.
+#' Used by hbm() to bypass the eager NA-handling logic so that users
+#' running joint or ME models are not forced into row-deletion or
+#' `handle_missing = "model"` mode.
+#'
+#' @param formula A brmsformula object.
+#' @return Logical scalar.
+#' @keywords internal
+#' @noRd
+.formula_has_mi <- function(formula) {
+  if (is.null(formula)) return(FALSE)
+  # Render every form's main + auxiliary formulas
+  rendered <- character(0L)
+  one_form_str <- function(x) {
+    paste(deparse(x), collapse = " ")
+  }
+  if (inherits(formula, "brmsformula")) {
+    rendered <- c(rendered, one_form_str(formula$formula))
+    if (!is.null(formula$pforms))
+      rendered <- c(rendered,
+                     vapply(formula$pforms, one_form_str, character(1L)))
+  } else if (inherits(formula, "mvbrmsformula")) {
+    rendered <- vapply(formula$forms, function(f) one_form_str(f$formula),
+                       character(1L))
+  } else {
+    rendered <- one_form_str(formula)
+  }
+  any(grepl("\\bmi\\s*\\(|\\bme\\s*\\(", rendered, perl = TRUE))
+}
+
+
+#' Rewrite a brmsformula to wrap listed variables with mi(var, se_var)
+#'
+#' Used by the \code{measurement_error} sugar in \code{hbm()} and the
+#' wrapper functions.  The rewrite is AST-based for robustness against
+#' interactions, transformations (\code{I(...)}, \code{log(...)},
+#' \code{poly(...)}), explicit \code{mi()} or \code{me()} wrappers,
+#' and any other syntax legal in a brmsformula.
+#'
+#' Rewrite rules per top-level term (decomposed via
+#' \code{stats::terms()}):
+#'
+#' \itemize{
+#'   \item If the term IS exactly the bare variable name listed in
+#'         \code{measurement_error}, rewrite to \code{mi(var, se_col)}.
+#'   \item Otherwise (the term is a function call, an interaction,
+#'         already wrapped in \code{mi()} / \code{me()}, etc.) leave
+#'         the term unchanged.  The user's explicit syntax wins.
+#' }
+#'
+#' @param formula A formula, brmsformula, or mvbrmsformula.
+#' @param measurement_error Named list (\code{list(var = "se_col")}).
+#' @return The same class as the input, with the RHS rewritten.
+#' @keywords internal
+#' @noRd
+.apply_measurement_error <- function(formula, measurement_error) {
+  if (is.null(measurement_error) || length(measurement_error) == 0L)
+    return(formula)
+  me_names <- names(measurement_error)
+
+  rewrite_one <- function(fml) {
+    tt <- tryCatch(stats::terms(fml, keep.order = TRUE),
+                    error = function(e) NULL)
+    if (is.null(tt)) return(fml)   # safer to skip than corrupt
+
+    term_labels    <- attr(tt, "term.labels")
+    has_intercept  <- attr(tt, "intercept") == 1L
+    response_lang  <- if (length(fml) == 3L) fml[[2L]] else NULL
+    env            <- environment(fml)
+
+    # Preserve offset() terms which terms() strips into a separate
+    # attribute (see comment in .replace_nl_in_formula).
+    offset_idx <- attr(tt, "offset")
+    offset_strs <- character(0L)
+    if (!is.null(offset_idx) && length(offset_idx) > 0L) {
+      vars <- attr(tt, "variables")
+      offset_strs <- vapply(offset_idx, function(i)
+        deparse(vars[[i + 1L]], width.cutoff = 500L),
+        character(1L))
+    }
+
+    new_labels <- vapply(term_labels, function(tl) {
+      if (tl %in% me_names)
+        sprintf("mi(%s, %s)", tl, measurement_error[[tl]])
+      else
+        tl
+    }, character(1L))
+
+    all_labels <- c(new_labels, offset_strs)
+    rhs_str <- if (length(all_labels) == 0L) {
+      if (has_intercept) "1" else "0"
+    } else {
+      paste(all_labels, collapse = " + ")
+    }
+    if (!has_intercept) rhs_str <- paste(rhs_str, "- 1")
+
+    if (!is.null(response_lang)) {
+      stats::as.formula(
+        paste(deparse(response_lang, width.cutoff = 500L), "~", rhs_str),
+        env = env
+      )
+    } else {
+      stats::as.formula(paste("~", rhs_str), env = env)
+    }
+  }
+
+  if (inherits(formula, "brmsformula")) {
+    formula$formula <- rewrite_one(formula$formula)
+    return(formula)
+  }
+  if (inherits(formula, "mvbrmsformula")) {
+    formula$forms <- lapply(formula$forms, function(f) {
+      f$formula <- rewrite_one(f$formula)
+      f
+    })
+    return(formula)
+  }
+  rewrite_one(formula)
 }

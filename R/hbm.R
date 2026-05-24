@@ -172,6 +172,38 @@
 #'   (\code{phi = ~ I(n / deff - 1)}) and pinning \code{sigma} for
 #'   Fay--Herriot-style models with known sampling variance.
 #'
+#' @param sampling_variance Optional character.  Name of a column in
+#'   \code{data} containing the \strong{known} sampling variance
+#'   \eqn{D_i} for each area (the Fay-Herriot sugar).  When supplied,
+#'   \eqn{\sigma_i = \sqrt{D_i}} is pinned via offset.  This is the
+#'   canonical way to fit a Gaussian Fay-Herriot model: without it, the
+#'   residual \eqn{\sigma} and the area-RE \eqn{\sigma_u} compete to
+#'   explain the same variance and the model is unidentified, typically
+#'   producing divergent transitions.  Equivalent to
+#'   \code{fixed_params = list(sigma = sqrt(data[[<col>]]))}.
+#'
+#'   \strong{Family compatibility.} \code{sampling_variance} requires a
+#'   continuous family whose response distribution has a residual scale
+#'   parameter named \code{sigma}.  Supported: \code{gaussian} (the
+#'   canonical Fay-Herriot case), \code{lognormal} (D must be on the
+#'   log scale; see also \code{\link{hbm_lnln}}), \code{student},
+#'   \code{skew_normal}, \code{exgaussian}, \code{asym_laplace}.  A
+#'   helpful error is thrown when an incompatible family is supplied.
+#'
+#'   \strong{For non-Gaussian SAE families} the analogous pinning
+#'   mechanism is family-specific:
+#'   \itemize{
+#'     \item \strong{Beta}: pin the precision \code{phi} via the survey
+#'           design effect, e.g.\ \code{fixed_params = list(phi = ~ I(n/deff - 1))}
+#'           (Liu 2009).  See \code{\link{hbm_betalogitnorm}}.
+#'     \item \strong{Binomial}: sampling variability enters through the
+#'           \code{trials} addition term, not through a separate
+#'           \code{sigma}.  See \code{\link{hbm_binlogitnorm}}.
+#'     \item \strong{Poisson, Gamma, Weibull}: variance is tied
+#'           algebraically to the mean -- no separate scale parameter
+#'           to pin.
+#'   }
+#'
 #' @param prior_type Character.  Global-local shrinkage prior applied to all
 #'   regression coefficients (\code{class = "b"}).  One of:
 #'   \describe{
@@ -286,6 +318,24 @@
 #'   \code{\link[mice]{mice}}, for example
 #'   \code{list(method = "pmm", seed = 42)}.  Only used when
 #'   \code{handle_missing = "multiple"}.
+#' @param measurement_error Optional named list specifying which
+#'   auxiliary variables are measured with error and where to find
+#'   their standard errors.  The list maps variable names to columns
+#'   in \code{data} containing the SE, e.g.
+#'   \code{measurement_error = list(x1 = "se_x1", x2 = "se_x2")}.
+#'   Listed variables are wrapped on-the-fly with \code{mi(var, se_col)}
+#'   in the brmsformula so that brms treats them as latent variables
+#'   with a Gaussian measurement-error structure, following Ybarra and
+#'   Lohr (2008).  Standard errors must be non-negative and have no
+#'   missing values; \code{measurement_error} variables must be a
+#'   subset of the model's auxiliary (linear) predictors.  When the
+#'   user has already written \code{mi(...)} explicitly in the
+#'   formula, the corresponding entries in \code{measurement_error}
+#'   are detected and not duplicated.  Note that ME inflates the
+#'   parameter space (each \emph{x_i} becomes latent), which slows
+#'   sampling and increases the risk of divergent transitions,
+#'   especially when combined with smooth terms (\code{nonlinear}).
+#'   See the "Measurement error" section of the SAE vignette.
 #' @param control A named list of sampler control parameters
 #'   (default: \code{list()}).  Passed directly to \code{\link[brms]{brm}}.
 #' @param chains Integer.  Number of MCMC chains (default: \code{4}).
@@ -325,6 +375,46 @@
 #'
 #' @author Achmad Syahrul Choir, Saniyyah Sri Nurhayati, and Sofi Zamzanah
 #'
+#' @section How to pin distributional parameters per family:
+#' \pkg{hbsaems} exposes three layers for pinning distributional
+#' parameters to known values, in increasing order of generality:
+#' \enumerate{
+#'   \item \strong{Family-specific sugar} (least typing, most readable).
+#'         Each wrapper exposes a convenience argument that maps to a
+#'         well-defined Fay-Herriot-style transformation of survey
+#'         design quantities:
+#'         \tabular{lll}{
+#'           \strong{Wrapper} \tab \strong{Sugar argument} \tab \strong{Pinned dpar} \cr
+#'           \code{hbm(..., hb_sampling = "gaussian")} \tab \code{sampling_variance = "D"}
+#'             \tab \eqn{\sigma_i = \sqrt{D_i}} \cr
+#'           \code{hbm_lnln()}                        \tab \code{sampling_variance = "psi"}
+#'             \tab \eqn{\sigma_i = \sqrt{\psi_i}}  (on log scale) \cr
+#'           \code{hbm_betalogitnorm()}               \tab \code{n = "n", deff = "deff"}
+#'             \tab \eqn{\phi_i = n_i / \mathrm{deff}_i - 1}  (Liu 2009) \cr
+#'           \code{hbm_binlogitnorm()}                \tab \code{trials = "n"}
+#'             \tab (sampling variance built into the family) \cr
+#'         }
+#'   \item \strong{Universal \code{fixed_params}} (works everywhere).
+#'         A named list pinning any distributional parameter -- accepts
+#'         a column name (character), a scalar (numeric of length 1),
+#'         a vector of length \code{nrow(data)}, or a one-sided
+#'         formula (evaluated in \code{data}'s environment).  Examples:
+#'         \itemize{
+#'           \item \code{fixed_params = list(sigma = "D")} -- pin sigma to a column.
+#'           \item \code{fixed_params = list(phi   = ~ I(n / deff - 1))} -- pin phi via formula.
+#'           \item \code{fixed_params = list(nu    = 4)} -- pin Student-t df to a scalar.
+#'         }
+#'   \item \strong{Raw \code{stanvars}} (for power users authoring
+#'         custom Stan code).  Direct injection of Stan code blocks --
+#'         see \code{\link[brms]{stanvar}}.
+#' }
+#'
+#' Sugar arguments are simply thin wrappers around layer 2: they
+#' validate the survey-design inputs (no NAs, strictly positive) and
+#' translate to \code{fixed_params} before delegating to the universal
+#' machinery.  Hence the conflict policy below applies uniformly to
+#' both sugar and explicit \code{fixed_params}.
+#'
 #' @section Conflict resolution between prior, prior_type, fixed_params, and stanvars:
 #' \code{hbm()} provides four orthogonal mechanisms to influence the
 #' prior / parameter specification of the underlying \pkg{brms} model:
@@ -338,9 +428,35 @@
 #'                                 values via the offset trick.
 #'   \item \code{stanvars}     -- inject custom Stan code blocks.
 #' }
+#'
+#' Plus two family-specific \emph{sugar} arguments that translate to
+#' \code{fixed_params} internally:
+#' \itemize{
+#'   \item \code{sampling_variance} (continuous families): pins
+#'         \eqn{\sigma_i = \sqrt{D_i}}, equivalent to
+#'         \code{fixed_params$sigma = sqrt(data$D)}.
+#'   \item \code{n + deff} (\code{hbm_betalogitnorm}): pins
+#'         \eqn{\phi_i = n_i / \mathrm{deff}_i - 1}, equivalent to
+#'         \code{fixed_params$phi = n / deff - 1}.
+#' }
+#'
 #' Combining these without rules in mind can produce unidentified models
 #' or compile-time errors.  \code{hbm()} therefore enforces the
-#' following precedence and conflict policy:
+#' following \strong{conflict matrix}, where each cell describes what
+#' happens when the row and column inputs both target the same
+#' distributional parameter (e.g.\ both pin \code{sigma}):
+#'
+#' \tabular{lllll}{
+#'                                  \tab \strong{fixed_params} \tab \strong{prior} \tab \strong{prior_type} \tab \strong{stanvars} \cr
+#'   \strong{sampling_variance}    \tab error                 \tab error (transitive) \tab no overlap        \tab error (transitive) \cr
+#'   \strong{n + deff}              \tab error                 \tab error (transitive) \tab no overlap        \tab error (transitive) \cr
+#'   \strong{fixed_params}          \tab --                    \tab error (10b.i)      \tab no overlap        \tab error (10b.ii)     \cr
+#'   \strong{prior}                 \tab error (10b.i)         \tab --                 \tab warning, user wins\tab no check needed     \cr
+#'   \strong{prior_type}            \tab no overlap            \tab warning, user wins \tab --                 \tab no check needed     \cr
+#'   \strong{stanvars}              \tab error (10b.ii)        \tab no check needed    \tab no check needed   \tab --                  \cr
+#' }
+#'
+#' Resolution semantics in detail:
 #' \itemize{
 #'   \item \strong{\code{prior} vs \code{prior_type}.}  If the user
 #'         supplies a \emph{global} (no \code{coef =}) prior on
@@ -357,13 +473,18 @@
 #'         as above: a sampling statement in \code{stanvars} that
 #'         targets a pinned parameter would fail at Stan compile time;
 #'         \code{hbm()} catches this and stops with a clear message.
-#'   \item \strong{Wrapper sugar (e.g. \code{sampling_variance} in
-#'         \code{hbm_lnln}).}  Wrappers translate their domain-specific
-#'         arguments into \code{fixed_params} entries before delegating
-#'         to \code{hbm()}, so the same conflict policy applies
-#'         transitively.  Supplying both \code{sampling_variance =
-#'         "psi"} and a user prior on \code{class = "sigma"} therefore
-#'         also errors.
+#'   \item \strong{Sugar vs \code{fixed_params} on the same parameter.}
+#'         The sugar translators (\code{.translate_sampling_variance()},
+#'         \code{.translate_n_deff_to_phi()}) error out if the user has
+#'         also pre-populated \code{fixed_params} for the target
+#'         parameter -- there should never be two pin sources for the
+#'         same dpar.
+#'   \item \strong{Sugar vs \code{prior} / \code{stanvars} transitively.}
+#'         After the sugar -> \code{fixed_params} translation, the
+#'         downstream \code{fixed_params}-vs-prior / -stanvars checks
+#'         fire automatically.  E.g.\ \code{sampling_variance = "D"}
+#'         plus \code{prior = set_prior("normal(0, 1)", class = "sigma")}
+#'         errors via the \code{fixed_params} vs \code{prior} rule.
 #' }
 #' The intent is to fail fast and explicitly rather than silently
 #' producing an unidentified or mis-specified model.
@@ -391,6 +512,15 @@
 #'         class = "sd")}.
 #'   \item For Beta/Binomial logit-normal models, prior on the random
 #'         intercept SD should also be on the logit scale.
+#'   \item \strong{Gaussian (Fay-Herriot) only.}  Always supply the
+#'         known sampling variance via \code{sampling_variance =
+#'         "<col>"}.  Without this, the residual \eqn{\sigma} and the
+#'         area-RE \eqn{\sigma_u} compete to explain the same variance
+#'         component, producing weak identifiability and divergent
+#'         transitions almost regardless of \code{adapt_delta}.  This
+#'         is the single most common cause of divergences in
+#'         Fay-Herriot fits and should be checked \emph{first} before
+#'         any sampler-tuning.
 #' }
 #'
 #' \strong{3. Low effective sample size (ESS < 1000).}
@@ -587,11 +717,14 @@
 #' summary(model_car)
 #'
 #' # -- Spatial: SAR (Simultaneous Autoregressive) -------------------------------
+#' # spatial_weight_sar is a 100x100 row-standardised matrix with row-
+#' # names regency_001..regency_100, so it pairs with the fine-grained
+#' # "regency" column (100 levels) -- NOT with "province" (5 levels).
 #' data("spatial_weight_sar")
 #' model_sar <- do.call(hbm, c(
 #'   list(formula     = bf(y ~ x1 + x2 + x3),
 #'        data        = data,
-#'        spatial_var = "province",
+#'        spatial_var = "regency",
 #'        spatial_model    = "sar",
 #'        M           = spatial_weight_sar),
 #'   FAST
@@ -612,6 +745,8 @@ hbm <- function(formula,
                 prior          = NULL,
                 # -- Fixed-value distributional parameters ------------
                 fixed_params   = NULL,
+                # -- Fay-Herriot sampling variance (Gaussian) ---------
+                sampling_variance = NULL,
                 # -- Shrinkage priors (Feature 1) -----------------------------
                 prior_type      = "default",
                 hs_df           = 1,
@@ -639,6 +774,8 @@ hbm <- function(formula,
                 handle_missing = NULL,
                 m              = 5L,
                 mice_args      = list(),
+                # -- Measurement error on auxiliary variables (v1.0.0) --
+                measurement_error = NULL,
                 control        = list(),
                 chains         = 4L,
                 iter           = 4000L,
@@ -714,6 +851,45 @@ hbm <- function(formula,
     spatial_model <- sre_type
   }
 
+  # -- 0c. Translate sampling_variance to fixed_params$sigma -------------------
+  # `sampling_variance = "<col>"` is the Fay-Herriot sugar that pins
+  # sigma_i to sqrt(D_i) for each area, recovering the canonical
+  # Fay-Herriot identifiability.  Only meaningful for continuous
+  # families whose response distribution has a residual SCALE parameter
+  # named `sigma` (e.g. gaussian, lognormal, student, skew_normal,
+  # exgaussian, asym_laplace).  For Beta / Binomial / Poisson families
+  # the variance is tied to the mean and cannot be pinned this way; for
+  # those, use `fixed_params$phi` (Beta, via design effect) or the
+  # `trials` argument (Binomial) instead.
+  if (!is.null(sampling_variance)) {
+    # Family compatibility check (happens BEFORE the translation so we
+    # produce an informative error rather than a cryptic Stan error).
+    families_with_sigma <- c(
+      "gaussian", "lognormal", "student", "skew_normal",
+      "exgaussian", "asym_laplace"
+    )
+    if (!hb_sampling %in% families_with_sigma) {
+      stop(
+        "`sampling_variance` requires a family with a residual SD parameter ",
+        "named `sigma`.\n",
+        "  Supplied family: '", hb_sampling, "'\n",
+        "  Compatible:      ", paste(shQuote(families_with_sigma),
+                                       collapse = ", "), "\n",
+        "  For Beta:        pin precision via `fixed_params = list(phi = ~ I(n/deff - 1))` (Liu 2009).\n",
+        "  For Binomial:    sampling variance enters via the `trials = ` argument.\n",
+        "  For Poisson:     variance is tied to mean -- no offset needed.",
+        call. = FALSE
+      )
+    }
+
+    # Translate via the centralised helper.  Validation lives there too.
+    fixed_params <- .translate_sampling_variance(
+      fixed_params      = fixed_params,
+      sampling_variance = sampling_variance,
+      data              = data
+    )
+  }
+
   # -- 0b. Process fixed_params -----------------------------------------
   # Resolve user-specified pinned parameters (column name / scalar / vector /
   # formula) to numeric vectors and attach them as columns of `data` named
@@ -730,6 +906,36 @@ hbm <- function(formula,
   all_formulas   <- parsed$all_formulas
   response_var   <- parsed$response_var
   auxiliary_vars <- parsed$auxiliary_vars
+
+  # -- 1a. Detect explicit mi() / me() usage in the user-supplied formula -------
+  # (v1.0.0) when the user writes `mi(x, sdx)` or `me(x, sdx)` directly
+  # in the brmsformula they are explicitly opting in to brms's measurement-
+  # error / joint-modelling framework.  Two consequences:
+  #   * NA in `x` is intentional (brms handles imputation internally); we
+  #     must NOT force the user to set handle_missing or drop rows.
+  #   * We should silently route to `handle_missing = "model"` so that
+  #     downstream code preserves the original data.
+  user_has_mi <- .formula_has_mi(formula)
+
+  # -- 1b. measurement_error sugar (v1.0.0) -------------------------------
+  # Validate and apply.  When the user passes `measurement_error = list(x = "se_x")`,
+  # we rewrite the RHS so that the listed variables are wrapped with mi(x, se_x).
+  # The auxiliary-variable names referenced here must be PRESENT in the
+  # current formula RHS as bare names; if they already appear inside mi() the
+  # transformation is skipped (the user's explicit syntax wins).
+  if (!is.null(measurement_error)) {
+    .validate_measurement_error(measurement_error, auxiliary_vars, data)
+    main_formula <- .apply_measurement_error(main_formula, measurement_error)
+    formula      <- .apply_measurement_error(formula,      measurement_error)
+    # Refresh parsed metadata after the rewrite
+    parsed         <- .parse_hbm_formula(formula)
+    main_formula   <- parsed$main_formula
+    all_formulas   <- parsed$all_formulas
+    response_var   <- parsed$response_var
+    auxiliary_vars <- parsed$auxiliary_vars
+    # Re-detect mi() since we just inserted it
+    user_has_mi    <- TRUE
+  }
 
   # -- 1b. Apply nonlinear smooth terms (Feature 2) -----------------------------
   # Replace listed predictor variables in the formula RHS with s(var) (spline)
@@ -800,7 +1006,13 @@ hbm <- function(formula,
   # -- 4. Validate handle_missing -----------------------------------------------
   has_any_missing <- !is.null(missing_y) || !is.null(missing_x)
 
-  if (has_any_missing) {
+  # (v1.0.0): explicit mi()/me() in user's formula => silently engage model-based
+  # imputation mode and skip the eager error.  The user knows what they want.
+  if (user_has_mi && is.null(handle_missing)) {
+    handle_missing <- "model"
+  }
+
+  if (has_any_missing && !user_has_mi) {
     if (is.null(handle_missing)) {
       stop(
         "`handle_missing` must be specified when the data contain missing ",
@@ -1054,13 +1266,22 @@ hbm <- function(formula,
   # -- 8. Random effects --------------------------------------------------------
   if (!is.null(re)) {
     re_str       <- as.character(re)
+    # Accepts brms/lme4 random-effect syntaxes:
+    #   (1 | g)            single grouping factor
+    #   (1 | g1 + g2)      multiple grouping factors (crossed within a term)
+    #   (1 | g1 / g2)      nested grouping factors  -> brms sugar for
+    #                      (1 | g1) + (1 | g1:g2)
+    # plus any number of additional `(1 | ...)` terms joined by `+`.
     valid_re_pat <- paste0(
-      "^\\(\\s*1\\s*\\|\\s*\\w+(\\s*\\+\\s*\\w+)*\\s*\\)",
-      "(\\s*\\+\\s*\\(\\s*1\\s*\\|\\s*\\w+(\\s*\\+\\s*\\w+)*\\s*\\))*\\s*$"
+      "^\\(\\s*1\\s*\\|\\s*\\w+(\\s*[+/]\\s*\\w+)*\\s*\\)",
+      "(\\s*\\+\\s*\\(\\s*1\\s*\\|\\s*\\w+(\\s*[+/]\\s*\\w+)*\\s*\\))*\\s*$"
     )
     if (!grepl(valid_re_pat, re_str[2L])) {
       stop(
-        "Invalid `re` formula. Expected syntax: ~ (1|group1) + (1|group2)\n",
+        "Invalid `re` formula. Expected one of:\n",
+        "  ~ (1|group)\n",
+        "  ~ (1|group1) + (1|group2)\n",
+        "  ~ (1|group1/group2)           # nested\n",
         "Received: ", re_str[2L],
         call. = FALSE
       )
@@ -1271,6 +1492,40 @@ hbm <- function(formula,
                                     link_phi = link_phi)
   }
 
+  # -- 10a. Override default links for pinned distributional parameters --
+  # Critical: brms applies the dpar's LINK FUNCTION to the linear predictor
+  # before plugging it into the likelihood.  For Gaussian / Lognormal /
+  # Student / etc., brms's default `link_sigma = "log"` means the model
+  # block computes `sigma = exp(offset_sigma)`.  Since our offset already
+  # carries the SCALE value sqrt(D) on the natural (untransformed) scale,
+  # the exponentiation would corrupt sigma -- e.g. sqrt(D)=2.0 would
+  # become sigma=exp(2.0)=7.39.  To prevent this, we force the relevant
+  # link to "identity" for every pinned dpar.
+  #
+  # The mapping below covers all dpars hbsaems can pin via sugar
+  # (sigma via `sampling_variance`, phi via `n + deff`) and via the
+  # generic `fixed_params` mechanism.  We only intervene when:
+  #   * the user did not already supply a `link_<par>` (we respect their
+  #     explicit choice -- they might be doing something exotic), and
+  #   * the family actually exposes `link_<par>` (brms is silent on
+  #     unknown link args, but we check defensively).
+  if (length(.fixed_params_processed$resolved) > 0L) {
+    pinned_dpars <- names(.fixed_params_processed$resolved)
+    for (dpar in pinned_dpars) {
+      link_key <- paste0("link_", dpar)
+      # Only override if family currently uses a non-identity link for this dpar.
+      # The family_obj is a brmsfamily object with a `link_<par>` element.
+      current_link <- family_obj[[link_key]]
+      if (!is.null(current_link) && current_link != "identity") {
+        # phi was already correctly resolved in hbm_betalogitnorm() (which
+        # sets link_phi = "identity" when fixed_params$phi is set), but
+        # for sigma in hbm() we need to do it here.  Re-build the family
+        # with the identity link substituted in.
+        family_obj[[link_key]] <- "identity"
+      }
+    }
+  }
+
   if (!is.null(all_formulas$forms)) {
     all_formulas$forms[[1L]]$family <- family_obj
   } else {
@@ -1341,6 +1596,32 @@ hbm <- function(formula,
   }
 
   # -- 12. Model fitting --------------------------------------------------------
+  # Build the named arg list to pass to brm()/brm_multiple().
+  # We separate explicit hbsaems arguments from user-supplied ...
+  # to handle collisions cleanly:
+  #
+  #   * `data2` may be set internally (CAR/SAR spatial weight matrix)
+  #     AND/OR passed via ... by the user.  Merge the two lists --
+  #     hbsaems-set keys win for the spatial matrix slot M, but user
+  #     additions for other keys (e.g. their own auxiliary matrices)
+  #     are preserved.
+  #   * Other args (`formula`, `prior`, `chains`, etc.) cannot be
+  #     overridden via ... -- they are derived from explicit hbsaems
+  #     arguments; passing them via ... would be a user error.
+  #
+  # `do.call(..., c(list_a, list_b))` errors loudly on duplicate names,
+  # so we deduplicate up front.
+  dots_brm <- list(...)
+  user_data2 <- dots_brm$data2
+  dots_brm$data2 <- NULL                      # remove to avoid duplicate
+  if (!is.null(user_data2)) {
+    if (!is.list(user_data2))
+      stop("`data2` supplied via `...` must be a named list.",
+           call. = FALSE)
+    # Merge: hbsaems wins for keys we set ourselves (currently `M`).
+    data2 <- utils::modifyList(user_data2, as.list(data2 %||% list()))
+  }
+
   common_brm_args <- list(
     formula      = all_formulas,
     data2        = data2,
@@ -1354,6 +1635,18 @@ hbm <- function(formula,
     save_pars    = brms::save_pars(all = TRUE),
     stanvars     = stanvars   # NULL by default; used by hbm_betalogitnorm()
   )
+
+  # Warn loudly if user tries to override any internally-managed arg via ...
+  managed_args <- intersect(names(common_brm_args), names(dots_brm))
+  if (length(managed_args) > 0L)
+    stop(
+      "The following argument(s) supplied via `...` conflict with values ",
+      "hbm() sets internally: ",
+      paste(shQuote(managed_args), collapse = ", "), ". ",
+      "Remove them from the call (or pass them through their dedicated ",
+      "hbsaems argument, if any).",
+      call. = FALSE
+    )
 
   if (multiple) {
     # -- 12a. Multiple imputation path ------------------------------------------
@@ -1372,7 +1665,7 @@ hbm <- function(formula,
       # Downgrade to a single brm() call on the training data.
       model <- do.call(
         brms::brm,
-        c(list(data = imp_result$data_train), common_brm_args, list(...))
+        c(list(data = imp_result$data_train), common_brm_args, dots_brm)
       )
     } else if (hb_sampling == "binomial" && length(response_var) >= 2L) {
       # Binomial post-processing: enforce y <= n across all imputed datasets.
@@ -1389,7 +1682,7 @@ hbm <- function(formula,
       })
       model <- do.call(
         brms::brm_multiple,
-        c(list(data = imputed_list), common_brm_args, list(...))
+        c(list(data = imputed_list), common_brm_args, dots_brm)
       )
     } else {
       # Standard path: pass the mids object directly to brm_multiple().
@@ -1398,7 +1691,7 @@ hbm <- function(formula,
       # See: https://github.com/paul-buerkner/brms/blob/master/R/brm_multiple.R
       model <- do.call(
         brms::brm_multiple,
-        c(list(data = imp_result$mids), common_brm_args, list(...))
+        c(list(data = imp_result$mids), common_brm_args, dots_brm)
       )
     }
 
@@ -1406,7 +1699,7 @@ hbm <- function(formula,
     # -- 12b. Single model path -------------------------------------------------
     model <- do.call(
       brms::brm,
-      c(list(data = data), common_brm_args, list(...))
+      c(list(data = data), common_brm_args, dots_brm)
     )
   }
 

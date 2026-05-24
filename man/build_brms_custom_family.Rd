@@ -14,7 +14,8 @@ build_brms_custom_family(
   loop = FALSE,
   log_lik = NULL,
   posterior_predict = NULL,
-  posterior_epred = NULL
+  posterior_epred = NULL,
+  use_stan_native = FALSE
 )
 }
 \arguments{
@@ -53,13 +54,20 @@ predictive distribution (used by \code{pp_check()},
 expectation \eqn{E[Y \mid X]} (used by \code{fitted()},
 \code{conditional_effects()}).  Signature
 \code{function(prep)}.}
+
+\item{use_stan_native}{Logical.  If \code{TRUE}, no \code{stanvars}
+block is attached -- the \code{<name>_lpdf} function is assumed to
+exist as a Stan \strong{built-in} (e.g.\ \code{loglogistic_lpdf}
+in Stan \eqn{\geq} 2.29).  When \code{FALSE} (the default), the
+function definition is loaded from \code{inst/stan/<name>.stan}.}
 }
 \value{
 A list with two elements:
 \describe{
   \item{\code{custom_family}}{A \code{brms::customfamily} object.}
   \item{\code{stanvars_family}}{A \code{brms::stanvars} object with the
-    Stan code in the \code{functions} block.}
+    Stan code in the \code{functions} block, or \code{NULL} when
+    \code{use_stan_native = TRUE}.}
 }
 }
 \description{
@@ -79,14 +87,16 @@ wrap the returned object in a function and call it lazily.
 library(hbsaems)
 library(brms)
 
-# Build the loglogistic family from inst/stan/loglogistic.stan
+# Build the loglogistic family.  Stan code is loaded from
+# inst/stan/hbsae_loglogistic.stan — the `hbsae_` prefix avoids
+# collision with Stan's BUILT-IN `loglogistic_lpdf` (Stan >= 2.29).
 ll <- build_brms_custom_family(
-  name  = "loglogistic",
-  dpars = c("mu", "beta"),
-  links = c("log", "log"),
-  lb    = c(0,    0),
-  ub    = c(NA,   NA),
-  type  = "real"
+  name             = "hbsae_loglogistic",
+  dpars            = c("mu", "beta"),
+  links            = c("log", "log"),
+  lb               = c(0,    0),
+  ub               = c(NA,   NA),
+  type             = "real"
 )
 class(ll$custom_family)
 }

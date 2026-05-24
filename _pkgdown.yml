@@ -33,7 +33,7 @@ navbar:
   components:
     intro:
       text: Get started
-      href: articles/hbsaems-modelling.html
+      href: articles/complete-workflow.html
     articles:
       text: Articles
       menu:
@@ -55,12 +55,12 @@ navbar:
         href: articles/hbsaems-handle-missing.html
       - text: Interactive Shiny dashboard
         href: articles/hbsaems-run_sae_app.html
-      - text: "-------"
-      - text: "Reference"
-      - text: Complete workflow walk-through
-        href: articles/complete-workflow.html
       - text: Advanced features
         href: articles/advanced-features.html
+      - text: "-------"
+      - text: "Internals & development"
+      - text: AST-based formula manipulation
+        href: articles/ast-formula-manipulation.html
       - text: Migration guide (legacy users)
         href: articles/migration-guide.html
 

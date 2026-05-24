@@ -204,8 +204,16 @@ print.hbcc_results <- function(x, ...) {
   cat("\nConvergence Diagnostics  [hbcc_results]\n")
   cat("------------------------------------------\n")
   if (!is.null(x$rhat_ess)) {
-    ok <- all(x$rhat_ess[, "Rhat"] < 1.1, na.rm = TRUE)
-    cat(" R-hat < 1.1 :", if (ok) "PASS" else "FAIL", "\n")
+    rh <- x$rhat_ess[, "Rhat"]
+    finite_rh <- rh[is.finite(rh)]
+    # Avoid the all-NA -> all(logical(0)) -> TRUE silent failure.  When
+    # there are no finite Rhat values to evaluate, report explicitly.
+    if (length(finite_rh) == 0L) {
+      cat(" R-hat < 1.1 : ?? (all NA -- model fit may be degenerate)\n")
+    } else {
+      ok <- all(finite_rh < 1.1)
+      cat(" R-hat < 1.1 :", if (ok) "PASS" else "FAIL", "\n")
+    }
     cat(" Parameters  :", nrow(x$rhat_ess), "\n")
   }
   cat("\nUse summary() for full statistics or plot() to visualise.\n\n")
@@ -344,9 +352,25 @@ print.hbsae_results <- function(x, ...) {
   cat("\nSmall Area Estimates  [hbsae_results]\n")
   cat("--------------------------------------\n")
   cat(" Areas       :", nrow(x$result_table), "\n")
-  cat(" Overall RSE :", round(x$rse_model, 2), "%\n")
-  cat(" Pred. range :",
-      paste(round(range(x$pred, na.rm = TRUE), 3), collapse = " to "), "\n\n")
+  # Defensive: rse_model may be NA / NaN if all predictions were zero
+  # (see sae_predict() RSE guard).  round() returns NaN on NaN, which
+  # prints awkwardly.  Likewise range(na.rm=TRUE) returns Inf, -Inf on
+  # all-NA -- we suppress that case.
+  rse_str <- if (is.finite(x$rse_model))
+    paste0(round(x$rse_model, 2L), " %")
+  else
+    "NA (all areas had zero or non-finite predictions)"
+  cat(" Overall RSE :", rse_str, "\n")
+
+  finite_pred <- x$pred[is.finite(x$pred)]
+  if (length(finite_pred) > 0L) {
+    pred_range <- range(finite_pred)
+    cat(" Pred. range :",
+        paste(round(pred_range, 3L), collapse = " to "), "\n")
+  } else {
+    cat(" Pred. range : NA (no finite predictions)\n")
+  }
+  cat("\n")
   invisible(x)
 }
 

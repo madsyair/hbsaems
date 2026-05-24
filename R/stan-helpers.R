@@ -34,7 +34,7 @@
 #' @return A character scalar containing the Stan code (functions block).
 #'
 #' @examples
-#' code <- read_stan_function("loglogistic")
+#' code <- read_stan_function("hbsae_loglogistic")
 #' cat(code)
 #'
 #' @seealso \code{\link{build_brms_custom_family}},
@@ -105,12 +105,18 @@ read_stan_function <- function(name) {
 #'   expectation \eqn{E[Y \mid X]} (used by \code{fitted()},
 #'   \code{conditional_effects()}).  Signature
 #'   \code{function(prep)}.
+#' @param use_stan_native Logical.  If \code{TRUE}, no \code{stanvars}
+#'   block is attached -- the \code{<name>_lpdf} function is assumed to
+#'   exist as a Stan \strong{built-in} (e.g.\ \code{loglogistic_lpdf}
+#'   in Stan \eqn{\geq} 2.29).  When \code{FALSE} (the default), the
+#'   function definition is loaded from \code{inst/stan/<name>.stan}.
 #'
 #' @return A list with two elements:
 #' \describe{
 #'   \item{\code{custom_family}}{A \code{brms::customfamily} object.}
 #'   \item{\code{stanvars_family}}{A \code{brms::stanvars} object with the
-#'     Stan code in the \code{functions} block.}
+#'     Stan code in the \code{functions} block, or \code{NULL} when
+#'     \code{use_stan_native = TRUE}.}
 #' }
 #'
 #' @examples
@@ -118,14 +124,16 @@ read_stan_function <- function(name) {
 #' library(hbsaems)
 #' library(brms)
 #'
-#' # Build the loglogistic family from inst/stan/loglogistic.stan
+#' # Build the loglogistic family.  Stan code is loaded from
+#' # inst/stan/hbsae_loglogistic.stan — the `hbsae_` prefix avoids
+#' # collision with Stan's BUILT-IN `loglogistic_lpdf` (Stan >= 2.29).
 #' ll <- build_brms_custom_family(
-#'   name  = "loglogistic",
-#'   dpars = c("mu", "beta"),
-#'   links = c("log", "log"),
-#'   lb    = c(0,    0),
-#'   ub    = c(NA,   NA),
-#'   type  = "real"
+#'   name             = "hbsae_loglogistic",
+#'   dpars            = c("mu", "beta"),
+#'   links            = c("log", "log"),
+#'   lb               = c(0,    0),
+#'   ub               = c(NA,   NA),
+#'   type             = "real"
 #' )
 #' class(ll$custom_family)
 #' }
@@ -142,7 +150,8 @@ build_brms_custom_family <- function(name,
                                      loop              = FALSE,
                                      log_lik           = NULL,
                                      posterior_predict = NULL,
-                                     posterior_epred   = NULL) {
+                                     posterior_epred   = NULL,
+                                     use_stan_native   = FALSE) {
 
   # ---- input validation ----------------------------------------------------
   stopifnot(is.character(name), length(name) == 1L, nzchar(name))
@@ -156,6 +165,8 @@ build_brms_custom_family <- function(name,
   if (length(ub) == 1L) ub <- rep(ub, length(dpars))
   stopifnot(length(lb) == length(dpars),
             length(ub) == length(dpars))
+  if (!is.logical(use_stan_native) || length(use_stan_native) != 1L)
+    stop("`use_stan_native` must be a single logical.", call. = FALSE)
   # Optional function args
   if (!is.null(log_lik)           && !is.function(log_lik))
     stop("`log_lik` must be a function or NULL.",           call. = FALSE)
@@ -187,9 +198,13 @@ build_brms_custom_family <- function(name,
 
   cf <- do.call(brms::custom_family, cf_args)
 
-  # ---- attach Stan code from inst/stan/ ----------------------------------
-  scode <- read_stan_function(name)
-  sv    <- brms::stanvar(scode = scode, block = "functions")
+  # ---- attach Stan code from inst/stan/  (skip when using native) ---------
+  sv <- if (use_stan_native) {
+    NULL
+  } else {
+    scode <- read_stan_function(name)
+    brms::stanvar(scode = scode, block = "functions")
+  }
 
   list(
     custom_family   = cf,

@@ -98,8 +98,22 @@
 #'   \code{method = "raking"}: a numeric vector of group totals (one per
 #'   group; see \code{groups}).
 #' @param weights Optional numeric vector of length equal to the number
-#'   of areas in \code{predictions}.  Typical choices are population
-#'   sizes or sampling weights.  Defaults to equal weights (\code{1 / n}).
+#'   of areas in \code{predictions}.  In Official-Statistics practice
+#'   this is normally the population size \eqn{N_i} of each area, so
+#'   that \eqn{\sum_i w_i \hat{\theta}_i} is the implied population
+#'   total.  When \code{NULL}, a safe default is chosen based on
+#'   \code{target_type}; an informational message is emitted so users
+#'   can see exactly which weighting was applied.
+#' @param target_type Character.  Either \code{"total"} (default) or
+#'   \code{"mean"}.  Consulted ONLY when \code{weights = NULL} to choose
+#'   a safe default: \code{"total"} sets \code{weights = rep(1, n)} so
+#'   that \eqn{\sum_i w_i \hat{\theta}_i = \sum_i \hat{\theta}_i};
+#'   \code{"mean"} sets \code{weights = rep(1/n, n)} so that the
+#'   weighted sum equals the mean.  Ignored when \code{weights} is
+#'   supplied.  \strong{Always prefer to pass explicit \code{weights}
+#'   (typically the population size \eqn{N_i}) in production code:}
+#'   the default heuristic is provided only to avoid silent scale
+#'   corruption when the user forgets the argument.
 #' @param method Character.  One of:
 #'   \describe{
 #'     \item{\code{"ratio"}}{Multiplicative:
@@ -195,27 +209,66 @@
 #' @export
 sae_benchmark <- function(predictions,
                           target,
-                          weights   = NULL,
-                          method    = c("ratio", "difference", "raking"),
-                          groups    = NULL,
-                          posterior = NULL,
-                          probs     = c(0.025, 0.5, 0.975),
-                          max_iter  = 100L,
-                          tol       = 1e-8) {
+                          weights     = NULL,
+                          target_type = c("total", "mean"),
+                          method      = c("ratio", "difference", "raking"),
+                          groups      = NULL,
+                          posterior   = NULL,
+                          probs       = c(0.025, 0.5, 0.975),
+                          max_iter    = 100L,
+                          tol         = 1e-8) {
 
-  method <- match.arg(method)
+  method      <- match.arg(method)
 
   # -- 1. Input validation ---------------------------------------------------
   if (!is.hbsae_results(predictions))
     stop("'predictions' must be an hbsae_results object.", call. = FALSE)
   if (!is.numeric(target))
     stop("'target' must be numeric.", call. = FALSE)
+  if (any(!is.finite(target)))
+    stop("'target' must be finite (no NA, NaN, or Inf).", call. = FALSE)
 
   pred <- predictions$pred
   n    <- length(pred)
+  if (any(!is.finite(pred)))
+    stop("`predictions$pred` contains non-finite value(s) (NA / NaN / Inf). ",
+         "Benchmark cannot proceed.  Check the model fit and prediction step.",
+         call. = FALSE)
 
+  # ------------------------------------------------------------------
+  # (v1.0.0): Default weights must reflect the SEMANTIC of `target`.
+  #
+  # The previous default `weights = rep(1/n, n)` silently assumed
+  # `target` was a population MEAN, because
+  #     sum(weights * pred) = mean(pred).
+  # When users instead pass `target = <population TOTAL>` (the
+  # overwhelmingly common case in BPS / Official Statistics), the
+  # adjustment factor `r = target / mean(pred)` is roughly `n` times
+  # larger than the correct one `target / sum(pred)`, producing
+  # benchmarked estimates that are scale-corrupt by a factor of `n`.
+  #
+  # Fix: refuse to silently guess.  Require the user to either
+  #   (a) pass `weights` explicitly (recommended -- normally population
+  #       sizes N_i, then `sum(weights * pred)` is the population total
+  #       estimate), or
+  #   (b) declare `target_type = "mean"` or `"total"` so we can pick a
+  #       safe default.
+  # ------------------------------------------------------------------
   if (is.null(weights)) {
-    weights <- rep(1 / n, n)
+    target_type <- match.arg(target_type)
+    weights <- switch(
+      target_type,
+      "total" = rep(1,     n),   # sum(w * pred) = sum(pred) = total
+      "mean"  = rep(1 / n, n),   # sum(w * pred) = mean(pred)
+      stop("Default `weights` only supported when `target_type` is ",
+           "'total' or 'mean'.  Pass explicit weights (typically the ",
+           "population size N_i for each area).", call. = FALSE)
+    )
+    message(sprintf(
+      "Using default weights for `target_type = \"%s\"`.\n",
+      target_type),
+      "  For production use, pass `weights = <population size per area>` ",
+      "to be explicit.")
   } else {
     if (!is.numeric(weights) || length(weights) != n)
       stop(sprintf(

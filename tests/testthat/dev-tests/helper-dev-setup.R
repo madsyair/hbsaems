@@ -25,13 +25,37 @@
 # emits a single skip notice and exits.
 # =============================================================================
 
-# Lazy guard: refuse to run on CRAN even by accident
+# ---------------------------------------------------------------------------
+# 1.  Attach the package
+# ---------------------------------------------------------------------------
+# dev-tests/ is OUTSIDE the standard tests/testthat/ tree, so testthat
+# does not auto-attach the package.  We do it ourselves -- silently --
+# so that unqualified calls like `hbm(...)`, `check_shiny_deps(...)`,
+# `hbm_lnln(...)` resolve correctly inside every test_that() block.
+if (requireNamespace("hbsaems", quietly = TRUE)) {
+  suppressPackageStartupMessages(library(hbsaems))
+}
+
+# ---------------------------------------------------------------------------
+# 2.  Gate: refuse to run on CRAN even by accident
+# ---------------------------------------------------------------------------
 .dev_skip <- function() {
   testthat::skip_on_cran()
   if (!identical(Sys.getenv("NOT_CRAN"), "true") &&
+      !identical(Sys.getenv("_R_RUN_DEV_TESTS_"), "true") &&
       !interactive()) {
-    testthat::skip("Set NOT_CRAN=true to run development tests.")
+    testthat::skip(
+      "Set NOT_CRAN=true (or _R_RUN_DEV_TESTS_=true) to run development tests."
+    )
   }
+}
+
+# Some legacy dev-tests reference `skip_if_no_stan()`; provide it as a
+# thin alias.  Stan availability is checked indirectly by attempting a
+# requireNamespace on rstan.
+skip_if_no_stan <- function() {
+  testthat::skip_if_not_installed("rstan")
+  testthat::skip_if_not_installed("brms")
 }
 
 # Centralised lightweight Stan defaults: keep iter low so each test
@@ -44,9 +68,12 @@
   refresh = 0L
 )
 
-# Load datasets that ship with the package (already in data/).
-# We rely on package data being on the search path; testthat
-# handles this when load_package = "source".
+# ---------------------------------------------------------------------------
+# 3.  Pre-load datasets used widely across dev-tests
+# ---------------------------------------------------------------------------
+# Load datasets that ship with the package (already in data/).  These end
+# up in the calling environment of each test_that() block because
+# testthat sources helper-*.R files at the same scope as test files.
 if (requireNamespace("hbsaems", quietly = TRUE)) {
   utils::data("data_fhnorm",          package = "hbsaems", envir = environment())
   utils::data("data_betalogitnorm",   package = "hbsaems", envir = environment())

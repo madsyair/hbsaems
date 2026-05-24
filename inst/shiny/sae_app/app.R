@@ -538,6 +538,29 @@ ui <- shinydashboard::dashboardPage(
                                     selectInput("n_beta", "Sample Size (n)", choices = NULL),
                                     selectInput("deff_beta", "Design Effect (deff)", choices = NULL)
                                 )),
+                                # v1.0.0: Fay-Herriot sampling variance for Lognormal SAE.
+                                # When supplied, sigma_i is pinned to sqrt(psi_i) via offset
+                                # (see ?hbm_lnln).  This is the classical SAE workflow.
+                                column(6, conditionalPanel(
+                                    condition = "input.dist_type == 'Lognormal-Lognormal'",
+                                    selectInput("sampling_variance_lnln",
+                                                "Sampling Variance (psi_i) [optional]",
+                                                choices = NULL),
+                                    helpText("Pin sigma_i = sqrt(psi_i) via offset (Fay-Herriot, lognormal scale).")
+                                )),
+                                # v1.0.0: Generic sampling_variance + measurement_error for the
+                                # Custom path (gaussian / lognormal / student / etc.).  Covered
+                                # in `?hbm` and `vignette('migration-guide')`.
+                                conditionalPanel(
+                                    condition = "input.dist_type == 'Custom' && (input.hb_family == 'gaussian' || input.hb_family == 'lognormal' || input.hb_family == 'student')",
+                                    column(6, selectInput("sampling_variance_custom",
+                                                          "Sampling Variance (D_i) [optional]",
+                                                          choices = NULL)),
+                                    column(12, helpText(
+                                        "Pin sigma_i = sqrt(D_i) via offset (Fay-Herriot). ",
+                                        "link_sigma is forced to 'identity' for correct calibration."
+                                    ))
+                                ),
                                 conditionalPanel(
                                     condition = "input.dist_type == 'Custom'",
                                     column(6, selectInput("hb_family", "HB Family", choices = c(
@@ -556,6 +579,60 @@ ui <- shinydashboard::dashboardPage(
                                     column(6, selectInput("hb_link", "HB Link",
                                                           choices = c("identity", "log", "logit", "probit", "cloglog")))
                                 )
+                            ),
+                            # v1.0.0: Measurement-error sugar (Ybarra-Lohr 2008).
+                            # When the user knows the standard error of a noisily-
+                            # measured predictor x, they can flag it here -- hbsaems
+                            # will rewrite the formula `y ~ x` into `y ~ mi(x, se_x)`
+                            # so brms treats x as a latent covariate with measurement
+                            # error model.
+                            shinydashboard::box(
+                                title       = "Measurement-error covariates (Ybarra-Lohr)",
+                                width       = 12,
+                                solidHeader = TRUE,
+                                status      = "info",
+                                collapsible = TRUE,
+                                collapsed   = TRUE,
+                                helpText(
+                                    "If one of the auxiliary covariates has known standard error ",
+                                    "(typical for variables coming from survey microdata, themselves ",
+                                    "estimated rather than measured), select it together with the ",
+                                    "column holding its standard error.  hbsaems will replace ",
+                                    tags$code("x"), " with ", tags$code("mi(x, se_x)"),
+                                    " in the model formula (Ybarra and Lohr, 2008)."
+                                ),
+                                fluidRow(
+                                    column(6, selectInput("me_var", "Noisy predictor",
+                                                          choices = c("none"), selected = "none")),
+                                    column(6, selectInput("me_se_col", "Standard-error column",
+                                                          choices = c("none"), selected = "none"))
+                                )
+                            ),
+                            # v1.0.0: Generic fixed_params expression.  Power users can pin
+                            # any distributional parameter via column-name reference (e.g.
+                            # `sigma = D` for Gaussian FH, `shape = my_shape` for Gamma,
+                            # etc.).  Validated via .process_fixed_params() in fixed-params.R.
+                            shinydashboard::box(
+                                title       = "Fixed distributional parameters (advanced)",
+                                width       = 12,
+                                solidHeader = TRUE,
+                                status      = "info",
+                                collapsible = TRUE,
+                                collapsed   = TRUE,
+                                helpText(
+                                    "Pin any distributional parameter to a known value (per area, ",
+                                    "constant, or formula).  Example: ",
+                                    tags$code('list(sigma = "D")'), " pins ",
+                                    tags$code("sigma_i = sqrt(D_i)"),
+                                    " via offset.  Leave blank to let brms sample everything.  ",
+                                    "Syntax must be valid R code returning a named list."
+                                ),
+                                textAreaInput("fixed_params_expr",
+                                              "fixed_params (R expression)",
+                                              value  = "",
+                                              width  = "100%",
+                                              height = "80px",
+                                              placeholder = 'e.g. list(sigma = "D")  or  list(shape = 2)')
                             ),
                             # Prior Settings box -- collapsed by default (advanced option)
                             shinydashboard::box(
@@ -988,16 +1065,16 @@ ui <- shinydashboard::dashboardPage(
                                     "single higher-level domain and you have an ",
                                     "official total for each domain. ",
                                     tags$br(),
-                                    tags$em("Example: SAE per kecamatan, benchmark to ",
-                                            "kabupaten totals. The 'Group Variable' is ",
-                                            "the kabupaten ID column; 'Group Targets' is ",
-                                            "the vector of kabupaten totals in the same ",
-                                            "order as ", tags$code("levels(group_var)"), ".")),
-                                fluidRow(
-                                    column(6, selectInput(
-                                        "bm_groups_var",
-                                        "Group Variable (e.g. 'kabupaten')",
-                                        choices = NULL)),
+                                    tags$em("Example: SAE per district, benchmark to ",
+                                        "regency totals.  The 'Group Variable' is ",
+                                        "the regency ID column; 'Group Targets' is ",
+                                        "the vector of regency totals in the same ",
+                                        "order as ", tags$code("levels(group_var)"), ".")),
+                            fluidRow(
+                                column(6, selectInput(
+                                    "bm_groups_var",
+                                    "Group Variable (e.g. .regency.)",
+                                    choices = NULL)),
                                     column(6, textInput(
                                         "bm_targets_multi",
                                         "Group Targets (comma-separated)",
@@ -1022,6 +1099,124 @@ ui <- shinydashboard::dashboardPage(
                             br(),
                             downloadButton("download_benchmark",
                                             "Download Benchmarked Predictions (CSV)")
+                        )
+                    ),
+                    tabPanel(
+                        "Post-processing",
+                        value = "postprocess_panel",
+                        # v1.0.0: Expose the sae_* helpers (scale, transform, filter)
+                        # for downstream manipulation of hbsae_results objects.
+                        # Aggregation across multiple fits is offered when the user
+                        # saves the current prediction into a slot first (slot A vs B).
+                        fluidRow(
+                            column(12,
+                                shinydashboard::box(
+                                    title  = "Transform / Scale / Filter predictions",
+                                    width  = 12,
+                                    solidHeader = TRUE,
+                                    status = "info",
+                                    helpText(
+                                        "Apply a quick post-processing operation to the most ",
+                                        "recent prediction.  Results are shown below and downloadable ",
+                                        "as CSV."
+                                    ),
+                                    fluidRow(
+                                        column(4, selectInput(
+                                            "post_op", "Operation",
+                                            choices = c(
+                                                "(none)"             = "none",
+                                                "Transform (log)"    = "transform_log",
+                                                "Transform (exp)"    = "transform_exp",
+                                                "Scale (centre+std)" = "scale_both",
+                                                "Scale (centre only)"= "scale_centre",
+                                                "Filter (RSE < threshold)" = "filter_rse"
+                                            ),
+                                            selected = "none"
+                                        )),
+                                        column(4, conditionalPanel(
+                                            condition = "input.post_op == 'filter_rse'",
+                                            numericInput("post_filter_rse_thr",
+                                                          "RSE threshold (%)",
+                                                          value = 25, min = 0, step = 5)
+                                        )),
+                                        column(4, br(),
+                                            actionButton("post_run", "Apply",
+                                                          icon = icon("play"),
+                                                          class = "btn-primary"))
+                                    ),
+                                    br(),
+                                    verbatimTextOutput("post_summary"),
+                                    DT::DTOutput("post_table"),
+                                    br(),
+                                    downloadButton("post_download",
+                                                    "Download Result (CSV)")
+                                )
+                            )
+                        )
+                    ),
+                    tabPanel(
+                        "Multi-model",
+                        value = "multimodel_panel",
+                        # v1.0.0: Lightweight UI for model_compare_all() and
+                        # model_average() on top of saved model snapshots.
+                        # The user clicks "Snapshot" to push the current
+                        # model_fit() into a small in-app library, then
+                        # selects multiple snapshots to compare or average.
+                        fluidRow(
+                            column(12,
+                                shinydashboard::box(
+                                    title  = "Multi-model comparison & averaging",
+                                    width  = 12,
+                                    solidHeader = TRUE,
+                                    status = "info",
+                                    helpText(
+                                        "Use ", tags$strong("Snapshot current fit"), " to save the ",
+                                        "most recent ", tags$code("model_fit()"), " into the in-app ",
+                                        "library.  Then select 2 or more snapshots and run ",
+                                        tags$code("model_compare_all()"), " (LOO/WAIC comparison) ",
+                                        "or ", tags$code("model_average()"),
+                                        " (Bayesian model averaging of predictions)."
+                                    ),
+                                    fluidRow(
+                                        column(4,
+                                            textInput("multimodel_name",
+                                                       "Name for snapshot",
+                                                       value = "",
+                                                       placeholder = "e.g. baseline_FH"),
+                                            actionButton("multimodel_snapshot",
+                                                          "Snapshot current fit",
+                                                          icon = icon("camera"),
+                                                          class = "btn-primary")
+                                        ),
+                                        column(8,
+                                            selectizeInput("multimodel_selected",
+                                                            "Select snapshots to use:",
+                                                            choices = NULL,
+                                                            multiple = TRUE),
+                                            fluidRow(
+                                                column(6,
+                                                    radioButtons("multimodel_metric",
+                                                                  "LOO / WAIC",
+                                                                  choices = c("loo", "waic", "both"),
+                                                                  selected = "loo",
+                                                                  inline = TRUE)),
+                                                column(6,
+                                                    actionButton("multimodel_compare_btn",
+                                                                  "Compare (LOO/WAIC)",
+                                                                  icon = icon("balance-scale"),
+                                                                  class = "btn-default"),
+                                                    actionButton("multimodel_average_btn",
+                                                                  "Average predictions",
+                                                                  icon = icon("calculator"),
+                                                                  class = "btn-default")
+                                                )
+                                            )
+                                        )
+                                    ),
+                                    br(),
+                                    verbatimTextOutput("multimodel_output")
+                                )
+                            )
                         )
                     ),
                     tabPanel(
@@ -1904,6 +2099,16 @@ server <- function(input, output, session) {
                         updateSelectInput(session, "trials_logit", choices = c("none", all_vars))
                         updateSelectInput(session, "n_beta",       choices = c("none", all_vars))
                         updateSelectInput(session, "deff_beta",    choices = c("none", all_vars))
+                        # v1.0.0: Fay-Herriot sampling variance dropdowns
+                        updateSelectInput(session, "sampling_variance_lnln",
+                                          choices = c("none", all_vars))
+                        updateSelectInput(session, "sampling_variance_custom",
+                                          choices = c("none", all_vars))
+                        # v1.0.0: Measurement-error dropdowns
+                        updateSelectInput(session, "me_var",
+                                          choices = c("none", all_vars))
+                        updateSelectInput(session, "me_se_col",
+                                          choices = c("none", all_vars))
                         showNotification("Data uploaded successfully!", type = "message", duration = 5)
                     },
                     warning = function(w) {
@@ -1941,6 +2146,9 @@ server <- function(input, output, session) {
         updateSelectInput(session, "trials_logit", selected = "none")
         updateSelectInput(session, "n_beta",       selected = "none")
         updateSelectInput(session, "deff_beta",    selected = "none")
+        # v1.0.0: also reset sampling_variance dropdowns
+        updateSelectInput(session, "sampling_variance_lnln",   selected = "none")
+        updateSelectInput(session, "sampling_variance_custom", selected = "none")
     })
     observeEvent(input$sre_type, {
         updateSelectInput(session, "sre", selected = "none")
@@ -2457,7 +2665,40 @@ server <- function(input, output, session) {
             refresh        = 0L
         )
         common_args <- c(common_args, get_prior_args())
-        
+
+        # v1.0.0: Measurement-error sugar (Ybarra-Lohr 2008).
+        # When the user has selected a noisy predictor + SE column,
+        # we pass it as a named list to hbm()/hbm_*(): the helper then
+        # rewrites the formula `y ~ x` into `y ~ mi(x, se_x)`.
+        if (!is.null(input$me_var) && input$me_var != "none" &&
+            !is.null(input$me_se_col) && input$me_se_col != "none") {
+          me_list <- list()
+          me_list[[input$me_var]] <- input$me_se_col
+          common_args$measurement_error <- me_list
+        }
+
+        # v1.0.0: fixed_params (advanced).  User supplies an R expression
+        # that evaluates to a named list.  We parse + eval defensively;
+        # syntax / type errors are surfaced via the model-fit error path.
+        if (!is.null(input$fixed_params_expr) &&
+            nzchar(trimws(input$fixed_params_expr))) {
+          parsed_fp <- tryCatch(
+            eval(parse(text = input$fixed_params_expr)),
+            error = function(e)
+              stop("Invalid `fixed_params` expression: ",
+                   conditionMessage(e),
+                   ".  Expected a named list, e.g. ",
+                   'list(sigma = "D"). Got: ',
+                   input$fixed_params_expr,
+                   call. = FALSE)
+          )
+          if (!is.list(parsed_fp))
+            stop("`fixed_params` expression must evaluate to a named list. ",
+                 "Got ", class(parsed_fp)[1L], ".",
+                 call. = FALSE)
+          common_args$fixed_params <- parsed_fp
+        }
+
         # Helper: build the smooth-term arguments block (DRY)
         add_nonlinear_args <- function(args) {
             if (length(nl_vars) > 0L) {
@@ -2482,12 +2723,24 @@ server <- function(input, output, session) {
             common_args$formula     <- reactive_formula()
             common_args$hb_sampling <- input$hb_family
             common_args$hb_link     <- input$hb_link
+            # v1.0.0: forward Fay-Herriot sampling variance when supplied
+            # for the families that support it (Gaussian / Lognormal /
+            # Student).  The hbm() helper handles the offset injection
+            # and the link_sigma = "identity" override internally.
+            if (!is.null(input$sampling_variance_custom) &&
+                input$sampling_variance_custom != "none" &&
+                input$hb_family %in% c("gaussian", "lognormal", "student"))
+              common_args$sampling_variance <- input$sampling_variance_custom
             fit <- do.call(hbm, common_args)
 
         } else if (input$dist_type == "Lognormal-Lognormal") {
             common_args$response  <- input$response_var
             common_args$auxiliary <- setdiff(input$linear_aux_vars, nl_vars)
             common_args$area_var  <- input$re_groups
+            # v1.0.0: Fay-Herriot sampling variance for the lognormal SAE.
+            if (!is.null(input$sampling_variance_lnln) &&
+                input$sampling_variance_lnln != "none")
+              common_args$sampling_variance <- input$sampling_variance_lnln
             common_args <- add_nonlinear_args(common_args)
             fit <- do.call(hbm_lnln, common_args)
 
@@ -2928,6 +3181,155 @@ server <- function(input, output, session) {
     })
     
     
+    # -- MULTI-MODEL (v1.0.0) --------------------------------------------------
+    # Lightweight library of named model snapshots.  The user takes a
+    # snapshot of the current fit, then selects 2+ snapshots to feed into
+    # model_compare_all() or model_average().
+    multimodel_library <- reactiveVal(list())
+
+    observeEvent(input$multimodel_snapshot, {
+        req(model_fit())
+        nm <- trimws(input$multimodel_name %||% "")
+        if (!nzchar(nm)) {
+            showNotification("Please give the snapshot a non-empty name.",
+                              type = "warning", duration = 8)
+            return()
+        }
+        lib <- multimodel_library()
+        if (nm %in% names(lib)) {
+            showNotification(paste("Overwriting existing snapshot:", nm),
+                              type = "warning", duration = 6)
+        }
+        lib[[nm]] <- model_fit()
+        multimodel_library(lib)
+
+        # Refresh the selection dropdown
+        updateSelectizeInput(session, "multimodel_selected",
+                              choices = names(lib),
+                              selected = names(lib))
+        showNotification(paste("Snapshot saved:", nm),
+                          type = "message", duration = 5)
+    })
+
+    observeEvent(input$multimodel_compare_btn, {
+        lib  <- multimodel_library()
+        sel  <- input$multimodel_selected
+        if (length(sel) < 2L) {
+            showNotification(
+                "Select at least 2 snapshots to compare.",
+                type = "warning", duration = 8)
+            return()
+        }
+        models <- lib[sel]
+        out <- tryCatch(
+            do.call(model_compare_all,
+                    c(unname(models),
+                      list(criterion = input$multimodel_metric))),
+            error = function(e) paste("ERROR:", conditionMessage(e))
+        )
+        output$multimodel_output <- renderPrint({
+            if (is.character(out) && length(out) == 1L &&
+                grepl("^ERROR:", out)) cat(out, "\n")
+            else print(out)
+        })
+    })
+
+    observeEvent(input$multimodel_average_btn, {
+        lib  <- multimodel_library()
+        sel  <- input$multimodel_selected
+        if (length(sel) < 2L) {
+            showNotification(
+                "Select at least 2 snapshots to average.",
+                type = "warning", duration = 8)
+            return()
+        }
+        models <- lib[sel]
+        out <- tryCatch(
+            do.call(model_average, unname(models)),
+            error = function(e) paste("ERROR:", conditionMessage(e))
+        )
+        output$multimodel_output <- renderPrint({
+            if (is.character(out) && length(out) == 1L &&
+                grepl("^ERROR:", out)) cat(out, "\n")
+            else print(out)
+        })
+    })
+
+
+    # -- POST-PROCESSING (v1.0.0) ----------------------------------------------
+    # Wraps sae_transform / sae_scale / sae_filter for the user.  Stores
+    # the most recent result so it can be downloaded.
+    post_result <- reactiveVal(NULL)
+
+    observeEvent(input$post_run, {
+        req(model_fit())
+        op <- input$post_op
+        if (is.null(op) || op == "none") {
+            post_result(NULL)
+            return()
+        }
+
+        withProgress(message = "Applying post-processing...", {
+            tryCatch({
+                base_pred <- sae_predict(model_fit())
+                out <- switch(
+                    op,
+                    transform_log  = sae_transform(base_pred, fun = log),
+                    transform_exp  = sae_transform(base_pred, fun = exp),
+                    scale_both     = sae_scale(base_pred, center = TRUE, scale = TRUE),
+                    scale_centre   = sae_scale(base_pred, center = TRUE, scale = FALSE),
+                    filter_rse     = {
+                        thr <- input$post_filter_rse_thr
+                        if (is.null(thr) || !is.finite(thr) || thr <= 0)
+                            stop("Filter threshold must be a positive number.",
+                                 call. = FALSE)
+                        cond <- base_pred$result_table$RSE_percent < thr
+                        sae_filter(base_pred, condition = cond)
+                    },
+                    stop("Unknown post-processing operation: ", shQuote(op),
+                         call. = FALSE)
+                )
+                post_result(out)
+                showNotification("Post-processing applied successfully.",
+                                  type = "message", duration = 5)
+            },
+            error = function(e) {
+                showNotification(paste("Post-processing error:", e$message),
+                                  type = "error", duration = 15)
+                post_result(NULL)
+            })
+        })
+    })
+
+    output$post_summary <- renderPrint({
+        res <- post_result()
+        if (is.null(res)) {
+            cat("No result yet. Select an operation and click Apply.\n")
+        } else {
+            cat("Operation: ", input$post_op, "\n", sep = "")
+            cat("Overall RSE: ", round(res$rse_model, 2L), "%\n", sep = "")
+            cat("Areas remaining: ", nrow(res$result_table), "\n", sep = "")
+        }
+    })
+
+    output$post_table <- DT::renderDT({
+        res <- post_result()
+        if (is.null(res)) return(NULL)
+        DT::datatable(round(res$result_table, 4L),
+                       options = list(scrollX = TRUE, scrollY = "370px"))
+    })
+
+    output$post_download <- downloadHandler(
+        filename = function() paste0("hbsae_postprocess_", Sys.Date(), ".csv"),
+        content  = function(file) {
+            res <- post_result()
+            if (is.null(res))
+                stop("No post-processing result to download.", call. = FALSE)
+            utils::write.csv(res$result_table, file, row.names = FALSE)
+        }
+    )
+
+
     # -- SAVE OUTPUTS ----------------------------------------------------------
     output$save_model <- downloadHandler(
         filename = function() paste0("hbsae_model_", Sys.Date(), ".rds"),

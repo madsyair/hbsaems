@@ -4,8 +4,15 @@
 # brms (log_lik / posterior_predict / posterior_epred), and the
 # brms_custom_loglogistic() wrapper.
 #
-# The Stan-side function definitions live in inst/stan/loglogistic.stan and
-# are loaded at runtime via build_brms_custom_family().
+# Stan-side
+# ---------
+# The Stan function definitions live in inst/stan/hbsae_loglogistic.stan
+# and are loaded at runtime via build_brms_custom_family().  The Stan
+# function names are prefixed with `hbsae_` (e.g.\ `hbsae_loglogistic_lpdf`)
+# to avoid a symbol collision with Stan's BUILT-IN `loglogistic_lpdf`
+# (Stan >= 2.29).  The user-facing R helpers dloglogistic(),
+# ploglogistic(), qloglogistic(), and rloglogistic() KEEP their natural
+# names because they live in the R namespace, not the Stan namespace.
 #
 # Parameterisation
 # ----------------
@@ -87,7 +94,16 @@ NULL
 #' @rdname loglogistic
 #' @export
 dloglogistic <- function(x, mu = 1, beta = 1, log = FALSE) {
-  stopifnot(all(mu > 0), all(beta > 0))
+  # Strict positivity check on parameters, EXCEPT for NA (which we
+  # propagate as NA in the result, matching base R density conventions
+  # like dnorm(NA) -> NA).  Pre-v1.0.0 the stopifnot() tripped on
+  # `all(NA > 0)` (which is NA) because stopifnot() treats NA as
+  # failure.
+  if (!all(mu[!is.na(mu)] > 0))
+    stop("all(mu > 0) is not TRUE", call. = FALSE)
+  if (!all(beta[!is.na(beta)] > 0))
+    stop("all(beta > 0) is not TRUE", call. = FALSE)
+
   # Determine the output length by R's standard recycling rules.
   n_out <- max(length(x), length(mu), length(beta))
   if (length(x)    < n_out) x    <- rep(x,    length.out = n_out)
@@ -95,14 +111,17 @@ dloglogistic <- function(x, mu = 1, beta = 1, log = FALSE) {
   if (length(beta) < n_out) beta <- rep(beta, length.out = n_out)
 
   log_pdf <- rep(-Inf, n_out)
-  pos <- which(x > 0)
+  pos <- which(x > 0 & !is.na(mu) & !is.na(beta))
   if (length(pos) > 0L) {
     z <- x[pos] / mu[pos]
     log_pdf[pos] <- log(beta[pos]) - log(mu[pos]) +
                      (beta[pos] - 1) * log(z) -
                      2 * log1p(z^beta[pos])
   }
+  # Propagate NA from any input (base R convention: dnorm(NA) -> NA).
+  na_idx <- is.na(x) | is.na(mu) | is.na(beta)
   log_pdf[!is.finite(log_pdf)] <- -Inf
+  log_pdf[na_idx] <- NA_real_
   if (log) log_pdf else exp(log_pdf)
 }
 
@@ -265,7 +284,14 @@ posterior_epred_loglogistic <- function(prep) {
 #' @export
 brms_custom_loglogistic <- function() {
   build_brms_custom_family(
-    name              = "loglogistic",
+    # The Stan-side family name is "hbsae_loglogistic" (rather than just
+    # "loglogistic") to avoid a symbol collision with Stan's built-in
+    # `loglogistic_lpdf` (Stan >= 2.29).  brms will generate
+    # `target += hbsae_loglogistic_lpdf(...)` from the name we pass here.
+    # The user-facing R-side names dloglogistic(), ploglogistic(),
+    # qloglogistic(), and rloglogistic() are unaffected because they
+    # live in the R namespace and not the Stan namespace.
+    name              = "hbsae_loglogistic",
     dpars             = c("mu", "beta"),
     links             = c("log", "log"),
     lb                = c(0,    0),

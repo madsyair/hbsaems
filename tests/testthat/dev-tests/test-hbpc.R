@@ -12,80 +12,6 @@ sample_data <- data_fhnorm
 fit <- suppressWarnings(hbm(brms::bf(y ~ x1 + x2), data = sample_data))
 
 # hbpc
-test_that("hbpc returns expected structure and classes", {
-  .dev_skip()
-  
-  result <- suppressWarnings(hbpc(model = fit, data = sample_data, response_var = "y"))
-  
-  expect_s3_class(result, "hbpc_results")
-  expect_named(result, c("prior_summary", "prior_predictive_plot", "prior_draws_summary"))
-  expect_s3_class(result$prior_predictive_plot, "gg")
-})
-
-test_that("hbpc automatically detects response variable and data", {
-  .dev_skip()
-  
-  result_auto <- suppressWarnings(hbpc(model = fit))
-  
-  expect_s3_class(result_auto$prior_predictive_plot, "gg")
-  expect_true(is.data.frame(result_auto$prior_summary) || is.list(result_auto$prior_summary))
-})
-
-
-test_that("hbpc throws error for non-brms/hbmfit model", {
-  .dev_skip()
-  
-  expect_error(
-    hbpc(model = lm(y ~ x1, data = sample_data), data = sample_data, response_var = "y"),
-    "Input model must be a brmsfit or hbmfit object."
-  )
-})
-
-test_that("hbpc throws error for invalid response variable name", {
-  .dev_skip()
-  
-  expect_error(
-    hbpc(model = fit, data = sample_data, response_var = "not_y"),
-    "not found in the data"
-  )
-})
-
-test_that("hbpc gives warning when model is not sampling and not prior-only", {
-  .dev_skip()
-  
-  dummy_model <- list(
-    formula = brms::bf(y ~ x1 + x2),
-    algorithm = "meanfield",
-    sample_prior = "no",
-    data = sample_data[, c("x1", "x2")], # data tanpa 'y'
-    version = "2.20.0"
-  )
-  class(dummy_model) <- "brmsfit"
-  
-  expect_warning(
-    try(hbpc(dummy_model), silent = TRUE),
-    "For meaningful prior predictive checks"
-  )
-})
-
-
-test_that("hbpc stops when response_var cannot be determined from model formula", {
-  .dev_skip()
-  
-  dummy_model <- list(
-    formula = brms::bf(~ x1 + x2),
-    algorithm = "sampling",          
-    sample_prior = "no",             
-    data = sample_data                
-  )
-  class(dummy_model) <- "brmsfit"
-  
-  expect_error(
-    hbpc(dummy_model),
-    "The 'response_var' argument is required and could not be automatically determined"
-  )
-})
-
 test_that("hbpc stops when automatically determined response variable not found in data", {
   .dev_skip()
   
@@ -113,9 +39,11 @@ test_that("hbpc stops when automatically determined response variable not found 
   )
 })
 
+
+# === Migrated back from main tests (calls brms::brm directly) ===
 test_that("hbpc handles all-NA y values for prior predictive check", {
   .dev_skip()
-  
+  testthat::skip_if_not_installed("brms")
   library(ggplot2)
   
   # Data dummy dengan semua nilai y = NA
@@ -148,8 +76,75 @@ test_that("hbpc handles all-NA y values for prior predictive check", {
 })
 
 
+# === Re-migrated from main (require real fits) ===
+test_that("hbpc returns expected structure and classes", {
+  .dev_skip()
+  testthat::skip_if_not_installed("brms")
+  result <- suppressWarnings(hbpc(model = fit, data = sample_data, response_var = "y"))
+  
+  expect_s3_class(result, "hbpc_results")
+  expect_named(result, c("prior_summary", "prior_predictive_plot", "prior_draws_summary"))
+  expect_s3_class(result$prior_predictive_plot, "gg")
+})
 
+test_that("hbpc automatically detects response variable and data", {
+  .dev_skip()
+  testthat::skip_if_not_installed("brms")
+  result_auto <- suppressWarnings(hbpc(model = fit))
+  
+  expect_s3_class(result_auto$prior_predictive_plot, "gg")
+  expect_true(is.data.frame(result_auto$prior_summary) || is.list(result_auto$prior_summary))
+})
 
+test_that("hbpc throws error for non-brms/hbmfit model", {
+  .dev_skip()
+  testthat::skip_if_not_installed("brms")
+  expect_error(
+    hbpc(model = lm(y ~ x1, data = sample_data), data = sample_data, response_var = "y"),
+    "Input model must be a brmsfit or hbmfit object."
+  )
+})
 
+test_that("hbpc throws error for invalid response variable name", {
+  .dev_skip()
+  testthat::skip_if_not_installed("brms")
+  expect_error(
+    hbpc(model = fit, data = sample_data, response_var = "not_y"),
+    "not found in the data"
+  )
+})
 
+test_that("hbpc gives warning when model is not sampling and not prior-only", {
+  .dev_skip()
+  testthat::skip_if_not_installed("brms")
+  dummy_model <- list(
+    formula = brms::bf(y ~ x1 + x2),
+    algorithm = "meanfield",
+    sample_prior = "no",
+    data = sample_data[, c("x1", "x2")], # data tanpa 'y'
+    version = "2.20.0"
+  )
+  class(dummy_model) <- "brmsfit"
+  
+  expect_warning(
+    try(hbpc(dummy_model), silent = TRUE),
+    "For meaningful prior predictive checks"
+  )
+})
 
+test_that("hbpc stops when response_var cannot be determined from model formula", {
+  .dev_skip()
+  testthat::skip_if_not_installed("brms")
+  dummy_model <- list(
+    formula = brms::bf(~ x1 + x2),
+    algorithm = "sampling",          
+    sample_prior = "no",             
+    data = sample_data                
+  )
+  class(dummy_model) <- "brmsfit"
+  
+  expect_error(
+    hbpc(dummy_model),
+    "The 'response_var' argument is required and could not be automatically determined"
+  )
+})

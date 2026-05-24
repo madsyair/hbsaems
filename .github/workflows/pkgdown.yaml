@@ -1,14 +1,15 @@
 # pkgdown.yaml -- build and deploy the package website to GitHub Pages.
 #
+# This workflow renders both the CRAN vignette (vignettes/*.Rmd) AND
+# the pkgdown-only articles (vignettes/articles/*.Rmd) into a single
+# documentation site, then publishes it to the gh-pages branch.
+#
 # Reference workflow from the r-lib/actions examples:
 # https://github.com/r-lib/actions/blob/v2-branch/examples/pkgdown.yaml
 #
-# This is the modern official approach using pkgdown::deploy_to_branch()
-# which handles authentication via GITHUB_TOKEN automatically (no need
-# for personal access tokens or third-party deploy actions).
-#
 # The site is deployed to the gh-pages branch and served from
 # https://madsyair.github.io/hbsaems/
+
 on:
   push:
     branches: [main, master]
@@ -20,41 +21,112 @@ on:
 
 name: pkgdown
 
+# Newer permissions model: minimal grants per job.
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
   pkgdown:
     runs-on: ubuntu-latest
-    # Only restrict concurrency for non-PR jobs
+    # Concurrency guard: cancel in-progress runs when a newer commit
+    # arrives on the same ref (saves CI minutes on rapid pushes).
     concurrency:
-      group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
+      group: pkgdown-${{ github.event_name }}-${{ github.ref }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-
-    permissions:
-      contents: write
+      # Disable interactive prompts during install.
+      R_KEEP_PKG_SOURCE: yes
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: r-lib/actions/setup-pandoc@v2
+      - name: Setup pandoc
+        uses: r-lib/actions/setup-pandoc@v2
 
-      - uses: r-lib/actions/setup-r@v2
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
 
-      - uses: r-lib/actions/setup-r-dependencies@v2
+      - name: Setup R dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, local::.
+          extra-packages: |
+            any::pkgdown
+            any::rmarkdown
+            any::knitr
+            local::.
           needs: website
 
-      - name: Build site
-        run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
+      # Optional: lint the pkgdown config before attempting the build,
+      # so a typo gives a fast clear error rather than a confusing
+      # half-built site.
+      - name: Validate pkgdown config
+        run: |
+          if (file.exists("_pkgdown.yml")) {
+            cat("Loading _pkgdown.yml...\n")
+            cfg <- yaml::read_yaml("_pkgdown.yml")
+            cat("OK -- config parses.\n")
+            cat("  navbar entries  :", length(cfg$navbar$components), "\n")
+            cat("  reference groups:", length(cfg$reference), "\n")
+          }
         shell: Rscript {0}
 
-      - name: Deploy to GitHub pages 🚀
+      - name: Build site
+        run: |
+          # build_site_github_pages does two extras over build_site:
+          #   (a) adds .nojekyll to suppress Jekyll processing
+          #   (b) configures CNAME if present
+          # new_process = FALSE keeps everything in the current R
+          # session, which is faster and shows clearer errors.
+          # install = FALSE relies on local::. above.
+          pkgdown::build_site_github_pages(
+            new_process = FALSE,
+            install     = FALSE
+          )
+        shell: Rscript {0}
+
+      - name: Verify articles were rendered
+        run: |
+          # Defensive: make sure both the CRAN vignette AND the
+          # pkgdown-only articles are in the final docs/ output.
+          # If vignettes/articles/ ever stops being picked up we want
+          # to fail fast rather than silently ship an incomplete site.
+          required <- c(
+            "complete-workflow.html",
+            "ast-formula-manipulation.html",
+            "hbsaems-modelling.html",
+            "advanced-features.html"
+          )
+          missing <- required[!file.exists(file.path("docs/articles", required))]
+          if (length(missing) > 0L) {
+            stop("Missing rendered articles: ",
+                 paste(missing, collapse = ", "),
+                 call. = FALSE)
+          }
+          cat("OK -- all required articles rendered.\n")
+        shell: Rscript {0}
+
+      - name: Deploy to GitHub Pages
         if: github.event_name != 'pull_request'
-        uses: JamesIves/github-pages-deploy-action@v4.5.0
+        uses: JamesIves/github-pages-deploy-action@v4.6.4
         with:
           clean: false
           branch: gh-pages
           folder: docs
+          # The default token (GITHUB_TOKEN) is sufficient.
+
+      # Upload the rendered site as an artifact for PRs, so reviewers
+      # can download and inspect the proposed site without merging.
+      - name: Upload site as artifact (PRs only)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pkgdown-site-pr-${{ github.event.number }}
+          path: docs
+          retention-days: 14

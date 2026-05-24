@@ -11,6 +11,7 @@ hbm_flex(
   data,
   addition_var = NULL,
   area_var = NULL,
+  area_re_structure = c("nested", "crossed"),
   spatial_var = NULL,
   spatial_model = NULL,
   car_type = NULL,
@@ -18,6 +19,7 @@ hbm_flex(
   M = NULL,
   prior = NULL,
   fixed_params = NULL,
+  sampling_variance = NULL,
   prior_type = "default",
   hs_df = 1,
   hs_df_global = 1,
@@ -72,9 +74,28 @@ variables; corresponds to area-level covariates in SAE literature.}
 variable (e.g.\ trials for binomial).  Required when the family spec
 has \code{has_addition_term = TRUE}.}
 
-\item{area_var}{Character or \code{NULL}.  Name of the column in
-\code{data} identifying the areas; if supplied, adds
-\code{(1 | area_var)} as an IID random intercept (Fay-Herriot).}
+\item{area_var}{Character vector or \code{NULL}.  Name(s) of the
+column(s) in \code{data} identifying the areas.  Three usage modes:
+\itemize{
+  \item Length 1 (default behaviour): a single area-level random
+        intercept \code{(1 | area_var)}.
+  \item Length \eqn{\geq} 2 with \code{area_re_structure = "nested"}
+        (default): a hierarchy of areas given from the
+        \emph{highest} to the \emph{lowest} level, e.g.
+        \code{c("province", "regency")} yields
+        \code{(1 | province / regency)} which brms expands to
+        \code{(1 | province) + (1 | province:regency)}.  This is
+        the canonical multi-stage SAE setup.
+  \item Length \eqn{\geq} 2 with \code{area_re_structure = "crossed"}:
+        non-nested levels, e.g.\ adding separate effects for
+        \code{(1 | province) + (1 | urbanrural)}.  Use only when
+        the levels are truly crossed rather than hierarchically
+        nested.
+}}
+
+\item{area_re_structure}{Either \code{"nested"} (default) or
+\code{"crossed"}.  Only consulted when \code{area_var} has length
+\eqn{\geq} 2.  See above.}
 
 \item{spatial_var, spatial_model, car_type, sar_type, M}{Spatial
 random-effect arguments forwarded to \code{\link{hbm}}.  See
@@ -89,6 +110,17 @@ automatically cascaded to the corresponding parameter classes
 parameters to known values.  See \code{\link{hbm}} for the spec
 format.  Allows power-user access to the generic fixed-parameter
 machinery (works with custom families too).}
+
+\item{sampling_variance}{Optional character.  Name of a column in
+\code{data} containing the \strong{known} sampling variance
+\eqn{D_i} for each area (the Fay-Herriot sugar).  When supplied,
+\eqn{\sigma_i = \sqrt{D_i}} is pinned via offset.  Forwarded to
+\code{\link{hbm}}, where a family-compatibility check ensures the
+family exposes a residual SD parameter named \code{sigma}
+(gaussian, lognormal, student, skew_normal, exgaussian,
+asym_laplace).  Incompatible families (beta, binomial, poisson,
+etc.) raise an explicit error pointing at the family-specific
+alternative.  See \code{?hbm} for details.}
 
 \item{nonlinear}{Character vector of variable names to include as
 smooth/nonlinear terms (rather than linear).  Variables listed here

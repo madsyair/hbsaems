@@ -5,6 +5,7 @@
 # =============================================================================
 
 test_that("hbm() returns an hbmfit and S3 methods work", {
+  .dev_skip()
   skip_if_no_stan()
 
   set.seed(123)
@@ -44,6 +45,7 @@ test_that("hbm() returns an hbmfit and S3 methods work", {
 
 
 test_that("convergence_check returns hbcc_results with rhat_ess", {
+  .dev_skip()
   skip_if_no_stan()
 
   set.seed(123)
@@ -67,6 +69,7 @@ test_that("convergence_check returns hbcc_results with rhat_ess", {
 
 
 test_that("sae_predict returns hbsae_results with valid columns", {
+  .dev_skip()
   skip_if_no_stan()
 
   set.seed(123)

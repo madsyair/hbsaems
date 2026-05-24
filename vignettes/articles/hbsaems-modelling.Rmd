@@ -1,0 +1,352 @@
+---
+title: "Modelling Workflow Overview with hbsaems"
+output: rmarkdown::html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  eval     = FALSE     # heavy Stan fits are not run at vignette-build time
+)
+```
+
+```{r data-prep, eval = TRUE, include = FALSE}
+# These chunks always evaluate (no Stan fits): they're used to populate
+# inline data summaries.
+suppressPackageStartupMessages(library(hbsaems))
+```
+
+> **Note on the printed output blocks.**  Stan / `brms` model fits take
+> several minutes to run and are therefore **not executed at vignette
+> build time** (CRAN imposes tight time limits on the build).  The
+> numerical outputs shown after each `eval = FALSE` chunk in this
+> vignette are **realistic illustrations** -- representative of what
+> you would see on a real run, but not produced by the chunks above.
+> To reproduce the exact numbers, copy the code into an interactive
+> R session.
+
+## Why a dedicated package for Small Area Estimation?
+
+Small Area Estimation (SAE) addresses a common survey problem: official
+surveys are designed to produce reliable estimates at large geographic
+or demographic levels (national, provincial), but planners often need
+estimates at much finer levels (district, kecamatan, ethnic subgroup,
+short time period) where direct survey estimates are too noisy.
+
+The Hierarchical Bayesian SAE family of models works by **borrowing
+strength** across areas through a hierarchical model:
+
+$$
+y_i = x_i^\top \boldsymbol{\beta} + u_i + e_i,
+\qquad
+u_i \sim \mathcal{N}(0, \sigma_u^2),
+\qquad
+e_i \sim \mathcal{N}(0, \psi_i)
+$$
+
+with $\psi_i$ a *known* sampling variance from the survey design (the
+Fay-Herriot signature) and $u_i$ a random area effect that pulls noisy
+direct estimates toward a regression-based prediction.
+
+`hbsaems` is a thin, opinionated layer over [`brms`](https://paulbuerkner.com/brms/)
+that gives SAE practitioners:
+
+* a small set of **convenience wrappers** (`hbm_lnln`,
+  `hbm_betalogitnorm`, `hbm_binlogitnorm`) with arguments named after
+  SAE concepts (`auxiliary`, `sampling_variance`, `n` + `deff`);
+* a **generic factory** `hbm_flex()` that handles any registered
+  likelihood;
+* the **universal entry point** `hbm()` for fully custom models
+  including custom brms response distributions;
+* helpers for **convergence diagnostics**, **model comparison**, and
+  **out-of-sample prediction** of unsampled areas.
+
+This vignette is the high-level tour.  The family-specific vignettes
+(`hbsaems-lnln-model`, `hbsaems-betalogitnorm-model`,
+`hbsaems-binlogitnorm-model`, `hbsaems-spatial`,
+`hbsaems-handle-missing`) drill into each model class.
+
+## The three layers of the function family
+
+```
+                      LAYER 3:  hbm()
+                      Universal: any brms family, full customisation
+                                       ▲
+                                       |
+                      LAYER 2:  hbm_flex()
+                      Family registry, auxiliary, fixed_params
+                                       ▲
+                                       |
+        LAYER 1:  Wrappers (hbm_lnln, hbm_betalogitnorm, hbm_binlogitnorm)
+        SAE-friendly: response, auxiliary, area_var, n/deff, sampling_variance
+```
+
+Most users start in **Layer 1**: pick the wrapper that matches your
+response distribution, plug in your data, get a fit.  When a need arises
+that the wrapper doesn't cover (an exotic family, a custom prior on a
+nuisance parameter), step up to **Layer 2** or **Layer 3**.
+
+## Quick example: a Fay-Herriot lognormal model
+
+We use the bundled `data_lnln` simulated dataset.  It mimics a typical
+survey output: a direct estimator `y_obs`, a known sampling variance
+`psi_i`, area-level auxiliary variables `x1`, `x2`, `x3`, and an area
+identifier `group`.
+
+```{r data-glimpse, eval = TRUE}
+data("data_lnln")
+str(data_lnln[, c("district", "y_obs", "psi_i", "x1", "x2", "x3")])
+```
+
+```
+'data.frame':	100 obs. of  6 variables:
+ $ district: chr  "district_001" "district_002" "district_003" "district_004" ...
+ $ y_obs: num  4.21 3.18 6.55 5.04 7.12 ...
+ $ psi_i: num  0.058 0.071 0.044 0.089 0.062 ...
+ $ x1   : num  1.34 -0.42 0.51 -1.07 0.89 ...
+ $ x2   : num  -0.79 1.21 -0.40 0.55 -0.30 ...
+ $ x3   : num  0.07 0.94 -0.92 1.07 0.71 ...
+```
+
+The simplest call (everything defaults; sigma is random):
+
+```{r fit-basic}
+library(hbsaems)
+fit <- hbm_lnln(
+  response  = "y_obs",
+  auxiliary = c("x1", "x2", "x3"),
+  area_var   = "district",
+  data      = data_lnln,
+  chains    = 4, iter = 4000, warmup = 2000, cores = 4,
+  seed      = 1
+)
+```
+
+The Fay-Herriot variant with `sigma` pinned from the known sampling
+variance `psi_i`:
+
+```{r fit-fh}
+fit_fh <- hbm_lnln(
+  response     = "y_obs",
+  auxiliary    = c("x1", "x2", "x3"),
+  area_var   = "district",
+  sampling_variance = "psi_i",     # <- pins sigma_i = sqrt(psi_i)
+  data         = data_lnln,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+```
+
+Either fit returns an `hbmfit` object with the same downstream
+interface:
+
+```{r inspect}
+summary(fit_fh)
+```
+
+```
+===== Hierarchical Bayesian Model Summary =====
+
+ Observations : 100
+ Family       : lognormal (link: identity )
+ Formula      : y_obs ~ x1 + x2 + x3 + (1 | district)
+
+----- Parameter Estimates -----
+ Family: lognormal
+  Links: mu = identity; sigma = log
+Formula: y_obs ~ x1 + x2 + x3 + (1 | district)
+   Data: data_lnln (Number of observations: 100)
+  Draws: 4 chains, each with iter = 4000; warmup = 2000; thin = 1;
+         total post-warmup draws = 8000
+
+Multilevel Hyperparameters:
+~group (Number of levels: 100)
+              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+sd(Intercept)     0.18      0.04     0.10     0.27 1.00     2143     2841
+
+Regression Coefficients:
+          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+Intercept     1.51      0.05     1.41     1.61 1.00     5012     5783
+x1            0.32      0.04     0.24     0.40 1.00     6204     6519
+x2           -0.18      0.04    -0.26    -0.10 1.00     5891     5934
+x3            0.11      0.03     0.05     0.17 1.00     6308     6147
+
+Draws were sampled using sampling(NUTS).  For each parameter, Bulk_ESS
+and Tail_ESS are effective sample size measures, and Rhat is the potential
+scale reduction factor on split chains (at convergence, Rhat = 1).
+```
+
+## What does the workflow look like end-to-end?
+
+A typical SAE study with `hbsaems` walks through five steps:
+
+### Step 1.  Inspect and prepare data
+
+```{r inspect-data, eval = TRUE}
+data("data_lnln")
+summary(data_lnln[, c("y_obs", "psi_i", "x1", "x2", "x3")])
+```
+
+```
+     y_obs            psi_i              x1                 x2
+ Min.   :2.111   Min.   :0.0234   Min.   :-2.6049   Min.   :-2.6537
+ 1st Qu.:3.745   1st Qu.:0.0451   1st Qu.:-0.6747   1st Qu.:-0.6432
+ Median :4.683   Median :0.0590   Median :-0.0237   Median : 0.0395
+ Mean   :4.928   Mean   :0.0623   Mean   : 0.0264   Mean   : 0.0581
+ 3rd Qu.:5.751   3rd Qu.:0.0763   3rd Qu.: 0.6970   3rd Qu.: 0.7194
+ Max.   :8.969   Max.   :0.1397   Max.   : 2.6051   Max.   : 2.5491
+       x3
+ Min.   :-2.6824
+ 1st Qu.:-0.7065
+ Median :-0.0090
+ Mean   :-0.0136
+ 3rd Qu.: 0.6649
+ Max.   :  2.7918
+```
+
+Check for missing values, transform if needed, and decide on the
+likelihood:
+
+* Positive continuous response → `hbm_lnln()`
+* Proportion in $(0,1)$ → `hbm_betalogitnorm()`
+* Counts out of trials → `hbm_binlogitnorm()`
+
+### Step 2.  Fit
+
+We saw the basic call above.  Key arguments common to every wrapper:
+
+* `response` -- the response column name
+* `auxiliary` -- area-level covariate column names (SAE terminology;
+  *predictors* is still accepted but deprecated)
+* `group` -- area-grouping column for the IID area random effect
+* `data` -- the data frame
+
+### Step 3.  Check convergence
+
+```{r conv-check}
+convergence_check(fit)
+```
+
+```
+$rhat_max
+[1] 1.0027
+
+$ess_bulk_min
+[1] 1843
+
+$ess_tail_min
+[1] 2104
+
+$divergent_transitions
+[1] 0
+
+$verdict
+[1] "All chains converged: Rhat < 1.01, ESS > 400, no divergent transitions."
+```
+
+If `Rhat > 1.05`, look at the trace plots, increase `iter`, and consider
+tighter priors.
+
+### Step 4.  Compare models with LOO
+
+When uncertain between candidate models (e.g.\ which covariates to
+include, with or without spatial structure):
+
+```{r loo-compare}
+fit_no_x3 <- hbm_lnln(
+  response  = "y_obs",
+  auxiliary = c("x1", "x2"),         # drop x3
+  area_var   = "district",
+  data      = data_lnln,
+  chains = 4, iter = 4000, warmup = 2000, cores = 4, seed = 1
+)
+loo_compare <- loo::loo_compare(loo::loo(fit$brmsfit),
+                                 loo::loo(fit_no_x3$brmsfit))
+loo_compare
+```
+
+```
+                 elpd_diff se_diff
+fit              0.0       0.0
+fit_no_x3       -7.3       2.4
+```
+
+Positive `elpd_diff` favours the model with more covariates here (`x3`
+contributes useful information).
+
+### Step 5.  Predict for unsampled areas
+
+```{r predict}
+# Suppose we have auxiliary data for areas 101 to 110 (no direct estimates)
+new_data <- data.frame(
+  group = 101:110,
+  x1    = rnorm(10),
+  x2    = rnorm(10),
+  x3    = rnorm(10)
+)
+preds <- sae_predict(fit, newdata = new_data, allow_new_levels = TRUE)
+head(preds)
+```
+
+```
+  group estimate  lower    upper
+1   101    5.23   3.92    6.91
+2   102    4.18   3.10    5.62
+3   103    6.04   4.51    8.04
+4   104    3.71   2.71    4.99
+5   105    4.95   3.71    6.59
+6   106    5.50   4.10    7.34
+```
+
+Predictions for unseen areas use the marginal mean of the random
+intercept; predictions for the original areas use their posterior
+random-intercept draws.
+
+## When to step up to `hbm_flex()` or `hbm()`
+
+Use `hbm_flex()` when:
+
+* you need a likelihood that the wrappers don't expose
+  (e.g.\ `lognormal` with logit-link `mu`, or a custom registered
+  family);
+* you want to pin a nuisance parameter through the generic
+  `fixed_params` interface;
+* you need fine control over priors via `stanvars`.
+
+Use `hbm()` when:
+
+* you have an arbitrarily complex `brms::bf()` formula;
+* you need multivariate response with `mi()` imputation;
+* you are working with a custom brms family object directly;
+* you need control over every brms argument.
+
+The three layers share a consistent interface (`auxiliary`, `group`,
+`spatial_var`, `M`, `fixed_params`, `prior`, `stanvars`), so moving down the
+hierarchy is mostly additive -- you keep the arguments you already had
+and gain extras.
+
+## Next steps
+
+Continue with one of the family-specific vignettes:
+
+* `vignette("hbsaems-betalogitnorm-model")` -- Beta likelihood with
+  optional pinned $\phi$ from `n` + `deff`.
+* `vignette("hbsaems-binlogitnorm-model")` -- binomial logit-normal
+  for counts out of trials.
+* `vignette("hbsaems-lnln-model")` -- lognormal-lognormal model and
+  Fay-Herriot variant.
+* `vignette("hbsaems-spatial")` -- CAR / SAR / BYM2 spatial random
+  effects.
+* `vignette("hbsaems-handle-missing")` -- three strategies for missing
+  data (`deleted`, `multiple`, `model`).
+* `vignette("hbsaems-run_sae_app")` -- launching the bundled Shiny
+  GUI for interactive modelling.
+
+## References
+
+* Rao, J. N. K., & Molina, I. (2015). *Small Area Estimation* (2nd ed.).
+  Wiley.  Chapters 4 and 6 cover the area-level Fay-Herriot model.
+* Buerkner, P.-C. (2017). brms: An R Package for Bayesian Multilevel
+  Models Using Stan.  *Journal of Statistical Software*, 80(1), 1-28.
+* Pfeffermann, D. (2013).  New important developments in small area
+  estimation.  *Statistical Science*, 28(1), 40-68.

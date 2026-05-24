@@ -8,6 +8,7 @@ sae_benchmark(
   predictions,
   target,
   weights = NULL,
+  target_type = c("total", "mean"),
   method = c("ratio", "difference", "raking"),
   groups = NULL,
   posterior = NULL,
@@ -26,8 +27,23 @@ sae_benchmark(
 group; see \code{groups}).}
 
 \item{weights}{Optional numeric vector of length equal to the number
-of areas in \code{predictions}.  Typical choices are population
-sizes or sampling weights.  Defaults to equal weights (\code{1 / n}).}
+of areas in \code{predictions}.  In Official-Statistics practice
+this is normally the population size \eqn{N_i} of each area, so
+that \eqn{\sum_i w_i \hat{\theta}_i} is the implied population
+total.  When \code{NULL}, a safe default is chosen based on
+\code{target_type}; an informational message is emitted so users
+can see exactly which weighting was applied.}
+
+\item{target_type}{Character.  Either \code{"total"} (default) or
+\code{"mean"}.  Consulted ONLY when \code{weights = NULL} to choose
+a safe default: \code{"total"} sets \code{weights = rep(1, n)} so
+that \eqn{\sum_i w_i \hat{\theta}_i = \sum_i \hat{\theta}_i};
+\code{"mean"} sets \code{weights = rep(1/n, n)} so that the
+weighted sum equals the mean.  Ignored when \code{weights} is
+supplied.  \strong{Always prefer to pass explicit \code{weights}
+(typically the population size \eqn{N_i}) in production code:}
+the default heuristic is provided only to avoid silent scale
+corruption when the user forgets the argument.}
 
 \item{method}{Character.  One of:
 \describe{

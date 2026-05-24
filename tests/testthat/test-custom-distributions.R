@@ -371,4 +371,9 @@ test_that("shifted_loglogistic: stable across a wide range of xi", {
 })
 
 
-#
+# ==========================================================================
+# NOTE: Stan-side cross-checks (rstan::expose_stan_functions) live under
+#   tests/testthat/dev-tests/test-stan-loglogistic-crosscheck.R
+# They are skipped on CRAN because compiling a Stan model costs 10-30+
+# seconds and CRAN mandates per-file run-time below 60 seconds.
+# ==========================================================================

@@ -10,6 +10,7 @@ hbm_binlogitnorm(
   auxiliary = NULL,
   data,
   area_var = NULL,
+  area_re_structure = c("nested", "crossed"),
   spatial_var = NULL,
   spatial_model = NULL,
   car_type = NULL,
@@ -35,10 +36,14 @@ names; corresponds to area-level covariates in SAE literature
 
 \item{data}{A \code{data.frame}.}
 
-\item{area_var}{Optional character.  Name of the column in \code{data}
-identifying the small area / domain.  When supplied, an IID
-area-level random effect \code{(1 | area_var)} is added to the
-linear predictor.  Default: \code{NULL}.}
+\item{area_var}{Optional character vector.  Name(s) of column(s) in
+\code{data} identifying the small area / domain.  Length 1 fits an
+IID area-level random intercept \code{(1 | area_var)}; length
+\eqn{\geq} 2 supports hierarchical areas -- see \code{?hbm_flex}
+for the nested vs.\ crossed structures.  Default: \code{NULL}.}
+
+\item{area_re_structure}{Either \code{"nested"} (default) or
+\code{"crossed"}; controls how multiple area columns combine.}
 
 \item{spatial_var}{Optional character.  Name of a column identifying
 the spatial cluster.  Must be supplied together with

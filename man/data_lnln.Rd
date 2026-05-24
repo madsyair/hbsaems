@@ -8,7 +8,7 @@
 A data frame with 100 rows and 13 variables:
 \describe{
   \item{\code{district}}{District identifier (\code{"district_001"} ..
-    \code{"district_100"}).}
+    \code{"district_100"}) -- the 100 small areas to estimate.}
   \item{\code{x1}, \code{x2}, \code{x3}}{Auxiliary covariates.}
   \item{\code{u_true}}{True area-level random effect (log scale).}
   \item{\code{teta_true}}{True linear predictor (log scale).}
@@ -19,7 +19,8 @@ A data frame with 100 rows and 13 variables:
   \item{\code{y_log_obs}}{Observed value on the log scale.}
   \item{\code{psi_i}}{Sampling variance on the log scale.}
   \item{\code{regency}}{Regency identifier (\code{"regency_01"} ..
-    \code{"regency_05"}) -- spatial cluster level.  Pair with
+    \code{"regency_05"}) -- coarse spatial-cluster level (5 regencies
+    each containing 20 districts).  Pair with
     \code{adjacency_matrix_car_regency}.}
 }
 }

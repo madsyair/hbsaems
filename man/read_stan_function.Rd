@@ -20,7 +20,7 @@ a thin wrapper around \code{readLines()} that resolves the package path
 once and validates that the file exists.
 }
 \examples{
-code <- read_stan_function("loglogistic")
+code <- read_stan_function("hbsae_loglogistic")
 cat(code)
 
 }

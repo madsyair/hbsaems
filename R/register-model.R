@@ -96,6 +96,15 @@ register_hbsae_model <- function(key,
   # -- Argument validation ---------------------------------------------------
   if (!is.character(key)        || length(key) != 1L)
     stop("'key' must be a single character string.", call. = FALSE)
+  if (!nzchar(key))
+    stop("'key' must not be an empty string.", call. = FALSE)
+  # The registry stores specs in an environment, so `key` must be a valid
+  # R identifier (or at least syntactically usable via backticks).  We
+  # accept anything that make.names() returns unchanged.  This catches
+  # whitespace, leading digits, and most punctuation.
+  if (!identical(make.names(key), key))
+    stop("'key' must be a valid R identifier (no spaces, special chars, ",
+         "or leading digits).  Got: ", shQuote(key), call. = FALSE)
   if (!is.character(family)     || length(family) != 1L)
     stop("'family' must be a single character string.", call. = FALSE)
   if (!is.character(link)       || length(link) != 1L)
@@ -112,10 +121,33 @@ register_hbsae_model <- function(key,
          call. = FALSE)
   if (!is.function(response_check))
     stop("'response_check' must be a function.", call. = FALSE)
+  if (!is.null(response_check_msg) &&
+      (!is.character(response_check_msg) ||
+       length(response_check_msg) != 1L))
+    stop("'response_check_msg' must be NULL or a single character string.",
+         call. = FALSE)
   if (!is.function(default_priors))
     stop("'default_priors' must be a function.", call. = FALSE)
   if (!is.null(aux_param_hyperprior) && !is.function(aux_param_hyperprior))
     stop("'aux_param_hyperprior' must be a function or NULL.", call. = FALSE)
+
+  # -- Built-in family override warning --------------------------------------
+  # Skip this check when called from .register_builtin_custom_families()
+  # during package load.
+  if (!isTRUE(getOption("hbsaems.in_builtin_registration", default = FALSE))) {
+    builtin_keys <- .builtin_keys()
+    if (key %in% builtin_keys) {
+      if (!overwrite)
+        stop("Model '", key, "' is a built-in hbsaems family.  Refusing to ",
+             "overwrite without `overwrite = TRUE`.  Be aware that ",
+             "overriding a built-in loses its curated defaults.",
+             call. = FALSE)
+      warning("Overwriting built-in family '", key, "'.  This loses the ",
+              "package-curated defaults (response validation, link, ",
+              "priors); proceed only if you know what you're doing.",
+              call. = FALSE)
+    }
+  }
 
   # -- Conflict check --------------------------------------------------------
   if (exists(key, envir = .hbsae_model_env, inherits = FALSE) &&

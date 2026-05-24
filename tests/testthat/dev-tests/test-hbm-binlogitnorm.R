@@ -21,90 +21,6 @@ test_that("Function returns a model object", {
   expect_named(model_logit, c("model", "handle_missing", "data"), ignore.order = TRUE)
 })
 
-# Variable not exixt
-test_that("Function throws error when response is missing", {
-  .dev_skip()
-  
-  expect_error(hbm_binlogitnorm(response = "z_dir", 
-                               trials = "n", 
-                               predictors = c("x1", "x2", "x3"),
-                               data = data),
-               "Response variable not found in 'data'.")
-})
-
-test_that("Function throws error when predictors are missing", {
-  .dev_skip()
-  
-  expect_error(hbm_binlogitnorm(response = "y", 
-                                trials = "n", 
-                                predictors = c("x1", "x2", "x4"),
-                               data = data),
-               "One or more predictor variables not found in 'data'.")
-})
-
-test_that("Function throws error when trials are missing", {
-  .dev_skip()
-  
-  expect_error(hbm_binlogitnorm(response = "y", 
-                                trials = "m_i", 
-                                predictors = c("x1", "x2", "x3"),
-                               data = data),
-               "Trials not found in 'data'.")
-})
-
-# Validate variable
-test_that("Function throws error when response contains a negative integer.", {
-  .dev_skip()
-  
-  data_wrong1 <- data
-  data_wrong1$y[1] <- -1
-  expect_error(hbm_binlogitnorm(response = "y", 
-                                trials = "n", 
-                                predictors = c("x1", "x2", "x3"),
-                                data = data_wrong1),
-               "Response must be a non-negative integer.")
-})
-
-test_that("Function throws error when response is greater than the number of trials.", {
-  .dev_skip()
-  
-  data_wrong2 <- data
-  data_wrong2$y[1] <- 101
-  data_wrong2$n[1] <- 100
-  expect_error(hbm_binlogitnorm(response = "y", 
-                                trials = "n", 
-                                predictors = c("x1", "x2", "x3"), 
-                                data = data_wrong2),
-               "Response cannot be greater than the number of trials.")
-})
-
-test_that("Function throws error when number of trials is not a positive integer.", {
-  .dev_skip()
-  
-  data_wrong3 <- data
-  data_wrong3$n[1] <- -1
-  data_wrong3$y[1] <- 0  # Ensure response <= trials
-  expect_error(hbm_binlogitnorm(response = "y", 
-                                trials = "n", 
-                                predictors = c("x1", "x2", "x3"),
-                                data = data_wrong3),
-               "Number of trials must be a positive integer.")
-})
-
-test_that("Function throws error when trials contain NA", {
-  .dev_skip()
-  
-  data_wrong_na <- data
-  data_wrong_na$n[1] <- NA
-  expect_error(hbm_binlogitnorm(response = "y", 
-                                trials = "n", 
-                                predictors = c("x1", "x2", "x3"), 
-                                data = data_wrong_na),
-               "Trials contains NA values. The model cannot proceed.")
-})
-
-
-# Validate prior
 test_that("Function accepts valid priors", {
   .dev_skip()
   
@@ -120,20 +36,6 @@ test_that("Function accepts valid priors", {
   expect_s3_class(model_logit, "hbmfit")
 })
 
-test_that("Function throws error for invalid prior", {
-  .dev_skip()
-  
-  expect_error(
-    hbm_binlogitnorm(response = "y", 
-                     trials = "n", 
-                     predictors = c("x1", "x2", "x3"),
-                     data = data,
-                     prior = "invalid"),
-    "Argument 'prior' must be a 'brmsprior' object."
-  )
-})
-
-#Validate random effects
 test_that("Function supports random effects", {
   .dev_skip()
   
@@ -147,18 +49,6 @@ test_that("Function supports random effects", {
   })
 })
 
-test_that("Function throws error for invalid random effect variable", {
-  .dev_skip()
-  
-  expect_error(hbm_binlogitnorm(response = "y", 
-                                trials = "n", 
-                                predictors = c("x1", "x2", "x3"),
-                                group = "invalid",
-                                data = data),
-               "Variable 'invalid' not found in the data." )
-})
-
-# Validate spatial effect
 test_that("Function supports spatial random effects", {
   .dev_skip()
   
@@ -175,21 +65,6 @@ test_that("Function supports spatial random effects", {
   })
 })
 
-test_that("Function throws error for invalid spatial random effect", {
-  .dev_skip()
-  
-  expect_error(hbm_binlogitnorm(response = "y", 
-                                trials = "n", 
-                                predictors = c("x1", "x2", "x3"),
-                                group = "group",
-                                sre = "invalid",
-                                sre_type = "car",
-                                M = adjacency_matrix,
-                                data = data),
-               "Variable 'invalid' not found in the data.")
-})
-
-
 test_that("Function supports spatial random effects without specified parameter", {
   .dev_skip()
   
@@ -204,22 +79,6 @@ test_that("Function supports spatial random effects without specified parameter"
     expect_s3_class(model_logit, "hbmfit")
   })
 })
-
-test_that("Function throws error for invalid car type", {
-  .dev_skip()
-  
-  expect_error(hbm_binlogitnorm(response = "y", 
-                                trials = "n", 
-                                predictors = c("x1", "x2", "x3"), 
-                                group = "group",
-                                sre = "sre",
-                                sre_type = "car",
-                                car_type = "invalid",
-                                M = adjacency_matrix,
-                                data = data),
-               "'car_type' should be one of 'escar', 'esicar', 'icar', 'bym2'")
-})
-
 
 test_that("Function supports spatial random effects with missing value in sre", {
   .dev_skip()
@@ -237,9 +96,191 @@ test_that("Function supports spatial random effects with missing value in sre", 
   expect_s3_class(model, "hbmfit")
 })
 
-test_that("Function throws error for invalid spatial random effect type", {
+test_that("Function supports with the number of dimensions greater than the number of locations sre", {
   .dev_skip()
   
+  data_adj_dim <- data
+  data_adj_dim$sre <- rep(1:4)
+  
+  model <- suppressWarnings(hbm_binlogitnorm(response = "y", 
+                                                   trials = "n", 
+                                                   predictors = c("x1", "x2", "x3"), 
+                                                   sre = "sre",
+                                                   sre_type = "car",
+                                                   car_type = "icar",
+                                                   M = adjacency_matrix,
+                                                   data = data_adj_dim))
+  expect_s3_class(model, "hbmfit")
+})
+
+test_that("Function support handles missing data with 'deleted' method", {
+  .dev_skip()
+  
+  # Missing at response
+  data_miss_binom1 <- data
+  data_miss_binom1$y[1] <- NA
+  
+  suppressWarnings({
+    model <- hbm_binlogitnorm(response = "y", 
+                              trials = "n", 
+                              predictors = c("x1", "x2", "x3"),
+                              group = "group",
+                              data = data_miss_binom1,
+                              handle_missing = "deleted")
+    expect_s3_class(model, "hbmfit")
+  })
+})
+
+test_that("Function support handles missing data with 'multiple' method", {
+  .dev_skip()
+  
+  #Missing at response and predictor
+  data_miss_binom2 <- data
+  data_miss_binom2$y[1] <- NA
+  data_miss_binom2$x1[3] <- NA
+  
+  suppressWarnings({
+    model <- hbm_binlogitnorm(response = "y", 
+                              trials = "n", 
+                              predictors = c("x1", "x2", "x3"),
+                              group = "group",
+                              data = data,
+                              handle_missing = "multiple")
+    expect_s3_class(model, "hbmfit")
+  })
+})
+
+
+# === Migrated back from main tests (ghost-variable dependence) ===
+test_that("Function throws an error when handle missing does not fit with the condition", {
+  .dev_skip()
+  #Missing at response and predictor
+  data_miss_binom2 <- data
+  data_miss_binom2$y[1] <- NA
+  data_miss_binom2$x1[3] <- NA
+  
+  # When predictor variable missing handle missing is deleted but there are missing in predictor
+  expect_error(hbm_binlogitnorm(response = "y", 
+                                trials = "n", 
+                                predictors = c("x1", "x2", "x3"), 
+                                data = data_miss_binom2, 
+                                handle_missing = "deleted"))
+})
+
+
+# === Re-migrated from main (require real fits) ===
+test_that("Function throws error when response is missing", {
+  .dev_skip()
+  expect_error(hbm_binlogitnorm(response = "z_dir", 
+                               trials = "n", 
+                               predictors = c("x1", "x2", "x3"),
+                               data = data),
+               "Response variable not found in 'data'.")
+})
+
+test_that("Function throws error when predictors are missing", {
+  .dev_skip()
+  expect_error(hbm_binlogitnorm(response = "y", 
+                                trials = "n", 
+                                predictors = c("x1", "x2", "x4"),
+                               data = data),
+               "One or more predictor variables not found in 'data'.")
+})
+
+test_that("Function throws error when trials are missing", {
+  .dev_skip()
+  expect_error(hbm_binlogitnorm(response = "y", 
+                                trials = "m_i", 
+                                predictors = c("x1", "x2", "x3"),
+                               data = data),
+               "Trials not found in 'data'.")
+})
+
+test_that("Function throws error when response contains a negative integer.", {
+  .dev_skip()
+  data_wrong1 <- data
+  data_wrong1$y[1] <- -1
+  expect_error(hbm_binlogitnorm(response = "y", 
+                                trials = "n", 
+                                predictors = c("x1", "x2", "x3"),
+                                data = data_wrong1),
+               "Response must be a non-negative integer.")
+})
+
+test_that("Function throws error when response is greater than the number of trials.", {
+  .dev_skip()
+  data_wrong2 <- data
+  data_wrong2$y[1] <- 101
+  data_wrong2$n[1] <- 100
+  expect_error(hbm_binlogitnorm(response = "y", 
+                                trials = "n", 
+                                predictors = c("x1", "x2", "x3"), 
+                                data = data_wrong2),
+               "Response cannot be greater than the number of trials.")
+})
+
+test_that("Function throws error when number of trials is not a positive integer.", {
+  .dev_skip()
+  data_wrong3 <- data
+  data_wrong3$n[1] <- -1
+  data_wrong3$y[1] <- 0  # Ensure response <= trials
+  expect_error(hbm_binlogitnorm(response = "y", 
+                                trials = "n", 
+                                predictors = c("x1", "x2", "x3"),
+                                data = data_wrong3),
+               "Number of trials must be a positive integer.")
+})
+
+test_that("Function throws error when trials contain NA", {
+  .dev_skip()
+  data_wrong_na <- data
+  data_wrong_na$n[1] <- NA
+  expect_error(hbm_binlogitnorm(response = "y", 
+                                trials = "n", 
+                                predictors = c("x1", "x2", "x3"), 
+                                data = data_wrong_na),
+               "Trials contains NA values. The model cannot proceed.")
+})
+
+test_that("Function throws error for invalid random effect variable", {
+  .dev_skip()
+  expect_error(hbm_binlogitnorm(response = "y", 
+                                trials = "n", 
+                                predictors = c("x1", "x2", "x3"),
+                                group = "invalid",
+                                data = data),
+               "Variable 'invalid' not found in the data." )
+})
+
+test_that("Function throws error for invalid spatial random effect", {
+  .dev_skip()
+  expect_error(hbm_binlogitnorm(response = "y", 
+                                trials = "n", 
+                                predictors = c("x1", "x2", "x3"),
+                                group = "group",
+                                sre = "invalid",
+                                sre_type = "car",
+                                M = adjacency_matrix,
+                                data = data),
+               "Variable 'invalid' not found in the data.")
+})
+
+test_that("Function throws error for invalid car type", {
+  .dev_skip()
+  expect_error(hbm_binlogitnorm(response = "y", 
+                                trials = "n", 
+                                predictors = c("x1", "x2", "x3"), 
+                                group = "group",
+                                sre = "sre",
+                                sre_type = "car",
+                                car_type = "invalid",
+                                M = adjacency_matrix,
+                                data = data),
+               "'car_type' should be one of 'escar', 'esicar', 'icar', 'bym2'")
+})
+
+test_that("Function throws error for invalid spatial random effect type", {
+  .dev_skip()
   expect_error(hbm_binlogitnorm(response = "y", 
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"),
@@ -262,11 +303,8 @@ test_that("Function throws error for spatial random effect type = sar", {
                "Currently, only families gaussian and student support SAR structures.")
 })
 
-
-# adj matrix
 test_that("Function throws error when adjacency matrix is incorrect", {
   .dev_skip()
-  
   adjacency_matrix_wrong <- matrix(c(
     0, 1, 1,
     1, 0, 0
@@ -342,93 +380,4 @@ test_that("Function throws error when adjacency matrix is incorrect", {
                                                  M = adjacency_matrix_wrong4,
                                                  data = data)
   ))
-})
-
-test_that("Function supports with the number of dimensions greater than the number of locations sre", {
-  .dev_skip()
-  
-  data_adj_dim <- data
-  data_adj_dim$sre <- rep(1:4)
-  
-  model <- suppressWarnings(hbm_binlogitnorm(response = "y", 
-                                                   trials = "n", 
-                                                   predictors = c("x1", "x2", "x3"), 
-                                                   sre = "sre",
-                                                   sre_type = "car",
-                                                   car_type = "icar",
-                                                   M = adjacency_matrix,
-                                                   data = data_adj_dim))
-  expect_s3_class(model, "hbmfit")
-})
-
-
-#Validate Handle Missing
-test_that("Function throws an error when handle missing does not fit with the condition", {
-  .dev_skip()
-  
-  #Missing at response and predictor
-  data_miss_binom2 <- data
-  data_miss_binom2$y[1] <- NA
-  data_miss_binom2$x1[3] <- NA
-  
-  # When predictor variable missing handle missing is deleted but there are missing in predictor
-  expect_error(hbm_binlogitnorm(response = "y", 
-                                trials = "n", 
-                                predictors = c("x1", "x2", "x3"), 
-                                data = data_miss_binom2, 
-                                handle_missing = "deleted"))
-})
-
-
-test_that("Function support handles missing data with 'deleted' method", {
-  .dev_skip()
-  
-  # Missing at response
-  data_miss_binom1 <- data
-  data_miss_binom1$y[1] <- NA
-  
-  suppressWarnings({
-    model <- hbm_binlogitnorm(response = "y", 
-                              trials = "n", 
-                              predictors = c("x1", "x2", "x3"),
-                              group = "group",
-                              data = data_miss_binom1,
-                              handle_missing = "deleted")
-    expect_s3_class(model, "hbmfit")
-  })
-})
-
-test_that("Function support handles missing data with 'multiple' method", {
-  .dev_skip()
-  
-  #Missing at response and predictor
-  data_miss_binom2 <- data
-  data_miss_binom2$y[1] <- NA
-  data_miss_binom2$x1[3] <- NA
-  
-  suppressWarnings({
-    model <- hbm_binlogitnorm(response = "y", 
-                              trials = "n", 
-                              predictors = c("x1", "x2", "x3"),
-                              group = "group",
-                              data = data,
-                              handle_missing = "multiple")
-    expect_s3_class(model, "hbmfit")
-  })
-})
-
-test_that("Function do not support handles missing data with 'model' method in binlogitnorm model", {
-  .dev_skip()
-  
-  #Missing at response and predictor
-  data_miss_binom2 <- data
-  data_miss_binom2$y[1] <- NA
-  data_miss_binom2$x1[3] <- NA
-  
-  expect_error(hbm_binlogitnorm(response = "y", 
-                                  trials = "n", 
-                                  predictors = c("x1", "x2", "x3"),
-                                  group = "group",
-                                  data = data_miss_binom2,
-                                  handle_missing = "model"))
 })

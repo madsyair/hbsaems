@@ -55,6 +55,28 @@ frame stored on the original \code{hbmfit}).  Pass an explicit
 \code{newdata} to override this behaviour.
 }
 
+\section{Fixed-parameter columns}{
+
+Models fitted with \code{sampling_variance}, \code{n} + \code{deff}
+(in \code{hbm_betalogitnorm}), or \code{fixed_params} carry hidden
+offset columns named \code{.hbsaems_<par>_fixed} in their data
+frames.  When \code{update_hbm} receives a \code{newdata} that
+\emph{does not} have these columns, brms refuses to refit with
+\emph{"variables can neither be found in 'data' nor in 'data2'"}.
+\code{update_hbm} now detects this case and:
+\itemize{
+  \item warns the user when offset columns are present in the
+        original data but missing in \code{newdata};
+  \item either copies the columns over from the original
+        \code{object$data} (when \code{nrow(newdata) ==
+        nrow(object$data)}, which is the typical "same areas,
+        updated covariates" case), or
+  \item raises an informative error pointing the user to either
+        supply the columns in \code{newdata} explicitly or refit
+        from scratch with a fresh \code{hbm()} call.
+}
+}
+
 \examples{
 \donttest{
 library(hbsaems)

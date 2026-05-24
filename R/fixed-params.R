@@ -159,14 +159,42 @@
 
 # Augment a brms::bf() object with `<par> ~ 0 + offset(<col>)` for each
 # fixed parameter.  Returns the augmented bform.
+#
+# Multivariate caveat: when `bform` is a `mvbrmsformula` (i.e. user
+# wrote `bf(y | mi() ~ ...) + bf(x | mi() ~ ...)`), `brms::lf()` cannot
+# disambiguate which response the dpar belongs to without a `resp`
+# argument.  We therefore detect the multivariate case and supply the
+# FIRST response's name (the primary outcome -- by convention the
+# small-area target variable that the dpar specifications are about).
 .add_fixed_pforms <- function(bform, processed) {
   if (length(processed$resolved) == 0L) return(bform)
+
+  # Detect multivariate formulas (mvbrmsformula has `$forms`).
+  is_mv <- !is.null(bform$forms)
+  primary_resp <- if (is_mv) {
+    # The first sub-formula is the primary response by convention.
+    # Extract its response variable name; this matches the conventional
+    # SAE workflow where the small-area target is the first formula
+    # and the auxiliary imputation models follow.
+    first_form <- bform$forms[[1L]]$formula
+    .extract_response_names(first_form)[1L]
+  } else {
+    NULL
+  }
+
   for (par in names(processed$resolved)) {
     col <- processed$col_names[[par]]
     rhs <- stats::as.formula(
       paste0(par, " ~ 0 + offset(", col, ")")
     )
-    bform <- bform + brms::lf(rhs)
+    # In the multivariate case we must specify which response the
+    # dpar applies to; in the univariate case `lf()` infers it.
+    lf_obj <- if (is_mv)
+      brms::lf(rhs, resp = primary_resp)
+    else
+      brms::lf(rhs)
+
+    bform <- bform + lf_obj
   }
   bform
 }

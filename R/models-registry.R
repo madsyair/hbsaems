@@ -76,30 +76,18 @@
       default_priors     = function(...) {
         c(brms::set_prior("student_t(4, 0, 10)",  class = "Intercept"),
           brms::set_prior("student_t(4, 0, 2.5)", class = "b"))
-      },
-      # ---- Auxiliary phi hyperprior (Tier 2) ------------------------------
-      # Triggered when the user supplies n and deff in the wrapper call.
-      # Constructs phi ~ gamma(alpha, beta) with alpha, beta themselves
-      # given a gamma(1, 1) hyperprior, injected via stanvars.
-      aux_param_hyperprior = function(args, data) {
-        if (is.null(args$n) || is.null(args$deff)) return(NULL)
-        if (!(args$n %in% names(data)))
-          stop(sprintf("Variable '%s' (sample size) not found in 'data'.",
-                       args$n), call. = FALSE)
-        if (!(args$deff %in% names(data)))
-          stop(sprintf("Variable '%s' (design effect) not found in 'data'.",
-                       args$deff), call. = FALSE)
-
-        list(
-          stanvars = brms::stanvar(
-              scode = "real<lower=1> alpha;\n  real<lower=0> beta;",
-              block = "parameters") +
-            brms::stanvar(
-              scode = "alpha ~ gamma(1, 1);\n  beta ~ gamma(1, 1);",
-              block = "model"),
-          prior = brms::set_prior("gamma(alpha, beta)", class = "phi")
-        )
       }
+      # ---- Auxiliary phi hyperprior (Tier 2) ------------------------------
+      # As of v1.0.0, the legacy
+      #   phi ~ gamma(alpha, beta), alpha ~ gamma(1, 1), beta ~ gamma(1, 1)
+      # hierarchical hyperprior is no longer registered for the Beta
+      # family.  phi now uses brms's own default gamma(0.01, 0.01) prior.
+      # The n + deff survey-design route in hbm_betalogitnorm() pins phi
+      # via the generic `fixed_params` mechanism instead -- there is no
+      # need for an aux_param_hyperprior callback any more.  Custom
+      # families that DO need a hyperprior (e.g.\ user-registered via
+      # register_hbsae_model()) can still supply one via the callback;
+      # see ?register_hbsae_model.
     ),
 
     # ---- Binomial (counts out of trials) -----------------------------------
@@ -173,7 +161,21 @@
 # ---- Initialise on package load --------------------------------------------
 
 .init_model_registry <- function() {
-  for (key in names(.builtin_models())) {
+  # Defensive: clear any stale custom registrations before re-loading
+  # built-ins.  Without this, calling .init_model_registry() to "reset"
+  # the registry would leave behind any custom families the user
+  # registered earlier in the session (or that were overwritten with
+  # overwrite=TRUE in tests).  We rm() any key NOT in the built-in
+  # list; the .onLoad path then re-adds loglogistic and
+  # shifted_loglogistic via .register_builtin_custom_families().
+  builtin_native <- names(.builtin_models())
+  for (k in ls(.hbsae_model_env)) {
+    if (!(k %in% builtin_native)) {
+      rm(list = k, envir = .hbsae_model_env)
+    }
+  }
+  # Re-assign all brms-native built-ins (idempotent).
+  for (key in builtin_native) {
     assign(key, .builtin_models()[[key]], envir = .hbsae_model_env)
   }
 }
@@ -210,3 +212,38 @@
 
 # All registered family keys
 .list_models <- function() ls(.hbsae_model_env)
+
+# All BUILT-IN family keys -- this is the comprehensive list used by the
+# override-protection logic in register_hbsae_model() and
+# register_hbsae_brms_custom().  It comprises:
+#   1. brms-native families registered by .init_model_registry() (gaussian,
+#      beta, binomial, lognormal, poisson, etc.); and
+#   2. hbsaems-bundled custom brms families registered by
+#      .register_builtin_custom_families() in .onLoad
+#      (loglogistic, shifted_loglogistic).
+#
+# Keeping this central avoids the v1.0.0 bug where the
+# .register_hbsae_brms_custom() override check only looked at (1) and
+# would silently let the user clobber `loglogistic` or
+# `shifted_loglogistic`.
+.builtin_keys <- function() {
+  c(names(.builtin_models()),
+    "loglogistic", "shifted_loglogistic")
+}
+
+# Internal: probes whether a name corresponds to a brms-native family.
+# Used by register_hbsae_brms_custom() to warn when a user-supplied key
+# would shadow a brms-native family at lookup time.
+#
+# Implementation note: brms exposes no public predicate for this, so we
+# call brmsfamily() inside tryCatch().  Success means "this is a real
+# brms family"; an error (with the diagnostic listing supported families)
+# means "not a brms family".  The probe is cheap -- brmsfamily() does
+# only string lookup + record construction, no Stan code generation.
+.is_brms_native_family <- function(name) {
+  if (!requireNamespace("brms", quietly = TRUE)) return(FALSE)
+  if (!is.character(name) || length(name) != 1L) return(FALSE)
+  res <- tryCatch(brms::brmsfamily(name),
+                  error = function(e) NULL)
+  inherits(res, "brmsfamily")
+}

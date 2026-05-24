@@ -125,15 +125,30 @@ hbm_warnings <- function(model) {
 
   w <- character(0L)
 
-  # R-hat
+  # R-hat -- guard against the all-NA case (e.g. degenerate fit, no chains
+  # actually ran).  na.rm = TRUE on all-NA returns TRUE for all(), giving
+  # the false impression of convergence; we treat all-NA as a separate
+  # warning so the user is alerted.
   rh <- tryCatch(brms::rhat(model$model), error = function(e) NULL)
-  if (!is.null(rh) && !all(rh < 1.1, na.rm = TRUE))
-    w <- c(w, "R-hat > 1.1: model may not have converged.")
+  if (!is.null(rh)) {
+    finite_rh <- rh[is.finite(rh)]
+    if (length(finite_rh) == 0L) {
+      w <- c(w, "All R-hat values are NA: model fit appears degenerate.")
+    } else if (!all(finite_rh < 1.1)) {
+      w <- c(w, "R-hat > 1.1: model may not have converged.")
+    }
+  }
 
   # ESS
   nr <- tryCatch(brms::neff_ratio(model$model), error = function(e) NULL)
-  if (!is.null(nr) && any(nr < 0.1, na.rm = TRUE))
-    w <- c(w, "neff_ratio < 0.1: low effective sample size.")
+  if (!is.null(nr)) {
+    finite_nr <- nr[is.finite(nr)]
+    if (length(finite_nr) == 0L) {
+      w <- c(w, "All neff_ratio values are NA: model fit appears degenerate.")
+    } else if (any(finite_nr < 0.1)) {
+      w <- c(w, "neff_ratio < 0.1: low effective sample size.")
+    }
+  }
 
   # Divergent transitions (NUTS only)
   np <- tryCatch(brms::nuts_params(model$model), error = function(e) NULL)

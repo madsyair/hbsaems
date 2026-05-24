@@ -182,17 +182,56 @@ is_converged <- function(model, threshold = 1.1, ...) {
 
 #' @export
 is_converged.hbmfit <- function(model, threshold = 1.1, ...) {
-  all(brms::rhat(model$model) < threshold, na.rm = TRUE)
+  .check_rhat_threshold(threshold)
+  rhats <- brms::rhat(model$model)
+  # all(numeric(0)) and all(c(NA, NA), na.rm = TRUE) both return TRUE,
+  # which is a degenerate "convergence" signal -- it means we have no
+  # Rhat values to evaluate against, not that everything is converged.
+  # Treat this as NA with an informative warning.
+  finite_rhats <- rhats[is.finite(rhats)]
+  if (length(finite_rhats) == 0L) {
+    warning("No finite R-hat values available for this model -- ",
+            "cannot determine convergence.  Did the chains run at all?",
+            call. = FALSE)
+    return(NA)
+  }
+  all(finite_rhats < threshold)
 }
 
 #' @export
 is_converged.hbcc_results <- function(model, threshold = 1.1, ...) {
+  .check_rhat_threshold(threshold)
   if (is.null(model$rhat_ess)) {
     warning("No R-hat values stored in the hbcc_results object.",
             call. = FALSE)
     return(NA)
   }
-  all(model$rhat_ess[, "Rhat"] < threshold, na.rm = TRUE)
+  rhats <- model$rhat_ess[, "Rhat"]
+  finite_rhats <- rhats[is.finite(rhats)]
+  if (length(finite_rhats) == 0L) {
+    warning("All stored R-hat values are NA/Inf -- ",
+            "cannot determine convergence.",
+            call. = FALSE)
+    return(NA)
+  }
+  all(finite_rhats < threshold)
+}
+
+# Internal helper -- ensures the R-hat threshold is a single finite
+# positive numeric.  `threshold = "1.1"` (a string), `NULL`, negative
+# values, and length>1 vectors are all rejected explicitly because
+# they previously fell through `<` coercion silently (e.g.\ a string
+# threshold compared with `<` against a numeric vector coerces and
+# produces NA which `all()` treats permissively).
+.check_rhat_threshold <- function(threshold) {
+  if (is.null(threshold) || length(threshold) != 1L ||
+      !is.numeric(threshold) || !is.finite(threshold) ||
+      threshold <= 0)
+    stop("`threshold` must be a single finite positive number ",
+         "(typically 1.05 or 1.1).  Got: ",
+         deparse(threshold),
+         call. = FALSE)
+  invisible(TRUE)
 }
 
 

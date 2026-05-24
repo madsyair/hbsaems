@@ -80,13 +80,46 @@ sae_predict.brmsfit <- function(model, newdata = NULL, ...) {
 #
 # Kept private so that the public function set stays small.  Edit ONCE here, both the
 # new and deprecated entry points pick up the change.
+#
+# Multivariate handling: for joint-imputation / multivariate brms models
+# (where the user wrote `bf(y | mi() ~ ...) + bf(x1 | mi() ~ ...)`),
+# `brms::posterior_predict()` returns a 3-D array of shape
+# (draws x obs x responses).  In hbsaems the *primary* response is by
+# convention the first sub-formula (the small-area target), so we
+# extract that slice and compute the summary on the 2-D matrix.
+# Power users who need predictions for the imputation responses can
+# pass `resp = <name>` via `...` to override.
 .sae_predict_impl <- function(model, newdata = NULL, ...) {
   brms_model <- model$model
   data_use   <- if (!is.null(newdata)) newdata else model$data
 
+  dots <- list(...)
+  is_mv <- !is.null(brms_model$formula$forms)
+
+  # For multivariate brms models, default `resp` to the first response
+  # unless the user supplied one explicitly via `...`.  This avoids
+  # 3-D arrays propagating into colMeans()/apply() and into the
+  # data.frame() at the end.
+  if (is_mv && is.null(dots$resp)) {
+    first_form  <- brms_model$formula$forms[[1L]]$formula
+    first_resp  <- .extract_response_names(first_form)[1L]
+    dots$resp   <- first_resp
+  }
+
   # Posterior predictive draws (matrix: draws x areas)
-  pred_matrix <- brms::posterior_predict(brms_model,
-                                          newdata = data_use, ...)
+  pp_args     <- c(list(object = brms_model, newdata = data_use), dots)
+  pred_matrix <- do.call(brms::posterior_predict, pp_args)
+
+  # Defensive: even with `resp` supplied, posterior_predict() may return
+  # a 3-D array if the user is on an older brms.  Drop singleton dims.
+  if (length(dim(pred_matrix)) == 3L) {
+    if (dim(pred_matrix)[3L] == 1L) {
+      pred_matrix <- pred_matrix[, , 1L, drop = TRUE]
+    } else {
+      # Multiple responses still in result; fall back to first slice.
+      pred_matrix <- pred_matrix[, , 1L, drop = TRUE]
+    }
+  }
 
   # Area-level summaries (vectorised over columns)
   pred_mean <- colMeans(pred_matrix, na.rm = TRUE)
@@ -178,9 +211,16 @@ sae_aggregate <- function(..., method = c("mean", "median", "weighted"),
       if (length(weights) != length(objs))
         stop("length(weights) must equal the number of hbsae_results.",
              call. = FALSE)
+      if (any(!is.finite(weights)))
+        stop("All weights must be finite (no NA, NaN, or Inf).",
+             call. = FALSE)
       if (any(weights < 0))
         stop("All weights must be non-negative.", call. = FALSE)
-      weights <- weights / sum(weights)
+      w_sum <- sum(weights)
+      if (w_sum <= 0)
+        stop("`weights` must sum to a positive value; got sum = ", w_sum, ".",
+             call. = FALSE)
+      weights <- weights / w_sum
       as.numeric(mat %*% weights)
     }
   )
@@ -227,8 +267,18 @@ sae_transform.hbsae_results <- function(x, fun, ...) {
     stop("'fun' must be a function.", call. = FALSE)
 
   np <- fun(x$pred, ...)
+  if (!is.numeric(np))
+    stop("`fun(pred, ...)` must return a numeric vector; got class ",
+         shQuote(class(np)[1L]), ".", call. = FALSE)
+  if (length(np) != length(x$pred))
+    stop("`fun(pred, ...)` returned ", length(np), " value(s) but ",
+         length(x$pred), " were expected (one per area). ",
+         "Did you mean to use an element-wise function like `log` or ",
+         "`exp` instead of a reducer like `sum` or `mean`?",
+         call. = FALSE)
+
   nt <- x$result_table
-  nt$Prediction <- fun(nt$Prediction, ...)
+  nt$Prediction <- np
 
   structure(
     list(result_table = nt, rse_model = x$rse_model, pred = np),
@@ -257,9 +307,24 @@ sae_scale <- function(x, center = TRUE, scale = TRUE) UseMethod("sae_scale")
 #' @export
 sae_scale.hbsae_results <- function(x, center = TRUE, scale = TRUE) {
   pred_sd <- stats::sd(x$pred, na.rm = TRUE)
-  if (!is.na(pred_sd) && pred_sd == 0)
-    warning("All predictions are identical; scaling produces NaN.",
+
+  # (v1.0.0): When predictions are degenerate (zero variance) and the user
+  # also requests scaling, base::scale() produces NaN throughout, which
+  # silently corrupts the result_table downstream.  Two safe behaviours:
+  #
+  #   * scale = TRUE (the default)  -> emit a warning and DO NOT scale;
+  #     return centred-only predictions (or the raw vector when
+  #     center = FALSE as well).
+  #   * scale = <numeric>            -> respect the user-supplied scale
+  #     (NaN does not occur because we don't divide by sd in that case).
+  if (!is.na(pred_sd) && pred_sd == 0 && isTRUE(scale)) {
+    warning("All predictions are identical (zero variance); ",
+            "`scale = TRUE` would produce NaN.  Skipping the scale step ",
+            "and returning ", if (center) "centred" else "raw",
+            " predictions instead.",
             call. = FALSE)
+    scale <- FALSE   # neutralise scaling; centering still applies if requested
+  }
 
   sp <- as.numeric(base::scale(x$pred, center = center, scale = scale))
   nt <- x$result_table

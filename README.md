@@ -191,29 +191,29 @@ fit_lnln <- hbm_lnln(
 
 ### Workflow functions
 
-| Function | Purpose | Replaces (legacy) |
-|----|----|----|
-| `convergence_check()` | MCMC convergence diagnostics: $\hat R$, ESS, Geweke, Heidelberger, Raftery | `hbcc()` |
-| `model_compare()` | LOO/WAIC/Bayes-factor model comparison and posterior predictive checks | `hbmc()` |
-| `model_compare_all()` | Multi-model ranking analogous to `loo_compare` | – |
-| `model_average()` | Bayesian model averaging (manual, stacking, or pseudo-BMA+ weights via `loo`) | – |
-| `prior_check()` | Prior predictive checks | `hbpc()` |
-| `prior_sensitivity()` | Power-scale prior sensitivity diagnostics (`priorsense`) | – |
-| `sae_predict()` | In-sample and out-of-sample SAE prediction | `hbsae()` |
-| `sae_benchmark()` | Design-consistent benchmarking | – |
+| Function              | Purpose                                                                       | Replaces (legacy) |
+|-----------------------|-------------------------------------------------------------------------------|-------------------|
+| `convergence_check()` | MCMC convergence diagnostics: $\hat R$, ESS, Geweke, Heidelberger, Raftery    | `hbcc()`          |
+| `model_compare()`     | LOO/WAIC/Bayes-factor model comparison and posterior predictive checks        | `hbmc()`          |
+| `model_compare_all()` | Multi-model ranking analogous to `loo_compare`                                | –                 |
+| `model_average()`     | Bayesian model averaging (manual, stacking, or pseudo-BMA+ weights via `loo`) | –                 |
+| `prior_check()`       | Prior predictive checks                                                       | `hbpc()`          |
+| `prior_sensitivity()` | Power-scale prior sensitivity diagnostics (`priorsense`)                      | –                 |
+| `sae_predict()`       | In-sample and out-of-sample SAE prediction                                    | `hbsae()`         |
+| `sae_benchmark()`     | Design-consistent benchmarking                                                | –                 |
 
 ### Auxiliary functions
 
-| Function | Purpose |
-|----|----|
-| `check_data()` | Data integrity checks (missingness, duplicates, sample size) |
-| `check_spatial_weight()` | Spatial weight matrix theoretical-compatibility checks |
-| `build_spatial_weight()` | Build adjacency / row-standardised weight matrices |
-| `is_converged()` | Quick yes/no convergence check |
-| `posterior_interval()` | Credible intervals for posterior draws |
-| `posterior_draws()` | Extract posterior draws as a long data frame |
-| `hbm_info()` | Inspect model spec, priors, sampler settings |
-| `hbm_warnings()` | Surface model fit warnings |
+| Function                 | Purpose                                                      |
+|--------------------------|--------------------------------------------------------------|
+| `check_data()`           | Data integrity checks (missingness, duplicates, sample size) |
+| `check_spatial_weight()` | Spatial weight matrix theoretical-compatibility checks       |
+| `build_spatial_weight()` | Build adjacency / row-standardised weight matrices           |
+| `is_converged()`         | Quick yes/no convergence check                               |
+| `posterior_interval()`   | Credible intervals for posterior draws                       |
+| `posterior_draws()`      | Extract posterior draws as a long data frame                 |
+| `hbm_info()`             | Inspect model spec, priors, sampler settings                 |
+| `hbm_warnings()`         | Surface model fit warnings                                   |
 
 ## Custom distributions
 
@@ -250,18 +250,18 @@ modelling workflow:
 browseVignettes("hbsaems")
 ```
 
-| Vignette | Topic |
-|----|----|
-| `complete-workflow` | End-to-end Fay-Herriot example with full Bayesian workflow |
-| `hbsaems-modelling` | Modelling concepts and the three-layer API |
-| `hbsaems-betalogitnorm-model` | Beta logit-normal for proportions |
-| `hbsaems-binlogitnorm-model` | Binomial logit-normal for counts |
-| `hbsaems-lnln-model` | Lognormal-lognormal Fay-Herriot variant |
-| `hbsaems-spatial` | CAR / SAR / BYM2 spatial models |
-| `hbsaems-handle-missing` | Three missing-data strategies |
-| `advanced-features` | Shrinkage priors, splines, custom families |
-| `hbsaems-run_sae_app` | Using the Shiny application |
-| `migration-guide` | Migrating from v0.x to v1.0.0 |
+| Vignette                      | Topic                                                      |
+|-------------------------------|------------------------------------------------------------|
+| `complete-workflow`           | End-to-end Fay-Herriot example with full Bayesian workflow |
+| `hbsaems-modelling`           | Modelling concepts and the three-layer API                 |
+| `hbsaems-betalogitnorm-model` | Beta logit-normal for proportions                          |
+| `hbsaems-binlogitnorm-model`  | Binomial logit-normal for counts                           |
+| `hbsaems-lnln-model`          | Lognormal-lognormal Fay-Herriot variant                    |
+| `hbsaems-spatial`             | CAR / SAR / BYM2 spatial models                            |
+| `hbsaems-handle-missing`      | Three missing-data strategies                              |
+| `advanced-features`           | Shrinkage priors, splines, custom families                 |
+| `hbsaems-run_sae_app`         | Using the Shiny application                                |
+| `migration-guide`             | Migrating from v0.x to v1.0.0                              |
 
 ## Migrating from v0.x
 

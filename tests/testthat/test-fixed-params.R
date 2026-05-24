@@ -196,7 +196,10 @@ test_that(".merge_betalogitnorm_priors fills in defaults when prior is NULL", {
   classes <- out$class
   expect_true("Intercept" %in% classes)
   expect_true("b"          %in% classes)
-  expect_true("phi"        %in% classes)
+  # As of v1.0.0, the wrapper no longer injects a `phi` prior --
+  # brms's own default (gamma(0.01, 0.01)) takes over.  See the
+  # migration note in ?hbm_betalogitnorm.
+  expect_false("phi"       %in% classes)
 })
 
 test_that(".merge_betalogitnorm_priors omits phi prior when fixed", {
@@ -322,6 +325,25 @@ test_that("hbm_betalogitnorm: hyperprior on alpha/beta + fixed phi -> error", {
                                  block = "model"),
       chains = 1, iter = 10
     ),
-    "hyperprior on `alpha`"
+    "sampling statement targeting `alpha`"
+  )
+})
+
+# v1.0.0: legacy stanvars(alpha/beta) in RANDOM mode also fails loudly
+test_that("hbm_betalogitnorm: legacy alpha/beta stanvars in random mode -> error", {
+  testthat::skip_if_not_installed("brms")
+  d <- data.frame(
+    y  = runif(10, 0.2, 0.8),
+    x1 = rnorm(10)
+  )
+  expect_error(
+    hbm_betalogitnorm(
+      response = "y", auxiliary = "x1",
+      data = d,
+      stanvars = brms::stanvar(scode = "alpha ~ gamma(2,1);",
+                                 block = "model"),
+      chains = 1, iter = 10
+    ),
+    "no longer declares those as"
   )
 })

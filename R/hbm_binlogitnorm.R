@@ -27,10 +27,13 @@
 #' @param predictors \strong{Deprecated.}  Use \code{auxiliary} instead.
 #'   Kept for backward compatibility; will be removed in v2.0.0.
 #' @param data A \code{data.frame}.
-#' @param area_var Optional character.  Name of the column in \code{data}
-#'   identifying the small area / domain.  When supplied, an IID
-#'   area-level random effect \code{(1 | area_var)} is added to the
-#'   linear predictor.  Default: \code{NULL}.
+#' @param area_var Optional character vector.  Name(s) of column(s) in
+#'   \code{data} identifying the small area / domain.  Length 1 fits an
+#'   IID area-level random intercept \code{(1 | area_var)}; length
+#'   \eqn{\geq} 2 supports hierarchical areas -- see \code{?hbm_flex}
+#'   for the nested vs.\ crossed structures.  Default: \code{NULL}.
+#' @param area_re_structure Either \code{"nested"} (default) or
+#'   \code{"crossed"}; controls how multiple area columns combine.
 #' @param spatial_var Optional character.  Name of a column identifying
 #'   the spatial cluster.  Must be supplied together with
 #'   \code{spatial_model} and \code{M}.  Default: \code{NULL}.
@@ -107,6 +110,7 @@ hbm_binlogitnorm <- function(response,
                              auxiliary     = NULL,
                              data,
                              area_var      = NULL,
+                             area_re_structure = c("nested", "crossed"),
                              spatial_var   = NULL,
                              spatial_model = NULL,
                              car_type      = NULL,
@@ -154,12 +158,15 @@ hbm_binlogitnorm <- function(response,
     spatial_model <- sre_type
   }
 
+  area_re_structure <- match.arg(area_re_structure)
+
   hbm_flex(family_key    = "binomial",
            response      = response,
            auxiliary     = auxiliary,
            addition_var  = trials,
            data          = data,
            area_var      = area_var,
+           area_re_structure = area_re_structure,
            spatial_var   = spatial_var,
            spatial_model = spatial_model,
            car_type      = car_type,
