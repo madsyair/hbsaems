@@ -96,6 +96,6 @@ if (requireNamespace("priorsense", quietly = TRUE)) {
   print(ps)
 }
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 # }
 ```

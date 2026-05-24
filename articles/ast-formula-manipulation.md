@@ -326,28 +326,28 @@ helper builds the random-effect specification:
 
 hbsaems:::.build_area_re_formula("province")
 #> ~(1 | province)
-#> <environment: 0x55bca1ad8fe0>
+#> <environment: 0x55d58a941418>
 
 hbsaems:::.build_area_re_formula(
   c("province", "regency"),
   structure = "nested"
 )
 #> ~(1 | province/regency)
-#> <environment: 0x55bca1a02768>
+#> <environment: 0x55d58a8786c0>
 
 hbsaems:::.build_area_re_formula(
   c("province", "regency"),
   structure = "crossed"
 )
 #> ~(1 | province) + (1 | regency)
-#> <environment: 0x55bca17f4ec8>
+#> <environment: 0x55d58a6ab1f8>
 
 hbsaems:::.build_area_re_formula(
   c("province", "regency", "district", "village"),
   structure = "nested"
 )
 #> ~(1 | province/regency/district/village)
-#> <environment: 0x55bca165e1b0>
+#> <environment: 0x55d58a4cb950>
 ```
 
 This formula is then

@@ -814,7 +814,7 @@ model <- do.call(hbm, c(
   FAST
 ))
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 summary(model)
 #> Error: object 'model' not found
 
@@ -828,7 +828,7 @@ model_hs <- do.call(hbm, c(
   FAST
 ))
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 summary(model_hs)
 #> Error: object 'model_hs' not found
 
@@ -843,7 +843,7 @@ model_r2 <- do.call(hbm, c(
   FAST
 ))
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 summary(model_r2)
 #> Error: object 'model_r2' not found
 
@@ -859,7 +859,7 @@ model_spline <- do.call(hbm, c(
 ))
 #> Warning: Variable(s) x1 appear in both 'auxiliary' (linear) and 'nonlinear'. They will be modelled nonlinearly ONLY. Remove them from 'auxiliary' to suppress this warning.
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 summary(model_spline)
 #> Error: object 'model_spline' not found
 
@@ -874,7 +874,7 @@ model_gp <- do.call(hbm, c(
 ))
 #> Warning: Variable(s) x2 appear in both 'auxiliary' (linear) and 'nonlinear'. They will be modelled nonlinearly ONLY. Remove them from 'auxiliary' to suppress this warning.
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 summary(model_gp)
 #> Error: object 'model_gp' not found
 
@@ -891,7 +891,7 @@ model_deleted <- do.call(hbm, c(
 ))
 #> handle_missing = 'deleted': 3 row(s) with missing response variable removed from model fitting.
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 summary(model_deleted)
 #> Error: object 'model_deleted' not found
 
@@ -910,7 +910,7 @@ model_multiple <- do.call(hbm, c(
 #> Missing predictor variable(s): x1. Applying multiple imputation (mice) with m = 5 imputations.
 #> Warning: Number of logged events: 2
 #> Compiling the C++ model
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 summary(model_multiple)
 #> Error: object 'model_multiple' not found
 
@@ -929,7 +929,7 @@ model_model <- do.call(hbm, c(
 #> handle_missing = 'model': using mi() specification for joint model-based imputation.
 #> Setting 'rescor' to FALSE by default for this model
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 summary(model_model)
 #> Error: object 'model_model' not found
 
@@ -944,7 +944,7 @@ model_car <- do.call(hbm, c(
   FAST
 ))
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 summary(model_car)
 #> Error: object 'model_car' not found
 
@@ -962,7 +962,7 @@ model_sar <- do.call(hbm, c(
   FAST
 ))
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 summary(model_sar)
 #> Error: object 'model_sar' not found
 # }

@@ -156,7 +156,7 @@ the priors are likely too tight or in the wrong location.</p>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>     spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Eigen not found; call install.packages('RcppEigen')</span>
 <span class="r-in"><span><span class="va">pc</span> <span class="op">&lt;-</span> <span class="fu">prior_check</span><span class="op">(</span><span class="va">model_prior</span>,</span></span>
 <span class="r-in"><span>                  data         <span class="op">=</span> <span class="va">data_fhnorm</span>,</span></span>
 <span class="r-in"><span>                  response_var <span class="op">=</span> <span class="st">"y"</span><span class="op">)</span></span></span>

@@ -81,7 +81,7 @@ model <- hbm(brms::bf(y ~ x1 + x2 + x3),
              chains = 2, iter = 2000, warmup = 1000,
              cores  = 1, seed = 123, refresh = 0)
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 
 diag <- convergence_check(model)
 #> Error: object 'model' not found

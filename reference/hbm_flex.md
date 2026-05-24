@@ -313,6 +313,6 @@ fit <- hbm_flex(
 )
 #> Warning: Area column 'district' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 # }
 ```

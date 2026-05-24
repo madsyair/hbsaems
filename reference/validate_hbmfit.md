@@ -58,7 +58,7 @@ fit <- suppressWarnings(
       chains = 1, iter = 200, refresh = 0)
 )
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 validate_hbmfit(fit)
 #> Error: object 'fit' not found
 # }

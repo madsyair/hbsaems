@@ -253,7 +253,7 @@ model1 <- hbm_betalogitnorm(
 )
 #> Warning: Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 summary(model1)
 #> Error: object 'model1' not found
 
@@ -269,7 +269,7 @@ model2 <- hbm_betalogitnorm(
 )
 #> Warning: Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 summary(model2)
 #> Error: object 'model2' not found
 
@@ -291,7 +291,7 @@ model3 <- hbm_betalogitnorm(
 )
 #> Warning: Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 
 # -- 4. Spatial CAR model ----------------------------------------------------
 data("adjacency_matrix_car")
@@ -307,6 +307,6 @@ model4 <- hbm_betalogitnorm(
   chains = 1, iter = 500, warmup = 250, refresh = 0
 )
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 # }
 ```

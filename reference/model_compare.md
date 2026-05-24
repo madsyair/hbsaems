@@ -101,7 +101,7 @@ m1 <- do.call(hbm, c(list(formula = brms::bf(y ~ x1 + x2 + x3),
 #>     spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE
 #>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 m2 <- do.call(hbm, c(list(formula = brms::bf(y ~ x1 + x2),
                           data = data_fhnorm), FAST))
 #> Warning: Model fitted without any area-level random effects.
@@ -112,7 +112,7 @@ m2 <- do.call(hbm, c(list(formula = brms::bf(y ~ x1 + x2),
 #>     spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE
 #>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Error in .fun(model_code = .x1): Eigen not found; call install.packages('RcppEigen')
 
 model_compare(m1)            # single-model goodness-of-fit
 #> Error: object 'm1' not found
