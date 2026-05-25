@@ -25,6 +25,25 @@
 library(shiny)
 library(hbsaems)
 
+# Source internal memory-management helpers used by the multimodel
+# snapshot library and post-fit cleanup.  These are app-local (not
+# package-exported) so we source them by file path resolved relative
+# to this file's location.
+local({
+  helpers_path <- file.path(
+    dirname(sys.frame(1)$ofile %||% "."),
+    "memory_helpers.R"
+  )
+  if (!file.exists(helpers_path)) {
+    # Fallback: try the installed package path
+    helpers_path <- system.file("shiny", "sae_app", "memory_helpers.R",
+                                 package = "hbsaems")
+  }
+  if (nzchar(helpers_path) && file.exists(helpers_path)) {
+    sys.source(helpers_path, envir = globalenv())
+  }
+})
+
 
 # =============================================================================
 # UI
@@ -1209,6 +1228,27 @@ ui <- shinydashboard::dashboardPage(
                                                                   "Average predictions",
                                                                   icon = icon("calculator"),
                                                                   class = "btn-default")
+                                                )
+                                            )
+                                        )
+                                    ),
+                                    br(),
+                                    # Memory status + clear button
+                                    fluidRow(
+                                        column(8,
+                                            verbatimTextOutput(
+                                                "multimodel_memory_status")
+                                        ),
+                                        column(4,
+                                            actionButton("multimodel_clear",
+                                                          "Clear library",
+                                                          icon = icon("trash"),
+                                                          class = "btn-warning btn-sm"),
+                                            helpText(
+                                                tags$small(
+                                                    "Library capped at 5 snapshots; ",
+                                                    "oldest is evicted automatically. ",
+                                                    "Clear when done to free memory."
                                                 )
                                             )
                                         )
@@ -2774,6 +2814,12 @@ server <- function(input, output, session) {
                             suppressMessages(fit <- fit_model_function(sample_prior_mode = "no"))
                         ))
                         model_fit(fit)
+                        # Aggressive cleanup: Stan compile temporaries +
+                        # intermediate brms helper objects can hold
+                        # several hundred MB.  Force a full GC after
+                        # each fit so subsequent fits start from a
+                        # clean slate.
+                        .hbsaems_gc()
                         showNotification("Model fitting completed!", type = "message", duration = 10)
                         fit_params <- tryCatch(
                             colnames(brms::as_draws_matrix(fit$model))[
@@ -3185,6 +3231,12 @@ server <- function(input, output, session) {
     # Lightweight library of named model snapshots.  The user takes a
     # snapshot of the current fit, then selects 2+ snapshots to feed into
     # model_compare_all() or model_average().
+    # Memory note: each snapshot can be 50-200 MB of brmsfit object.  We
+    # cap the library at MAX_SNAPSHOTS to prevent the Shiny session from
+    # accumulating gigabytes across many fit-snapshot cycles.  When the
+    # cap is hit, the oldest snapshot is evicted FIFO with a notification.
+    # See inst/shiny/sae_app/memory_helpers.R for the helpers.
+    MAX_SNAPSHOTS <- 5L
     multimodel_library <- reactiveVal(list())
 
     observeEvent(input$multimodel_snapshot, {
@@ -3200,15 +3252,42 @@ server <- function(input, output, session) {
             showNotification(paste("Overwriting existing snapshot:", nm),
                               type = "warning", duration = 6)
         }
-        lib[[nm]] <- model_fit()
+        # Use the LRU-aware helper -- it shrinks the brmsfit (drops the
+        # rstan compile cache), inserts under `nm`, and evicts the
+        # oldest entries above the cap.
+        lib <- .multimodel_library_add(
+            lib           = lib,
+            name          = nm,
+            model         = model_fit(),
+            max_snapshots = MAX_SNAPSHOTS
+        )
+        evicted <- attr(lib, "evicted") %||% character(0L)
+        attr(lib, "evicted") <- NULL   # clean the attribute before storing
         multimodel_library(lib)
+
+        # Release any intermediate state (Stan compile temporary objects,
+        # etc.) accumulated during the recent fit.
+        .hbsaems_gc()
 
         # Refresh the selection dropdown
         updateSelectizeInput(session, "multimodel_selected",
                               choices = names(lib),
                               selected = names(lib))
-        showNotification(paste("Snapshot saved:", nm),
-                          type = "message", duration = 5)
+        if (length(evicted) > 0L) {
+            showNotification(
+                paste0("Snapshot library at cap (", MAX_SNAPSHOTS, "). ",
+                       "Evicted oldest: ",
+                       paste(evicted, collapse = ", "), "."),
+                type = "warning", duration = 8)
+        }
+        # Report current memory cost of the library so the user can see
+        # what they are storing.
+        total_mb <- sum(vapply(lib, .estimate_object_size, numeric(1L)),
+                         na.rm = TRUE)
+        showNotification(
+            sprintf("Snapshot saved: %s. Library: %d snapshot(s), ~%.0f MB total.",
+                     nm, length(lib), total_mb),
+            type = "message", duration = 6)
     })
 
     observeEvent(input$multimodel_compare_btn, {
@@ -3253,6 +3332,44 @@ server <- function(input, output, session) {
                 grepl("^ERROR:", out)) cat(out, "\n")
             else print(out)
         })
+    })
+
+    # -- Memory status display --------------------------------------------------
+    # Show a per-snapshot size readout under the comparison panel so the
+    # user can see how much memory the library is holding.
+    output$multimodel_memory_status <- renderPrint({
+        lib <- multimodel_library()
+        if (length(lib) == 0L) {
+            cat("Library is empty.\n")
+            return(invisible())
+        }
+        sizes <- vapply(lib, .estimate_object_size, numeric(1L))
+        cat("Snapshot library:\n")
+        for (i in seq_along(lib)) {
+            cat(sprintf("  %-25s %6.1f MB\n", names(lib)[i], sizes[i]))
+        }
+        cat(sprintf("  %-25s %6.1f MB total\n",
+                     "-----", sum(sizes, na.rm = TRUE)))
+    })
+
+    # -- Clear library ----------------------------------------------------------
+    # Free memory by dropping every snapshot.  We call .hbsaems_gc()
+    # after clearing so the OS reclaims the freed RAM.
+    observeEvent(input$multimodel_clear, {
+        n_before <- length(multimodel_library())
+        if (n_before == 0L) {
+            showNotification("Library is already empty.",
+                              type = "message", duration = 4)
+            return()
+        }
+        multimodel_library(list())
+        updateSelectizeInput(session, "multimodel_selected",
+                              choices = character(0L),
+                              selected = character(0L))
+        .hbsaems_gc()
+        showNotification(
+            sprintf("Cleared %d snapshot(s) and released memory.", n_before),
+            type = "message", duration = 5)
     })
 
 

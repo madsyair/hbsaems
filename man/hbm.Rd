@@ -671,9 +671,11 @@ library(brms)
 data("data_fhnorm")
 data <- data_fhnorm
 
-# Standard lightweight MCMC settings used throughout these examples.
-# Use chains = 4, iter = 4000 for production runs.
-FAST <- list(chains = 2, iter = 2000, warmup = 1000, cores = 1,
+# Standard brms-default MCMC settings used throughout these
+# examples (chains = 4, iter = 2000, warmup = 1000).  For tougher
+# posteriors (funnel geometry, weakly identified priors), bump to
+# iter = 4000, warmup = 2000, control = list(adapt_delta = 0.99).
+FAST <- list(chains = 4, iter = 2000, warmup = 1000, cores = 1,
              seed = 123, refresh = 0)
 
 # -- Basic model --------------------------------------------------------------

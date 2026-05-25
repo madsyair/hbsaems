@@ -27,8 +27,11 @@ wrappers do it for you.
 }
 \examples{
 \donttest{
+# Uses brms-default MCMC settings (chains = 4, iter = 2000,
+# warmup = 1000) -- this toy data is only for verifying the
+# hbmfit class structure, not for inference.
 raw <- brms::brm(y ~ x1, data = data.frame(y = rnorm(10), x1 = 1:10),
-                 chains = 1, iter = 200, refresh = 0)
+                 chains = 4, iter = 2000, warmup = 1000, refresh = 0)
 fit <- hbmfit(model = raw,
               data  = data.frame(y = rnorm(10), x1 = 1:10),
               missing_method = NULL)

@@ -126,7 +126,7 @@ fit <- hbm_binlogitnorm(
   auxiliary  = c("x1", "x2", "x3"),
   area_var   = "district",        # area-level random effect (1 | district)
   data       = data_binlogitnorm,
-  chains = 1, iter = 500, warmup = 250, refresh = 0
+  chains = 4, iter = 2000, warmup = 1000, refresh = 0
 )
 
 # -- 2. With spatial CAR random effect -------------------------------------
@@ -139,7 +139,7 @@ fit_car <- hbm_binlogitnorm(
   spatial_model = "car",
   M             = adjacency_matrix_car_regency,
   data          = data_binlogitnorm,
-  chains = 1, iter = 500, warmup = 250, refresh = 0
+  chains = 4, iter = 2000, warmup = 1000, refresh = 0
 )
 }
 

@@ -84,11 +84,12 @@ library(brms)
 data("data_fhnorm")
 model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
              re = ~ (1 | regency),    # area-level random effect
-             chains = 2, iter = 1000, warmup = 500, cores = 1,
+             chains = 4, iter = 2000, warmup = 1000, cores = 1,
              seed = 1, refresh = 0)
 
-# Re-run with more iterations (no data change needed)
-model2 <- update_hbm(model, iter = 4000, warmup = 2000)
+# Re-run with slightly more iterations (no data change needed).
+# In production you would jump to e.g. iter = 4000, warmup = 2000.
+model2 <- update_hbm(model, iter = 1000, warmup = 500)
 
 # Add a predictor: the auto-fallback transparently retries with the
 # stored data frame.  Equivalent to passing newdata = data_fhnorm.

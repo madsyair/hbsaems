@@ -235,7 +235,7 @@ fit <- hbm_flex(
   auxiliary  = c("x1", "x2", "x3"),
   area_var   = "district",         # area-level random effect: (1 | district)
   data       = data_lnln,
-  chains = 2, iter = 1000, refresh = 0
+  chains = 4, iter = 2000, refresh = 0
 )
 }
 

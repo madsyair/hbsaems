@@ -108,10 +108,13 @@ new_hbmfit <- function(model, missing_method = NULL, data) {
 #' \donttest{
 #' # Minimal example without area-level RE (fixed-effects baseline) --
 #' # suppress the area-RE advisory because this 5-row toy dataset cannot
-#' # meaningfully estimate a random effect.
+#' # meaningfully estimate a random effect.  Uses brms-default MCMC
+#' # settings (chains = 4, iter = 2000, warmup = 1000); on this toy
+#' # data the fit is only used to verify the hbmfit class structure,
+#' # not for inference.
 #' fit <- suppressWarnings(
 #'   hbm(brms::bf(y ~ x1), data = data.frame(y = rnorm(5), x1 = 1:5),
-#'       chains = 1, iter = 200, refresh = 0)
+#'       chains = 4, iter = 2000, warmup = 1000, refresh = 0)
 #' )
 #' validate_hbmfit(fit)
 #' }
@@ -177,8 +180,11 @@ validate_hbmfit <- function(x) {
 #'
 #' @examples
 #' \donttest{
+#' # Uses brms-default MCMC settings (chains = 4, iter = 2000,
+#' # warmup = 1000) -- this toy data is only for verifying the
+#' # hbmfit class structure, not for inference.
 #' raw <- brms::brm(y ~ x1, data = data.frame(y = rnorm(10), x1 = 1:10),
-#'                  chains = 1, iter = 200, refresh = 0)
+#'                  chains = 4, iter = 2000, warmup = 1000, refresh = 0)
 #' fit <- hbmfit(model = raw,
 #'               data  = data.frame(y = rnorm(10), x1 = 1:10),
 #'               missing_method = NULL)

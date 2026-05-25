@@ -37,7 +37,7 @@ model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
                brms::prior(normal(0, 1), class = "b"),
                brms::prior(normal(0, 5), class = "Intercept")
              ),
-             chains = 2, iter = 1000, warmup = 500,
+             chains = 4, iter = 2000, warmup = 1000,
              cores = 1, seed = 1, refresh = 0)
 pd <- prior_draws(model)
 head(pd)

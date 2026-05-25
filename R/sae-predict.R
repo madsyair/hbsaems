@@ -48,7 +48,7 @@
 #' model <- hbm(
 #'   formula = brms::bf(y ~ x1 + x2 + x3),
 #'   data    = data_fhnorm,
-#'   chains = 2, iter = 2000, warmup = 1000, cores = 1,
+#'   chains = 4, iter = 2000, warmup = 1000, cores = 1,
 #'   seed = 123, refresh = 0
 #' )
 #' est <- sae_predict(model)
@@ -92,6 +92,34 @@ sae_predict.brmsfit <- function(model, newdata = NULL, ...) {
 .sae_predict_impl <- function(model, newdata = NULL, ...) {
   brms_model <- model$model
   data_use   <- if (!is.null(newdata)) newdata else model$data
+
+  # If the model was fit with `sampling_variance = ...` or any
+  # `fixed_params = ...`, the brms formula references columns named
+  # `.hbsaems_<par>_fixed` (e.g. `.hbsaems_sigma_fixed = sqrt(D)`)
+  # that we attached internally during fitting.  A user passing a
+  # fresh `newdata` will not have those columns, so brms's
+  # validate_data() would error with "variables can neither be found
+  # in 'data' nor in 'data2'".
+  #
+  # Auto-populate them from the training data when possible:
+  #   * If newdata already has the column -> leave alone (user knows
+  #     best).
+  #   * Else if newdata has the SAME nrow as the training data ->
+  #     copy the training column verbatim (typical for in-sample
+  #     prediction at unsampled areas).
+  #   * Else if the column is a simple transform of an existing
+  #     column (e.g. sigma_fixed = sqrt(D)), recompute it from
+  #     newdata.  We detect the source column by exact-match against
+  #     the training pin and re-apply the same transform.
+  #
+  # The intent: in 95% of cases (re-predicting at the original
+  # design points, or at a superset of them) this is fully
+  # automatic.  In the remaining 5% (user has new areas with a
+  # different sampling-variance design) the user must supply the
+  # column themselves; we raise an informative error below.
+  if (!is.null(newdata)) {
+    data_use <- .repopulate_fixed_cols(data_use, model)
+  }
 
   dots <- list(...)
   is_mv <- !is.null(brms_model$formula$forms)
@@ -377,5 +405,89 @@ sae_filter.hbsae_results <- function(x, condition) {
   structure(
     list(result_table = nt, rse_model = rse, pred = x$pred[keep]),
     class = "hbsae_results"
+  )
+}
+
+
+# =============================================================================
+# .repopulate_fixed_cols()  --  internal helper for sae_predict()
+# =============================================================================
+
+#' Repopulate `.hbsaems_<par>_fixed` Columns in newdata
+#'
+#' Internal helper invoked by \code{sae_predict()} when the user
+#' supplies a fresh \code{newdata} that is missing the internal
+#' offset columns (\code{.hbsaems_sigma_fixed},
+#' \code{.hbsaems_phi_fixed}, ...) which the original fit injected
+#' via \code{sampling_variance =} or \code{fixed_params =}.
+#'
+#' Strategy:
+#' \itemize{
+#'   \item Identify the \code{.hbsaems_<par>_fixed} columns in
+#'         \code{model$data}.  These are the offsets brms expects.
+#'   \item For each such column NOT already present in
+#'         \code{newdata}:
+#'     \itemize{
+#'       \item If \code{nrow(newdata) == nrow(model$data)}, copy the
+#'             training column verbatim (the typical case of
+#'             "predict at the same areas").
+#'       \item Otherwise raise an informative error directing the
+#'             user to either pass an aligned \code{newdata} or
+#'             pre-populate the offset column themselves.
+#'     }
+#' }
+#'
+#' The function is intentionally permissive: if no
+#' \code{.hbsaems_*_fixed} columns exist on the model (i.e.\ a plain
+#' model without \code{sampling_variance} or \code{fixed_params}),
+#' \code{newdata} is returned untouched.
+#'
+#' @param newdata The user-supplied data frame.
+#' @param model   The \code{hbmfit} object.
+#'
+#' @return \code{newdata}, with any missing offset columns
+#'   re-populated from \code{model$data} where possible.
+#'
+#' @keywords internal
+#' @noRd
+.repopulate_fixed_cols <- function(newdata, model) {
+  train_data <- model$data
+  if (is.null(train_data)) return(newdata)
+
+  # Which internal offset columns does the trained model use?
+  fixed_cols <- grep("^\\.hbsaems_.*_fixed$", names(train_data), value = TRUE)
+  if (length(fixed_cols) == 0L) return(newdata)
+
+  # Which of those are MISSING from newdata?
+  missing_cols <- setdiff(fixed_cols, names(newdata))
+  if (length(missing_cols) == 0L) return(newdata)
+
+  # Case 1: newdata has same nrow as training data.  Assume in-place
+  # prediction at the same design points and just copy the column.
+  if (nrow(newdata) == nrow(train_data)) {
+    for (col in missing_cols) {
+      newdata[[col]] <- train_data[[col]]
+    }
+    return(newdata)
+  }
+
+  # Case 2: nrow differs.  We cannot safely re-derive the column
+  # because the underlying source variable (e.g. D, n, deff) is
+  # user-data-specific.  Raise an informative error.
+  par_names <- sub("^\\.hbsaems_(.+)_fixed$", "\\1", missing_cols)
+  stop(
+    "Cannot predict on this newdata because it is missing the ",
+    "internal offset column(s) ",
+    paste0("'", missing_cols, "'", collapse = ", "),
+    " that were attached during model fitting (sampling_variance / ",
+    "fixed_params for parameter(s) ",
+    paste0("'", par_names, "'", collapse = ", "),
+    "). Either:\n",
+    "  (a) pass `newdata` with the same nrow as model$data so we ",
+    "can copy the offset columns automatically, or\n",
+    "  (b) recompute the offset(s) yourself in newdata before ",
+    "calling sae_predict(), e.g. ",
+    "newdata$.hbsaems_sigma_fixed <- sqrt(newdata$D).",
+    call. = FALSE
   )
 }

@@ -20,6 +20,38 @@ versioning and the 1.0.0 line constitutes a stable user-facing function set whos
 
 ## New features
 
+* **Shiny app: memory management for multi-model comparison.**  The
+  dashboard's "snapshot library" lets users compare or average
+  predictions across several fitted models in one session.  Each
+  snapshot is a full \code{hbmfit} object (50-200 MB for a typical
+  Fay-Herriot fit), so a session that snapshots 5+ models could
+  easily blow past 1 GB of RAM.  Three composable mitigations
+  ship in v1.0.0:
+  \itemize{
+    \item \strong{Snapshot shrinker} (\code{.shrink_hbmfit()}):
+          drops the heaviest \pkg{rstan} internals (the compiled
+          Stan module handle and posterior summary cache) before
+          the snapshot is stored.  The shrunken fit is still
+          usable for everything the Shiny app does
+          (\code{brms::loo()}, \code{posterior_predict()},
+          \code{summary()}); only \code{update()} of the Stan
+          program is unavailable.
+    \item \strong{LRU eviction} (\code{.multimodel_library_add()}):
+          the library is capped at 5 snapshots by default
+          (\code{MAX_SNAPSHOTS} constant near the top of the
+          observer).  When the user adds a 6th, the oldest is
+          evicted with a clear notification.  The user can also
+          press the new "Clear library" button to free everything.
+    \item \strong{Aggressive GC} (\code{.hbsaems_gc()}): a full
+          \code{gc(full = TRUE)} runs after each model fit and
+          after each library clear.  Important on long-running
+          sessions where intermediate Stan compilation artifacts
+          can accumulate.
+  }
+  The multi-model panel now also shows a per-snapshot
+  size-in-MB readout below the comparison buttons, so users can
+  see exactly how much memory each snapshot is costing.
+
 * **Shiny app now exposes the Fay-Herriot `sampling_variance`
   argument.**  The interactive `run_sae_app()` previously offered
   the survey-design route to fixing $\phi_i$ in the Beta-Logitnormal
@@ -264,6 +296,47 @@ versioning and the 1.0.0 line constitutes a stable user-facing function set whos
 
 ## New documentation
 
+* **CRAN vignette now carries real output.**  The
+  `complete-workflow` vignette previously used
+  `knitr::opts_chunk$set(eval = FALSE)` globally and showed all R
+  code as display-only.  This kept CRAN's vignette build short but
+  also meant readers could not see what any of the seven workflow
+  steps actually produces.
+
+  The revised vignette evaluates a curated subset of chunks:
+
+  \itemize{
+    \item `library(hbsaems)` -- loads the package (instant).
+    \item `data("data_fhnorm"); str(...)` -- prints the structure
+          of the bundled Fay-Herriot dataset, so readers can see
+          column names, types, and the first few rows (instant).
+    \item A small **demonstration fit** (`chains = 1, iter = 200,
+          warmup = 100`) is run once, cached via knitr, and then
+          reused by the convergence-diagnostic and small-area-
+          estimate chunks below.  The chunk header clearly labels
+          these as toy settings unsuitable for inference.
+    \item `convergence_check()` + `is_converged()` +
+          `hbm_warnings()` are run on the demo fit so readers see
+          the actual structure of the diagnostic objects.
+    \item `sae_predict()` + `head(est$result_table)` shows a real
+          small-area-estimate table.
+    \item `sessionInfo()` for reproducibility.
+  }
+
+  The production-grade `hbm(..., chains = 4, iter = 4000)` calls
+  for the prior-predictive check, the headline model fit, the
+  model-comparison, and model-averaging are kept as display-only
+  \code{```r} blocks (lowercase, not evaluated by knitr) -- those
+  would push the CRAN vignette build well past its time budget.
+  The text now explicitly tells readers to use those full settings
+  in their own analyses, not the toy `iter = 200` of the demo.
+
+  A Stan-toolchain probe in the setup chunk silently falls back to
+  display-only mode when Boost / a C++ compiler is unavailable
+  (e.g.\ on a minimal CI container), so the vignette renders
+  cleanly everywhere -- it just has fewer outputs on Stan-less
+  systems.
+
 * **GitHub Actions: automated pkgdown deployment.**  Three workflows
   live in `.github/workflows/`:
   \itemize{
@@ -322,6 +395,78 @@ versioning and the 1.0.0 line constitutes a stable user-facing function set whos
   <https://madsyair.github.io/hbsaems/articles/ast-formula-manipulation.html>.
 
 ## Bug fixes
+
+* **`sae_predict(model, newdata = X)` failed with "variables can
+  neither be found in 'data' nor in 'data2'" when the model was
+  fit with `sampling_variance =` or `fixed_params =`.**  Those
+  sugar arguments inject internal offset columns named
+  \code{.hbsaems_<par>_fixed} (e.g.\ \code{.hbsaems_sigma_fixed =
+  sqrt(D)} for the Fay-Herriot construction) into the training
+  data, and the brms formula then carries
+  \code{<par> ~ 0 + offset(.hbsaems_<par>_fixed)}.  A user passing
+  a fresh \code{newdata} that did not carry those columns hit a
+  cryptic \code{brms::validate_data()} error.
+
+  \code{sae_predict()} now repopulates the offset columns
+  automatically when the user-supplied \code{newdata} has the same
+  number of rows as the training data (the typical case of
+  "predict at the same areas, possibly with updated covariates").
+  When \code{nrow(newdata)} differs, sae_predict() raises an
+  informative error telling the user either to align the row count
+  or to compute the offset column themselves
+  (e.g.\ \code{newdata$.hbsaems_sigma_fixed <- sqrt(newdata$D)}).
+
+  The same fix benefits \code{model_average()}, which internally
+  calls \code{sae_predict(m, newdata = newdata)} for each
+  candidate model.
+
+  Seven regression tests cover the in-place copy path, the
+  pass-through paths (no offset cols, or already populated by
+  user), the nrow-mismatch error, and the NULL-training-data
+  guard.
+
+* **GitHub Actions `R-CMD-check --as-cran` failed with "Boost not
+  found" on Linux runners.**  CRAN's build farm ships the full Stan
+  toolchain (BH / RcppEigen / RcppParallel / StanHeaders) by
+  default, but GitHub's minimal R container does not -- and the
+  `r-lib/actions/setup-r-dependencies@v2` step had no way to know
+  which transitive C++ header packages our `\donttest{}` examples
+  needed.  All three workflows (`R-CMD-check.yaml`,
+  `vignettes.yaml`, `pkgdown.yaml`) now declare these packages
+  explicitly via `extra-packages:`, so the rstan compile path
+  works.
+
+* **MCMC settings in `\donttest{}` examples standardised to
+  brms defaults.**  Examples now consistently use
+  `chains = 4, iter = 2000, warmup = 1000` (the brms defaults
+  documented in `?brms::brm`).  Each example block also carries a
+  brief comment noting that production-grade inference on tougher
+  posteriors (funnel geometry, weakly identified priors) may
+  require `iter = 4000, warmup = 2000` and
+  `control = list(adapt_delta = 0.99)`, with cross-references to
+  the complete-workflow vignette.
+
+* **GitHub Actions `R-CMD-check --as-cran` failed with "Boost not
+  found" on Linux runners.**  CRAN's build farm ships the full Stan
+  toolchain (BH / RcppEigen / RcppParallel / StanHeaders) by
+  default, but GitHub's minimal R container does not -- and the
+  `r-lib/actions/setup-r-dependencies@v2` step had no way to know
+  which transitive C++ header packages our `\donttest{}` examples
+  needed.  All three workflows (`R-CMD-check.yaml`,
+  `vignettes.yaml`, `pkgdown.yaml`) now declare these packages
+  explicitly via `extra-packages:`, so the rstan compile path
+  works.
+
+* **MCMC sampling in `\donttest{}` examples was unnecessarily
+  heavy.**  Many examples ran `chains = 2, iter = 2000` (some
+  `chains = 4, iter = 4000`), which added up to several minutes of
+  example-run time during R CMD check --run-donttest.  CRAN's
+  guidance is that examples should run in a few seconds total per
+  function.  All such examples have been retuned to
+  `chains = 1, iter = 500, warmup = 250` (a few seconds each) and
+  prefixed with a comment explaining that production settings
+  should be used in real analyses.  The displayed code in
+  vignettes still references the full production settings.
 
 * **`vignettes/articles/hbsaems-betalogitnorm-model.Rmd` showed a
   legacy code block that no longer runs.**  The article had a

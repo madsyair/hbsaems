@@ -40,10 +40,15 @@
 #' library(hbsaems)
 #' library(brms)
 #' data("data_fhnorm")
+#' # Uses brms's default MCMC settings (chains = 4, iter = 2000,
+#' # warmup = 1000).  For challenging posteriors (e.g. funnel
+#' # geometries in Fay-Herriot with small D_i), consider
+#' # chains = 4, iter = 4000, warmup = 2000 and
+#' # control = list(adapt_delta = 0.99).
 #' model <- hbm(brms::bf(y ~ x1 + x2 + x3),
 #'              data   = data_fhnorm,
 #'              re     = ~ (1 | regency),    # area-level random effect
-#'              chains = 2, iter = 2000, warmup = 1000,
+#'              chains = 4, iter = 2000, warmup = 1000,
 #'              cores  = 1, seed = 123, refresh = 0)
 #'
 #' diag <- convergence_check(model)

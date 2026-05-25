@@ -2348,3 +2348,177 @@ test_that(".build_area_re_formula: correct rendering of hierarchies", {
   expect_error(hbsaems:::.build_area_re_formula(c("a", "")),
                "empty strings")
 })
+
+
+# ---------------------------------------------------------------------------
+# 38. .repopulate_fixed_cols() handles newdata without internal offset cols
+# ---------------------------------------------------------------------------
+# Regression: a user passing fresh newdata to sae_predict() would hit
+# brms validate_data() saying ".hbsaems_sigma_fixed" cannot be found.
+# Solution: auto-copy from model$data when nrow matches.
+
+test_that(".repopulate_fixed_cols copies offset cols when nrow matches", {
+  # Mock model$data with offset column
+  train <- data.frame(
+    y = 1:10,
+    D = runif(10, 0.1, 1),
+    .hbsaems_sigma_fixed = sqrt(runif(10, 0.1, 1))
+  )
+  model <- list(data = train)
+  
+  # User-supplied newdata: same nrow, no offset col
+  newdata <- data.frame(
+    y = 11:20,
+    D = runif(10, 0.5, 2)
+  )
+  
+  out <- hbsaems:::.repopulate_fixed_cols(newdata, model)
+  
+  expect_true(".hbsaems_sigma_fixed" %in% names(out))
+  # Should be the COPY of training values
+  expect_equal(out$.hbsaems_sigma_fixed, train$.hbsaems_sigma_fixed)
+})
+
+test_that(".repopulate_fixed_cols passes through when no offset cols", {
+  # Model without fixed_params
+  train <- data.frame(y = 1:10, x = 1:10)
+  model <- list(data = train)
+  
+  newdata <- data.frame(y = 1:5, x = 1:5)
+  out <- hbsaems:::.repopulate_fixed_cols(newdata, model)
+  
+  # newdata unchanged
+  expect_identical(out, newdata)
+})
+
+test_that(".repopulate_fixed_cols passes through when col already present", {
+  train <- data.frame(
+    y = 1:10,
+    .hbsaems_sigma_fixed = rep(0.5, 10)
+  )
+  newdata <- data.frame(
+    y = 11:15,
+    .hbsaems_sigma_fixed = rep(1.0, 5)   # user supplied
+  )
+  model <- list(data = train)
+  
+  out <- hbsaems:::.repopulate_fixed_cols(newdata, model)
+  
+  # User-supplied values preserved, not overwritten
+  expect_equal(out$.hbsaems_sigma_fixed, rep(1.0, 5))
+})
+
+test_that(".repopulate_fixed_cols errors informatively on nrow mismatch", {
+  train <- data.frame(
+    y = 1:10,
+    D = runif(10),
+    .hbsaems_sigma_fixed = sqrt(runif(10))
+  )
+  newdata <- data.frame(
+    y = 1:5,
+    D = runif(5)   # different nrow, no offset
+  )
+  model <- list(data = train)
+  
+  expect_error(
+    hbsaems:::.repopulate_fixed_cols(newdata, model),
+    "Cannot predict on this newdata"
+  )
+  expect_error(
+    hbsaems:::.repopulate_fixed_cols(newdata, model),
+    "sigma"   # mentions which param
+  )
+})
+
+test_that(".repopulate_fixed_cols handles model$data = NULL", {
+  model <- list(data = NULL)
+  newdata <- data.frame(y = 1:5, x = 1:5)
+  out <- hbsaems:::.repopulate_fixed_cols(newdata, model)
+  expect_identical(out, newdata)
+})
+
+
+# ---------------------------------------------------------------------------
+# 39. Shiny memory helpers (v1.0.0)
+# ---------------------------------------------------------------------------
+# These helpers live under inst/shiny/sae_app/ so they ship with the
+# app but are NOT exported package functions.  We still want CI to
+# catch regressions in their behaviour because the Shiny app's
+# multi-model comparison feature depends on them.
+
+test_that("shiny memory_helpers: .multimodel_library_add LRU works", {
+  helpers <- system.file("shiny", "sae_app", "memory_helpers.R",
+                          package = "hbsaems")
+  if (!nzchar(helpers) || !file.exists(helpers)) {
+    helpers <- file.path("..", "..", "inst", "shiny", "sae_app",
+                          "memory_helpers.R")
+  }
+  skip_if_not(file.exists(helpers), "memory_helpers.R not found")
+  
+  env <- new.env()
+  sys.source(helpers, envir = env)
+  
+  # Fill library beyond cap
+  lib <- list()
+  for (i in 1:7) {
+    lib <- env$.multimodel_library_add(
+      lib           = lib,
+      name          = sprintf("m%d", i),
+      model         = list(payload = 1:100),
+      max_snapshots = 5L
+    )
+  }
+  
+  expect_length(lib, 5L)
+  # Newest 5 retained, oldest 2 dropped
+  expect_setequal(names(lib), c("m3", "m4", "m5", "m6", "m7"))
+  
+  # Evicted attribute reports last eviction
+  expect_equal(attr(lib, "evicted"), "m2")
+})
+
+test_that("shiny memory_helpers: .estimate_object_size returns MB", {
+  helpers <- system.file("shiny", "sae_app", "memory_helpers.R",
+                          package = "hbsaems")
+  if (!nzchar(helpers) || !file.exists(helpers)) {
+    helpers <- file.path("..", "..", "inst", "shiny", "sae_app",
+                          "memory_helpers.R")
+  }
+  skip_if_not(file.exists(helpers), "memory_helpers.R not found")
+  
+  env <- new.env()
+  sys.source(helpers, envir = env)
+  
+  big <- list(x = rnorm(1e5))
+  mb <- env$.estimate_object_size(big)
+  expect_true(is.numeric(mb))
+  expect_gt(mb, 0)
+  
+  # Caches on the object
+  big2 <- env$.estimate_object_size(big)
+  expect_identical(mb, big2)
+  
+  # Handles NULL
+  expect_equal(env$.estimate_object_size(NULL), 0)
+})
+
+test_that("shiny memory_helpers: .shrink_hbmfit defensive on non-hbmfit", {
+  helpers <- system.file("shiny", "sae_app", "memory_helpers.R",
+                          package = "hbsaems")
+  if (!nzchar(helpers) || !file.exists(helpers)) {
+    helpers <- file.path("..", "..", "inst", "shiny", "sae_app",
+                          "memory_helpers.R")
+  }
+  skip_if_not(file.exists(helpers), "memory_helpers.R not found")
+  
+  env <- new.env()
+  sys.source(helpers, envir = env)
+  
+  # NULL -> NULL
+  expect_null(env$.shrink_hbmfit(NULL))
+  # Non-hbmfit input -> returned unchanged
+  expect_equal(env$.shrink_hbmfit(list(x = 1)), list(x = 1))
+  # Class-only object -> returned unchanged (no model slot)
+  obj <- structure(list(), class = "hbmfit")
+  expect_equal(env$.shrink_hbmfit(obj), obj)
+})

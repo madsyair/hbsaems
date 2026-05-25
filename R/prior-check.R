@@ -54,7 +54,7 @@
 #'     brms::prior(normal(0, 1), class = "b"),
 #'     brms::prior(normal(0, 5), class = "Intercept")
 #'   ),
-#'   chains = 2, iter = 1000, warmup = 500, cores = 1,
+#'   chains = 4, iter = 2000, warmup = 1000, cores = 1,
 #'   seed = 42, refresh = 0
 #' )
 #' pc <- prior_check(model_prior,

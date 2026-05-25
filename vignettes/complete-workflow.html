@@ -343,7 +343,8 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(hbsaems)</span></code></pre></div>
 <p>A typical Bayesian SAE workflow with <code>hbsaems</code> v1.0.0
-follows seven steps, each backed by a single primary function.</p>
+follows seven steps, each backed by a single primary function. This
+vignette walks through the canonical pipeline.</p>
 <div id="see-also" class="section level2">
 <h2>See also</h2>
 <p>For deeper coverage of topics beyond this introductory workflow, see
@@ -362,107 +363,656 @@ imputation)</li>
 <li>Migration guide for users coming from earlier versions</li>
 </ul>
 </div>
+<div id="inspect-the-data" class="section level2">
+<h2>0. Inspect the data</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;data_fhnorm&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">str</span>(data_fhnorm, <span class="at">max.level =</span> <span class="dv">1</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; &#39;data.frame&#39;:    100 obs. of  9 variables:</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt;  $ y         : num  6.98 9.01 6.22 10.47 10.62 ...</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt;  $ D         : num  0.921 2.643 1.704 0.659 1.017 ...</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt;  $ x1        : num  -0.9026 -0.7527 -0.2606 0.0759 0.2118 ...</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt;  $ x2        : num  0.712 -0.878 -0.607 -1.077 -0.502 ...</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt;  $ x3        : num  1.431 -0.318 -1.029 -1.071 -0.496 ...</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt;  $ theta_true: num  8.5 9.73 8.54 9.68 11.86 ...</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt;  $ u         : num  -0.8531 -0.0145 -1.2505 -0.5989 1.5845 ...</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt;  $ regency   : chr  &quot;regency_001&quot; &quot;regency_002&quot; &quot;regency_003&quot; &quot;regency_004&quot; ...</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt;  $ province  : chr  &quot;province_01&quot; &quot;province_01&quot; &quot;province_01&quot; &quot;province_01&quot; ...</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;datalabel&quot;)= chr &quot;data_fhnorm&quot;</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;var.labels&quot;)= chr [1:9] &quot;&quot; &quot;&quot; &quot;&quot; &quot;&quot; ...</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="fu">head</span>(data_fhnorm[, <span class="fu">c</span>(<span class="st">&quot;regency&quot;</span>, <span class="st">&quot;province&quot;</span>, <span class="st">&quot;y&quot;</span>, <span class="st">&quot;D&quot;</span>, <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>)], <span class="dv">4</span>)</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt;       regency    province         y         D         x1         x2         x3</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&gt; 1 regency_001 province_01  6.982249 0.9213655 -0.9026345  0.7116302  1.4305563</span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt; 2 regency_002 province_01  9.005801 2.6432183 -0.7526745 -0.8779797 -0.3182451</span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt; 3 regency_003 province_01  6.216509 1.7035092 -0.2605613 -0.6066989 -1.0293040</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt; 4 regency_004 province_01 10.469687 0.6586857  0.0759456 -1.0766939 -1.0711613</span></span></code></pre></div>
+<p><code>data_fhnorm</code> is a simulated Fay-Herriot dataset: 100
+regencies nested within 5 provinces, with a known sampling variance
+<code>D</code> per area and three covariates.</p>
+</div>
 <div id="prior-predictive-check" class="section level2">
 <h2>1. Prior predictive check</h2>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;data_fhnorm&quot;</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>model_prior <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">formula           =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">data              =</span> data_fhnorm,</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">re                =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),    <span class="co"># area-level random effect (Fay-Herriot)</span></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">sampling_variance =</span> <span class="st">&quot;D&quot;</span>,                 <span class="co"># KNOWN sampling variance D_i</span></span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="at">sample_prior      =</span> <span class="st">&quot;only&quot;</span>,</span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="at">prior             =</span> <span class="fu">c</span>(</span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>    brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">1</span>),  <span class="at">class =</span> <span class="st">&quot;b&quot;</span>),</span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>    brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">10</span>, <span class="dv">5</span>), <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>),</span>
-<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>    brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">2</span>),  <span class="at">class =</span> <span class="st">&quot;sd&quot;</span>)</span>
-<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>  ),</span>
-<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">2</span>, <span class="at">iter =</span> <span class="dv">1000</span></span>
-<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>)</span>
-<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>pc <span class="ot">&lt;-</span> <span class="fu">prior_check</span>(model_prior,</span>
-<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>                  <span class="at">data         =</span> data_fhnorm,</span>
-<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>                  <span class="at">response_var =</span> <span class="st">&quot;y&quot;</span>)</span>
-<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="fu">plot</span>(pc)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># This is the production call.  Replace `chains`, `iter` with your</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co"># usual values; the lighter settings below are a quick demonstration.</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>model_prior <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">formula           =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">data              =</span> data_fhnorm,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="at">re                =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),     <span class="co"># area-level random effect (Fay-Herriot)</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">sampling_variance =</span> <span class="st">&quot;D&quot;</span>,                 <span class="co"># KNOWN sampling variance D_i</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">sample_prior      =</span> <span class="st">&quot;only&quot;</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">prior             =</span> <span class="fu">c</span>(</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>    brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">1</span>),  <span class="at">class =</span> <span class="st">&quot;b&quot;</span>),</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>    brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">10</span>, <span class="dv">5</span>), <span class="at">class =</span> <span class="st">&quot;Intercept&quot;</span>),</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>    brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">2</span>),  <span class="at">class =</span> <span class="st">&quot;sd&quot;</span>)</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  ),</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">2</span>, <span class="at">iter =</span> <span class="dv">1000</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>)</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>pc <span class="ot">&lt;-</span> <span class="fu">prior_check</span>(model_prior,</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>                  <span class="at">data         =</span> data_fhnorm,</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>                  <span class="at">response_var =</span> <span class="st">&quot;y&quot;</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="fu">plot</span>(pc)</span></code></pre></div>
 <p>The <code>sampling_variance = &quot;D&quot;</code> argument is the
 <strong>defining feature</strong> of a Fay-Herriot model: the sampling
-variance is treated as from the design (it is not estimated), so brms
-pins the observation-level to . Omitting this argument makes the model
-unidentified because the residual and the area-RE would compete to
-explain the same variance, typically producing divergent transitions and
-very wide credible intervals.</p>
+variance is treated as <strong>known</strong> from the design (it is not
+estimated), so brms pins the observation-level to . Omitting this
+argument makes the model unidentified because the residual and the area
+random-effect would compete to explain the same variance, typically
+producing divergent transitions and very wide credible intervals.</p>
 </div>
 <div id="fit-the-model" class="section level2">
 <h2>2. Fit the model</h2>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="at">formula           =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">data              =</span> data_fhnorm,</span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">re                =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),       <span class="co"># area-level random effect (Fay-Herriot)</span></span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">sampling_variance =</span> <span class="st">&quot;D&quot;</span>,                    <span class="co"># known sampling variance from survey</span></span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="at">control           =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.99</span>),</span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">chains            =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">2</span></span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>)</span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">hbm</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="at">formula           =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">data              =</span> data_fhnorm,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">re                =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">sampling_variance =</span> <span class="st">&quot;D&quot;</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">control           =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.99</span>),</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">chains            =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>, <span class="at">warmup =</span> <span class="dv">2000</span>, <span class="at">cores =</span> <span class="dv">4</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>)</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="fu">summary</span>(model)</span></code></pre></div>
 <p>Two settings deserve attention:</p>
 <ul>
 <li><strong><code>sampling_variance = &quot;D&quot;</code></strong> – the column
-in holds the known sampling variance for each area; translates this into
-an offset on the observation-level standard deviation so brms / Stan
-never tries to estimate it.</li>
+<code>D</code> in <code>data_fhnorm</code> holds the known sampling
+variance for each area; <code>hbsaems</code> translates this into an
+offset on the observation-level standard deviation so brms / Stan never
+tries to estimate it.</li>
 <li><strong><code>adapt_delta = 0.99</code></strong> – Fay-Herriot
 likelihoods can produce mild funnel geometry between and the area random
-effects when many areas have small . Raising from the brms default 0.95
-to 0.99 buys a more conservative leapfrog step and eliminates the
-occasional divergent transition without re-parameterising the
-model.</li>
+effects when many areas have small . Raising <code>adapt_delta</code>
+from the brms default 0.95 to 0.99 buys a more conservative leapfrog
+step and eliminates the occasional divergent transition without
+re-parameterising the model.</li>
 </ul>
+<div id="a-small-fitted-model-to-demonstrate-the-rest-of-the-workflow" class="section level3">
+<h3>A small fitted model to demonstrate the rest of the workflow</h3>
+<p>For the remainder of the vignette we use a tiny model (very few
+iterations) so that the diagnostic and prediction chunks below have a
+real object to operate on. In your own analysis, <strong>use the full
+production settings shown above</strong>, not the toy settings here.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Mini fit -- iter = 200, chains = 1 -- for vignette demonstration only.</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co"># Do NOT use these settings for inference: the chains have not</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co"># converged at this length and the posterior will be biased.</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>fit_demo <span class="ot">&lt;-</span> <span class="fu">suppressWarnings</span>(</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="fu">hbm</span>(</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>    <span class="at">formula           =</span> brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2 <span class="sc">+</span> x3),</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>    <span class="at">data              =</span> data_fhnorm,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>    <span class="at">re                =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>    <span class="at">sampling_variance =</span> <span class="st">&quot;D&quot;</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>    <span class="at">chains  =</span> <span class="dv">1</span>,</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>    <span class="at">iter    =</span> <span class="dv">200</span>,</span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>    <span class="at">warmup  =</span> <span class="dv">100</span>,</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>    <span class="at">refresh =</span> <span class="dv">0</span>,</span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>    <span class="at">seed    =</span> <span class="dv">1</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a>  )</span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>)</span></code></pre></div>
+</div>
 </div>
 <div id="convergence-diagnostics" class="section level2">
 <h2>3. Convergence diagnostics</h2>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>diag <span class="ot">&lt;-</span> <span class="fu">convergence_check</span>(model)</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">is_converged</span>(model)</span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">summary</span>(diag)</span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="fu">plot</span>(diag, <span class="at">type =</span> <span class="st">&quot;trace&quot;</span>)</span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="fu">hbm_warnings</span>(model)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Operate on the mini fit_demo above (NOT a substitute for production</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co"># diagnostics on full chains).</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>diag <span class="ot">&lt;-</span> <span class="fu">convergence_check</span>(fit_demo)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-41"><a href="#cb6-41" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-42"><a href="#cb6-42" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-43"><a href="#cb6-43" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-44"><a href="#cb6-44" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-45"><a href="#cb6-45" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-46"><a href="#cb6-46" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-47"><a href="#cb6-47" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-48"><a href="#cb6-48" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-49"><a href="#cb6-49" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-50"><a href="#cb6-50" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-51"><a href="#cb6-51" tabindex="-1"></a><span class="co">#&gt; No divergences to plot.</span></span>
+<span id="cb6-52"><a href="#cb6-52" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-53"><a href="#cb6-53" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-54"><a href="#cb6-54" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-55"><a href="#cb6-55" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-56"><a href="#cb6-56" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-57"><a href="#cb6-57" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-58"><a href="#cb6-58" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-59"><a href="#cb6-59" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-60"><a href="#cb6-60" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-61"><a href="#cb6-61" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-62"><a href="#cb6-62" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-63"><a href="#cb6-63" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-64"><a href="#cb6-64" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-65"><a href="#cb6-65" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-66"><a href="#cb6-66" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-67"><a href="#cb6-67" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-68"><a href="#cb6-68" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-69"><a href="#cb6-69" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-70"><a href="#cb6-70" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-71"><a href="#cb6-71" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-72"><a href="#cb6-72" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-73"><a href="#cb6-73" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-74"><a href="#cb6-74" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-75"><a href="#cb6-75" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-76"><a href="#cb6-76" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-77"><a href="#cb6-77" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-78"><a href="#cb6-78" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-79"><a href="#cb6-79" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-80"><a href="#cb6-80" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-81"><a href="#cb6-81" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-82"><a href="#cb6-82" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-83"><a href="#cb6-83" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-84"><a href="#cb6-84" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-85"><a href="#cb6-85" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-86"><a href="#cb6-86" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-87"><a href="#cb6-87" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-88"><a href="#cb6-88" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-89"><a href="#cb6-89" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-90"><a href="#cb6-90" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-91"><a href="#cb6-91" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-92"><a href="#cb6-92" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-93"><a href="#cb6-93" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-94"><a href="#cb6-94" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-95"><a href="#cb6-95" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-96"><a href="#cb6-96" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-97"><a href="#cb6-97" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-98"><a href="#cb6-98" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-99"><a href="#cb6-99" tabindex="-1"></a><span class="fu">is_converged</span>(fit_demo)</span>
+<span id="cb6-100"><a href="#cb6-100" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb6-101"><a href="#cb6-101" tabindex="-1"></a><span class="fu">summary</span>(diag)</span>
+<span id="cb6-102"><a href="#cb6-102" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-103"><a href="#cb6-103" tabindex="-1"></a><span class="co">#&gt; ===== Convergence Diagnostics Summary =====</span></span>
+<span id="cb6-104"><a href="#cb6-104" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-105"><a href="#cb6-105" tabindex="-1"></a><span class="co">#&gt; R-hat:</span></span>
+<span id="cb6-106"><a href="#cb6-106" tabindex="-1"></a><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span id="cb6-107"><a href="#cb6-107" tabindex="-1"></a><span class="co">#&gt;  0.9902  0.9955  1.0038  1.0121  1.0194  1.1280 </span></span>
+<span id="cb6-108"><a href="#cb6-108" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-109"><a href="#cb6-109" tabindex="-1"></a><span class="co">#&gt; Bulk ESS:</span></span>
+<span id="cb6-110"><a href="#cb6-110" tabindex="-1"></a><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span id="cb6-111"><a href="#cb6-111" tabindex="-1"></a><span class="co">#&gt;   30.97  100.65  133.85  138.09  188.47  200.00 </span></span>
+<span id="cb6-112"><a href="#cb6-112" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-113"><a href="#cb6-113" tabindex="-1"></a><span class="co">#&gt; Geweke test (Z-scores):</span></span>
+<span id="cb6-114"><a href="#cb6-114" tabindex="-1"></a><span class="co">#&gt; [[1]]</span></span>
+<span id="cb6-115"><a href="#cb6-115" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-116"><a href="#cb6-116" tabindex="-1"></a><span class="co">#&gt; Fraction in 1st window = 0.1</span></span>
+<span id="cb6-117"><a href="#cb6-117" tabindex="-1"></a><span class="co">#&gt; Fraction in 2nd window = 0.5 </span></span>
+<span id="cb6-118"><a href="#cb6-118" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-119"><a href="#cb6-119" tabindex="-1"></a><span class="co">#&gt;                      b_Intercept                             b_x1 </span></span>
+<span id="cb6-120"><a href="#cb6-120" tabindex="-1"></a><span class="co">#&gt;                         -0.37988                         -0.88792 </span></span>
+<span id="cb6-121"><a href="#cb6-121" tabindex="-1"></a><span class="co">#&gt;                             b_x2                             b_x3 </span></span>
+<span id="cb6-122"><a href="#cb6-122" tabindex="-1"></a><span class="co">#&gt;                         -2.25456                          1.19864 </span></span>
+<span id="cb6-123"><a href="#cb6-123" tabindex="-1"></a><span class="co">#&gt;            sd_regency__Intercept                        Intercept </span></span>
+<span id="cb6-124"><a href="#cb6-124" tabindex="-1"></a><span class="co">#&gt;                         -0.48291                         -0.27155 </span></span>
+<span id="cb6-125"><a href="#cb6-125" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_001,Intercept] r_regency[regency_002,Intercept] </span></span>
+<span id="cb6-126"><a href="#cb6-126" tabindex="-1"></a><span class="co">#&gt;                          2.53333                         -1.09432 </span></span>
+<span id="cb6-127"><a href="#cb6-127" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_003,Intercept] r_regency[regency_004,Intercept] </span></span>
+<span id="cb6-128"><a href="#cb6-128" tabindex="-1"></a><span class="co">#&gt;                         -0.34630                         -1.03951 </span></span>
+<span id="cb6-129"><a href="#cb6-129" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_005,Intercept] r_regency[regency_006,Intercept] </span></span>
+<span id="cb6-130"><a href="#cb6-130" tabindex="-1"></a><span class="co">#&gt;                          0.29714                          0.79992 </span></span>
+<span id="cb6-131"><a href="#cb6-131" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_007,Intercept] r_regency[regency_008,Intercept] </span></span>
+<span id="cb6-132"><a href="#cb6-132" tabindex="-1"></a><span class="co">#&gt;                          0.96555                          0.69001 </span></span>
+<span id="cb6-133"><a href="#cb6-133" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_009,Intercept] r_regency[regency_010,Intercept] </span></span>
+<span id="cb6-134"><a href="#cb6-134" tabindex="-1"></a><span class="co">#&gt;                          2.12666                         -0.71444 </span></span>
+<span id="cb6-135"><a href="#cb6-135" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_011,Intercept] r_regency[regency_012,Intercept] </span></span>
+<span id="cb6-136"><a href="#cb6-136" tabindex="-1"></a><span class="co">#&gt;                          0.78253                          0.97046 </span></span>
+<span id="cb6-137"><a href="#cb6-137" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_013,Intercept] r_regency[regency_014,Intercept] </span></span>
+<span id="cb6-138"><a href="#cb6-138" tabindex="-1"></a><span class="co">#&gt;                          1.26104                          1.69245 </span></span>
+<span id="cb6-139"><a href="#cb6-139" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_015,Intercept] r_regency[regency_016,Intercept] </span></span>
+<span id="cb6-140"><a href="#cb6-140" tabindex="-1"></a><span class="co">#&gt;                         -0.38183                          0.64330 </span></span>
+<span id="cb6-141"><a href="#cb6-141" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_017,Intercept] r_regency[regency_018,Intercept] </span></span>
+<span id="cb6-142"><a href="#cb6-142" tabindex="-1"></a><span class="co">#&gt;                          0.69435                         -0.23802 </span></span>
+<span id="cb6-143"><a href="#cb6-143" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_019,Intercept] r_regency[regency_020,Intercept] </span></span>
+<span id="cb6-144"><a href="#cb6-144" tabindex="-1"></a><span class="co">#&gt;                          1.50055                         -0.33108 </span></span>
+<span id="cb6-145"><a href="#cb6-145" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_021,Intercept] r_regency[regency_022,Intercept] </span></span>
+<span id="cb6-146"><a href="#cb6-146" tabindex="-1"></a><span class="co">#&gt;                          0.76543                         -0.31163 </span></span>
+<span id="cb6-147"><a href="#cb6-147" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_023,Intercept] r_regency[regency_024,Intercept] </span></span>
+<span id="cb6-148"><a href="#cb6-148" tabindex="-1"></a><span class="co">#&gt;                          0.95497                          0.55438 </span></span>
+<span id="cb6-149"><a href="#cb6-149" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_025,Intercept] r_regency[regency_026,Intercept] </span></span>
+<span id="cb6-150"><a href="#cb6-150" tabindex="-1"></a><span class="co">#&gt;                         -1.30189                         -0.23310 </span></span>
+<span id="cb6-151"><a href="#cb6-151" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_027,Intercept] r_regency[regency_028,Intercept] </span></span>
+<span id="cb6-152"><a href="#cb6-152" tabindex="-1"></a><span class="co">#&gt;                         -0.27869                         -0.37691 </span></span>
+<span id="cb6-153"><a href="#cb6-153" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_029,Intercept] r_regency[regency_030,Intercept] </span></span>
+<span id="cb6-154"><a href="#cb6-154" tabindex="-1"></a><span class="co">#&gt;                         -1.03580                         -0.62288 </span></span>
+<span id="cb6-155"><a href="#cb6-155" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_031,Intercept] r_regency[regency_032,Intercept] </span></span>
+<span id="cb6-156"><a href="#cb6-156" tabindex="-1"></a><span class="co">#&gt;                          1.13821                          0.68404 </span></span>
+<span id="cb6-157"><a href="#cb6-157" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_033,Intercept] r_regency[regency_034,Intercept] </span></span>
+<span id="cb6-158"><a href="#cb6-158" tabindex="-1"></a><span class="co">#&gt;                          1.74722                          0.99892 </span></span>
+<span id="cb6-159"><a href="#cb6-159" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_035,Intercept] r_regency[regency_036,Intercept] </span></span>
+<span id="cb6-160"><a href="#cb6-160" tabindex="-1"></a><span class="co">#&gt;                         -0.18233                         -0.56501 </span></span>
+<span id="cb6-161"><a href="#cb6-161" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_037,Intercept] r_regency[regency_038,Intercept] </span></span>
+<span id="cb6-162"><a href="#cb6-162" tabindex="-1"></a><span class="co">#&gt;                          0.79287                         -0.36884 </span></span>
+<span id="cb6-163"><a href="#cb6-163" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_039,Intercept] r_regency[regency_040,Intercept] </span></span>
+<span id="cb6-164"><a href="#cb6-164" tabindex="-1"></a><span class="co">#&gt;                          0.53184                          0.22485 </span></span>
+<span id="cb6-165"><a href="#cb6-165" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_041,Intercept] r_regency[regency_042,Intercept] </span></span>
+<span id="cb6-166"><a href="#cb6-166" tabindex="-1"></a><span class="co">#&gt;                         -0.51635                          0.07436 </span></span>
+<span id="cb6-167"><a href="#cb6-167" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_043,Intercept] r_regency[regency_044,Intercept] </span></span>
+<span id="cb6-168"><a href="#cb6-168" tabindex="-1"></a><span class="co">#&gt;                         -0.24141                         -0.03389 </span></span>
+<span id="cb6-169"><a href="#cb6-169" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_045,Intercept] r_regency[regency_046,Intercept] </span></span>
+<span id="cb6-170"><a href="#cb6-170" tabindex="-1"></a><span class="co">#&gt;                          0.74541                         -0.12837 </span></span>
+<span id="cb6-171"><a href="#cb6-171" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_047,Intercept] r_regency[regency_048,Intercept] </span></span>
+<span id="cb6-172"><a href="#cb6-172" tabindex="-1"></a><span class="co">#&gt;                         -0.66193                         -0.34274 </span></span>
+<span id="cb6-173"><a href="#cb6-173" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_049,Intercept] r_regency[regency_050,Intercept] </span></span>
+<span id="cb6-174"><a href="#cb6-174" tabindex="-1"></a><span class="co">#&gt;                          0.96997                         -0.72179 </span></span>
+<span id="cb6-175"><a href="#cb6-175" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_051,Intercept] r_regency[regency_052,Intercept] </span></span>
+<span id="cb6-176"><a href="#cb6-176" tabindex="-1"></a><span class="co">#&gt;                         -0.61008                          1.55256 </span></span>
+<span id="cb6-177"><a href="#cb6-177" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_053,Intercept] r_regency[regency_054,Intercept] </span></span>
+<span id="cb6-178"><a href="#cb6-178" tabindex="-1"></a><span class="co">#&gt;                          3.14094                          1.29244 </span></span>
+<span id="cb6-179"><a href="#cb6-179" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_055,Intercept] r_regency[regency_056,Intercept] </span></span>
+<span id="cb6-180"><a href="#cb6-180" tabindex="-1"></a><span class="co">#&gt;                          0.97997                          1.76742 </span></span>
+<span id="cb6-181"><a href="#cb6-181" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_057,Intercept] r_regency[regency_058,Intercept] </span></span>
+<span id="cb6-182"><a href="#cb6-182" tabindex="-1"></a><span class="co">#&gt;                          0.23508                          0.15553 </span></span>
+<span id="cb6-183"><a href="#cb6-183" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_059,Intercept] r_regency[regency_060,Intercept] </span></span>
+<span id="cb6-184"><a href="#cb6-184" tabindex="-1"></a><span class="co">#&gt;                         -1.38684                         -0.03441 </span></span>
+<span id="cb6-185"><a href="#cb6-185" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_061,Intercept] r_regency[regency_062,Intercept] </span></span>
+<span id="cb6-186"><a href="#cb6-186" tabindex="-1"></a><span class="co">#&gt;                         -0.39761                          1.94751 </span></span>
+<span id="cb6-187"><a href="#cb6-187" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_063,Intercept] r_regency[regency_064,Intercept] </span></span>
+<span id="cb6-188"><a href="#cb6-188" tabindex="-1"></a><span class="co">#&gt;                          0.88468                         -0.74694 </span></span>
+<span id="cb6-189"><a href="#cb6-189" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_065,Intercept] r_regency[regency_066,Intercept] </span></span>
+<span id="cb6-190"><a href="#cb6-190" tabindex="-1"></a><span class="co">#&gt;                         -1.11521                          0.05771 </span></span>
+<span id="cb6-191"><a href="#cb6-191" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_067,Intercept] r_regency[regency_068,Intercept] </span></span>
+<span id="cb6-192"><a href="#cb6-192" tabindex="-1"></a><span class="co">#&gt;                          0.54408                          0.15825 </span></span>
+<span id="cb6-193"><a href="#cb6-193" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_069,Intercept] r_regency[regency_070,Intercept] </span></span>
+<span id="cb6-194"><a href="#cb6-194" tabindex="-1"></a><span class="co">#&gt;                          0.38837                          1.89231 </span></span>
+<span id="cb6-195"><a href="#cb6-195" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_071,Intercept] r_regency[regency_072,Intercept] </span></span>
+<span id="cb6-196"><a href="#cb6-196" tabindex="-1"></a><span class="co">#&gt;                          0.86007                         -1.10758 </span></span>
+<span id="cb6-197"><a href="#cb6-197" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_073,Intercept] r_regency[regency_074,Intercept] </span></span>
+<span id="cb6-198"><a href="#cb6-198" tabindex="-1"></a><span class="co">#&gt;                          0.52490                          1.19575 </span></span>
+<span id="cb6-199"><a href="#cb6-199" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_075,Intercept] r_regency[regency_076,Intercept] </span></span>
+<span id="cb6-200"><a href="#cb6-200" tabindex="-1"></a><span class="co">#&gt;                          0.31622                          0.71654 </span></span>
+<span id="cb6-201"><a href="#cb6-201" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_077,Intercept] r_regency[regency_078,Intercept] </span></span>
+<span id="cb6-202"><a href="#cb6-202" tabindex="-1"></a><span class="co">#&gt;                         -0.02686                          1.11578 </span></span>
+<span id="cb6-203"><a href="#cb6-203" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_079,Intercept] r_regency[regency_080,Intercept] </span></span>
+<span id="cb6-204"><a href="#cb6-204" tabindex="-1"></a><span class="co">#&gt;                         -0.93260                         -1.60636 </span></span>
+<span id="cb6-205"><a href="#cb6-205" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_081,Intercept] r_regency[regency_082,Intercept] </span></span>
+<span id="cb6-206"><a href="#cb6-206" tabindex="-1"></a><span class="co">#&gt;                         -0.73044                         -1.85083 </span></span>
+<span id="cb6-207"><a href="#cb6-207" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_083,Intercept] r_regency[regency_084,Intercept] </span></span>
+<span id="cb6-208"><a href="#cb6-208" tabindex="-1"></a><span class="co">#&gt;                          0.38941                         -0.18867 </span></span>
+<span id="cb6-209"><a href="#cb6-209" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_085,Intercept] r_regency[regency_086,Intercept] </span></span>
+<span id="cb6-210"><a href="#cb6-210" tabindex="-1"></a><span class="co">#&gt;                         -0.19211                         -6.53790 </span></span>
+<span id="cb6-211"><a href="#cb6-211" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_087,Intercept] r_regency[regency_088,Intercept] </span></span>
+<span id="cb6-212"><a href="#cb6-212" tabindex="-1"></a><span class="co">#&gt;                          0.06123                         -0.77727 </span></span>
+<span id="cb6-213"><a href="#cb6-213" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_089,Intercept] r_regency[regency_090,Intercept] </span></span>
+<span id="cb6-214"><a href="#cb6-214" tabindex="-1"></a><span class="co">#&gt;                          1.48321                         -0.81653 </span></span>
+<span id="cb6-215"><a href="#cb6-215" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_091,Intercept] r_regency[regency_092,Intercept] </span></span>
+<span id="cb6-216"><a href="#cb6-216" tabindex="-1"></a><span class="co">#&gt;                         -0.69895                         -1.54475 </span></span>
+<span id="cb6-217"><a href="#cb6-217" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_093,Intercept] r_regency[regency_094,Intercept] </span></span>
+<span id="cb6-218"><a href="#cb6-218" tabindex="-1"></a><span class="co">#&gt;                         -0.73712                          0.97211 </span></span>
+<span id="cb6-219"><a href="#cb6-219" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_095,Intercept] r_regency[regency_096,Intercept] </span></span>
+<span id="cb6-220"><a href="#cb6-220" tabindex="-1"></a><span class="co">#&gt;                         -0.52273                          2.09873 </span></span>
+<span id="cb6-221"><a href="#cb6-221" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_097,Intercept] r_regency[regency_098,Intercept] </span></span>
+<span id="cb6-222"><a href="#cb6-222" tabindex="-1"></a><span class="co">#&gt;                          0.92111                         -3.44677 </span></span>
+<span id="cb6-223"><a href="#cb6-223" tabindex="-1"></a><span class="co">#&gt; r_regency[regency_099,Intercept] r_regency[regency_100,Intercept] </span></span>
+<span id="cb6-224"><a href="#cb6-224" tabindex="-1"></a><span class="co">#&gt;                          0.33993                         -0.13166 </span></span>
+<span id="cb6-225"><a href="#cb6-225" tabindex="-1"></a><span class="co">#&gt;                           lprior                             lp__ </span></span>
+<span id="cb6-226"><a href="#cb6-226" tabindex="-1"></a><span class="co">#&gt;                          0.67585                         -0.36662 </span></span>
+<span id="cb6-227"><a href="#cb6-227" tabindex="-1"></a><span class="co">#&gt;                         z_1[1,1]                         z_1[1,2] </span></span>
+<span id="cb6-228"><a href="#cb6-228" tabindex="-1"></a><span class="co">#&gt;                          2.60661                         -1.15950 </span></span>
+<span id="cb6-229"><a href="#cb6-229" tabindex="-1"></a><span class="co">#&gt;                         z_1[1,3]                         z_1[1,4] </span></span>
+<span id="cb6-230"><a href="#cb6-230" tabindex="-1"></a><span class="co">#&gt;                         -0.44316                         -0.83686 </span></span>
+<span id="cb6-231"><a href="#cb6-231" tabindex="-1"></a><span class="co">#&gt;                         z_1[1,5]                         z_1[1,6] </span></span>
+<span id="cb6-232"><a href="#cb6-232" tabindex="-1"></a><span class="co">#&gt;                          0.32197                          0.72187 </span></span>
+<span id="cb6-233"><a href="#cb6-233" tabindex="-1"></a><span class="co">#&gt;                         z_1[1,7]                         z_1[1,8] </span></span>
+<span id="cb6-234"><a href="#cb6-234" tabindex="-1"></a><span class="co">#&gt;                          0.85500                          0.68356 </span></span>
+<span id="cb6-235"><a href="#cb6-235" tabindex="-1"></a><span class="co">#&gt;                         z_1[1,9]                        z_1[1,10] </span></span>
+<span id="cb6-236"><a href="#cb6-236" tabindex="-1"></a><span class="co">#&gt;                          1.99573                         -0.61475 </span></span>
+<span id="cb6-237"><a href="#cb6-237" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,11]                        z_1[1,12] </span></span>
+<span id="cb6-238"><a href="#cb6-238" tabindex="-1"></a><span class="co">#&gt;                          0.71367                          1.11718 </span></span>
+<span id="cb6-239"><a href="#cb6-239" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,13]                        z_1[1,14] </span></span>
+<span id="cb6-240"><a href="#cb6-240" tabindex="-1"></a><span class="co">#&gt;                          1.45869                          1.84480 </span></span>
+<span id="cb6-241"><a href="#cb6-241" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,15]                        z_1[1,16] </span></span>
+<span id="cb6-242"><a href="#cb6-242" tabindex="-1"></a><span class="co">#&gt;                         -0.17716                          1.26162 </span></span>
+<span id="cb6-243"><a href="#cb6-243" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,17]                        z_1[1,18] </span></span>
+<span id="cb6-244"><a href="#cb6-244" tabindex="-1"></a><span class="co">#&gt;                          0.78684                         -0.50915 </span></span>
+<span id="cb6-245"><a href="#cb6-245" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,19]                        z_1[1,20] </span></span>
+<span id="cb6-246"><a href="#cb6-246" tabindex="-1"></a><span class="co">#&gt;                          0.84447                         -0.03705 </span></span>
+<span id="cb6-247"><a href="#cb6-247" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,21]                        z_1[1,22] </span></span>
+<span id="cb6-248"><a href="#cb6-248" tabindex="-1"></a><span class="co">#&gt;                          0.78376                         -0.34361 </span></span>
+<span id="cb6-249"><a href="#cb6-249" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,23]                        z_1[1,24] </span></span>
+<span id="cb6-250"><a href="#cb6-250" tabindex="-1"></a><span class="co">#&gt;                          1.16054                          0.83935 </span></span>
+<span id="cb6-251"><a href="#cb6-251" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,25]                        z_1[1,26] </span></span>
+<span id="cb6-252"><a href="#cb6-252" tabindex="-1"></a><span class="co">#&gt;                         -1.82156                          0.07895 </span></span>
+<span id="cb6-253"><a href="#cb6-253" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,27]                        z_1[1,28] </span></span>
+<span id="cb6-254"><a href="#cb6-254" tabindex="-1"></a><span class="co">#&gt;                         -0.37286                          0.03831 </span></span>
+<span id="cb6-255"><a href="#cb6-255" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,29]                        z_1[1,30] </span></span>
+<span id="cb6-256"><a href="#cb6-256" tabindex="-1"></a><span class="co">#&gt;                         -0.97086                         -0.47947 </span></span>
+<span id="cb6-257"><a href="#cb6-257" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,31]                        z_1[1,32] </span></span>
+<span id="cb6-258"><a href="#cb6-258" tabindex="-1"></a><span class="co">#&gt;                          1.66448                          0.47742 </span></span>
+<span id="cb6-259"><a href="#cb6-259" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,33]                        z_1[1,34] </span></span>
+<span id="cb6-260"><a href="#cb6-260" tabindex="-1"></a><span class="co">#&gt;                          2.42846                          1.23626 </span></span>
+<span id="cb6-261"><a href="#cb6-261" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,35]                        z_1[1,36] </span></span>
+<span id="cb6-262"><a href="#cb6-262" tabindex="-1"></a><span class="co">#&gt;                         -0.17968                         -0.45039 </span></span>
+<span id="cb6-263"><a href="#cb6-263" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,37]                        z_1[1,38] </span></span>
+<span id="cb6-264"><a href="#cb6-264" tabindex="-1"></a><span class="co">#&gt;                          0.60664                         -0.85224 </span></span>
+<span id="cb6-265"><a href="#cb6-265" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,39]                        z_1[1,40] </span></span>
+<span id="cb6-266"><a href="#cb6-266" tabindex="-1"></a><span class="co">#&gt;                          0.33977                          0.23800 </span></span>
+<span id="cb6-267"><a href="#cb6-267" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,41]                        z_1[1,42] </span></span>
+<span id="cb6-268"><a href="#cb6-268" tabindex="-1"></a><span class="co">#&gt;                         -0.36941                         -0.04355 </span></span>
+<span id="cb6-269"><a href="#cb6-269" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,43]                        z_1[1,44] </span></span>
+<span id="cb6-270"><a href="#cb6-270" tabindex="-1"></a><span class="co">#&gt;                         -0.35746                          0.13954 </span></span>
+<span id="cb6-271"><a href="#cb6-271" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,45]                        z_1[1,46] </span></span>
+<span id="cb6-272"><a href="#cb6-272" tabindex="-1"></a><span class="co">#&gt;                          0.73972                          0.31833 </span></span>
+<span id="cb6-273"><a href="#cb6-273" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,47]                        z_1[1,48] </span></span>
+<span id="cb6-274"><a href="#cb6-274" tabindex="-1"></a><span class="co">#&gt;                         -1.22041                         -0.37691 </span></span>
+<span id="cb6-275"><a href="#cb6-275" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,49]                        z_1[1,50] </span></span>
+<span id="cb6-276"><a href="#cb6-276" tabindex="-1"></a><span class="co">#&gt;                          0.94695                         -0.28747 </span></span>
+<span id="cb6-277"><a href="#cb6-277" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,51]                        z_1[1,52] </span></span>
+<span id="cb6-278"><a href="#cb6-278" tabindex="-1"></a><span class="co">#&gt;                         -0.74239                          1.63518 </span></span>
+<span id="cb6-279"><a href="#cb6-279" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,53]                        z_1[1,54] </span></span>
+<span id="cb6-280"><a href="#cb6-280" tabindex="-1"></a><span class="co">#&gt;                          2.46719                          1.52550 </span></span>
+<span id="cb6-281"><a href="#cb6-281" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,55]                        z_1[1,56] </span></span>
+<span id="cb6-282"><a href="#cb6-282" tabindex="-1"></a><span class="co">#&gt;                          1.01434                          1.35748 </span></span>
+<span id="cb6-283"><a href="#cb6-283" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,57]                        z_1[1,58] </span></span>
+<span id="cb6-284"><a href="#cb6-284" tabindex="-1"></a><span class="co">#&gt;                          0.02757                          0.20723 </span></span>
+<span id="cb6-285"><a href="#cb6-285" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,59]                        z_1[1,60] </span></span>
+<span id="cb6-286"><a href="#cb6-286" tabindex="-1"></a><span class="co">#&gt;                         -1.18128                         -0.19537 </span></span>
+<span id="cb6-287"><a href="#cb6-287" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,61]                        z_1[1,62] </span></span>
+<span id="cb6-288"><a href="#cb6-288" tabindex="-1"></a><span class="co">#&gt;                         -0.52778                          2.07618 </span></span>
+<span id="cb6-289"><a href="#cb6-289" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,63]                        z_1[1,64] </span></span>
+<span id="cb6-290"><a href="#cb6-290" tabindex="-1"></a><span class="co">#&gt;                          1.17741                         -0.82973 </span></span>
+<span id="cb6-291"><a href="#cb6-291" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,65]                        z_1[1,66] </span></span>
+<span id="cb6-292"><a href="#cb6-292" tabindex="-1"></a><span class="co">#&gt;                         -1.40315                         -0.24890 </span></span>
+<span id="cb6-293"><a href="#cb6-293" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,67]                        z_1[1,68] </span></span>
+<span id="cb6-294"><a href="#cb6-294" tabindex="-1"></a><span class="co">#&gt;                          0.68357                          0.17158 </span></span>
+<span id="cb6-295"><a href="#cb6-295" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,69]                        z_1[1,70] </span></span>
+<span id="cb6-296"><a href="#cb6-296" tabindex="-1"></a><span class="co">#&gt;                          0.25941                          1.32047 </span></span>
+<span id="cb6-297"><a href="#cb6-297" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,71]                        z_1[1,72] </span></span>
+<span id="cb6-298"><a href="#cb6-298" tabindex="-1"></a><span class="co">#&gt;                          0.94439                         -1.28296 </span></span>
+<span id="cb6-299"><a href="#cb6-299" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,73]                        z_1[1,74] </span></span>
+<span id="cb6-300"><a href="#cb6-300" tabindex="-1"></a><span class="co">#&gt;                          0.56654                          1.18829 </span></span>
+<span id="cb6-301"><a href="#cb6-301" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,75]                        z_1[1,76] </span></span>
+<span id="cb6-302"><a href="#cb6-302" tabindex="-1"></a><span class="co">#&gt;                          0.20314                          0.82644 </span></span>
+<span id="cb6-303"><a href="#cb6-303" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,77]                        z_1[1,78] </span></span>
+<span id="cb6-304"><a href="#cb6-304" tabindex="-1"></a><span class="co">#&gt;                          0.36700                          1.16686 </span></span>
+<span id="cb6-305"><a href="#cb6-305" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,79]                        z_1[1,80] </span></span>
+<span id="cb6-306"><a href="#cb6-306" tabindex="-1"></a><span class="co">#&gt;                         -0.37497                         -1.69950 </span></span>
+<span id="cb6-307"><a href="#cb6-307" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,81]                        z_1[1,82] </span></span>
+<span id="cb6-308"><a href="#cb6-308" tabindex="-1"></a><span class="co">#&gt;                         -0.68790                         -1.75051 </span></span>
+<span id="cb6-309"><a href="#cb6-309" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,83]                        z_1[1,84] </span></span>
+<span id="cb6-310"><a href="#cb6-310" tabindex="-1"></a><span class="co">#&gt;                         -0.03720                         -0.07350 </span></span>
+<span id="cb6-311"><a href="#cb6-311" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,85]                        z_1[1,86] </span></span>
+<span id="cb6-312"><a href="#cb6-312" tabindex="-1"></a><span class="co">#&gt;                         -0.44064                         -5.94021 </span></span>
+<span id="cb6-313"><a href="#cb6-313" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,87]                        z_1[1,88] </span></span>
+<span id="cb6-314"><a href="#cb6-314" tabindex="-1"></a><span class="co">#&gt;                          0.21214                         -0.72701 </span></span>
+<span id="cb6-315"><a href="#cb6-315" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,89]                        z_1[1,90] </span></span>
+<span id="cb6-316"><a href="#cb6-316" tabindex="-1"></a><span class="co">#&gt;                          1.59174                         -0.84100 </span></span>
+<span id="cb6-317"><a href="#cb6-317" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,91]                        z_1[1,92] </span></span>
+<span id="cb6-318"><a href="#cb6-318" tabindex="-1"></a><span class="co">#&gt;                         -0.46963                         -1.53098 </span></span>
+<span id="cb6-319"><a href="#cb6-319" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,93]                        z_1[1,94] </span></span>
+<span id="cb6-320"><a href="#cb6-320" tabindex="-1"></a><span class="co">#&gt;                         -0.90421                          1.50403 </span></span>
+<span id="cb6-321"><a href="#cb6-321" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,95]                        z_1[1,96] </span></span>
+<span id="cb6-322"><a href="#cb6-322" tabindex="-1"></a><span class="co">#&gt;                         -0.42522                          1.75905 </span></span>
+<span id="cb6-323"><a href="#cb6-323" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,97]                        z_1[1,98] </span></span>
+<span id="cb6-324"><a href="#cb6-324" tabindex="-1"></a><span class="co">#&gt;                          1.37087                         -3.50478 </span></span>
+<span id="cb6-325"><a href="#cb6-325" tabindex="-1"></a><span class="co">#&gt;                        z_1[1,99]                       z_1[1,100] </span></span>
+<span id="cb6-326"><a href="#cb6-326" tabindex="-1"></a><span class="co">#&gt;                          0.54213                         -0.44517</span></span>
+<span id="cb6-327"><a href="#cb6-327" tabindex="-1"></a><span class="fu">hbm_warnings</span>(fit_demo)</span>
+<span id="cb6-328"><a href="#cb6-328" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-329"><a href="#cb6-329" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-330"><a href="#cb6-330" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-331"><a href="#cb6-331" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-332"><a href="#cb6-332" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-333"><a href="#cb6-333" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-334"><a href="#cb6-334" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-335"><a href="#cb6-335" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-336"><a href="#cb6-336" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-337"><a href="#cb6-337" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-338"><a href="#cb6-338" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-339"><a href="#cb6-339" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-340"><a href="#cb6-340" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-341"><a href="#cb6-341" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-342"><a href="#cb6-342" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-343"><a href="#cb6-343" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-344"><a href="#cb6-344" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-345"><a href="#cb6-345" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-346"><a href="#cb6-346" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-347"><a href="#cb6-347" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-348"><a href="#cb6-348" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-349"><a href="#cb6-349" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-350"><a href="#cb6-350" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-351"><a href="#cb6-351" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-352"><a href="#cb6-352" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-353"><a href="#cb6-353" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-354"><a href="#cb6-354" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-355"><a href="#cb6-355" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-356"><a href="#cb6-356" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-357"><a href="#cb6-357" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-358"><a href="#cb6-358" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-359"><a href="#cb6-359" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-360"><a href="#cb6-360" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-361"><a href="#cb6-361" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-362"><a href="#cb6-362" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-363"><a href="#cb6-363" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-364"><a href="#cb6-364" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-365"><a href="#cb6-365" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-366"><a href="#cb6-366" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-367"><a href="#cb6-367" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-368"><a href="#cb6-368" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-369"><a href="#cb6-369" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-370"><a href="#cb6-370" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-371"><a href="#cb6-371" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-372"><a href="#cb6-372" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-373"><a href="#cb6-373" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-374"><a href="#cb6-374" tabindex="-1"></a><span class="co">#&gt; Warning: The ESS has been capped to avoid unstable estimates.</span></span>
+<span id="cb6-375"><a href="#cb6-375" tabindex="-1"></a><span class="co">#&gt; [1] &quot;R-hat &gt; 1.1: model may not have converged.&quot;</span></span></code></pre></div>
+<p>The full set of diagnostics on your production fit would also include
+trace plots, R-hat / ESS tables, and pp-checks. These all follow the
+same calling convention:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">plot</span>(diag, <span class="at">type =</span> <span class="st">&quot;trace&quot;</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">plot</span>(diag, <span class="at">type =</span> <span class="st">&quot;rhat&quot;</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">plot</span>(diag, <span class="at">type =</span> <span class="st">&quot;ess&quot;</span>)</span></code></pre></div>
 </div>
 <div id="goodness-of-fit" class="section level2">
 <h2>4. Goodness-of-fit</h2>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>gof <span class="ot">&lt;-</span> <span class="fu">model_compare</span>(model)         <span class="co"># single-model: LOO, WAIC, pp_check</span></span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">summary</span>(gof)</span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">plot</span>(gof, <span class="at">type =</span> <span class="st">&quot;pp_check&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>gof <span class="ot">&lt;-</span> <span class="fu">model_compare</span>(model)    <span class="co"># single-model: LOO, WAIC, pp_check</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">summary</span>(gof)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">plot</span>(gof, <span class="at">type =</span> <span class="st">&quot;pp_check&quot;</span>)</span></code></pre></div>
 </div>
 <div id="compare-alternatives" class="section level2">
 <h2>5. Compare alternatives</h2>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>model2 <span class="ot">&lt;-</span> <span class="fu">hbm</span>(brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2), <span class="at">data =</span> data_fhnorm,</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>              <span class="at">re =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),</span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>              <span class="at">sampling_variance =</span> <span class="st">&quot;D&quot;</span>,</span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>              <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.99</span>),</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>              <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>)</span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>model3 <span class="ot">&lt;-</span> <span class="fu">hbm</span>(brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1),      <span class="at">data =</span> data_fhnorm,</span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>              <span class="at">re =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),</span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>              <span class="at">sampling_variance =</span> <span class="st">&quot;D&quot;</span>,</span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>              <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.99</span>),</span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>              <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>)</span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a></span>
-<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="fu">model_compare</span>(model, model2)</span>
-<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="fu">model_compare_all</span>(<span class="at">full =</span> model, <span class="at">medium =</span> model2, <span class="at">simple =</span> model3)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>model2 <span class="ot">&lt;-</span> <span class="fu">hbm</span>(brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2), <span class="at">data =</span> data_fhnorm,</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>              <span class="at">re =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>              <span class="at">sampling_variance =</span> <span class="st">&quot;D&quot;</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>              <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.99</span>),</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>              <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>model3 <span class="ot">&lt;-</span> <span class="fu">hbm</span>(brms<span class="sc">::</span><span class="fu">bf</span>(y <span class="sc">~</span> x1),      <span class="at">data =</span> data_fhnorm,</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>              <span class="at">re =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> regency),</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>              <span class="at">sampling_variance =</span> <span class="st">&quot;D&quot;</span>,</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>              <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.99</span>),</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>              <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">4000</span>)</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="fu">model_compare</span>(model, model2)</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="fu">model_compare_all</span>(<span class="at">full =</span> model, <span class="at">medium =</span> model2, <span class="at">simple =</span> model3)</span></code></pre></div>
 </div>
 <div id="small-area-estimates" class="section level2">
 <h2>6. Small-area estimates</h2>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>est <span class="ot">&lt;-</span> <span class="fu">sae_predict</span>(model)</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">summary</span>(est)</span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">plot</span>(est, <span class="at">type =</span> <span class="st">&quot;predictions&quot;</span>)</span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="fu">plot</span>(est, <span class="at">type =</span> <span class="st">&quot;uncertainty&quot;</span>)</span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co"># Bayesian model averaging</span></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>avg <span class="ot">&lt;-</span> <span class="fu">model_average</span>(model, model2, <span class="at">weights =</span> <span class="fu">c</span>(<span class="fl">0.7</span>, <span class="fl">0.3</span>))</span></code></pre></div>
+<p>The simplest call uses the data the model was fit on – no
+<code>newdata</code> argument needed:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># In-sample prediction (default): operates on the data stored</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co"># inside the fitted object.</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>est <span class="ot">&lt;-</span> <span class="fu">sae_predict</span>(fit_demo)</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="fu">summary</span>(est)</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; ===== Small Area Estimation Summary =====</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; Areas       : 100 </span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; Overall RSE : 12.33 %</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; Predictions:</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt;   6.262   8.959   9.855   9.856  10.691  13.467 </span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; RSE by area:</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt;   6.127   9.910  11.925  12.327  14.564  22.888</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="fu">head</span>(est<span class="sc">$</span>result_table, <span class="dv">5</span>)</span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt;   Prediction       SD RSE_percent</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; 1   7.937559 1.113869    14.03289</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt; 2   9.510884 1.976171    20.77799</span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt; 3   8.496731 1.673595    19.69693</span></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt; 4  10.525725 1.085465    10.31250</span></span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt; 5  10.689713 1.295239    12.11668</span></span></code></pre></div>
+<p>To predict at fresh data points, pass <code>newdata</code>. When you
+do, any internal offset columns the original fit needed
+(e.g. <code>.hbsaems_sigma_fixed = sqrt(D)</code> for the Fay-Herriot
+sugar) are repopulated automatically when the new data frame has the
+same number of rows as the training data – the standard “predict at the
+same areas with updated covariates” use case.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Out-of-sample prediction at new areas:</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>est_new <span class="ot">&lt;-</span> <span class="fu">sae_predict</span>(fit_demo, <span class="at">newdata =</span> data_new)</span></code></pre></div>
+<div id="bayesian-model-averaging" class="section level3">
+<h3>Bayesian model averaging</h3>
+<p>For model averaging, fit several candidate models, then either let
+<code>model_average()</code> weight them by stacking weights (LOO-based)
+or supply your own weights:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Stacking weights (default, derived from LOO)</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>avg_stacked <span class="ot">&lt;-</span> <span class="fu">model_average</span>(model, model2, model3)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co"># User-specified weights -- must sum to 1</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>avg_manual  <span class="ot">&lt;-</span> <span class="fu">model_average</span>(model, model2, <span class="at">weights =</span> <span class="fu">c</span>(<span class="fl">0.7</span>, <span class="fl">0.3</span>))</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co"># The returned object is an `hbsae_results`, identical in shape to</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co"># what sae_predict() returns, so all post-processing helpers</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co"># (sae_transform, sae_scale, sae_filter, sae_aggregate) work on it.</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="fu">plot</span>(avg_stacked, <span class="at">type =</span> <span class="st">&quot;predictions&quot;</span>)</span></code></pre></div>
+</div>
+<div id="visualisations" class="section level3">
+<h3>Visualisations</h3>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># Visualisations (require a graphics device):</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">plot</span>(est, <span class="at">type =</span> <span class="st">&quot;predictions&quot;</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="fu">plot</span>(est, <span class="at">type =</span> <span class="st">&quot;uncertainty&quot;</span>)</span></code></pre></div>
+</div>
 </div>
 <div id="post-processing-predictions" class="section level2">
 <h2>7. Post-processing predictions</h2>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>log_est  <span class="ot">&lt;-</span> <span class="fu">sae_transform</span>(est, log)</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>sc_est   <span class="ot">&lt;-</span> <span class="fu">sae_scale</span>(est)</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>hi_est   <span class="ot">&lt;-</span> <span class="fu">sae_filter</span>(est, est<span class="sc">$</span>pred <span class="sc">&gt;</span> stats<span class="sc">::</span><span class="fu">median</span>(est<span class="sc">$</span>pred))</span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>agg_est  <span class="ot">&lt;-</span> <span class="fu">sae_aggregate</span>(<span class="fu">sae_predict</span>(model),</span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>                          <span class="fu">sae_predict</span>(model2),</span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>                          <span class="at">method =</span> <span class="st">&quot;mean&quot;</span>)</span></code></pre></div>
+<p>All <code>sae_*</code> post-processing helpers operate on the
+<code>hbsae_results</code> object returned by either
+<code>sae_predict()</code> or <code>model_average()</code>:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>log_est  <span class="ot">&lt;-</span> <span class="fu">sae_transform</span>(est, log)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>sc_est   <span class="ot">&lt;-</span> <span class="fu">sae_scale</span>(est)</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>hi_est   <span class="ot">&lt;-</span> <span class="fu">sae_filter</span>(est, est<span class="sc">$</span>pred <span class="sc">&gt;</span> stats<span class="sc">::</span><span class="fu">median</span>(est<span class="sc">$</span>pred))</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>agg_est  <span class="ot">&lt;-</span> <span class="fu">sae_aggregate</span>(<span class="fu">sae_predict</span>(model),</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>                          <span class="fu">sae_predict</span>(model2),</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>                          <span class="at">method =</span> <span class="st">&quot;mean&quot;</span>)</span></code></pre></div>
+</div>
+<div id="session-info" class="section level2">
+<h2>Session info</h2>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co">#&gt; R version 4.6.0 (2026-04-24)</span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt; Running under: Ubuntu 24.04.3 LTS</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0</span></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="co">#&gt;  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              </span></span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="co">#&gt;  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=C              </span></span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a><span class="co">#&gt;  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   </span></span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a><span class="co">#&gt;  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 </span></span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a><span class="co">#&gt;  [9] LC_ADDRESS=C               LC_TELEPHONE=C            </span></span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a><span class="co">#&gt; [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       </span></span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a><span class="co">#&gt; time zone: Asia/Jakarta</span></span>
+<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a><span class="co">#&gt; tzcode source: system (glibc)</span></span>
+<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
+<span id="cb15-22"><a href="#cb15-22" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span id="cb15-23"><a href="#cb15-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb15-24"><a href="#cb15-24" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
+<span id="cb15-25"><a href="#cb15-25" tabindex="-1"></a><span class="co">#&gt; [1] testthat_3.3.2 hbsaems_1.0.0 </span></span>
+<span id="cb15-26"><a href="#cb15-26" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb15-27"><a href="#cb15-27" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span id="cb15-28"><a href="#cb15-28" tabindex="-1"></a><span class="co">#&gt;   [1] Rdpack_2.6.6          gridExtra_2.3         inline_0.3.21        </span></span>
+<span id="cb15-29"><a href="#cb15-29" tabindex="-1"></a><span class="co">#&gt;   [4] sandwich_3.1-1        rlang_1.2.0           magrittr_2.0.5       </span></span>
+<span id="cb15-30"><a href="#cb15-30" tabindex="-1"></a><span class="co">#&gt;   [7] multcomp_1.4-28       otel_0.2.0            matrixStats_1.5.0    </span></span>
+<span id="cb15-31"><a href="#cb15-31" tabindex="-1"></a><span class="co">#&gt;  [10] compiler_4.6.0        roxygen2_8.0.0        loo_2.9.0            </span></span>
+<span id="cb15-32"><a href="#cb15-32" tabindex="-1"></a><span class="co">#&gt;  [13] reshape2_1.4.5        callr_3.7.6           vctrs_0.7.3          </span></span>
+<span id="cb15-33"><a href="#cb15-33" tabindex="-1"></a><span class="co">#&gt;  [16] stringr_1.6.0         pkgconfig_2.0.3       shape_1.4.6.1        </span></span>
+<span id="cb15-34"><a href="#cb15-34" tabindex="-1"></a><span class="co">#&gt;  [19] fastmap_1.2.0         backports_1.5.1       ellipsis_0.3.3       </span></span>
+<span id="cb15-35"><a href="#cb15-35" tabindex="-1"></a><span class="co">#&gt;  [22] rmarkdown_2.31        sessioninfo_1.2.3     ps_1.9.3             </span></span>
+<span id="cb15-36"><a href="#cb15-36" tabindex="-1"></a><span class="co">#&gt;  [25] nloptr_2.2.1          purrr_1.2.2           xfun_0.57            </span></span>
+<span id="cb15-37"><a href="#cb15-37" tabindex="-1"></a><span class="co">#&gt;  [28] glmnet_5.0            jomo_2.7-6            cachem_1.1.0         </span></span>
+<span id="cb15-38"><a href="#cb15-38" tabindex="-1"></a><span class="co">#&gt;  [31] jsonlite_2.0.0        pan_1.9               broom_1.0.13         </span></span>
+<span id="cb15-39"><a href="#cb15-39" tabindex="-1"></a><span class="co">#&gt;  [34] parallel_4.6.0        R6_2.6.1              StanHeaders_2.32.10  </span></span>
+<span id="cb15-40"><a href="#cb15-40" tabindex="-1"></a><span class="co">#&gt;  [37] bslib_0.10.0          stringi_1.8.7         RColorBrewer_1.1-3   </span></span>
+<span id="cb15-41"><a href="#cb15-41" tabindex="-1"></a><span class="co">#&gt;  [40] boot_1.3-32           pkgload_1.5.2         rpart_4.1.27         </span></span>
+<span id="cb15-42"><a href="#cb15-42" tabindex="-1"></a><span class="co">#&gt;  [43] brio_1.1.5            jquerylib_0.1.4       estimability_1.5.1   </span></span>
+<span id="cb15-43"><a href="#cb15-43" tabindex="-1"></a><span class="co">#&gt;  [46] Rcpp_1.1.1-1.1        rstan_2.32.7          iterators_1.0.14     </span></span>
+<span id="cb15-44"><a href="#cb15-44" tabindex="-1"></a><span class="co">#&gt;  [49] knitr_1.51            usethis_3.2.1         zoo_1.8-14           </span></span>
+<span id="cb15-45"><a href="#cb15-45" tabindex="-1"></a><span class="co">#&gt;  [52] bayesplot_1.15.0      Matrix_1.7-5          splines_4.6.0        </span></span>
+<span id="cb15-46"><a href="#cb15-46" tabindex="-1"></a><span class="co">#&gt;  [55] nnet_7.3-20           tidyselect_1.2.1      rstudioapi_0.17.1    </span></span>
+<span id="cb15-47"><a href="#cb15-47" tabindex="-1"></a><span class="co">#&gt;  [58] dichromat_2.0-0.1     abind_1.4-8           yaml_2.3.12          </span></span>
+<span id="cb15-48"><a href="#cb15-48" tabindex="-1"></a><span class="co">#&gt;  [61] codetools_0.2-20      processx_3.9.0        curl_7.1.0           </span></span>
+<span id="cb15-49"><a href="#cb15-49" tabindex="-1"></a><span class="co">#&gt;  [64] pkgbuild_1.4.8        plyr_1.8.9            lattice_0.22-9       </span></span>
+<span id="cb15-50"><a href="#cb15-50" tabindex="-1"></a><span class="co">#&gt;  [67] tibble_3.3.1          withr_3.0.2           bridgesampling_1.2-1 </span></span>
+<span id="cb15-51"><a href="#cb15-51" tabindex="-1"></a><span class="co">#&gt;  [70] S7_0.2.2              posterior_1.7.0       coda_0.19-4.1        </span></span>
+<span id="cb15-52"><a href="#cb15-52" tabindex="-1"></a><span class="co">#&gt;  [73] evaluate_1.0.5        desc_1.4.3            survival_3.8-6       </span></span>
+<span id="cb15-53"><a href="#cb15-53" tabindex="-1"></a><span class="co">#&gt;  [76] RcppParallel_5.1.11-2 xml2_1.5.2            pillar_1.11.1        </span></span>
+<span id="cb15-54"><a href="#cb15-54" tabindex="-1"></a><span class="co">#&gt;  [79] mice_3.19.0           tensorA_0.36.2.1      checkmate_2.3.4      </span></span>
+<span id="cb15-55"><a href="#cb15-55" tabindex="-1"></a><span class="co">#&gt;  [82] foreach_1.5.2         stats4_4.6.0          reformulas_0.4.4     </span></span>
+<span id="cb15-56"><a href="#cb15-56" tabindex="-1"></a><span class="co">#&gt;  [85] distributional_0.7.0  generics_0.1.4        rprojroot_2.1.1      </span></span>
+<span id="cb15-57"><a href="#cb15-57" tabindex="-1"></a><span class="co">#&gt;  [88] ggplot2_4.0.3         rstantools_2.6.0      scales_1.4.0         </span></span>
+<span id="cb15-58"><a href="#cb15-58" tabindex="-1"></a><span class="co">#&gt;  [91] minqa_1.2.8           xtable_1.8-8          glue_1.8.1           </span></span>
+<span id="cb15-59"><a href="#cb15-59" tabindex="-1"></a><span class="co">#&gt;  [94] emmeans_1.11.2        tools_4.6.0           lme4_2.0-1           </span></span>
+<span id="cb15-60"><a href="#cb15-60" tabindex="-1"></a><span class="co">#&gt;  [97] fs_2.1.0              mvtnorm_1.3-7         grid_4.6.0           </span></span>
+<span id="cb15-61"><a href="#cb15-61" tabindex="-1"></a><span class="co">#&gt; [100] tidyr_1.3.2           QuickJSR_1.9.2        rbibutils_2.4.1      </span></span>
+<span id="cb15-62"><a href="#cb15-62" tabindex="-1"></a><span class="co">#&gt; [103] devtools_2.5.2        nlme_3.1-169          cli_3.6.6            </span></span>
+<span id="cb15-63"><a href="#cb15-63" tabindex="-1"></a><span class="co">#&gt; [106] Brobdingnag_1.2-9     dplyr_1.2.1           V8_8.2.0             </span></span>
+<span id="cb15-64"><a href="#cb15-64" tabindex="-1"></a><span class="co">#&gt; [109] gtable_0.3.6          sass_0.4.10           digest_0.6.39        </span></span>
+<span id="cb15-65"><a href="#cb15-65" tabindex="-1"></a><span class="co">#&gt; [112] TH.data_1.1-3         brms_2.23.0           farver_2.1.2         </span></span>
+<span id="cb15-66"><a href="#cb15-66" tabindex="-1"></a><span class="co">#&gt; [115] memoise_2.0.1         htmltools_0.5.9       lifecycle_1.0.5      </span></span>
+<span id="cb15-67"><a href="#cb15-67" tabindex="-1"></a><span class="co">#&gt; [118] mitml_0.4-5           MASS_7.3-65</span></span></code></pre></div>
 </div>
 
 

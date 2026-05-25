@@ -48,7 +48,7 @@ data("data_fhnorm")
 model <- hbm(
   formula = brms::bf(y ~ x1 + x2 + x3),
   data    = data_fhnorm,
-  chains = 2, iter = 2000, warmup = 1000, cores = 1,
+  chains = 4, iter = 2000, warmup = 1000, cores = 1,
   seed = 123, refresh = 0
 )
 est <- sae_predict(model)

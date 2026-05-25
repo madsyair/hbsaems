@@ -70,7 +70,7 @@ if (requireNamespace("priorsense", quietly = TRUE)) {
   data("data_fhnorm")
   fit <- hbm(brms::bf(y ~ x1 + x2),
              data = data_fhnorm, re = ~(1 | regency),
-             chains = 2, iter = 1000, refresh = 0)
+             chains = 4, iter = 2000, refresh = 0)
   ps  <- prior_sensitivity(fit)
   print(ps)
 }

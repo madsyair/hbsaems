@@ -117,7 +117,7 @@
 #'   auxiliary  = c("x1", "x2", "x3"),
 #'   area_var   = "district",
 #'   data       = data_lnln,
-#'   chains = 1, iter = 500, warmup = 250, refresh = 0
+#'   chains = 4, iter = 2000, warmup = 1000, refresh = 0
 #' )
 #'
 #' # -- 2. Fay-Herriot style with known sampling variance ----------------------
@@ -128,7 +128,7 @@
 #'   area_var     = "district",
 #'   sampling_variance = "psi_i",
 #'   data         = data_lnln,
-#'   chains = 1, iter = 500, warmup = 250, refresh = 0
+#'   chains = 4, iter = 2000, warmup = 1000, refresh = 0
 #' )
 #' }
 #'

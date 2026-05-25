@@ -32,7 +32,7 @@ NULL
 #' data("data_fhnorm")
 #' model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
 #'              re = ~ (1 | regency),    # area-level random effect
-#'              chains = 2, iter = 1000, warmup = 500,
+#'              chains = 4, iter = 2000, warmup = 1000,
 #'              cores = 1, seed = 1, refresh = 0)
 #' draws <- posterior_draws(model)
 #' dim(draws)
@@ -80,7 +80,7 @@ posterior_draws.hbmfit <- function(model, params = NULL, ...) {
 #'                brms::prior(normal(0, 1), class = "b"),
 #'                brms::prior(normal(0, 5), class = "Intercept")
 #'              ),
-#'              chains = 2, iter = 1000, warmup = 500,
+#'              chains = 4, iter = 2000, warmup = 1000,
 #'              cores = 1, seed = 1, refresh = 0)
 #' pd <- prior_draws(model)
 #' head(pd)
@@ -135,7 +135,7 @@ prior_draws.hbmfit <- function(x, ...) {
 #' data("data_fhnorm")
 #' model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
 #'              re = ~ (1 | regency),    # area-level random effect
-#'              chains = 2, iter = 1000, warmup = 500,
+#'              chains = 4, iter = 2000, warmup = 1000,
 #'              cores = 1, seed = 1, refresh = 0)
 #' posterior_interval(model, prob = 0.90)
 #' }
@@ -187,7 +187,7 @@ posterior_interval.hbmfit <- function(object, prob = 0.95,
 #' data("data_fhnorm")
 #' model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
 #'              re = ~ (1 | regency),    # area-level random effect
-#'              chains = 2, iter = 1000, warmup = 500,
+#'              chains = 4, iter = 2000, warmup = 1000,
 #'              cores = 1, seed = 1, refresh = 0)
 #' s <- posterior_summary_hbm(model)
 #' s$fixed_effects

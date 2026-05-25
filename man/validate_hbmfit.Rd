@@ -39,10 +39,13 @@ Invariants verified:
 \donttest{
 # Minimal example without area-level RE (fixed-effects baseline) --
 # suppress the area-RE advisory because this 5-row toy dataset cannot
-# meaningfully estimate a random effect.
+# meaningfully estimate a random effect.  Uses brms-default MCMC
+# settings (chains = 4, iter = 2000, warmup = 1000); on this toy
+# data the fit is only used to verify the hbmfit class structure,
+# not for inference.
 fit <- suppressWarnings(
   hbm(brms::bf(y ~ x1), data = data.frame(y = rnorm(5), x1 = 1:5),
-      chains = 1, iter = 200, refresh = 0)
+      chains = 4, iter = 2000, warmup = 1000, refresh = 0)
 )
 validate_hbmfit(fit)
 }

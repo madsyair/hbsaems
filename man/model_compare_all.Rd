@@ -26,7 +26,7 @@ Analogous to \code{\link[brms]{loo_compare}}.
 library(hbsaems)
 library(brms)
 data("data_fhnorm")
-FAST <- list(chains = 2, iter = 1000, warmup = 500, cores = 1,
+FAST <- list(chains = 4, iter = 2000, warmup = 1000, cores = 1,
              seed = 1, refresh = 0)
 m1 <- do.call(hbm, c(list(formula = brms::bf(y ~ x1),
                           data = data_fhnorm), FAST))

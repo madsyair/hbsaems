@@ -11,6 +11,7 @@ AST
 Achmad
 Anselin
 Arsyka
+BH
 BMA
 BPS
 BYM
@@ -47,6 +48,7 @@ ESS
 Fabrizi
 Fay
 Ferrante
+GC
 GEV
 GP
 GPs
@@ -83,6 +85,7 @@ Kluwer
 Kotz
 Kullback
 LOO
+LRU
 Laila
 Leibler
 Lifecycle
@@ -133,6 +136,8 @@ RSEs
 Raftery
 Rao
 Rbuildignored
+RcppEigen
+RcppParallel
 Regularised
 Reproducibility
 Rhat
@@ -156,6 +161,7 @@ Sorbye
 Springer
 Sri
 Stan
+StanHeaders
 Stanvars
 Stata
 Statistika
@@ -214,6 +220,7 @@ choropleth
 codebase
 colMeans
 coloured
+composable
 config
 covariate
 covariates
@@ -257,6 +264,7 @@ frac
 frontend
 g1
 g2
+gc
 generalised
 getters
 ggplot
@@ -285,6 +293,7 @@ jss
 kNN
 kabupaten
 kecamatan
+knitr
 knn
 kota
 laplace
@@ -313,6 +322,7 @@ mis
 miscalibrated
 miscalibration
 misspecified
+mitigations
 modelled
 modelling
 modernised
@@ -321,6 +331,7 @@ modularity
 modulo
 msg
 mu
+multimodel
 multivariate
 mvbrmsformula
 na
@@ -384,6 +395,7 @@ reparameterised
 reprex
 reproducibility
 requireNamespace
+retuned
 rewriter
 rewriters
 rh
@@ -393,6 +405,7 @@ rmarkdown
 rotationally
 roundtrip
 rse
+rstan
 rstanarm
 rstantools
 runApp
@@ -408,6 +421,7 @@ seroconversion
 shinyWidgets
 shinydashboard
 shinytest
+shrinker
 sigma
 spdep
 stabilised
@@ -431,6 +445,7 @@ syntaxes
 synthesises
 sysdata
 testthat
+th
 tokeniser
 toolchain
 ult

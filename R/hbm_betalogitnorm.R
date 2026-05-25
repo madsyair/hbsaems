@@ -174,7 +174,7 @@
 #'   auxiliary  = c("x1", "x2", "x3"),
 #'   area_var   = "regency",
 #'   data       = data,
-#'   chains = 1, iter = 500, warmup = 250, refresh = 0
+#'   chains = 4, iter = 2000, warmup = 1000, refresh = 0
 #' )
 #' summary(model1)
 #'
@@ -186,7 +186,7 @@
 #'   deff       = "deff",
 #'   area_var   = "regency",
 #'   data       = data,
-#'   chains = 1, iter = 500, warmup = 250, refresh = 0
+#'   chains = 4, iter = 2000, warmup = 1000, refresh = 0
 #' )
 #' summary(model2)
 #'
@@ -204,7 +204,7 @@
 #'   area_var   = "regency",
 #'   data       = data,
 #'   prior      = brms::set_prior("gamma(2, 0.5)", class = "phi"),
-#'   chains = 1, iter = 500, warmup = 250, refresh = 0
+#'   chains = 4, iter = 2000, warmup = 1000, refresh = 0
 #' )
 #'
 #' # -- 4. Spatial CAR model ----------------------------------------------------
@@ -218,7 +218,7 @@
 #'   spatial_model   = "car",
 #'   M          = adjacency_matrix_car,
 #'   data       = data,
-#'   chains = 1, iter = 500, warmup = 250, refresh = 0
+#'   chains = 4, iter = 2000, warmup = 1000, refresh = 0
 #' )
 #' }
 #'

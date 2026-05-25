@@ -62,7 +62,7 @@ a pairwise comparison.
 library(hbsaems)
 library(brms)
 data("data_fhnorm")
-FAST <- list(chains = 2, iter = 2000, warmup = 1000, cores = 1,
+FAST <- list(chains = 4, iter = 2000, warmup = 1000, cores = 1,
              seed = 123, refresh = 0)
 
 m1 <- do.call(hbm, c(list(formula = brms::bf(y ~ x1 + x2 + x3),
