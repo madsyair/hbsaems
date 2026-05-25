@@ -86,7 +86,7 @@ model_prior <- hbm(
     brms::prior(normal(0, 1), class = "b"),
     brms::prior(normal(0, 5), class = "Intercept")
   ),
-  chains = 2, iter = 1000, warmup = 500, cores = 1,
+  chains = 4, iter = 2000, warmup = 1000, cores = 1,
   seed = 42, refresh = 0
 )
 #> Warning: Model fitted without any area-level random effects.
@@ -97,18 +97,14 @@ model_prior <- hbm(
 #>     spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE
 #>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.
 #> Compiling Stan program...
-#> Start sampling
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 pc <- prior_check(model_prior,
                   data         = data_fhnorm,
                   response_var = "y")
+#> Error: object 'model_prior' not found
 print(pc)
-#> 
-#> Prior Predictive Check  [hbpc_results]
-#> ----------------------------------------
-#>  Prior draws  : 50 x 100 
-#>  Observations : 100 
-#> 
+#> Error: object 'pc' not found
 plot(pc)
-
+#> Error: object 'pc' not found
 # }
 ```

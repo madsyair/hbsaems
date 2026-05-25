@@ -189,23 +189,11 @@ fit1 <- hbm_lnln(
   auxiliary  = c("x1", "x2", "x3"),
   area_var   = "district",
   data       = data_lnln,
-  chains = 1, iter = 500, warmup = 250, refresh = 0
+  chains = 4, iter = 2000, warmup = 1000, refresh = 0
 )
 #> Warning: Area column 'district' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
-#> Start sampling
-#> Warning: There were 1 chains where the estimated Bayesian Fraction of Missing Information was low. See
-#> https://mc-stan.org/misc/warnings.html#bfmi-low
-#> Warning: Examine the pairs() plot to diagnose sampling problems
-#> Warning: The largest R-hat is 1.09, indicating chains have not mixed.
-#> Running the chains for more iterations may help. See
-#> https://mc-stan.org/misc/warnings.html#r-hat
-#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
-#> Running the chains for more iterations may help. See
-#> https://mc-stan.org/misc/warnings.html#bulk-ess
-#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
-#> Running the chains for more iterations may help. See
-#> https://mc-stan.org/misc/warnings.html#tail-ess
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 # -- 2. Fay-Herriot style with known sampling variance ----------------------
 #     (assumes psi_i column is available)
@@ -215,19 +203,10 @@ fit2 <- hbm_lnln(
   area_var     = "district",
   sampling_variance = "psi_i",
   data         = data_lnln,
-  chains = 1, iter = 500, warmup = 250, refresh = 0
+  chains = 4, iter = 2000, warmup = 1000, refresh = 0
 )
 #> Warning: Area column 'district' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
-#> Start sampling
-#> Warning: The largest R-hat is 1.12, indicating chains have not mixed.
-#> Running the chains for more iterations may help. See
-#> https://mc-stan.org/misc/warnings.html#r-hat
-#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
-#> Running the chains for more iterations may help. See
-#> https://mc-stan.org/misc/warnings.html#bulk-ess
-#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
-#> Running the chains for more iterations may help. See
-#> https://mc-stan.org/misc/warnings.html#tail-ess
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 # }
 ```

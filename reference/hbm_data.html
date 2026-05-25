@@ -83,40 +83,12 @@
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"data_fhnorm"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="hbm.html">hbm</a></span><span class="op">(</span><span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">data_fhnorm</span>,</span></span>
 <span class="r-in"><span>             re <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,    <span class="co"># area-level random effect</span></span></span>
-<span class="r-in"><span>             chains <span class="op">=</span> <span class="fl">2</span>, iter <span class="op">=</span> <span class="fl">1000</span>, warmup <span class="op">=</span> <span class="fl">500</span>,</span></span>
+<span class="r-in"><span>             chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">2000</span>, warmup <span class="op">=</span> <span class="fl">1000</span>,</span></span>
 <span class="r-in"><span>             cores <span class="op">=</span> <span class="fl">1</span>, seed <span class="op">=</span> <span class="fl">1</span>, refresh <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 40 divergent transitions after warmup. See</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> to find out why this is a problem and how to eliminate them.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 2 chains where the estimated Bayesian Fraction of Missing Information was low. See</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bfmi-low</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.1, indicating chains have not mixed.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">hbm_data</span><span class="op">(</span><span class="va">model</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           y         D         x1         x2         x3 theta_true           u</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1  6.982249 0.9213655 -0.9026345  0.7116302  1.4305563   8.498168 -0.85307599</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  9.005801 2.6432183 -0.7526745 -0.8779797 -0.3182451   9.726882 -0.01449469</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3  6.216509 1.7035092 -0.2605613 -0.6066989 -1.0293040   8.535629 -1.25047984</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 10.469687 0.6586857  0.0759456 -1.0766939 -1.0711613   9.678839 -0.59891604</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 10.620157 1.0166936  0.2117701 -0.5022666 -0.4964679  11.856111  1.58450157</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6 12.045742 0.5881090  0.6544500 -0.3750112  0.3802786  12.075297  1.25014821</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       regency    province</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 regency_001 province_01</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 regency_002 province_01</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 regency_003 province_01</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 regency_004 province_01</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5 regency_005 province_01</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6 regency_006 province_01</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model' not found</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

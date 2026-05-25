@@ -86,7 +86,8 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://madsyair.github.io/hbsaems/">hbsaems</a></span><span class="op">)</span></span></code></pre></div>
 <p>A typical Bayesian SAE workflow with <code>hbsaems</code> v1.0.0
-follows seven steps, each backed by a single primary function.</p>
+follows seven steps, each backed by a single primary function. This
+vignette walks through the canonical pipeline.</p>
 <div class="section level2">
 <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a>
 </h2>
@@ -107,14 +108,43 @@ imputation)</li>
 </ul>
 </div>
 <div class="section level2">
-<h2 id="prior-predictive-check">1. Prior predictive check<a class="anchor" aria-label="anchor" href="#prior-predictive-check"></a>
+<h2 id="inspect-the-data">0. Inspect the data<a class="anchor" aria-label="anchor" href="#inspect-the-data"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"data_fhnorm"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">data_fhnorm</span>, max.level <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="co">#&gt; 'data.frame':    100 obs. of  9 variables:</span></span>
+<span><span class="co">#&gt;  $ y         : num  6.98 9.01 6.22 10.47 10.62 ...</span></span>
+<span><span class="co">#&gt;  $ D         : num  0.921 2.643 1.704 0.659 1.017 ...</span></span>
+<span><span class="co">#&gt;  $ x1        : num  -0.9026 -0.7527 -0.2606 0.0759 0.2118 ...</span></span>
+<span><span class="co">#&gt;  $ x2        : num  0.712 -0.878 -0.607 -1.077 -0.502 ...</span></span>
+<span><span class="co">#&gt;  $ x3        : num  1.431 -0.318 -1.029 -1.071 -0.496 ...</span></span>
+<span><span class="co">#&gt;  $ theta_true: num  8.5 9.73 8.54 9.68 11.86 ...</span></span>
+<span><span class="co">#&gt;  $ u         : num  -0.8531 -0.0145 -1.2505 -0.5989 1.5845 ...</span></span>
+<span><span class="co">#&gt;  $ regency   : chr  "regency_001" "regency_002" "regency_003" "regency_004" ...</span></span>
+<span><span class="co">#&gt;  $ province  : chr  "province_01" "province_01" "province_01" "province_01" ...</span></span>
+<span><span class="co">#&gt;  - attr(*, "datalabel")= chr "data_fhnorm"</span></span>
+<span><span class="co">#&gt;  - attr(*, "var.labels")= chr [1:9] "" "" "" "" ...</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">data_fhnorm</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"regency"</span>, <span class="st">"province"</span>, <span class="st">"y"</span>, <span class="st">"D"</span>, <span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span><span class="op">]</span>, <span class="fl">4</span><span class="op">)</span></span>
+<span><span class="co">#&gt;       regency    province         y         D         x1         x2         x3</span></span>
+<span><span class="co">#&gt; 1 regency_001 province_01  6.982249 0.9213655 -0.9026345  0.7116302  1.4305563</span></span>
+<span><span class="co">#&gt; 2 regency_002 province_01  9.005801 2.6432183 -0.7526745 -0.8779797 -0.3182451</span></span>
+<span><span class="co">#&gt; 3 regency_003 province_01  6.216509 1.7035092 -0.2605613 -0.6066989 -1.0293040</span></span>
+<span><span class="co">#&gt; 4 regency_004 province_01 10.469687 0.6586857  0.0759456 -1.0766939 -1.0711613</span></span></code></pre></div>
+<p><code>data_fhnorm</code> is a simulated Fay-Herriot dataset: 100
+regencies nested within 5 provinces, with a known sampling variance
+<code>D</code> per area and three covariates.</p>
+</div>
+<div class="section level2">
+<h2 id="prior-predictive-check">1. Prior predictive check<a class="anchor" aria-label="anchor" href="#prior-predictive-check"></a>
+</h2>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># This is the production call.  Replace `chains`, `iter` with your</span></span>
+<span><span class="co"># usual values; the lighter settings below are a quick demonstration.</span></span>
 <span><span class="va">model_prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span></span>
 <span>  formula           <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span>
 <span>  data              <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
-<span>  re                <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,    <span class="co"># area-level random effect (Fay-Herriot)</span></span>
+<span>  re                <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,     <span class="co"># area-level random effect (Fay-Herriot)</span></span>
 <span>  sampling_variance <span class="op">=</span> <span class="st">"D"</span>,                 <span class="co"># KNOWN sampling variance D_i</span></span>
 <span>  sample_prior      <span class="op">=</span> <span class="st">"only"</span>,</span>
 <span>  prior             <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
@@ -130,63 +160,97 @@ imputation)</li>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pc</span><span class="op">)</span></span></code></pre></div>
 <p>The <code>sampling_variance = "D"</code> argument is the
 <strong>defining feature</strong> of a Fay-Herriot model: the sampling
-variance is treated as from the design (it is not estimated), so brms
-pins the observation-level to . Omitting this argument makes the model
-unidentified because the residual and the area-RE would compete to
-explain the same variance, typically producing divergent transitions and
-very wide credible intervals.</p>
+variance is treated as <strong>known</strong> from the design (it is not
+estimated), so brms pins the observation-level to . Omitting this
+argument makes the model unidentified because the residual and the area
+random-effect would compete to explain the same variance, typically
+producing divergent transitions and very wide credible intervals.</p>
 </div>
 <div class="section level2">
 <h2 id="fit-the-model">2. Fit the model<a class="anchor" aria-label="anchor" href="#fit-the-model"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span></span>
 <span>  formula           <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span>
 <span>  data              <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
-<span>  re                <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,       <span class="co"># area-level random effect (Fay-Herriot)</span></span>
-<span>  sampling_variance <span class="op">=</span> <span class="st">"D"</span>,                    <span class="co"># known sampling variance from survey</span></span>
+<span>  re                <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,</span>
+<span>  sampling_variance <span class="op">=</span> <span class="st">"D"</span>,</span>
 <span>  control           <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>adapt_delta <span class="op">=</span> <span class="fl">0.99</span><span class="op">)</span>,</span>
-<span>  chains            <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span>, warmup <span class="op">=</span> <span class="fl">2000</span>, cores <span class="op">=</span> <span class="fl">2</span></span>
+<span>  chains            <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">4000</span>, warmup <span class="op">=</span> <span class="fl">2000</span>, cores <span class="op">=</span> <span class="fl">4</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></code></pre></div>
 <p>Two settings deserve attention:</p>
 <ul>
 <li>
 <strong><code>sampling_variance = "D"</code></strong> – the column
-in holds the known sampling variance for each area; translates this into
-an offset on the observation-level standard deviation so brms / Stan
-never tries to estimate it.</li>
+<code>D</code> in <code>data_fhnorm</code> holds the known sampling
+variance for each area; <code>hbsaems</code> translates this into an
+offset on the observation-level standard deviation so brms / Stan never
+tries to estimate it.</li>
 <li>
 <strong><code>adapt_delta = 0.99</code></strong> – Fay-Herriot
 likelihoods can produce mild funnel geometry between and the area random
-effects when many areas have small . Raising from the brms default 0.95
-to 0.99 buys a more conservative leapfrog step and eliminates the
-occasional divergent transition without re-parameterising the
-model.</li>
+effects when many areas have small . Raising <code>adapt_delta</code>
+from the brms default 0.95 to 0.99 buys a more conservative leapfrog
+step and eliminates the occasional divergent transition without
+re-parameterising the model.</li>
 </ul>
+<div class="section level3">
+<h3 id="a-small-fitted-model-to-demonstrate-the-rest-of-the-workflow">A small fitted model to demonstrate the rest of the workflow<a class="anchor" aria-label="anchor" href="#a-small-fitted-model-to-demonstrate-the-rest-of-the-workflow"></a>
+</h3>
+<p>For the remainder of the vignette we use a tiny model (very few
+iterations) so that the diagnostic and prediction chunks below have a
+real object to operate on. In your own analysis, <strong>use the full
+production settings shown above</strong>, not the toy settings here.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Mini fit -- iter = 200, chains = 1 -- for vignette demonstration only.</span></span>
+<span><span class="co"># Do NOT use these settings for inference: the chains have not</span></span>
+<span><span class="co"># converged at this length and the posterior will be biased.</span></span>
+<span><span class="va">fit_demo</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span></span>
+<span>    formula           <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span>
+<span>    data              <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
+<span>    re                <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,</span>
+<span>    sampling_variance <span class="op">=</span> <span class="st">"D"</span>,</span>
+<span>    chains  <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>    iter    <span class="op">=</span> <span class="fl">200</span>,</span>
+<span>    warmup  <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>    refresh <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>    seed    <span class="op">=</span> <span class="fl">1</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="convergence-diagnostics">3. Convergence diagnostics<a class="anchor" aria-label="anchor" href="#convergence-diagnostics"></a>
 </h2>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">diag</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/convergence_check.html">convergence_check</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/is_converged.html">is_converged</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Operate on the mini fit_demo above (NOT a substitute for production</span></span>
+<span><span class="co"># diagnostics on full chains).</span></span>
+<span><span class="va">diag</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/convergence_check.html">convergence_check</a></span><span class="op">(</span><span class="va">fit_demo</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/is_converged.html">is_converged</a></span><span class="op">(</span><span class="va">fit_demo</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">diag</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">diag</span>, type <span class="op">=</span> <span class="st">"trace"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/hbm_warnings.html">hbm_warnings</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/hbm_warnings.html">hbm_warnings</a></span><span class="op">(</span><span class="va">fit_demo</span><span class="op">)</span></span></code></pre></div>
+<p>The full set of diagnostics on your production fit would also include
+trace plots, R-hat / ESS tables, and pp-checks. These all follow the
+same calling convention:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">diag</span>, type <span class="op">=</span> <span class="st">"trace"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">diag</span>, type <span class="op">=</span> <span class="st">"rhat"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">diag</span>, type <span class="op">=</span> <span class="st">"ess"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="goodness-of-fit">4. Goodness-of-fit<a class="anchor" aria-label="anchor" href="#goodness-of-fit"></a>
 </h2>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">gof</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model_compare.html">model_compare</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span>         <span class="co"># single-model: LOO, WAIC, pp_check</span></span>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">gof</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model_compare.html">model_compare</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span>    <span class="co"># single-model: LOO, WAIC, pp_check</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">gof</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">gof</span>, type <span class="op">=</span> <span class="st">"pp_check"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="compare-alternatives">5. Compare alternatives<a class="anchor" aria-label="anchor" href="#compare-alternatives"></a>
 </h2>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span><span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">data_fhnorm</span>,</span>
 <span>              re <span class="op">=</span> <span class="op">~</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,</span>
 <span>              sampling_variance <span class="op">=</span> <span class="st">"D"</span>,</span>
@@ -204,25 +268,126 @@ model.</li>
 <div class="section level2">
 <h2 id="small-area-estimates">6. Small-area estimates<a class="anchor" aria-label="anchor" href="#small-area-estimates"></a>
 </h2>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">est</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sae_predict.html">sae_predict</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span>
+<p>The simplest call uses the data the model was fit on – no
+<code>newdata</code> argument needed:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># In-sample prediction (default): operates on the data stored</span></span>
+<span><span class="co"># inside the fitted object.</span></span>
+<span><span class="va">est</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sae_predict.html">sae_predict</a></span><span class="op">(</span><span class="va">fit_demo</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">est</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">est</span>, type <span class="op">=</span> <span class="st">"predictions"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">est</span>, type <span class="op">=</span> <span class="st">"uncertainty"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">est</span><span class="op">$</span><span class="va">result_table</span>, <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
+<p>To predict at fresh data points, pass <code>newdata</code>. When you
+do, any internal offset columns the original fit needed
+(e.g. <code>.hbsaems_sigma_fixed = sqrt(D)</code> for the Fay-Herriot
+sugar) are repopulated automatically when the new data frame has the
+same number of rows as the training data – the standard “predict at the
+same areas with updated covariates” use case.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Out-of-sample prediction at new areas:</span></span>
+<span><span class="va">est_new</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sae_predict.html">sae_predict</a></span><span class="op">(</span><span class="va">fit_demo</span>, newdata <span class="op">=</span> <span class="va">data_new</span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="bayesian-model-averaging">Bayesian model averaging<a class="anchor" aria-label="anchor" href="#bayesian-model-averaging"></a>
+</h3>
+<p>For model averaging, fit several candidate models, then either let
+<code><a href="../reference/model_average.html">model_average()</a></code> weight them by stacking weights (LOO-based)
+or supply your own weights:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Stacking weights (default, derived from LOO)</span></span>
+<span><span class="va">avg_stacked</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model_average.html">model_average</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">model2</span>, <span class="va">model3</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Bayesian model averaging</span></span>
-<span><span class="va">avg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model_average.html">model_average</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">model2</span>, weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.7</span>, <span class="fl">0.3</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># User-specified weights -- must sum to 1</span></span>
+<span><span class="va">avg_manual</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model_average.html">model_average</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">model2</span>, weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.7</span>, <span class="fl">0.3</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># The returned object is an `hbsae_results`, identical in shape to</span></span>
+<span><span class="co"># what sae_predict() returns, so all post-processing helpers</span></span>
+<span><span class="co"># (sae_transform, sae_scale, sae_filter, sae_aggregate) work on it.</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">avg_stacked</span>, type <span class="op">=</span> <span class="st">"predictions"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="visualisations">Visualisations<a class="anchor" aria-label="anchor" href="#visualisations"></a>
+</h3>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Visualisations (require a graphics device):</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">est</span>, type <span class="op">=</span> <span class="st">"predictions"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">est</span>, type <span class="op">=</span> <span class="st">"uncertainty"</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="post-processing-predictions">7. Post-processing predictions<a class="anchor" aria-label="anchor" href="#post-processing-predictions"></a>
 </h2>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<p>All <code>sae_*</code> post-processing helpers operate on the
+<code>hbsae_results</code> object returned by either
+<code><a href="../reference/sae_predict.html">sae_predict()</a></code> or <code><a href="../reference/model_average.html">model_average()</a></code>:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">log_est</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sae_transform.html">sae_transform</a></span><span class="op">(</span><span class="va">est</span>, <span class="va">log</span><span class="op">)</span></span>
 <span><span class="va">sc_est</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sae_scale.html">sae_scale</a></span><span class="op">(</span><span class="va">est</span><span class="op">)</span></span>
 <span><span class="va">hi_est</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sae_filter.html">sae_filter</a></span><span class="op">(</span><span class="va">est</span>, <span class="va">est</span><span class="op">$</span><span class="va">pred</span> <span class="op">&gt;</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/median.html" class="external-link">median</a></span><span class="op">(</span><span class="va">est</span><span class="op">$</span><span class="va">pred</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">agg_est</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sae_aggregate.html">sae_aggregate</a></span><span class="op">(</span><span class="fu"><a href="../reference/sae_predict.html">sae_predict</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span>,</span>
 <span>                          <span class="fu"><a href="../reference/sae_predict.html">sae_predict</a></span><span class="op">(</span><span class="va">model2</span><span class="op">)</span>,</span>
 <span>                          method <span class="op">=</span> <span class="st">"mean"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="session-info">Session info<a class="anchor" aria-label="anchor" href="#session-info"></a>
+</h2>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; R version 4.6.0 (2026-04-24)</span></span>
+<span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
+<span><span class="co">#&gt; Running under: Ubuntu 24.04.4 LTS</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Matrix products: default</span></span>
+<span><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
+<span><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; locale:</span></span>
+<span><span class="co">#&gt;  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       </span></span>
+<span><span class="co">#&gt;  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   </span></span>
+<span><span class="co">#&gt;  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          </span></span>
+<span><span class="co">#&gt; [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; time zone: UTC</span></span>
+<span><span class="co">#&gt; tzcode source: system (glibc)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; attached base packages:</span></span>
+<span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; other attached packages:</span></span>
+<span><span class="co">#&gt; [1] hbsaems_1.0.0</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span><span class="co">#&gt;  [1] tidyselect_1.2.1      dplyr_1.2.1           farver_2.1.2         </span></span>
+<span><span class="co">#&gt;  [4] loo_2.9.0             S7_0.2.2              fastmap_1.2.0        </span></span>
+<span><span class="co">#&gt;  [7] tensorA_0.36.2.1      rpart_4.1.27          digest_0.6.39        </span></span>
+<span><span class="co">#&gt; [10] lifecycle_1.0.5       StanHeaders_2.32.10   survival_3.8-6       </span></span>
+<span><span class="co">#&gt; [13] magrittr_2.0.5        posterior_1.7.0       compiler_4.6.0       </span></span>
+<span><span class="co">#&gt; [16] rlang_1.2.0           sass_0.4.10           tools_4.6.0          </span></span>
+<span><span class="co">#&gt; [19] yaml_2.3.12           knitr_1.51            bridgesampling_1.2-1 </span></span>
+<span><span class="co">#&gt; [22] htmlwidgets_1.6.4     pkgbuild_1.4.8        RColorBrewer_1.1-3   </span></span>
+<span><span class="co">#&gt; [25] abind_1.4-8           purrr_1.2.2           desc_1.4.3           </span></span>
+<span><span class="co">#&gt; [28] nnet_7.3-20           grid_4.6.0            stats4_4.6.0         </span></span>
+<span><span class="co">#&gt; [31] jomo_2.7-6            mice_3.19.0           inline_0.3.21        </span></span>
+<span><span class="co">#&gt; [34] ggplot2_4.0.3         scales_1.4.0          iterators_1.0.14     </span></span>
+<span><span class="co">#&gt; [37] MASS_7.3-65           cli_3.6.6             mvtnorm_1.3-7        </span></span>
+<span><span class="co">#&gt; [40] rmarkdown_2.31        reformulas_0.4.4      ragg_1.5.2           </span></span>
+<span><span class="co">#&gt; [43] generics_0.1.4        otel_0.2.0            RcppParallel_5.1.11-2</span></span>
+<span><span class="co">#&gt; [46] minqa_1.2.8           cachem_1.1.0          rstan_2.32.7         </span></span>
+<span><span class="co">#&gt; [49] stringr_1.6.0         splines_4.6.0         bayesplot_1.15.0     </span></span>
+<span><span class="co">#&gt; [52] parallel_4.6.0        matrixStats_1.5.0     brms_2.23.0          </span></span>
+<span><span class="co">#&gt; [55] vctrs_0.7.3           boot_1.3-32           glmnet_5.0           </span></span>
+<span><span class="co">#&gt; [58] Matrix_1.7-5          jsonlite_2.0.0        mitml_0.4-5          </span></span>
+<span><span class="co">#&gt; [61] systemfonts_1.3.2     foreach_1.5.2         jquerylib_0.1.4      </span></span>
+<span><span class="co">#&gt; [64] tidyr_1.3.2           glue_1.8.1            pan_1.9              </span></span>
+<span><span class="co">#&gt; [67] nloptr_2.2.1          pkgdown_2.2.0         codetools_0.2-20     </span></span>
+<span><span class="co">#&gt; [70] distributional_0.7.0  stringi_1.8.7         gtable_0.3.6         </span></span>
+<span><span class="co">#&gt; [73] shape_1.4.6.1         QuickJSR_1.10.0       lme4_2.0-1           </span></span>
+<span><span class="co">#&gt; [76] tibble_3.3.1          pillar_1.11.1         htmltools_0.5.9      </span></span>
+<span><span class="co">#&gt; [79] Brobdingnag_1.2-9     R6_2.6.1              textshaping_1.0.5    </span></span>
+<span><span class="co">#&gt; [82] Rdpack_2.6.6          evaluate_1.0.5        lattice_0.22-9       </span></span>
+<span><span class="co">#&gt; [85] rbibutils_2.4.1       backports_1.5.1       broom_1.0.13         </span></span>
+<span><span class="co">#&gt; [88] bslib_0.11.0          rstantools_2.6.0      Rcpp_1.1.1-1.1       </span></span>
+<span><span class="co">#&gt; [91] coda_0.19-4.1         gridExtra_2.3         nlme_3.1-169         </span></span>
+<span><span class="co">#&gt; [94] checkmate_2.3.4       xfun_0.57             fs_2.1.0             </span></span>
+<span><span class="co">#&gt; [97] pkgconfig_2.0.3</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

@@ -72,7 +72,7 @@ data("data_fhnorm")
 model <- hbm(
   formula = brms::bf(y ~ x1 + x2 + x3),
   data    = data_fhnorm,
-  chains = 2, iter = 2000, warmup = 1000, cores = 1,
+  chains = 4, iter = 2000, warmup = 1000, cores = 1,
   seed = 123, refresh = 0
 )
 #> Warning: Model fitted without any area-level random effects.
@@ -83,25 +83,14 @@ model <- hbm(
 #>     spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE
 #>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.
 #> Compiling Stan program...
-#> Start sampling
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 est <- sae_predict(model)
+#> Error: object 'model' not found
 summary(est)
-#> 
-#> ===== Small Area Estimation Summary =====
-#> 
-#> Areas       : 100 
-#> Overall RSE : 14.91 %
-#> 
-#> Predictions:
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>   6.871   9.332   9.868   9.887  10.486  13.346 
-#> 
-#> RSE by area:
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>   11.08   13.96   14.70   14.91   15.66   21.10 
+#> Error: object 'est' not found
 plot(est, type = "predictions")
-
+#> Error: object 'est' not found
 plot(est, type = "uncertainty")
-
+#> Error: object 'est' not found
 # }
 ```

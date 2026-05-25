@@ -66,16 +66,16 @@ get_hbsae_model("lognormal")
 #>         v <- y[!is.na(y)]
 #>         length(v) == 0L || all(v > 0)
 #>       }
-#> <bytecode: 0x55bc0a452ea0>
-#> <environment: 0x55bc0a466ce0>
+#> <bytecode: 0x5630726f9120>
+#> <environment: 0x56307270efd0>
 #> 
 #> $response_check_msg
 #> [1] "Lognormal response must be strictly positive (y > 0)."
 #> 
 #> $default_priors
 #> function(...) NULL
-#> <bytecode: 0x55bc0a453d20>
-#> <environment: 0x55bc0a466ce0>
+#> <bytecode: 0x5630726ffe40>
+#> <environment: 0x56307270efd0>
 #> 
 get_hbsae_model("beta")$link  # "logit"
 #> [1] "logit"
