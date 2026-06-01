@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hbsaems</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -296,8 +296,12 @@ correctly:</p>
 <span><span class="co">#&gt;    Prediction      SD  RSE_percent      Q025      Q50      Q975</span></span>
 <span><span class="co">#&gt; 1     ...           ...     ...          ...      ...      ...</span></span>
 <span></span>
-<span><span class="co"># Or supply your own draws matrix (D x n)</span></span>
-<span><span class="va">draws</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://mc-stan.org/rstantools/reference/posterior_predict.html" class="external-link">posterior_predict</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">model</span><span class="op">)</span></span>
+<span><span class="co"># Or supply your own draws matrix (D x n).  Use posterior_epred() so the</span></span>
+<span><span class="co"># draws represent the area mean theta_i -- the quantity the benchmark</span></span>
+<span><span class="co"># formula below adjusts (theta_{d,i} * r_d), and consistent with</span></span>
+<span><span class="co"># sae_predict()'s v1.1.0 epred default.  Use posterior_predict() instead</span></span>
+<span><span class="co"># only when you are benchmarking new-observation/aggregate-count draws.</span></span>
+<span><span class="va">draws</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://mc-stan.org/rstantools/reference/posterior_epred.html" class="external-link">posterior_epred</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">model</span><span class="op">)</span></span>
 <span><span class="va">bm_bayes2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sae_benchmark.html">sae_benchmark</a></span><span class="op">(</span><span class="va">estimates</span>, target <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>                            method <span class="op">=</span> <span class="st">"ratio"</span>,</span>
 <span>                            posterior <span class="op">=</span> <span class="va">draws</span><span class="op">)</span></span></code></pre></div>
@@ -786,7 +790,36 @@ al. 2018)</td>
 <span><span class="co">#&gt; [1] "stacking"</span></span></code></pre></div>
 <p>The returned <code>hbsae_results</code> object can be passed to
 <code><a href="../reference/sae_benchmark.html">sae_benchmark()</a></code> exactly like any single-model estimate.</p>
+<div class="section level3">
+<h3 id="psis-loo-reliability-and-reloo-v1-1-0">PSIS-LOO reliability and <code>reloo</code> (v1.1.0)<a class="anchor" aria-label="anchor" href="#psis-loo-reliability-and-reloo-v1-1-0"></a>
+</h3>
+<p>LOO weights – and LOO/WAIC comparisons in general – are only
+trustworthy when the PSIS approximation is stable, i.e. when all Pareto-
+diagnostics are below <code>0.7</code> (Vehtari, Gelman &amp; Gabry
+2017). As of v1.1.0, <code><a href="../reference/model_compare.html">model_compare()</a></code> and
+<code><a href="../reference/model_compare_all.html">model_compare_all()</a></code> check this automatically:
+<code><a href="../reference/model_compare_all.html">model_compare_all()</a></code> adds an <code>n_high_k</code> column,
+and a warning is emitted when any .</p>
+<p>When high- points exist, refit just those folds exactly rather than
+relying on the importance-sampling approximation. Supplying
+<code>reloo_args</code> triggers <code><a href="https://paulbuerkner.com/brms/reference/reloo.brmsfit.html" class="external-link">brms::reloo()</a></code> (previously
+this argument was inert):</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Compare two models; if any Pareto-k &gt; 0.7, refit those folds exactly.</span></span>
+<span><span class="va">cmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model_compare.html">model_compare</a></span><span class="op">(</span></span>
+<span>  <span class="va">fit_linear</span>, <span class="va">fit_smooth</span>,</span>
+<span>  reloo_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>chains <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>   <span class="co"># forwarded to brms::reloo()</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Multi-model ranking surfaces the high-k count per model:</span></span>
+<span><span class="va">rank</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/model_compare_all.html">model_compare_all</a></span><span class="op">(</span>linear <span class="op">=</span> <span class="va">fit_linear</span>, smooth <span class="op">=</span> <span class="va">fit_smooth</span><span class="op">)</span></span>
+<span><span class="va">rank</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Model"</span>, <span class="st">"ELPD_LOO"</span>, <span class="st">"n_high_k"</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
+<p>A cheaper alternative to a full refit is
+<code>moment_match = TRUE</code>, which applies a moment-matching
+correction to the existing draws; use <code>reloo_args</code> when
+moment matching is insufficient.</p>
 <hr>
+</div>
 </div>
 <div class="section level2">
 <h2 id="prior-sensitivity-analysis">9. Prior sensitivity analysis<a class="anchor" aria-label="anchor" href="#prior-sensitivity-analysis"></a>
@@ -804,7 +837,7 @@ an overly informative or misspecified prior.</li>
 <strong>Weak likelihood</strong> – the posterior is dominated by the
 prior. Common in SAE for areas with few sampled units.</li>
 </ul>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span><span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span> <span class="op">+</span> <span class="va">x3</span><span class="op">)</span>,</span>
 <span>           data           <span class="op">=</span> <span class="va">my_data</span>,</span>
 <span>           re             <span class="op">=</span> <span class="op">~</span><span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">regency</span><span class="op">)</span>,</span>
@@ -829,7 +862,7 @@ prior is too strong for that covariate.</p>
 <code>install.packages("priorsense")</code>.</p>
 <hr>
 <p>A realistic workflow combining everything:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># 1. Check data</span></span>
 <span><span class="va">chk</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/check_data.html">check_data</a></span><span class="op">(</span><span class="va">my_data</span>, response <span class="op">=</span> <span class="st">"y"</span>,</span>
 <span>                   auxiliary  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,</span>
@@ -879,7 +912,7 @@ e.g. regencies within provinces, or districts within counties within
 province. <code>hbsaems</code> supports this directly through the
 <code>area_var</code> argument, which now accepts a <strong>character
 vector</strong> of column names from the highest level down:</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Two-level hierarchy: regency nested within province</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm_lnln.html">hbm_lnln</a></span><span class="op">(</span></span>
 <span>  response          <span class="op">=</span> <span class="st">"y_obs"</span>,</span>
@@ -908,7 +941,7 @@ This is the canonical multi-stage SAE specification (Rao &amp; Molina
 <code>"nested"</code>?</strong> Use crossed when the two grouping
 variables share levels across each other – e.g.<br><em>urban / rural</em> across <em>all</em> provinces. Pass
 <code>area_re_structure = "crossed"</code>:</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_crossed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm_lnln.html">hbm_lnln</a></span><span class="op">(</span></span>
 <span>  response          <span class="op">=</span> <span class="st">"y_obs"</span>,</span>
 <span>  auxiliary         <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span><span class="op">)</span>,</span>
@@ -920,7 +953,7 @@ variables share levels across each other – e.g.<br><em>urban / rural</em> acro
 <p>which becomes <code>(1 | province) + (1 | urbanrural)</code>.</p>
 <p><strong>Three or more levels.</strong> The same syntax extends
 arbitrarily:</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/hbm_lnln.html">hbm_lnln</a></span><span class="op">(</span></span>
 <span>  response  <span class="op">=</span> <span class="st">"y"</span>,</span>
 <span>  auxiliary <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span><span class="op">)</span>,</span>
@@ -961,6 +994,10 @@ Fit: The R2-D2 Shrinkage Prior. <em>JASA</em>, 117(538), 862-874.</li>
 A., &amp; Vehtari, A.</strong> (2023). Practical Hilbert space
 approximate Bayesian Gaussian processes for probabilistic programming.
 <em>Statistics and Computing</em>, 33, 17.</li>
+<li>
+<strong>Vehtari, A., Gelman, A., &amp; Gabry, J.</strong> (2017).
+Practical Bayesian model evaluation using leave-one-out cross-validation
+and WAIC. <em>Statistics and Computing</em>, 27(5), 1413-1432.</li>
 <li>
 <strong>Yao, Y., Vehtari, A., Simpson, D., &amp; Gelman, A.</strong>
 (2018). Using stacking to average Bayesian predictive distributions.

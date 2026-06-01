@@ -8,7 +8,7 @@ the primary prior-check function (supersedes the deprecated
 ## Usage
 
 ``` r
-prior_check(model, data, response_var, ndraws_ppc = 50, ...)
+prior_check(model, data = NULL, response_var = NULL, ndraws_ppc = 50, ...)
 ```
 
 ## Arguments
@@ -20,11 +20,15 @@ prior_check(model, data, response_var, ndraws_ppc = 50, ...)
 
 - data:
 
-  A `data.frame` containing the response variable.
+  A `data.frame` containing the response variable. **Optional since
+  1.1.0:** if `NULL` (default) the data frame stored on the fitted model
+  is used.
 
 - response_var:
 
-  Character scalar. Name of the response variable column.
+  Character scalar naming the response column. **Optional since 1.1.0:**
+  if `NULL` (default) it is determined from the model formula's
+  left-hand side.
 
 - ndraws_ppc:
 
@@ -58,11 +62,21 @@ An `hbpc_results` object with components:
 ## Details
 
 The prior predictive distribution is \$\$p(y\_{\text{rep}}) = \int
-p(y\_{\text{rep}} \mid \theta)\\ p(\theta) \\ \mathrm{d}\theta,\$\$ that
-is, the marginal distribution of new data \\y\_{\text{rep}}\\ under the
-prior alone. Comparing this to the observed data is a fast sanity check:
-if the prior predictive places no mass anywhere near the data, the
-priors are likely too tight or in the wrong location.
+p(y\_{\text{rep}} \mid \theta)\\ p(\theta) \\ \mathrm{d}\theta,\$\$ the
+marginal distribution of new data under the prior alone. Comparing it to
+the observed data is a fast sanity check: if the prior predictive places
+no mass anywhere near the data, the priors are likely too tight or in
+the wrong location.
+
+## Automatic argument detection (1.1.0)
+
+When `data` is omitted it is taken from `model$data` (the model frame
+stored on the fit). When `response_var` is omitted it is read from the
+model formula via
+[`brmsterms`](https://paulbuerkner.com/brms/reference/brmsterms.html);
+if the formula has no left-hand side (so no response can be determined),
+an error is raised asking the caller to supply `response_var`
+explicitly.
 
 ## See also
 
@@ -76,8 +90,6 @@ priors are likely too tight or in the wrong location.
 library(hbsaems)
 library(brms)
 data("data_fhnorm")
-# `sample_prior = "only"` requires all coefficients to have a proper
-# prior; supply explicit priors on the regression class.
 model_prior <- hbm(
   formula      = brms::bf(y ~ x1 + x2 + x3),
   data         = data_fhnorm,
@@ -97,14 +109,21 @@ model_prior <- hbm(
 #>     spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE
 #>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
-pc <- prior_check(model_prior,
-                  data         = data_fhnorm,
-                  response_var = "y")
-#> Error: object 'model_prior' not found
+#> Start sampling
+
+# Explicit (as before):
+pc <- prior_check(model_prior, data = data_fhnorm, response_var = "y")
+
+# New in 1.1.0 -- data and response auto-detected from the model:
+pc <- prior_check(model_prior)
 print(pc)
-#> Error: object 'pc' not found
+#> 
+#> Prior Predictive Check  [hbpc_results]
+#> ----------------------------------------
+#>  Prior draws  : 50 x 100 
+#>  Observations : 100 
+#> 
 plot(pc)
-#> Error: object 'pc' not found
+
 # }
 ```

@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">hbsaems</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -84,6 +84,44 @@
     
     
 <div class="section level2">
+<h2 id="what-changed-in-v1-1-0">What changed in v1.1.0<a class="anchor" aria-label="anchor" href="#what-changed-in-v1-1-0"></a>
+</h2>
+<p><strong>Behaviour change you must be aware of when upgrading from
+v1.0.x.</strong></p>
+<ul>
+<li>
+<strong><code><a href="../reference/sae_predict.html">sae_predict()</a></code> now defaults to
+<code>predict_type = "epred"</code>.</strong> It summarises the
+posterior of the area mean rather than the posterior predictive of a new
+observation . This is the correct small-area-estimation target, so the
+reported <code>SD</code> / <code>RSE_percent</code> are now
+<strong>smaller</strong> than in v1.0.x (they no longer include
+observation-level likelihood variance). <strong>Every RSE number your
+existing scripts produce will change.</strong> To reproduce the old
+values exactly:</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># v1.0.x behaviour (posterior predictive of a new observation)</span></span>
+<span><span class="va">est</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sae_predict.html">sae_predict</a></span><span class="op">(</span><span class="va">model</span>, predict_type <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span></span></code></pre></div>
+<ul>
+<li>
+<strong><code><a href="../reference/hbm.html">hbm()</a></code> default <code>adapt_delta</code> is now
+<code>0.95</code></strong> (was brms’s <code>0.8</code>). Hierarchical
+SAE funnels need the higher value to avoid spurious divergences. Any
+<code>control</code> value you set yourself is still respected.</li>
+<li>
+<strong><code><a href="../reference/model_compare.html">model_compare()</a></code> /
+<code><a href="../reference/model_compare_all.html">model_compare_all()</a></code></strong> now check Pareto-k for
+PSIS-LOO reliability and the previously inert <code>reloo_args</code>
+argument is functional – supplying it triggers
+<code><a href="https://paulbuerkner.com/brms/reference/reloo.brmsfit.html" class="external-link">brms::reloo()</a></code> on high-k folds.</li>
+<li>
+<strong><code><a href="../reference/convergence_check.html">convergence_check()</a></code></strong> now reports
+divergent transitions, E-BFMI, and the max-treedepth hit rate as numbers
+in <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>.</li>
+</ul>
+</div>
+<div class="section level2">
 <h2 id="what-changed-in-v1-0-0">What changed in v1.0.0<a class="anchor" aria-label="anchor" href="#what-changed-in-v1-0-0"></a>
 </h2>
 <p>Function names have been modernised to follow the
@@ -124,7 +162,7 @@ work but produce a warning once per session.</p>
 <div class="section level2">
 <h2 id="quick-beforeafter">Quick before/after<a class="anchor" aria-label="anchor" href="#quick-beforeafter"></a>
 </h2>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Before (legacy v0.1.x names)</span></span>
 <span><span class="va">diag</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/deprecated.html">hbcc</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span>
 <span><span class="va">comp</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/deprecated.html">hbmc</a></span><span class="op">(</span><span class="va">model</span>, <span class="va">model2</span><span class="op">)</span></span>
@@ -141,10 +179,10 @@ work but produce a warning once per session.</p>
 <h2 id="bulk-rename-via-sed">Bulk rename via sed<a class="anchor" aria-label="anchor" href="#bulk-rename-via-sed"></a>
 </h2>
 <p>From a project root:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">"s/hbcc(/convergence_check(/g"</span>  <span class="pp">*</span>.R</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">"s/hbmc(/model_compare(/g"</span>      <span class="pp">*</span>.R</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">"s/hbpc(/prior_check(/g"</span>        <span class="pp">*</span>.R</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">"s/hbsae(/sae_predict(/g"</span>       <span class="pp">*</span>.R</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">"s/hbcc(/convergence_check(/g"</span>  <span class="pp">*</span>.R</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">"s/hbmc(/model_compare(/g"</span>      <span class="pp">*</span>.R</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">"s/hbpc(/prior_check(/g"</span>        <span class="pp">*</span>.R</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">"s/hbsae(/sae_predict(/g"</span>       <span class="pp">*</span>.R</span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="argument-renames-in-v1-0-0">Argument renames in v1.0.0<a class="anchor" aria-label="anchor" href="#argument-renames-in-v1-0-0"></a>
@@ -198,7 +236,7 @@ out:</p>
 <p>The old names continue to work for one release cycle but emit a soft
 deprecation warning. All are <strong>scheduled for removal in
 v2.0.0</strong>.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Old (still works in v1.0.0, but emits a warning)</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span>formula <span class="op">=</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span><span class="op">)</span>,</span>
 <span>           sre     <span class="op">=</span> <span class="st">"province"</span>,</span>
@@ -215,7 +253,7 @@ v2.0.0</strong>.</p>
 <span>           M             <span class="op">=</span> <span class="va">adjacency_matrix_car</span>,</span>
 <span>           data          <span class="op">=</span> <span class="va">data_fhnorm</span><span class="op">)</span></span></code></pre></div>
 <p>For wrapper functions:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Old (still works, emits warning)</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm_lnln.html">hbm_lnln</a></span><span class="op">(</span>response  <span class="op">=</span> <span class="st">"y_obs"</span>,</span>
 <span>                auxiliary <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,</span>
@@ -293,7 +331,7 @@ alongside it for district-level datasets.</p>
 <div class="section level2">
 <h2 id="new-functionality-in-v1-0-0">New functionality in v1.0.0<a class="anchor" aria-label="anchor" href="#new-functionality-in-v1-0-0"></a>
 </h2>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://madsyair.github.io/hbsaems/">hbsaems</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"data_fhnorm"</span><span class="op">)</span></span>
 <span></span>
@@ -360,7 +398,7 @@ benchmarked estimates were scale-corrupt by a factor of
 <code>target_type = c("total", "mean")</code> chooses a safe default.
 The default is <code>"total"</code> (the BPS convention), so
 <code>weights = NULL</code> now means <code>rep(1, n)</code>.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># OLD code (silently used 1/n; corrupt if target is a total)</span></span>
 <span><span class="fu"><a href="../reference/sae_benchmark.html">sae_benchmark</a></span><span class="op">(</span><span class="va">predictions</span>, target <span class="op">=</span> <span class="fl">1e6</span><span class="op">)</span></span>
 <span></span>
@@ -483,7 +521,7 @@ warning, and returns centred-only (or raw) predictions instead of
 <p>When auxiliary covariates are themselves estimated from a survey and
 come with a known sampling SE, you can now declare measurement error
 without writing the brms <code><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi()</a></code> syntax by hand:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span></span>
 <span>  formula <span class="op">=</span> <span class="fu">brms</span><span class="fu">::</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x1</span> <span class="op">+</span> <span class="va">x2</span><span class="op">)</span>,</span>
 <span>  data    <span class="op">=</span> <span class="va">mydata</span>,</span>
@@ -504,7 +542,7 @@ with smooth terms.</p>
 formula, <code><a href="../reference/hbm.html">hbm()</a></code> no longer requires you to set
 <code>handle_missing</code> – the call silently routes to model-based
 imputation:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Previously: had to spell out handle_missing</span></span>
 <span><span class="fu"><a href="../reference/hbm.html">hbm</a></span><span class="op">(</span><span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">y</span> <span class="op">|</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi</a></span><span class="op">(</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi</a></span><span class="op">(</span><span class="va">x1</span><span class="op">)</span> <span class="op">+</span> <span class="va">x2</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></span><span class="op">(</span><span class="va">x1</span> <span class="op">|</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/mi.html" class="external-link">mi</a></span><span class="op">(</span><span class="op">)</span> <span class="op">~</span> <span class="va">z</span><span class="op">)</span>,</span>
 <span>    data <span class="op">=</span> <span class="va">d</span>, handle_missing <span class="op">=</span> <span class="st">"model"</span><span class="op">)</span></span>

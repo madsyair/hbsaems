@@ -44,7 +44,7 @@ m1 <- do.call(hbm, c(list(formula = brms::bf(y ~ x1),
 #>     spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE
 #>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Start sampling
 m2 <- do.call(hbm, c(list(formula = brms::bf(y ~ x1 + x2),
                           data = data_fhnorm), FAST))
 #> Warning: Model fitted without any area-level random effects.
@@ -55,8 +55,15 @@ m2 <- do.call(hbm, c(list(formula = brms::bf(y ~ x1 + x2),
 #>     spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE
 #>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Start sampling
 model_compare_all(simple = m1, medium = m2)
-#> Error: object 'm1' not found
+#> Model Comparison Table  [hbm_table]
+#> =====================================
+#> 
+#>   Model  ELPD_LOO   LOO_SE n_high_k LOO_rank
+#>  medium -180.9472 7.709664        0        1
+#>  simple -183.1146 7.341436        0        2
+#> 
+#> Best model: medium 
 # }
 ```

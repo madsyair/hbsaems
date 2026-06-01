@@ -11,7 +11,7 @@ in hbsaems (supersedes the deprecated hbcc)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">hbsaems</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -143,16 +143,919 @@ Values close to 1 (typically below 1.1) indicate convergence.</p>
 <span class="r-in"><span>             chains <span class="op">=</span> <span class="fl">4</span>, iter <span class="op">=</span> <span class="fl">2000</span>, warmup <span class="op">=</span> <span class="fl">1000</span>,</span></span>
 <span class="r-in"><span>             cores  <span class="op">=</span> <span class="fl">1</span>, seed <span class="op">=</span> <span class="fl">123</span>, refresh <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 25 divergent transitions after warmup. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> to find out why this is a problem and how to eliminate them.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 4 chains where the estimated Bayesian Fraction of Missing Information was low. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bfmi-low</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.35, indicating chains have not mixed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">diag</span> <span class="op">&lt;-</span> <span class="fu">convergence_check</span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model' not found</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Low E-BFMI (&lt; 0.3) in 4 chain(s); the posterior may have heavy tails the sampler explores poorly. Consider reparameterisation or longer warmup.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>25 divergent transition(s) detected; estimates may be biased. Increase adapt_delta (e.g. 0.99) or reparameterise.</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">diag</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in object[[i]]:</span> object of type 'closure' is not subsettable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ===== Convergence Diagnostics Summary =====</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Divergent transitions: 25 (0.62%)  &lt;-- WARNING</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> E-BFMI (min over chains): 0.008  &lt;-- WARNING (&lt; 0.3)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Max-treedepth hit rate: 0.00%</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> R-hat:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   1.005   1.049   1.073   1.078   1.095   1.346 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Bulk ESS:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    9.364   31.783  114.041  456.203  680.919 2670.063 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Tail ESS:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   12.63  601.22  792.12  855.54 1032.55 2115.53 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Geweke test (Z-scores):</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [[1]]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fraction in 1st window = 0.1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fraction in 2nd window = 0.5 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      b_Intercept                             b_x1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.15824                          1.60612 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                             b_x2                             b_x3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.88420                         -0.53576 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            sd_regency__Intercept                            sigma </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.52915                          2.29708 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        Intercept r_regency[regency_001,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.27931                          2.88638 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_002,Intercept] r_regency[regency_003,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.65180                          1.96971 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_004,Intercept] r_regency[regency_005,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.56594                         -0.71116 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_006,Intercept] r_regency[regency_007,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.89830                          1.92871 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_008,Intercept] r_regency[regency_009,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.62656                          1.90548 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_010,Intercept] r_regency[regency_011,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.26861                         -0.32483 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_012,Intercept] r_regency[regency_013,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.41782                          3.13014 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_014,Intercept] r_regency[regency_015,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.26103                         -3.13972 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_016,Intercept] r_regency[regency_017,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.19214                          2.61427 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_018,Intercept] r_regency[regency_019,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.12511                          2.31012 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_020,Intercept] r_regency[regency_021,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.59151                         -2.34553 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_022,Intercept] r_regency[regency_023,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.18168                         -2.37945 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_024,Intercept] r_regency[regency_025,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.08990                         -1.77198 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_026,Intercept] r_regency[regency_027,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.43900                          1.34708 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_028,Intercept] r_regency[regency_029,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.59289                          2.07400 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_030,Intercept] r_regency[regency_031,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.30394                          0.17685 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_032,Intercept] r_regency[regency_033,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.46099                         -2.30008 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_034,Intercept] r_regency[regency_035,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.78855                          3.67220 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_036,Intercept] r_regency[regency_037,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.00633                          1.96558 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_038,Intercept] r_regency[regency_039,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.37151                         -2.37390 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_040,Intercept] r_regency[regency_041,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.09146                         -1.99156 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_042,Intercept] r_regency[regency_043,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.91026                         -1.31370 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_044,Intercept] r_regency[regency_045,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.04051                          2.58990 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_046,Intercept] r_regency[regency_047,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.08812                         -2.00331 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_048,Intercept] r_regency[regency_049,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.39274                         -0.75400 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_050,Intercept] r_regency[regency_051,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.92543                         -2.41609 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_052,Intercept] r_regency[regency_053,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.00808                          1.54248 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_054,Intercept] r_regency[regency_055,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.41961                         -0.61713 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_056,Intercept] r_regency[regency_057,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.41193                         -0.29367 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_058,Intercept] r_regency[regency_059,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.10775                         -3.65790 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_060,Intercept] r_regency[regency_061,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.28392                         -2.09853 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_062,Intercept] r_regency[regency_063,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.67487                         -1.52616 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_064,Intercept] r_regency[regency_065,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.64206                          3.16218 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_066,Intercept] r_regency[regency_067,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.48188                         -2.25529 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_068,Intercept] r_regency[regency_069,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.04454                          3.01248 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_070,Intercept] r_regency[regency_071,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.32831                         -2.42450 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_072,Intercept] r_regency[regency_073,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.85159                          2.40675 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_074,Intercept] r_regency[regency_075,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.45759                          1.49635 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_076,Intercept] r_regency[regency_077,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.05644                          1.26249 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_078,Intercept] r_regency[regency_079,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.91413                         -2.15001 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_080,Intercept] r_regency[regency_081,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.85733                          3.69162 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_082,Intercept] r_regency[regency_083,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.20703                          0.91390 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_084,Intercept] r_regency[regency_085,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.15637                         -2.90992 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_086,Intercept] r_regency[regency_087,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.91843                         -0.54891 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_088,Intercept] r_regency[regency_089,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.23481                         -2.63679 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_090,Intercept] r_regency[regency_091,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.92409                         -2.02769 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_092,Intercept] r_regency[regency_093,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.39729                          4.36079 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_094,Intercept] r_regency[regency_095,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.38297                          0.02689 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_096,Intercept] r_regency[regency_097,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.00009                         -2.27511 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_098,Intercept] r_regency[regency_099,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.25542                         -1.92359 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_100,Intercept]                           lprior </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.62163                         -0.37048 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                             lp__                         z_1[1,1] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.28691                          2.11962 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,2]                         z_1[1,3] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.17088                          2.61201 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,4]                         z_1[1,5] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.24362                         -1.13379 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,6]                         z_1[1,7] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.09598                          2.06534 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,8]                         z_1[1,9] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.78965                          2.58728 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,10]                        z_1[1,11] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.87922                         -0.60529 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,12]                        z_1[1,13] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.61012                          3.89437 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,14]                        z_1[1,15] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.64685                         -3.34579 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,16]                        z_1[1,17] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.11491                          2.40921 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,18]                        z_1[1,19] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.45070                          2.70676 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,20]                        z_1[1,21] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.48499                         -2.12125 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,22]                        z_1[1,23] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.00494                         -1.20430 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,24]                        z_1[1,25] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.68542                         -2.43801 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,26]                        z_1[1,27] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.54678                          1.53436 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,28]                        z_1[1,29] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.19845                          0.74513 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,30]                        z_1[1,31] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.05580                          0.15998 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,32]                        z_1[1,33] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.03103                         -2.27982 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,34]                        z_1[1,35] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.39870                          2.94442 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,36]                        z_1[1,37] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.02712                          2.69929 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,38]                        z_1[1,39] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.27441                         -2.51660 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,40]                        z_1[1,41] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.65653                         -2.48684 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,42]                        z_1[1,43] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.45412                         -0.63725 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,44]                        z_1[1,45] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.01200                          2.40829 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,46]                        z_1[1,47] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.80717                         -1.68514 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,48]                        z_1[1,49] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.42407                         -1.43542 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,50]                        z_1[1,51] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.02343                         -3.09506 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,52]                        z_1[1,53] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.06200                          0.15922 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,54]                        z_1[1,55] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.30823                         -0.51112 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,56]                        z_1[1,57] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.39254                          0.85266 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,58]                        z_1[1,59] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.40147                         -2.56096 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,60]                        z_1[1,61] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.11313                         -2.24344 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,62]                        z_1[1,63] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.31091                          0.31605 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,64]                        z_1[1,65] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.06285                          3.29296 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,66]                        z_1[1,67] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.76390                         -1.70594 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,68]                        z_1[1,69] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.34826                          3.17592 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,70]                        z_1[1,71] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.03904                         -1.71170 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,72]                        z_1[1,73] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.68881                          3.09550 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,74]                        z_1[1,75] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.34911                          0.54012 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,76]                        z_1[1,77] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.43748                          0.84206 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,78]                        z_1[1,79] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.06353                         -2.33366 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,80]                        z_1[1,81] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.59284                          2.28628 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,82]                        z_1[1,83] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.78741                          0.66343 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,84]                        z_1[1,85] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.91615                         -2.18634 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,86]                        z_1[1,87] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.18771                         -0.48931 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,88]                        z_1[1,89] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.41842                         -1.63330 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,90]                        z_1[1,91] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.87632                         -2.02861 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,92]                        z_1[1,93] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.03824                          1.55679 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,94]                        z_1[1,95] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.47342                          0.84319 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,96]                        z_1[1,97] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.69043                         -1.61334 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,98]                        z_1[1,99] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.02948                         -1.67558 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       z_1[1,100] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.30813 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [[2]]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fraction in 1st window = 0.1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fraction in 2nd window = 0.5 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      b_Intercept                             b_x1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.95358                         -7.60496 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                             b_x2                             b_x3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.08080                          0.36287 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            sd_regency__Intercept                            sigma </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.92596                         -4.61273 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        Intercept r_regency[regency_001,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.37008                         -4.66496 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_002,Intercept] r_regency[regency_003,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.16556                         -3.38597 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_004,Intercept] r_regency[regency_005,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.54002                          6.47226 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_006,Intercept] r_regency[regency_007,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          5.94546                         -2.67606 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_008,Intercept] r_regency[regency_009,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.47313                         -2.71448 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_010,Intercept] r_regency[regency_011,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.56064                         -2.25937 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_012,Intercept] r_regency[regency_013,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.95943                         -2.09253 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_014,Intercept] r_regency[regency_015,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.33955                          4.79756 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_016,Intercept] r_regency[regency_017,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.53830                         -3.13828 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_018,Intercept] r_regency[regency_019,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.90589                         -2.78391 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_020,Intercept] r_regency[regency_021,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.64799                          3.74094 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_022,Intercept] r_regency[regency_023,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.38284                          2.40322 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_024,Intercept] r_regency[regency_025,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.94104                          6.11481 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_026,Intercept] r_regency[regency_027,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.95190                          2.71749 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_028,Intercept] r_regency[regency_029,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.41540                         -2.35089 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_030,Intercept] r_regency[regency_031,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.54996                          2.35183 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_032,Intercept] r_regency[regency_033,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          8.73909                          4.57671 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_034,Intercept] r_regency[regency_035,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.84530                         -2.73561 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_036,Intercept] r_regency[regency_037,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.86591                         -2.95689 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_038,Intercept] r_regency[regency_039,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          6.41156                          3.91242 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_040,Intercept] r_regency[regency_041,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.54186                          3.36529 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_042,Intercept] r_regency[regency_043,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.42232                          2.95368 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_044,Intercept] r_regency[regency_045,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          5.12949                         -2.68025 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_046,Intercept] r_regency[regency_047,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.97750                          5.05569 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_048,Intercept] r_regency[regency_049,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.46592                          1.20026 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_050,Intercept] r_regency[regency_051,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.25201                          2.28409 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_052,Intercept] r_regency[regency_053,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -4.36636                         -1.60295 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_054,Intercept] r_regency[regency_055,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         10.33209                          0.13763 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_056,Intercept] r_regency[regency_057,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.63304                          0.85220 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_058,Intercept] r_regency[regency_059,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          5.07435                          1.21834 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_060,Intercept] r_regency[regency_061,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -4.00153                          3.15308 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_062,Intercept] r_regency[regency_063,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.04068                          4.78043 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_064,Intercept] r_regency[regency_065,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.70226                         -3.16944 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_066,Intercept] r_regency[regency_067,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.08322                          2.35621 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_068,Intercept] r_regency[regency_069,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -4.18234                          1.02832 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_070,Intercept] r_regency[regency_071,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.49818                          5.24672 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_072,Intercept] r_regency[regency_073,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.84102                         -2.83323 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_074,Intercept] r_regency[regency_075,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.45650                          1.01657 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_076,Intercept] r_regency[regency_077,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.05114                          1.69138 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_078,Intercept] r_regency[regency_079,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.33362                          3.28153 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_080,Intercept] r_regency[regency_081,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          9.24354                         -4.21282 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_082,Intercept] r_regency[regency_083,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.51509                         -0.47672 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_084,Intercept] r_regency[regency_085,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.24322                          3.39027 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_086,Intercept] r_regency[regency_087,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.21053                          6.63743 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_088,Intercept] r_regency[regency_089,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          6.50785                          5.93525 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_090,Intercept] r_regency[regency_091,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.22985                          7.61296 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_092,Intercept] r_regency[regency_093,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.00287                         -2.76285 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_094,Intercept] r_regency[regency_095,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.35161                         -0.80392 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_096,Intercept] r_regency[regency_097,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.58111                          3.74010 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_098,Intercept] r_regency[regency_099,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          9.19121                          3.83075 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_100,Intercept]                           lprior </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.12281                          0.25977 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                             lp__                         z_1[1,1] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          7.54083                         -4.21147 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,2]                         z_1[1,3] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.19295                         -3.44074 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,4]                         z_1[1,5] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.90997                          5.29122 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,6]                         z_1[1,7] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          7.26798                         -2.49447 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,8]                         z_1[1,9] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.20150                         -2.13547 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,10]                        z_1[1,11] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.13490                         -1.82488 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,12]                        z_1[1,13] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.30047                         -1.78469 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,14]                        z_1[1,15] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.29988                          3.88001 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,16]                        z_1[1,17] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.28691                         -2.65156 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,18]                        z_1[1,19] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.55187                         -2.33990 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,20]                        z_1[1,21] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.74930                          3.94971 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,22]                        z_1[1,23] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.75840                          2.62373 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,24]                        z_1[1,25] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.14306                          6.41276 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,26]                        z_1[1,27] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.83589                          5.38955 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,28]                        z_1[1,29] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.88941                         -1.87839 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,30]                        z_1[1,31] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.69289                          1.99825 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,32]                        z_1[1,33] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          6.31600                          5.36197 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,34]                        z_1[1,35] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.44164                         -2.27807 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,36]                        z_1[1,37] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.62864                         -2.61372 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,38]                        z_1[1,39] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          5.50224                          4.09869 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,40]                        z_1[1,41] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.63843                          3.92030 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,42]                        z_1[1,43] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.54465                          2.57441 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,44]                        z_1[1,45] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.83986                         -2.42157 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,46]                        z_1[1,47] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          5.84947                          4.98051 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,48]                        z_1[1,49] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.20457                          1.03576 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,50]                        z_1[1,51] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.24082                          2.00922 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,52]                        z_1[1,53] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.33487                         -0.67367 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,54]                        z_1[1,55] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          9.52758                          0.34512 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,56]                        z_1[1,57] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.67135                          0.80572 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,58]                        z_1[1,59] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.69380                          0.78473 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,60]                        z_1[1,61] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -4.13058                          2.88603 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,62]                        z_1[1,63] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.46975                          3.79994 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,64]                        z_1[1,65] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.42287                         -1.96022 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,66]                        z_1[1,67] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.63962                          1.96729 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,68]                        z_1[1,69] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -4.66713                          3.09414 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,70]                        z_1[1,71] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.59709                          5.90209 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,72]                        z_1[1,73] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.92235                         -2.52277 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,74]                        z_1[1,75] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.23165                          2.01532 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,76]                        z_1[1,77] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.38227                          1.34967 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,78]                        z_1[1,79] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.78014                          2.75461 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,80]                        z_1[1,81] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         10.15230                         -3.52112 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,82]                        z_1[1,83] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.69371                         -0.06622 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,84]                        z_1[1,85] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.84943                          2.63431 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,86]                        z_1[1,87] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.64757                          6.21705 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,88]                        z_1[1,89] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.14507                          5.31947 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,90]                        z_1[1,91] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.23136                          7.58994 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,92]                        z_1[1,93] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.36636                         -2.18725 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,94]                        z_1[1,95] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.69595                         -0.97403 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,96]                        z_1[1,97] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.05842                          5.51356 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,98]                        z_1[1,99] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          7.72840                          3.29455 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       z_1[1,100] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.24142 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [[3]]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fraction in 1st window = 0.1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fraction in 2nd window = 0.5 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      b_Intercept                             b_x1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.33615                          2.61820 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                             b_x2                             b_x3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.63275                          1.18901 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            sd_regency__Intercept                            sigma </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.57078                         -2.12549 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        Intercept r_regency[regency_001,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.57831                         -2.46299 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_002,Intercept] r_regency[regency_003,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.33961                         -1.85363 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_004,Intercept] r_regency[regency_005,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.34994                          6.97587 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_006,Intercept] r_regency[regency_007,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.79184                         -1.69408 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_008,Intercept] r_regency[regency_009,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.29772                         -1.12953 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_010,Intercept] r_regency[regency_011,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.18530                         -0.70729 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_012,Intercept] r_regency[regency_013,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.38534                         -2.04923 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_014,Intercept] r_regency[regency_015,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.33950                          2.94184 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_016,Intercept] r_regency[regency_017,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.98671                         -2.37257 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_018,Intercept] r_regency[regency_019,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.30640                         -1.84580 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_020,Intercept] r_regency[regency_021,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          5.00190                          1.83303 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_022,Intercept] r_regency[regency_023,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          5.96547                          2.78556 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_024,Intercept] r_regency[regency_025,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.99181                          2.18277 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_026,Intercept] r_regency[regency_027,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.30718                         -1.90331 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_028,Intercept] r_regency[regency_029,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.99975                         -2.08964 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_030,Intercept] r_regency[regency_031,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.32208                         -0.42922 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_032,Intercept] r_regency[regency_033,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.31243                          1.66747 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_034,Intercept] r_regency[regency_035,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.67823                         -1.65864 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_036,Intercept] r_regency[regency_037,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.88746                         -0.92504 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_038,Intercept] r_regency[regency_039,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.11681                          2.61317 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_040,Intercept] r_regency[regency_041,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.09196                          1.79843 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_042,Intercept] r_regency[regency_043,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.05046                          1.22541 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_044,Intercept] r_regency[regency_045,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          5.24039                         -1.45629 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_046,Intercept] r_regency[regency_047,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.77451                          2.60953 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_048,Intercept] r_regency[regency_049,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.57636                          0.49798 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_050,Intercept] r_regency[regency_051,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.33022                          5.55240 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_052,Intercept] r_regency[regency_053,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.43673                         -1.76407 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_054,Intercept] r_regency[regency_055,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.44958                          2.03856 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_056,Intercept] r_regency[regency_057,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.75024                          0.10786 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_058,Intercept] r_regency[regency_059,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.35615                          2.86265 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_060,Intercept] r_regency[regency_061,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.34030                          1.81799 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_062,Intercept] r_regency[regency_063,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.76286                          0.83788 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_064,Intercept] r_regency[regency_065,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.57042                         -2.59346 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_066,Intercept] r_regency[regency_067,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.19599                          1.47350 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_068,Intercept] r_regency[regency_069,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.44086                         -1.31605 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_070,Intercept] r_regency[regency_071,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.15755                          3.20485 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_072,Intercept] r_regency[regency_073,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.66828                         -2.91003 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_074,Intercept] r_regency[regency_075,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.40241                         -1.40687 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_076,Intercept] r_regency[regency_077,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.39491                         -3.47794 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_078,Intercept] r_regency[regency_079,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.11954                          1.78426 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_080,Intercept] r_regency[regency_081,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.28672                         -2.13282 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_082,Intercept] r_regency[regency_083,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.15450                         -1.15865 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_084,Intercept] r_regency[regency_085,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.65410                          1.31614 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_086,Intercept] r_regency[regency_087,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.62817                         -2.42291 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_088,Intercept] r_regency[regency_089,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.84586                          1.93853 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_090,Intercept] r_regency[regency_091,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.05776                          3.24772 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_092,Intercept] r_regency[regency_093,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.02220                         -1.69903 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_094,Intercept] r_regency[regency_095,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.24011                          0.67441 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_096,Intercept] r_regency[regency_097,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.39041                          2.09650 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_098,Intercept] r_regency[regency_099,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.60892                          6.41766 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_100,Intercept]                           lprior </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.11250                         -0.48636 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                             lp__                         z_1[1,1] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.22015                         -2.57215 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,2]                         z_1[1,3] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.15098                         -1.57463 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,4]                         z_1[1,5] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.34179                          4.59979 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,6]                         z_1[1,7] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.94838                         -2.10966 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,8]                         z_1[1,9] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.71813                         -0.49367 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,10]                        z_1[1,11] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.13045                         -0.57648 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,12]                        z_1[1,13] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.31344                         -2.56096 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,14]                        z_1[1,15] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.79196                          2.70977 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,16]                        z_1[1,17] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.92924                         -2.37459 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,18]                        z_1[1,19] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.33476                         -2.31377 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,20]                        z_1[1,21] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          4.70778                          1.42784 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,22]                        z_1[1,23] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          5.37145                          2.67931 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,24]                        z_1[1,25] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.32091                          2.33938 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,26]                        z_1[1,27] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.68386                         -1.74830 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,28]                        z_1[1,29] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.35196                         -1.48279 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,30]                        z_1[1,31] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.01263                         -0.50463 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,32]                        z_1[1,33] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.49737                          1.42724 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,34]                        z_1[1,35] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.86990                         -1.91494 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,36]                        z_1[1,37] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.28205                         -0.22859 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,38]                        z_1[1,39] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.90272                          2.53025 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,40]                        z_1[1,41] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.68602                          1.80361 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,42]                        z_1[1,43] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.89609                          0.65115 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,44]                        z_1[1,45] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          5.21451                         -1.28369 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,46]                        z_1[1,47] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.18709                          2.39232 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,48]                        z_1[1,49] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.51789                          0.03439 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,50]                        z_1[1,51] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.04333                          5.05168 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,52]                        z_1[1,53] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -3.05517                         -1.54686 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,54]                        z_1[1,55] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.17467                          2.48659 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,56]                        z_1[1,57] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.07149                         -0.02887 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,58]                        z_1[1,59] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.23867                          2.21328 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,60]                        z_1[1,61] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.87877                          1.25077 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,62]                        z_1[1,63] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.45702                          0.51686 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,64]                        z_1[1,65] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.83717                         -2.33342 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,66]                        z_1[1,67] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.46761                          0.89563 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,68]                        z_1[1,69] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.41142                         -0.79586 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,70]                        z_1[1,71] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.58466                          2.60683 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,72]                        z_1[1,73] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.26957                         -2.13064 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,74]                        z_1[1,75] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.93720                         -1.33290 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,76]                        z_1[1,77] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.80733                         -1.85324 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,78]                        z_1[1,79] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.77678                          1.76344 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,80]                        z_1[1,81] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.52932                         -1.70323 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,82]                        z_1[1,83] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -0.83905                         -0.82037 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,84]                        z_1[1,85] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.73662                          1.05846 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,86]                        z_1[1,87] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          3.11650                         -2.41838 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,88]                        z_1[1,89] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.34459                          2.82350 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,90]                        z_1[1,91] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          0.75884                          3.46833 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,92]                        z_1[1,93] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.84745                         -1.37934 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,94]                        z_1[1,95] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          2.83016                          0.56784 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,96]                        z_1[1,97] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -1.98180                          2.06597 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,98]                        z_1[1,99] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                          1.13812                          5.11925 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       z_1[1,100] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         -2.55534 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [[4]]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fraction in 1st window = 0.1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Fraction in 2nd window = 0.5 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                      b_Intercept                             b_x1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         4.306798                         0.138522 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                             b_x2                             b_x3 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         3.217878                         2.091704 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            sd_regency__Intercept                            sigma </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         1.706977                        -1.169097 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        Intercept r_regency[regency_001,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         4.821207                        -2.644912 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_002,Intercept] r_regency[regency_003,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.584002                        -1.455519 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_004,Intercept] r_regency[regency_005,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         0.153535                        -0.807236 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_006,Intercept] r_regency[regency_007,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -0.671253                        -2.015644 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_008,Intercept] r_regency[regency_009,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.611947                        -2.168900 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_010,Intercept] r_regency[regency_011,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.845515                        -3.349155 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_012,Intercept] r_regency[regency_013,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -0.598528                        -3.966197 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_014,Intercept] r_regency[regency_015,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.672882                         0.216526 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_016,Intercept] r_regency[regency_017,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.156602                        -1.444862 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_018,Intercept] r_regency[regency_019,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.199866                        -0.998165 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_020,Intercept] r_regency[regency_021,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         1.913834                        -0.734336 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_022,Intercept] r_regency[regency_023,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -0.771281                        -0.390361 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_024,Intercept] r_regency[regency_025,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -0.550246                         0.270728 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_026,Intercept] r_regency[regency_027,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -0.358525                        -2.610382 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_028,Intercept] r_regency[regency_029,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         0.406868                        -4.840734 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_030,Intercept] r_regency[regency_031,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -0.979597                        -0.853206 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_032,Intercept] r_regency[regency_033,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.902062                         0.240789 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_034,Intercept] r_regency[regency_035,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -0.397651                        -2.277866 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_036,Intercept] r_regency[regency_037,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.937674                        -1.476411 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_038,Intercept] r_regency[regency_039,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.087061                         1.066855 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_040,Intercept] r_regency[regency_041,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         0.299457                        -0.321866 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_042,Intercept] r_regency[regency_043,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -0.589560                        -2.213468 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_044,Intercept] r_regency[regency_045,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         1.681134                        -1.509631 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_046,Intercept] r_regency[regency_047,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         0.925785                        -0.632817 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_048,Intercept] r_regency[regency_049,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.446031                        -2.232771 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_050,Intercept] r_regency[regency_051,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -7.190352                         0.474496 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_052,Intercept] r_regency[regency_053,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.287363                        -2.971393 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_054,Intercept] r_regency[regency_055,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -0.223817                        -1.068024 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_056,Intercept] r_regency[regency_057,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.703835                        -2.756484 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_058,Intercept] r_regency[regency_059,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         1.366060                        -2.107006 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_060,Intercept] r_regency[regency_061,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.950260                        -2.068420 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_062,Intercept] r_regency[regency_063,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         0.008517                        -2.754926 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_064,Intercept] r_regency[regency_065,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.891131                        -2.954195 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_066,Intercept] r_regency[regency_067,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.561695                        -0.826576 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_068,Intercept] r_regency[regency_069,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.247551                        -2.188642 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_070,Intercept] r_regency[regency_071,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.864885                        -0.082241 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_072,Intercept] r_regency[regency_073,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.836939                        -1.789548 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_074,Intercept] r_regency[regency_075,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -0.639663                        -2.895855 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_076,Intercept] r_regency[regency_077,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         1.193387                        -4.021551 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_078,Intercept] r_regency[regency_079,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.827248                         0.313596 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_080,Intercept] r_regency[regency_081,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.961982                        -3.726726 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_082,Intercept] r_regency[regency_083,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.527196                        -1.400072 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_084,Intercept] r_regency[regency_085,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.429709                        -2.150009 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_086,Intercept] r_regency[regency_087,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         0.470954                        -2.224197 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_088,Intercept] r_regency[regency_089,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.953428                         0.275214 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_090,Intercept] r_regency[regency_091,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.368603                         1.368208 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_092,Intercept] r_regency[regency_093,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.588248                        -6.612935 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_094,Intercept] r_regency[regency_095,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         0.374481                        -1.361233 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_096,Intercept] r_regency[regency_097,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.805933                        -0.144346 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_098,Intercept] r_regency[regency_099,Intercept] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.280423                         1.071588 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> r_regency[regency_100,Intercept]                           lprior </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.344496                        -1.531353 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                             lp__                         z_1[1,1] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         1.421865                        -3.344242 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,2]                         z_1[1,3] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.376196                        -1.438500 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,4]                         z_1[1,5] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         0.014319                        -1.054411 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,6]                         z_1[1,7] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -0.892320                        -2.136647 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         z_1[1,8]                         z_1[1,9] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.031110                        -1.706400 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,10]                        z_1[1,11] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -4.171387                        -3.491678 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,12]                        z_1[1,13] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.201080                        -4.206893 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,14]                        z_1[1,15] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.994205                        -0.163600 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,16]                        z_1[1,17] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.612151                        -1.618987 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,18]                        z_1[1,19] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.478478                        -1.174784 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,20]                        z_1[1,21] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         2.215308                        -1.359440 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,22]                        z_1[1,23] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.158873                        -0.955924 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,24]                        z_1[1,25] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.014166                        -0.126942 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,26]                        z_1[1,27] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -0.083022                        -2.283947 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,28]                        z_1[1,29] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         0.258311                        -5.540468 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,30]                        z_1[1,31] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.072474                        -0.668203 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,32]                        z_1[1,33] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.187014                        -0.329338 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,34]                        z_1[1,35] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.187802                        -2.917143 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,36]                        z_1[1,37] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.326368                        -1.424360 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,38]                        z_1[1,39] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.306850                         1.167718 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,40]                        z_1[1,41] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -0.256971                        -0.701562 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,42]                        z_1[1,43] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.059850                        -2.241285 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,44]                        z_1[1,45] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         2.072568                        -1.736575 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,46]                        z_1[1,47] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         0.822205                        -1.024810 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,48]                        z_1[1,49] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.182766                        -2.597025 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,50]                        z_1[1,51] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -7.173679                         0.390322 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,52]                        z_1[1,53] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.745516                        -2.990428 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,54]                        z_1[1,55] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -0.284172                        -0.839273 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,56]                        z_1[1,57] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.723342                        -2.960291 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,58]                        z_1[1,59] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         1.286633                        -1.668382 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,60]                        z_1[1,61] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.166122                        -2.188757 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,62]                        z_1[1,63] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -0.459177                        -3.252710 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,64]                        z_1[1,65] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.304451                        -4.120516 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,66]                        z_1[1,67] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.395075                        -1.403177 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,68]                        z_1[1,69] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.186673                        -2.766750 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,70]                        z_1[1,71] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -5.505045                        -0.579112 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,72]                        z_1[1,73] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.373123                        -2.061582 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,74]                        z_1[1,75] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -1.024341                        -2.988373 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,76]                        z_1[1,77] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         1.440211                        -4.601670 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,78]                        z_1[1,79] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -7.355370                        -0.180179 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,80]                        z_1[1,81] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.029339                        -4.108763 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,82]                        z_1[1,83] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.675617                        -1.095311 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,84]                        z_1[1,85] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.762787                        -2.060242 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,86]                        z_1[1,87] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         0.312556                        -1.927770 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,88]                        z_1[1,89] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.632345                         0.041515 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,90]                        z_1[1,91] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -3.821679                         1.472091 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,92]                        z_1[1,93] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.983358                        -6.157606 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,94]                        z_1[1,95] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                         0.163359                        -1.215103 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,96]                        z_1[1,97] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.892911                        -0.496275 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        z_1[1,98]                        z_1[1,99] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.250915                         1.082417 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       z_1[1,100] </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                        -2.974943 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="fu"><a href="is_converged.html">is_converged</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
 <span class="r-in"><span><span class="fu"><a href="is_converged.html">is_converged</a></span><span class="op">(</span><span class="va">model</span>, threshold <span class="op">=</span> <span class="fl">1.05</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

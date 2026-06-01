@@ -52,10 +52,30 @@ model <- hbm(brms::bf(y ~ x1), data = data_fhnorm,
              chains = 4, iter = 2000, warmup = 1000,
              cores = 1, seed = 1, refresh = 0)
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Start sampling
+#> Warning: There were 72 divergent transitions after warmup. See
+#> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#> to find out why this is a problem and how to eliminate them.
+#> Warning: There were 4 chains where the estimated Bayesian Fraction of Missing Information was low. See
+#> https://mc-stan.org/misc/warnings.html#bfmi-low
+#> Warning: Examine the pairs() plot to diagnose sampling problems
+#> Warning: The largest R-hat is 1.15, indicating chains have not mixed.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#r-hat
+#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
 pd <- prior_draws(model)
-#> Error: object 'model' not found
 head(pd)
-#> Error: object 'pd' not found
+#>   Intercept          b    sigma sd_regency
+#> 1  1.203556 -0.1796873 1.500267  0.7143109
+#> 2  2.775636  0.1524650 5.137378  1.3279995
+#> 3  5.087399  0.9773841 3.053966  0.1240028
+#> 4 -1.723898  0.6596110 3.850694  0.8130879
+#> 5  2.699549 -0.3961863 3.677017  3.4173558
+#> 6  6.199769 -1.4724376 1.989079  2.6545391
 # }
 ```

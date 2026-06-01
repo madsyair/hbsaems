@@ -18,10 +18,11 @@ has been registered via
 
 ``` r
 hbm_flex(
-  family_key,
+  family = NULL,
   response,
   auxiliary = NULL,
   data,
+  family_key = NULL,
   addition_var = NULL,
   area_var = NULL,
   area_re_structure = c("nested", "crossed"),
@@ -75,10 +76,24 @@ hbm_flex(
 
 ## Arguments
 
-- family_key:
+- family:
 
-  Character. The registry key of the desired family (e.g.\\
-  `"lognormal"`, `"binomial"`, `"gamma_log"`).
+  The model family (primary argument). Accepts EITHER a character family
+  name (e.g.\\ `"gaussian"`, `"binomial"`) OR a brms family object
+  (e.g.\\ [`gaussian()`](https://rdrr.io/r/stats/family.html),
+  [`Gamma()`](https://rdrr.io/r/stats/family.html)), OR a registered
+  custom family object (e.g.\\
+  `brms_custom_loglogistic()$custom_family`). The name is matched to a
+  registered spec, so a custom family reuses the same Stan code
+  (`stanvars`) as the key string would. A custom family object must
+  already be registered via
+  [`register_hbsae_brms_custom`](https://madsyair.github.io/hbsaems/reference/register_hbsae_brms_custom.md);
+  an unregistered custom family raises an informative error. Supply
+  either `family` or its alias `family_key`, not both. `family` is the
+  uniform way to choose the distribution across
+  [`hbm`](https://madsyair.github.io/hbsaems/reference/hbm.md) and
+  `hbm_flex()`; each function additionally keeps its historical alias
+  (`family_key` here, `hb_sampling` in `hbm`).
 
 - response:
 
@@ -92,6 +107,13 @@ hbm_flex(
 - data:
 
   A `data.frame`.
+
+- family_key:
+
+  Character. Backward-compatible **alias** for `family` (the registry
+  key of the desired family). Not deprecated; pass EITHER `family`
+  (preferred) OR `family_key`, never both (e.g.\\ `"lognormal"`,
+  `"binomial"`, `"gamma_log"`).
 
 - addition_var:
 
@@ -304,7 +326,7 @@ library(hbsaems)
 data("data_lnln")
 # Equivalent to hbm_lnln(...)
 fit <- hbm_flex(
-  family_key = "lognormal",
+  family = "lognormal",
   response   = "y_obs",
   auxiliary  = c("x1", "x2", "x3"),
   area_var   = "district",         # area-level random effect: (1 | district)
@@ -313,6 +335,21 @@ fit <- hbm_flex(
 )
 #> Warning: Area column 'district' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Start sampling
+#> Warning: There were 975 divergent transitions after warmup. See
+#> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+#> to find out why this is a problem and how to eliminate them.
+#> Warning: There were 4 chains where the estimated Bayesian Fraction of Missing Information was low. See
+#> https://mc-stan.org/misc/warnings.html#bfmi-low
+#> Warning: Examine the pairs() plot to diagnose sampling problems
+#> Warning: The largest R-hat is 1.25, indicating chains have not mixed.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#r-hat
+#> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#bulk-ess
+#> Warning: Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.
+#> Running the chains for more iterations may help. See
+#> https://mc-stan.org/misc/warnings.html#tail-ess
 # }
 ```

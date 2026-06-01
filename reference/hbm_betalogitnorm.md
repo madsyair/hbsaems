@@ -253,9 +253,42 @@ model1 <- hbm_betalogitnorm(
 )
 #> Warning: Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Start sampling
 summary(model1)
-#> Error: object 'model1' not found
+#> 
+#> ===== Hierarchical Bayesian Model Summary =====
+#> 
+#>  Observations : 100 
+#>  Family       : beta (link: logit )
+#>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + (1 | regency), pforms = list(),      pfix = list(), resp = "y", family = structure(list(family = "beta",          link = "logit", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "phi"),          type = "real", ybounds = c(0, 1), closed = c(FALSE, FALSE         ), ad = c("weights", "subset", "cens", "trunc", "mi",          "index"), link_phi = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) 
+#> 
+#> ----- Parameter Estimates -----
+#>  Family: beta 
+#>   Links: mu = logit 
+#> Formula: y ~ x1 + x2 + x3 + (1 | regency) 
+#>    Data: structure(list(y = c(0.01, 0.984074547994896, 0.01 (Number of observations: 100) 
+#>   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+#>          total post-warmup draws = 4000
+#> 
+#> Multilevel Hyperparameters:
+#> ~regency (Number of levels: 100) 
+#>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sd(Intercept)     0.15      0.12     0.01     0.43 1.00     2027     1433
+#> 
+#> Regression Coefficients:
+#>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> Intercept    -0.47      0.78    -2.01     1.08 1.00     7539     3048
+#> x1           -0.13      0.06    -0.24    -0.01 1.00     6874     3177
+#> x2           -0.06      0.04    -0.15     0.02 1.00     7475     3069
+#> x3            0.06      0.04    -0.01     0.13 1.00     5766     2844
+#> 
+#> Further Distributional Parameters:
+#>     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> phi     0.87      0.11     0.67     1.11 1.00     4486     3195
+#> 
+#> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+#> and Tail_ESS are effective sample size measures, and Rhat is the potential
+#> scale reduction factor on split chains (at convergence, Rhat = 1).
 
 # -- 2. Fixed phi via survey design (n + deff) -------------------------------
 model2 <- hbm_betalogitnorm(
@@ -269,9 +302,39 @@ model2 <- hbm_betalogitnorm(
 )
 #> Warning: Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Start sampling
 summary(model2)
-#> Error: object 'model2' not found
+#> 
+#> ===== Hierarchical Bayesian Model Summary =====
+#> 
+#>  Observations : 100 
+#>  Family       : beta (link: logit )
+#>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + (1 | regency), pforms = list(     phi = phi ~ 0 + offset(.hbsaems_phi_fixed)), pfix = list(),      resp = "y", family = structure(list(family = "beta", link = "logit",          linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "phi"),          type = "real", ybounds = c(0, 1), closed = c(FALSE, FALSE         ), ad = c("weights", "subset", "cens", "trunc", "mi",          "index"), link_phi = "identity"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) 
+#> 
+#> ----- Parameter Estimates -----
+#>  Family: beta 
+#>   Links: mu = logit; phi = identity 
+#> Formula: y ~ x1 + x2 + x3 + (1 | regency) 
+#>          phi ~ 0 + offset(.hbsaems_phi_fixed)
+#>    Data: structure(list(y = c(0.01, 0.984074547994896, 0.01 (Number of observations: 100) 
+#>   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
+#>          total post-warmup draws = 4000
+#> 
+#> Multilevel Hyperparameters:
+#> ~regency (Number of levels: 100) 
+#>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> sd(Intercept)     2.42      0.20     2.06     2.85 1.00     1227     1874
+#> 
+#> Regression Coefficients:
+#>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+#> Intercept    -1.55      1.47    -4.42     1.31 1.00      792     1602
+#> x1           -0.33      0.12    -0.56    -0.11 1.00      781     1735
+#> x2           -0.15      0.08    -0.31     0.01 1.00      907     1713
+#> x3            0.17      0.07     0.03     0.31 1.00      804     1417
+#> 
+#> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS
+#> and Tail_ESS are effective sample size measures, and Rhat is the potential
+#> scale reduction factor on split chains (at convergence, Rhat = 1).
 
 # -- 3. Custom prior on phi via the standard `prior` argument ----------------
 #
@@ -291,7 +354,7 @@ model3 <- hbm_betalogitnorm(
 )
 #> Warning: Area column 'regency' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Start sampling
 
 # -- 4. Spatial CAR model ----------------------------------------------------
 data("adjacency_matrix_car")
@@ -307,6 +370,6 @@ model4 <- hbm_betalogitnorm(
   chains = 4, iter = 2000, warmup = 1000, refresh = 0
 )
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Start sampling
 # }
 ```

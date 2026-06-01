@@ -206,8 +206,12 @@ bm_bayes$result_table
 #>    Prediction      SD  RSE_percent      Q025      Q50      Q975
 #> 1     ...           ...     ...          ...      ...      ...
 
-# Or supply your own draws matrix (D x n)
-draws <- posterior_predict(fit$model)
+# Or supply your own draws matrix (D x n).  Use posterior_epred() so the
+# draws represent the area mean theta_i -- the quantity the benchmark
+# formula below adjusts (theta_{d,i} * r_d), and consistent with
+# sae_predict()'s v1.1.0 epred default.  Use posterior_predict() instead
+# only when you are benchmarking new-observation/aggregate-count draws.
+draws <- posterior_epred(fit$model)
 bm_bayes2 <- sae_benchmark(estimates, target = 1000,
                             method = "ratio",
                             posterior = draws)
@@ -611,6 +615,41 @@ The returned `hbsae_results` object can be passed to
 [`sae_benchmark()`](https://madsyair.github.io/hbsaems/reference/sae_benchmark.md)
 exactly like any single-model estimate.
 
+### PSIS-LOO reliability and `reloo` (v1.1.0)
+
+LOO weights – and LOO/WAIC comparisons in general – are only trustworthy
+when the PSIS approximation is stable, i.e. when all Pareto- diagnostics
+are below `0.7` (Vehtari, Gelman & Gabry 2017). As of v1.1.0,
+[`model_compare()`](https://madsyair.github.io/hbsaems/reference/model_compare.md)
+and
+[`model_compare_all()`](https://madsyair.github.io/hbsaems/reference/model_compare_all.md)
+check this automatically:
+[`model_compare_all()`](https://madsyair.github.io/hbsaems/reference/model_compare_all.md)
+adds an `n_high_k` column, and a warning is emitted when any .
+
+When high- points exist, refit just those folds exactly rather than
+relying on the importance-sampling approximation. Supplying `reloo_args`
+triggers
+[`brms::reloo()`](https://paulbuerkner.com/brms/reference/reloo.brmsfit.html)
+(previously this argument was inert):
+
+``` r
+
+# Compare two models; if any Pareto-k > 0.7, refit those folds exactly.
+cmp <- model_compare(
+  fit_linear, fit_smooth,
+  reloo_args = list(chains = 2)   # forwarded to brms::reloo()
+)
+
+# Multi-model ranking surfaces the high-k count per model:
+rank <- model_compare_all(linear = fit_linear, smooth = fit_smooth)
+rank[, c("Model", "ELPD_LOO", "n_high_k")]
+```
+
+A cheaper alternative to a full refit is `moment_match = TRUE`, which
+applies a moment-matching correction to the existing draws; use
+`reloo_args` when moment matching is insufficient.
+
 ------------------------------------------------------------------------
 
 ## 9. Prior sensitivity analysis
@@ -794,6 +833,9 @@ expands to four nested random effects.
   Vehtari, A.** (2023). Practical Hilbert space approximate Bayesian
   Gaussian processes for probabilistic programming. *Statistics and
   Computing*, 33, 17.
+- **Vehtari, A., Gelman, A., & Gabry, J.** (2017). Practical Bayesian
+  model evaluation using leave-one-out cross-validation and WAIC.
+  *Statistics and Computing*, 27(5), 1413-1432.
 - **Yao, Y., Vehtari, A., Simpson, D., & Gelman, A.** (2018). Using
   stacking to average Bayesian predictive distributions. *Bayesian
   Analysis*, 13(3), 917-1007.

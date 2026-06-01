@@ -15,7 +15,7 @@ priors, and three strategies for handling missing data in auxiliary
 
     <a class="navbar-brand me-2" href="../index.html">hbsaems</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -73,6 +73,7 @@ priors, and three strategies for handling missing data in auxiliary
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">hbm</span><span class="op">(</span></span>
 <span>  <span class="va">formula</span>,</span>
+<span>  family <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  hb_sampling <span class="op">=</span> <span class="st">"gaussian"</span>,</span>
 <span>  hb_link <span class="op">=</span> <span class="st">"identity"</span>,</span>
 <span>  link_phi <span class="op">=</span> <span class="st">"log"</span>,</span>
@@ -133,6 +134,18 @@ priors, and three strategies for handling missing data in auxiliary
 or imputation sub-models use <code><a href="https://paulbuerkner.com/brms/reference/brmsformula.html" class="external-link">bf</a></code>.  Examples:
 <code>formula(y ~ x1 + x2)</code>, <code>bf(y ~ x1 + x2)</code>, or
 <code>bf(y | mi() ~ mi(x1) + x2) + bf(x1 | mi() ~ x2)</code>.</p></dd>
+
+
+<dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>
+<dd><p>The model family (primary argument, brms-consistent).
+Accepts a family name string (e.g.\ <code>"gaussian"</code>), a brms family
+object (e.g.\ <code><a href="https://rdrr.io/r/stats/family.html" class="external-link">gaussian()</a></code>, <code>Gamma(link = "log")</code>), or a
+registered custom family object.  A link carried on the object is used
+when <code>hb_link</code> is left at its default.  Supply either <code>family</code>
+or its alias <code>hb_sampling</code>, not both.  <code>family</code> is the uniform
+way to choose the distribution across <code>hbm()</code> and
+<code><a href="hbm_flex.html">hbm_flex</a></code>; each function additionally keeps its historical
+alias (<code>hb_sampling</code> here, <code>family_key</code> in <code>hbm_flex</code>).</p></dd>
 
 
 <dt id="arg-hb-sampling">hb_sampling<a class="anchor" aria-label="anchor" href="#arg-hb-sampling"></a></dt>
@@ -815,9 +828,59 @@ Software</em>, 45(3), 1–67.</p>
 <span class="r-in"><span>  <span class="va">FAST</span></span></span>
 <span class="r-in"><span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 25 divergent transitions after warmup. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> to find out why this is a problem and how to eliminate them.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 4 chains where the estimated Bayesian Fraction of Missing Information was low. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bfmi-low</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.35, indicating chains have not mixed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ===== Hierarchical Bayesian Model Summary =====</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Observations : 100 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family       : gaussian (link: identity )</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + (1 | regency), pforms = list(),      pfix = list(), resp = "y", family = structure(list(family = "gaussian",          link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ----- Parameter Estimates -----</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Parts of the model have not converged (some Rhats are &gt; 1.05). Be careful when analysing the results! We recommend running more iterations and/or setting stronger priors.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 25 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family: gaussian </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Links: mu = identity </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Formula: y ~ x1 + x2 + x3 + (1 | regency) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          total post-warmup draws = 4000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multilevel Hyperparameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ~regency (Number of levels: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sd(Intercept)     0.99      0.45     0.07     1.57 1.21       14      191</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Regression Coefficients:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Intercept    10.08      0.15     9.79    10.37 1.03      122      144</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x1            0.98      0.15     0.71     1.29 1.04      101      507</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x2           -0.38      0.14    -0.65    -0.12 1.01      326     1398</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x3            0.32      0.14     0.04     0.59 1.01      625      892</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Further Distributional Parameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sigma     0.79      0.49     0.06     1.53 1.34        9       13</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> and Tail_ESS are effective sample size measures, and Rhat is the potential</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> scale reduction factor on split chains (at convergence, Rhat = 1).</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># -- Horseshoe prior (sparse coefficients) ------------------------------------</span></span></span>
 <span class="r-in"><span><span class="va">model_hs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">hbm</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
@@ -829,9 +892,59 @@ Software</em>, 45(3), 1–67.</p>
 <span class="r-in"><span>  <span class="va">FAST</span></span></span>
 <span class="r-in"><span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 3 divergent transitions after warmup. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> to find out why this is a problem and how to eliminate them.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 4 chains where the estimated Bayesian Fraction of Missing Information was low. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bfmi-low</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.09, indicating chains have not mixed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model_hs</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model_hs' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ===== Hierarchical Bayesian Model Summary =====</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Observations : 100 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family       : gaussian (link: identity )</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + (1 | regency), pforms = list(),      pfix = list(), resp = "y", family = structure(list(family = "gaussian",          link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ----- Parameter Estimates -----</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Parts of the model have not converged (some Rhats are &gt; 1.05). Be careful when analysing the results! We recommend running more iterations and/or setting stronger priors.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 3 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family: gaussian </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Links: mu = identity </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Formula: y ~ x1 + x2 + x3 + (1 | regency) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          total post-warmup draws = 4000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multilevel Hyperparameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ~regency (Number of levels: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sd(Intercept)     0.90      0.43     0.05     1.49 1.08       49      255</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Regression Coefficients:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Intercept    10.08      0.15     9.78    10.37 1.00     1189     1164</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x1            0.96      0.15     0.68     1.26 1.00     1837     2340</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x2           -0.33      0.15    -0.61    -0.02 1.00     1525     1636</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x3            0.25      0.15    -0.01     0.54 1.00     1221     1049</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Further Distributional Parameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sigma     0.97      0.37     0.31     1.55 1.08       48       95</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> and Tail_ESS are effective sample size measures, and Rhat is the potential</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> scale reduction factor on split chains (at convergence, Rhat = 1).</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># -- R2D2 prior (prior on model R-squared) -------------------------------------</span></span></span>
 <span class="r-in"><span><span class="va">model_r2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">hbm</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
@@ -844,9 +957,59 @@ Software</em>, 45(3), 1–67.</p>
 <span class="r-in"><span>  <span class="va">FAST</span></span></span>
 <span class="r-in"><span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 31 divergent transitions after warmup. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> to find out why this is a problem and how to eliminate them.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 4 chains where the estimated Bayesian Fraction of Missing Information was low. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bfmi-low</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.09, indicating chains have not mixed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model_r2</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model_r2' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ===== Hierarchical Bayesian Model Summary =====</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Observations : 100 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family       : gaussian (link: identity )</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + (1 | regency), pforms = list(),      pfix = list(), resp = "y", family = structure(list(family = "gaussian",          link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ----- Parameter Estimates -----</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Parts of the model have not converged (some Rhats are &gt; 1.05). Be careful when analysing the results! We recommend running more iterations and/or setting stronger priors.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 31 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family: gaussian </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Links: mu = identity </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Formula: y ~ x1 + x2 + x3 + (1 | regency) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          total post-warmup draws = 4000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multilevel Hyperparameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ~regency (Number of levels: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sd(Intercept)     0.78      0.42     0.04     1.48 1.08       72       95</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Regression Coefficients:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Intercept    10.08      0.15     9.78    10.37 1.00     1149     1270</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x1            0.95      0.15     0.65     1.25 1.00     1545     1612</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x2           -0.33      0.14    -0.60    -0.05 1.00     1945     2136</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x3            0.26      0.15    -0.00     0.55 1.00     1759     1920</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Further Distributional Parameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sigma     1.10      0.33     0.39     1.56 1.08       65       36</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> and Tail_ESS are effective sample size measures, and Rhat is the potential</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> scale reduction factor on split chains (at convergence, Rhat = 1).</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># -- Spline smooth for x1 (nonlinear) -----------------------------------------</span></span></span>
 <span class="r-in"><span><span class="co"># x1 is modelled with s(x1); x2 and x3 remain linear.</span></span></span>
@@ -860,9 +1023,63 @@ Software</em>, 45(3), 1–67.</p>
 <span class="r-in"><span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Variable(s) x1 appear in both 'auxiliary' (linear) and 'nonlinear'. They will be modelled nonlinearly ONLY. Remove them from 'auxiliary' to suppress this warning.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 18 divergent transitions after warmup. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> to find out why this is a problem and how to eliminate them.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 4 chains where the estimated Bayesian Fraction of Missing Information was low. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bfmi-low</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.1, indicating chains have not mixed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model_spline</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model_spline' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ===== Hierarchical Bayesian Model Summary =====</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Observations : 100 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family       : gaussian (link: identity )</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Formula      : structure(list(formula = y ~ s(x1) + x2 + x3 + (1 | regency),      pforms = list(), pfix = list(), resp = "y", family = structure(list(         family = "gaussian", link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ----- Parameter Estimates -----</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Parts of the model have not converged (some Rhats are &gt; 1.05). Be careful when analysing the results! We recommend running more iterations and/or setting stronger priors.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 18 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family: gaussian </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Links: mu = identity </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Formula: y ~ s(x1) + x2 + x3 + (1 | regency) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          total post-warmup draws = 4000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Smoothing Spline Hyperparameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sds(sx1_1)     1.07      0.96     0.03     3.60 1.00     1040     1883</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multilevel Hyperparameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ~regency (Number of levels: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sd(Intercept)     0.76      0.42     0.06     1.47 1.08       49       99</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Regression Coefficients:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Intercept     9.93      0.15     9.65    10.23 1.00     1788     2660</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x2           -0.37      0.14    -0.65    -0.11 1.00     1825     1274</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x3            0.32      0.14     0.04     0.61 1.00     1719     2280</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sx1_1         7.49      2.79     2.79    14.25 1.00     1638     2086</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Further Distributional Parameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sigma     1.09      0.35     0.27     1.55 1.09       35       26</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> and Tail_ESS are effective sample size measures, and Rhat is the potential</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> scale reduction factor on split chains (at convergence, Rhat = 1).</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># -- Gaussian process for x2 (nonlinear) --------------------------------------</span></span></span>
 <span class="r-in"><span><span class="va">model_gp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">hbm</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
@@ -875,9 +1092,63 @@ Software</em>, 45(3), 1–67.</p>
 <span class="r-in"><span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Variable(s) x2 appear in both 'auxiliary' (linear) and 'nonlinear'. They will be modelled nonlinearly ONLY. Remove them from 'auxiliary' to suppress this warning.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 131 divergent transitions after warmup. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> to find out why this is a problem and how to eliminate them.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 3 chains where the estimated Bayesian Fraction of Missing Information was low. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bfmi-low</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.07, indicating chains have not mixed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model_gp</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model_gp' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ===== Hierarchical Bayesian Model Summary =====</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Observations : 100 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family       : gaussian (link: identity )</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Formula      : structure(list(formula = y ~ x1 + gp(x2) + x3 + (1 | regency),      pforms = list(), pfix = list(), resp = "y", family = structure(list(         family = "gaussian", link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ----- Parameter Estimates -----</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Parts of the model have not converged (some Rhats are &gt; 1.05). Be careful when analysing the results! We recommend running more iterations and/or setting stronger priors.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 131 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family: gaussian </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Links: mu = identity </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Formula: y ~ x1 + gp(x2) + x3 + (1 | regency) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          total post-warmup draws = 4000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Gaussian Process Hyperparameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sdgp(gpx2)       0.83      0.64     0.13     2.51 1.01      870     1399</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lscale(gpx2)     0.20      0.36     0.01     0.99 1.02      168      498</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multilevel Hyperparameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ~regency (Number of levels: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sd(Intercept)     0.72      0.41     0.04     1.41 1.06       90      222</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Regression Coefficients:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Intercept    10.20      0.57     9.08    11.52 1.00     1470     1106</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x1            1.01      0.15     0.73     1.31 1.00     1703     2735</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x3            0.32      0.14     0.04     0.59 1.00     2421     1806</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Further Distributional Parameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sigma     1.08      0.33     0.40     1.54 1.07       62       85</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> and Tail_ESS are effective sample size measures, and Rhat is the potential</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> scale reduction factor on split chains (at convergence, Rhat = 1).</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># -- Missing data: deletion (Y missing, X complete) ---------------------------</span></span></span>
 <span class="r-in"><span><span class="va">data_miss_y</span>        <span class="op">&lt;-</span> <span class="va">data</span></span></span>
@@ -892,9 +1163,60 @@ Software</em>, 45(3), 1–67.</p>
 <span class="r-in"><span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> handle_missing = 'deleted': 3 row(s) with missing response variable removed from model fitting.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 520 divergent transitions after warmup. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> to find out why this is a problem and how to eliminate them.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 4 chains where the estimated Bayesian Fraction of Missing Information was low. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bfmi-low</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.32, indicating chains have not mixed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model_deleted</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model_deleted' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ===== Hierarchical Bayesian Model Summary =====</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Observations : 100 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family       : gaussian (link: identity )</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + (1 | regency), pforms = list(),      pfix = list(), resp = "y", family = structure(list(family = "gaussian",          link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Missing data : deleted </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ----- Parameter Estimates -----</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Parts of the model have not converged (some Rhats are &gt; 1.05). Be careful when analysing the results! We recommend running more iterations and/or setting stronger priors.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 520 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family: gaussian </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Links: mu = identity </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Formula: y ~ x1 + x2 + x3 + (1 | regency) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 97) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          total post-warmup draws = 4000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multilevel Hyperparameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ~regency (Number of levels: 97) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sd(Intercept)     1.01      0.41     0.06     1.51 1.22       13       76</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Regression Coefficients:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Intercept    10.12      0.13     9.86    10.38 1.09      611     1015</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x1            0.97      0.13     0.72     1.24 1.04       93     1036</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x2           -0.38      0.14    -0.67    -0.13 1.06      467     1067</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x3            0.28      0.14     0.00     0.55 1.04      313     1027</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Further Distributional Parameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sigma     0.74      0.45     0.08     1.48 1.31       10       17</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> and Tail_ESS are effective sample size measures, and Rhat is the potential</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> scale reduction factor on split chains (at convergence, Rhat = 1).</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># -- Missing data: multiple imputation (X only -- Y is never imputed) ----------</span></span></span>
 <span class="r-in"><span><span class="va">data_miss_x</span>          <span class="op">&lt;-</span> <span class="va">data</span></span></span>
@@ -911,7 +1233,7 @@ Software</em>, 45(3), 1–67.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Missing predictor variable(s): x1. Applying multiple imputation (mice) with m = 5 imputations.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Number of logged events: 2</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling the C++ model</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in getGlobalsAndPackages(expr, envir = envir, globals = globals):</span> The total size of the 7 globals exported for future expression (‘FUN(chains = 4, iter = 2000, warmup = 1000, cores = 1, control = list(; adapt_delta = 0.95, max_treedepth = 12L), save_pars = structure(list(; group = TRUE, latent = FALSE, all = TRUE, manual = character(0)), class = "save_pars"),; refresh = 0)’) is 2.05 GiB. This exceeds the maximum allowed size 500.00 MiB per plan() argument 'maxSizeOfObjects'. This limit is set to protect against transfering too large objects to parallel workers by mistake, which may not be intended and could be costly. See help("future.globals.maxSize", package = "future") for how to adjust or remove the default threshold via an R option The three largest globals are ‘FUN’ (1.02 GiB of class ‘function’), ‘fit’ (1.02 GiB of class ‘list’) and ‘data’ (52.70 KiB of class ‘list’)</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model_multiple</span><span class="op">)</span></span></span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model_multiple' not found</span>
 <span class="r-in"><span></span></span>
@@ -930,9 +1252,67 @@ Software</em>, 45(3), 1–67.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> handle_missing = 'model': using mi() specification for joint model-based imputation.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Setting 'rescor' to FALSE by default for this model</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 243 divergent transitions after warmup. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> to find out why this is a problem and how to eliminate them.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 4 chains where the estimated Bayesian Fraction of Missing Information was low. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bfmi-low</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.59, indicating chains have not mixed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model_model</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model_model' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ===== Hierarchical Bayesian Model Summary =====</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Observations : 100 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family       : (link: )</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Formula      : structure(list(forms = list(y = structure(list(formula = y |      mi() ~ mi(x1) + x2 + x3 + (1 | regency), pforms = list(),      pfix = list(), resp = "y", family = structure(list(family = "gaussian",          link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )), x1 = structure(list(formula = x1 | mi() ~ x2 + x3 + (1 |      regency), pforms = list(), pfix = list(), resp = "x1", family = structure(list(     family = "gaussian", link = "identity", linkfun = function (mu)      link(mu, link = slink), linkinv = function (eta)      inv_link(eta, link = slink), dpars = c("mu", "sigma"), type = "real",      ybounds = c(-Inf, Inf), closed = c(NA, NA), ad = c("weights",      "subset", "se", "cens", "trunc", "mi", "index"), normalized = c("_time_hom",      "_time_het", "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",      "rescor")), class = c("brmsfamily", "family")), mecor = TRUE), class = c("brmsformula",  "bform"))), responses = c("y", "x1"), rescor = FALSE, mecor = TRUE), class = c("mvbrmsformula",  "bform")) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Missing data : model </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ----- Parameter Estimates -----</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Parts of the model have not converged (some Rhats are &gt; 1.05). Be careful when analysing the results! We recommend running more iterations and/or setting stronger priors.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 243 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family: MV(gaussian, gaussian) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Links: mu = identity</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          mu = identity </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Formula: y | mi() ~ mi(x1) + x2 + x3 + (1 | regency) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          x1 | mi() ~ x2 + x3 + (1 | regency) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          total post-warmup draws = 4000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Multilevel Hyperparameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ~regency (Number of levels: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sd(y_Intercept)      0.92      0.47     0.04     1.54 1.43        8       74</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sd(x1_Intercept)     0.59      0.29     0.05     1.05 1.13       20      160</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Regression Coefficients:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> y_Intercept     10.09      0.15     9.81    10.37 1.01      688     1698</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x1_Intercept    -0.16      0.10    -0.37     0.03 1.02      272     2378</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> y_x2            -0.39      0.14    -0.66    -0.10 1.02     1410     1528</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> y_x3             0.31      0.14     0.05     0.58 1.01     1967     2162</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x1_x2           -0.07      0.10    -0.26     0.12 1.01     2045     2296</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x1_x3           -0.00      0.10    -0.21     0.19 1.01      329     2190</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> y_mix1           0.99      0.14     0.72     1.26 1.01     1925     1692</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Further Distributional Parameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sigma_y      0.87      0.47     0.07     1.54 1.59        7       11</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sigma_x1     0.74      0.24     0.25     1.09 1.16       18       48</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> and Tail_ESS are effective sample size measures, and Rhat is the potential</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> scale reduction factor on split chains (at convergence, Rhat = 1).</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># -- Spatial: CAR (Conditional Autoregressive) --------------------------------</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"adjacency_matrix_car"</span><span class="op">)</span></span></span>
@@ -945,9 +1325,41 @@ Software</em>, 45(3), 1–67.</p>
 <span class="r-in"><span>  <span class="va">FAST</span></span></span>
 <span class="r-in"><span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model_car</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model_car' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ===== Hierarchical Bayesian Model Summary =====</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Observations : 100 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family       : gaussian (link: identity )</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + car(M, gr = province,      type = "icar"), pforms = list(), pfix = list(), resp = "y",      family = structure(list(family = "gaussian", link = "identity",          linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ----- Parameter Estimates -----</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family: gaussian </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Links: mu = identity </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Formula: y ~ x1 + x2 + x3 + car(M, gr = province, type = "icar") </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          total post-warmup draws = 4000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Correlation Structures:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sdcar     0.67      0.47     0.07     1.79 1.00     1139     1091</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Regression Coefficients:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Intercept    10.08      0.14     9.82    10.36 1.00     4907     2763</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x1            0.94      0.14     0.67     1.22 1.00     3432     2247</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x2           -0.38      0.14    -0.64    -0.12 1.00     3833     2282</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x3            0.32      0.14     0.04     0.58 1.00     3821     2714</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Further Distributional Parameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sigma     1.37      0.11     1.19     1.60 1.00     4052     2683</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> and Tail_ESS are effective sample size measures, and Rhat is the potential</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> scale reduction factor on split chains (at convergence, Rhat = 1).</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># -- Spatial: SAR (Simultaneous Autoregressive) -------------------------------</span></span></span>
 <span class="r-in"><span><span class="co"># spatial_weight_sar is a 100x100 row-standardised matrix with row-</span></span></span>
@@ -963,9 +1375,41 @@ Software</em>, 45(3), 1–67.</p>
 <span class="r-in"><span>  <span class="va">FAST</span></span></span>
 <span class="r-in"><span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">model_sar</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'model_sar' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ===== Hierarchical Bayesian Model Summary =====</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Observations : 100 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family       : gaussian (link: identity )</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Formula      : structure(list(formula = y ~ x1 + x2 + x3 + sar(M, type = "lag"),      pforms = list(), pfix = list(), resp = "y", family = structure(list(         family = "gaussian", link = "identity", linkfun = function (mu)          link(mu, link = slink), linkinv = function (eta)          inv_link(eta, link = slink), dpars = c("mu", "sigma"),          type = "real", ybounds = c(-Inf, Inf), closed = c(NA,          NA), ad = c("weights", "subset", "se", "cens", "trunc",          "mi", "index"), normalized = c("_time_hom", "_time_het",          "_lagsar", "_errorsar", "_fcor"), specials = c("residuals",          "rescor"), link_sigma = "log"), class = c("brmsfamily",      "family")), mecor = TRUE), class = c("brmsformula", "bform" )) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ----- Parameter Estimates -----</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Family: gaussian </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Links: mu = identity </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Formula: y ~ x1 + x2 + x3 + sar(M, type = "lag") </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    Data: structure(list(y = c(6.98224870350365, 9.005801436 (Number of observations: 100) </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Draws: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          total post-warmup draws = 4000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Correlation Structures:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lagsar     0.05      0.08    -0.12     0.16 1.00     2531     2178</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Regression Coefficients:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Intercept    10.03      0.17     9.70    10.39 1.00     3283     2917</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x1            0.99      0.14     0.72     1.28 1.00     4189     2899</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x2           -0.38      0.14    -0.65    -0.11 1.00     3904     2835</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> x3            0.32      0.14     0.05     0.59 1.00     4625     3165</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Further Distributional Parameters:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> sigma     1.42      0.10     1.24     1.63 1.00     3788     3136</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Draws were sampled using sampling(NUTS). For each parameter, Bulk_ESS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> and Tail_ESS are effective sample size measures, and Rhat is the potential</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> scale reduction factor on split chains (at convergence, Rhat = 1).</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

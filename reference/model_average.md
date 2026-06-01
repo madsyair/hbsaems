@@ -14,6 +14,7 @@ model_average(
   ...,
   weights = NULL,
   method = c("manual", "stacking", "pseudobma"),
+  predict_type = c("epred", "response", "linpred", "proportion"),
   newdata = NULL
 )
 ```
@@ -34,6 +35,13 @@ model_average(
   Character. Weighting method: `"manual"` (default), `"stacking"` (Yao
   et al. 2018), or `"pseudobma"`. When `"stacking"` or `"pseudobma"`,
   `weights` must be `NULL`; an error is raised otherwise.
+
+- predict_type:
+
+  Passed to
+  [`sae_predict`](https://madsyair.github.io/hbsaems/reference/sae_predict.md)
+  for each model: one of `"epred"` (default), `"response"`, `"linpred"`,
+  or `"proportion"`.
 
 - newdata:
 

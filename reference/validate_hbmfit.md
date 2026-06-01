@@ -61,8 +61,7 @@ fit <- suppressWarnings(
       chains = 4, iter = 2000, warmup = 1000, refresh = 0)
 )
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Start sampling
 validate_hbmfit(fit)
-#> Error: object 'fit' not found
 # }
 ```

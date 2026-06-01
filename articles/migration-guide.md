@@ -1,5 +1,39 @@
 # Migration Guide: legacy v0.1.x names to v1.0.0
 
+## What changed in v1.1.0
+
+**Behaviour change you must be aware of when upgrading from v1.0.x.**
+
+- **[`sae_predict()`](https://madsyair.github.io/hbsaems/reference/sae_predict.md)
+  now defaults to `predict_type = "epred"`.** It summarises the
+  posterior of the area mean rather than the posterior predictive of a
+  new observation . This is the correct small-area-estimation target, so
+  the reported `SD` / `RSE_percent` are now **smaller** than in v1.0.x
+  (they no longer include observation-level likelihood variance).
+  **Every RSE number your existing scripts produce will change.** To
+  reproduce the old values exactly:
+
+``` r
+
+# v1.0.x behaviour (posterior predictive of a new observation)
+est <- sae_predict(model, predict_type = "response")
+```
+
+- **[`hbm()`](https://madsyair.github.io/hbsaems/reference/hbm.md)
+  default `adapt_delta` is now `0.95`** (was brms’s `0.8`). Hierarchical
+  SAE funnels need the higher value to avoid spurious divergences. Any
+  `control` value you set yourself is still respected.
+- **[`model_compare()`](https://madsyair.github.io/hbsaems/reference/model_compare.md)
+  /
+  [`model_compare_all()`](https://madsyair.github.io/hbsaems/reference/model_compare_all.md)**
+  now check Pareto-k for PSIS-LOO reliability and the previously inert
+  `reloo_args` argument is functional – supplying it triggers
+  [`brms::reloo()`](https://paulbuerkner.com/brms/reference/reloo.brmsfit.html)
+  on high-k folds.
+- **[`convergence_check()`](https://madsyair.github.io/hbsaems/reference/convergence_check.md)**
+  now reports divergent transitions, E-BFMI, and the max-treedepth hit
+  rate as numbers in [`summary()`](https://rdrr.io/r/base/summary.html).
+
 ## What changed in v1.0.0
 
 Function names have been modernised to follow the **brms** snake_case

@@ -8,7 +8,12 @@ relative standard errors (RSE).
 ## Usage
 
 ``` r
-sae_predict(model, newdata = NULL, ...)
+sae_predict(
+  model,
+  newdata = NULL,
+  predict_type = c("epred", "response", "linpred", "proportion"),
+  ...
+)
 ```
 
 ## Arguments
@@ -21,6 +26,50 @@ sae_predict(model, newdata = NULL, ...)
 
   Optional new `data.frame` for prediction at unsampled areas. If `NULL`
   (default), the original data are used.
+
+- predict_type:
+
+  Character; the posterior quantity to summarise. One of:
+
+  `"epred"` (default, new in 1.1.0)
+
+  :   Posterior of the area mean \\\theta_i = E\[y_i \mid x_i, u_i\]\\
+      via
+      [`posterior_epred`](https://mc-stan.org/rstantools/reference/posterior_epred.html).
+      This is the correct SAE target; its per-area SD excludes
+      observation-level likelihood variance.
+
+  `"response"`
+
+  :   Posterior predictive of a NEW observation \\\tilde y_i\\ via
+      [`posterior_predict`](https://mc-stan.org/rstantools/reference/posterior_predict.html).
+      This was the 1.0.x behaviour; use it when predicting fresh
+      observations or aggregate counts where observation variability is
+      wanted.
+
+  `"linpred"`
+
+  :   Linear predictor on the response scale via
+      [`posterior_linpred`](https://mc-stan.org/rstantools/reference/posterior_linpred.html)
+      with `transform = TRUE`. For a binomial family this is the area
+      proportion \\p_i\\.
+
+  `"proportion"` (new in 1.1.0)
+
+  :   The area proportion \\p_i\\. For a binomial family this divides
+      the expected count by the trials (\\E\[y_i\]/n_i\\), giving a
+      quantity comparable across areas with different sample sizes;
+      identical to `"linpred"`. For non-binomial families it equals
+      `"epred"`.
+
+  **Binomial note.** For a binomial family
+  [`posterior_epred()`](https://mc-stan.org/rstantools/reference/posterior_epred.html)
+  returns the expected *count* \\n_i p_i\\, which is not comparable
+  across areas with unequal \\n_i\\. The SAE target is normally the
+  proportion \\p_i\\, so `predict_type = "epred"` on a binomial model
+  automatically returns \\p_i\\ (with a warning); use `"response"` for
+  the expected count, or `"proportion"` to request the proportion
+  explicitly.
 
 - ...:
 
@@ -49,9 +98,11 @@ An `hbsae_results` object with components:
 For each area \\i = 1, \ldots, n\\, the function computes
 \$\$\widehat{y}\_i = \frac{1}{S} \sum\_{s=1}^{S} y\_{i}^{(s)}, \qquad
 \widehat{\mathrm{sd}}\_i^2 = \frac{1}{S - 1} \sum\_{s=1}^{S} \left(
-y\_{i}^{(s)} - \widehat{y}\_i \right)^2,\$\$ where \\y\_{i}^{(s)}\\ are
-draws from the posterior predictive distribution and \\S\\ is the number
-of draws. The relative standard error is \\\mathrm{RSE}\_i = 100 \cdot
+y\_{i}^{(s)} - \widehat{y}\_i \right)^2,\$\$ where \\\theta\_{i}^{(s)}\\
+are posterior draws of the area-mean target (`predict_type = "epred"`,
+the default) – or of a new observation \\y_i^{(s)}\\ when
+`predict_type = "response"` – and \\S\\ is the number of draws. The
+relative standard error is \\\mathrm{RSE}\_i = 100 \cdot
 \|\widehat{\mathrm{sd}}\_i / \widehat{y}\_i\|\\.
 
 ## See also
@@ -83,14 +134,25 @@ model <- hbm(
 #>     spatial_var = 'area_id', spatial_model = 'sar', M = W    # SAR spatial RE
 #>   If a fixed-effects-only baseline is intentional, you can suppress this warning with `suppressWarnings()`.
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Start sampling
 est <- sae_predict(model)
-#> Error: object 'model' not found
 summary(est)
-#> Error: object 'est' not found
+#> 
+#> ===== Small Area Estimation Summary =====
+#> 
+#> Areas       : 100 
+#> Overall RSE : 2.85 %
+#> 
+#> Predictions:
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>   6.879   9.348   9.862   9.892  10.483  13.350 
+#> 
+#> RSE by area:
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>   1.541   2.176   2.646   2.851   3.375   6.286 
 plot(est, type = "predictions")
-#> Error: object 'est' not found
+
 plot(est, type = "uncertainty")
-#> Error: object 'est' not found
+
 # }
 ```

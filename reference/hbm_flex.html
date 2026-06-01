@@ -27,7 +27,7 @@ register_hbsae_model."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">hbsaems</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -90,10 +90,11 @@ also call it directly once a custom family has been registered via
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">hbm_flex</span><span class="op">(</span></span>
-<span>  <span class="va">family_key</span>,</span>
+<span>  family <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">response</span>,</span>
 <span>  auxiliary <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">data</span>,</span>
+<span>  family_key <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  addition_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  area_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  area_re_structure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nested"</span>, <span class="st">"crossed"</span><span class="op">)</span>,</span>
@@ -149,9 +150,20 @@ also call it directly once a custom family has been registered via
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-family-key">family_key<a class="anchor" aria-label="anchor" href="#arg-family-key"></a></dt>
-<dd><p>Character.  The registry key of the desired family
-(e.g.\ <code>"lognormal"</code>, <code>"binomial"</code>, <code>"gamma_log"</code>).</p></dd>
+<dl><dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>
+<dd><p>The model family (primary argument).  Accepts EITHER a
+character family name (e.g.\ <code>"gaussian"</code>, <code>"binomial"</code>) OR a
+brms family object (e.g.\ <code><a href="https://rdrr.io/r/stats/family.html" class="external-link">gaussian()</a></code>, <code><a href="https://rdrr.io/r/stats/family.html" class="external-link">Gamma()</a></code>), OR a
+registered custom family object (e.g.\
+<code>brms_custom_loglogistic()$custom_family</code>).  The name is matched to
+a registered spec, so a custom family reuses the same Stan code
+(<code>stanvars</code>) as the key string would.  A custom family object must
+already be registered via <code><a href="register_hbsae_brms_custom.html">register_hbsae_brms_custom</a></code>; an
+unregistered custom family raises an informative error.  Supply either
+<code>family</code> or its alias <code>family_key</code>, not both.  <code>family</code> is the
+uniform way to choose the distribution across <code><a href="hbm.html">hbm</a></code> and
+<code>hbm_flex()</code>; each function additionally keeps its historical alias
+(<code>family_key</code> here, <code>hb_sampling</code> in <code>hbm</code>).</p></dd>
 
 
 <dt id="arg-response">response<a class="anchor" aria-label="anchor" href="#arg-response"></a></dt>
@@ -165,6 +177,13 @@ variables; corresponds to area-level covariates in SAE literature.</p></dd>
 
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p>A <code>data.frame</code>.</p></dd>
+
+
+<dt id="arg-family-key">family_key<a class="anchor" aria-label="anchor" href="#arg-family-key"></a></dt>
+<dd><p>Character.  Backward-compatible <strong>alias</strong> for
+<code>family</code> (the registry key of the desired family).  Not deprecated;
+pass EITHER <code>family</code> (preferred) OR <code>family_key</code>, never both
+(e.g.\ <code>"lognormal"</code>, <code>"binomial"</code>, <code>"gamma_log"</code>).</p></dd>
 
 
 <dt id="arg-addition-var">addition_var<a class="anchor" aria-label="anchor" href="#arg-addition-var"></a></dt>
@@ -366,7 +385,7 @@ wrappers:</p><ol><li><p>Validate that <code>response</code>, <code>auxiliary</co
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"data_lnln"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># Equivalent to hbm_lnln(...)</span></span></span>
 <span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">hbm_flex</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  family_key <span class="op">=</span> <span class="st">"lognormal"</span>,</span></span>
+<span class="r-in"><span>  family <span class="op">=</span> <span class="st">"lognormal"</span>,</span></span>
 <span class="r-in"><span>  response   <span class="op">=</span> <span class="st">"y_obs"</span>,</span></span>
 <span class="r-in"><span>  auxiliary  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"x1"</span>, <span class="st">"x2"</span>, <span class="st">"x3"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  area_var   <span class="op">=</span> <span class="st">"district"</span>,         <span class="co"># area-level random effect: (1 | district)</span></span></span>
@@ -375,7 +394,22 @@ wrappers:</p><ol><li><p>Validate that <code>response</code>, <code>auxiliary</co
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Area column 'district' has 100 unique levels for 100 rows -- looks more like a continuous covariate than a grouping factor. Did you mean to put this in `auxiliary` instead?</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Start sampling</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 975 divergent transitions after warmup. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> to find out why this is a problem and how to eliminate them.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 4 chains where the estimated Bayesian Fraction of Missing Information was low. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bfmi-low</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is 1.25, indicating chains have not mixed.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

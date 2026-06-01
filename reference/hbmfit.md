@@ -51,12 +51,10 @@ A validated `hbmfit` object.
 raw <- brms::brm(y ~ x1, data = data.frame(y = rnorm(10), x1 = 1:10),
                  chains = 4, iter = 2000, warmup = 1000, refresh = 0)
 #> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+#> Start sampling
 fit <- hbmfit(model = raw,
               data  = data.frame(y = rnorm(10), x1 = 1:10),
               missing_method = NULL)
-#> Error in new_hbmfit(model = model, missing_method = missing_method, data = data): inherits(model, c("brmsfit", "brmsfit_multiple")) is not TRUE
 validate_hbmfit(fit)
-#> Error: object 'fit' not found
 # }
 ```
