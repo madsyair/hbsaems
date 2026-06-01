@@ -8,6 +8,77 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ---
 
+## [1.1.0] — 2026-05-31
+
+Minor release with Bayesian-workflow improvements. **Read the behaviour
+change below before upgrading production scripts.**
+
+### Changed (BEHAVIOUR CHANGE)
+
+- `sae_predict()` now defaults to `predict_type = "epred"` (posterior of the
+  area mean θ_i) instead of the posterior predictive of a new observation.
+  This is the correct SAE target; reported `SD` / `RSE_percent` now measure
+  uncertainty of the estimator θ_i and are **smaller** than in 1.0.x. Every
+  RSE number changes. Pass `predict_type = "response"` to reproduce 1.0.x
+  exactly; `"linpred"` returns the linear predictor on the response scale.
+  For binomial families `"epred"` returns the area **proportion** p_i (not the
+  expected count n_i·p_i, which is not comparable across areas with different
+  trial counts) and warns; use `"proportion"` to request it explicitly or
+  `"response"` to keep the count.
+
+### Added
+
+- `sae_predict()` gains `predict_type = c("epred", "response", "linpred",
+  "proportion")` and a `sae_predict.default()` method that gives a clear error
+  for unsupported inputs. `model_average()` now forwards `predict_type` to
+  each model; `sae_benchmark()` operates on the predictions you pass in, so it
+  honours whichever `predict_type` produced them.
+- `hbm_flex()` makes `family` the primary argument: it accepts a string
+  (e.g. `"gaussian"`, exactly like the old `family_key`), a brms family object
+  (e.g. `gaussian()`, `Gamma(link = "log")`), or a registered custom family
+  object. `family_key` is retained as a backward-compatible alias (not
+  deprecated).
+- `hbm()` gains a matching `family` argument (string or brms family object),
+  with `hb_sampling` retained as a backward-compatible alias, so `family` is
+  the uniform distribution selector across `hbm()` and `hbm_flex()`.
+- Four SAE-oriented brms-native families registered: `gamma` (log link),
+  `skew_normal`, `student` (robust Fay-Herriot), and `hurdle_lognormal`,
+  each with response-domain validation.
+- `convergence_check()` reports divergent transitions, E-BFMI per chain, and
+  the max-treedepth hit rate as numbers in `summary()`, and warns on
+  divergences or E-BFMI < 0.3.
+- `model_compare()` / `model_compare_all()` check Pareto-k for PSIS-LOO
+  reliability (`n_high_k` column + warning when any k > 0.7); the previously
+  dead `reloo_args` argument now triggers `brms::reloo()`.
+- `prior_check()` auto-detects `data` and `response_var` when omitted
+  (resolved from the fit / model formula via `brms::brmsterms()`); the
+  deprecated `hbpc()` wrapper inherits the same convenience.
+
+### Changed (defaults / validation)
+
+- `hbm()` now defaults to `control = list(adapt_delta = 0.95,
+  max_treedepth = 12)` instead of brms's `adapt_delta = 0.8`; hierarchical
+  SAE funnels need the higher value. User-supplied `control` is respected.
+- `hbm_binlogitnorm()` now errors on missing values in `trials` (the
+  binomial likelihood is undefined without a known number of trials).
+  Missingness in the response remains supported.
+- `convergence_check()` validates `diag_tests` / `plot_types` and errors on
+  unknown values instead of silently ignoring them.
+- For CAR spatial models, `hbm()` / `hbm_flex()` now validate that the row
+  names of the spatial weight matrix `M` match the levels of the spatial
+  grouping variable **before** Stan compilation. A mismatch previously
+  surfaced as a late brms error during Stan-data preparation; it now fails
+  fast with an informative message naming the offending levels (a permutation
+  of the levels is still accepted, since brms reorders by name).
+
+### Fixed
+
+- `convergence_check()` no longer reports `Tail_ESS = Bulk_ESS` in the
+  fallback path when the 'posterior' package is unavailable (now `NA`).
+- `model_compare()` / `hbmc()` accept a `list` of fitted models again via a
+  new `model_compare.list()` method (1–2 models → `hbmc_results`; 3+ →
+  ranked `hbm_table`; empty/invalid list → informative error).
+
 ## [1.0.0] — 2026-05-14
 
 First stable release. The package now follows semantic versioning; the 1.0.0 line constitutes a stable user-facing function set whose signatures will not change before v2.0.0.
@@ -130,7 +201,3 @@ The following short-form names continue to work but emit a soft-deprecation warn
 - Example datasets: `data_fhnorm`, `data_lnln`, `data_betalogitnorm`, `data_binlogitnorm`, `adjacency_matrix_car`, `spatial_weight_sar`
 - Basic vignettes: `complete-workflow`, `advanced-features`, `migration-guide`
 
----
-
-[1.0.0]: https://github.com/madsyair/hbsaems/releases/tag/v1.0.0
-[0.1.0]: https://github.com/madsyair/hbsaems/releases/tag/v0.1.0
