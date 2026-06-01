@@ -4,15 +4,19 @@
 \alias{prior_check}
 \title{Prior Predictive Check for Fitted HBMs}
 \usage{
-prior_check(model, data, response_var, ndraws_ppc = 50, ...)
+prior_check(model, data = NULL, response_var = NULL, ndraws_ppc = 50, ...)
 }
 \arguments{
 \item{model}{An \code{hbmfit} or \code{brmsfit} object fit with
 \code{sample_prior = "only"} (see \code{\link{hbm}}).}
 
-\item{data}{A \code{data.frame} containing the response variable.}
+\item{data}{A \code{data.frame} containing the response variable.
+\strong{Optional since 1.1.0:} if \code{NULL} (default) the data frame
+stored on the fitted model is used.}
 
-\item{response_var}{Character scalar.  Name of the response variable column.}
+\item{response_var}{Character scalar naming the response column.
+\strong{Optional since 1.1.0:} if \code{NULL} (default) it is determined
+from the model formula's left-hand side.}
 
 \item{ndraws_ppc}{Integer.  Number of prior predictive draws to overlay
 on the plot (default \code{50}).}
@@ -41,18 +45,25 @@ This is the primary prior-check function (supersedes the deprecated
 The prior predictive distribution is
 \deqn{p(y_{\text{rep}}) =
   \int p(y_{\text{rep}} \mid \theta)\, p(\theta) \, \mathrm{d}\theta,}
-that is, the marginal distribution of new data \eqn{y_{\text{rep}}} under
-the prior alone.  Comparing this to the observed data is a fast sanity
-check: if the prior predictive places no mass anywhere near the data,
-the priors are likely too tight or in the wrong location.
+the marginal distribution of new data under the prior alone.  Comparing it
+to the observed data is a fast sanity check: if the prior predictive places
+no mass anywhere near the data, the priors are likely too tight or in the
+wrong location.
 }
+\section{Automatic argument detection (1.1.0)}{
+
+When \code{data} is omitted it is taken from \code{model$data} (the model
+frame stored on the fit).  When \code{response_var} is omitted it is read
+from the model formula via \code{\link[brms]{brmsterms}}; if the formula
+has no left-hand side (so no response can be determined), an error is
+raised asking the caller to supply \code{response_var} explicitly.
+}
+
 \examples{
 \donttest{
 library(hbsaems)
 library(brms)
 data("data_fhnorm")
-# `sample_prior = "only"` requires all coefficients to have a proper
-# prior; supply explicit priors on the regression class.
 model_prior <- hbm(
   formula      = brms::bf(y ~ x1 + x2 + x3),
   data         = data_fhnorm,
@@ -64,9 +75,12 @@ model_prior <- hbm(
   chains = 4, iter = 2000, warmup = 1000, cores = 1,
   seed = 42, refresh = 0
 )
-pc <- prior_check(model_prior,
-                  data         = data_fhnorm,
-                  response_var = "y")
+
+# Explicit (as before):
+pc <- prior_check(model_prior, data = data_fhnorm, response_var = "y")
+
+# New in 1.1.0 -- data and response auto-detected from the model:
+pc <- prior_check(model_prior)
 print(pc)
 plot(pc)
 }

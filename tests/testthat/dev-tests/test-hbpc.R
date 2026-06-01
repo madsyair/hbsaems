@@ -83,7 +83,7 @@ test_that("hbpc returns expected structure and classes", {
   result <- suppressWarnings(hbpc(model = fit, data = sample_data, response_var = "y"))
   
   expect_s3_class(result, "hbpc_results")
-  expect_named(result, c("prior_summary", "prior_predictive_plot", "prior_draws_summary"))
+  expect_named(result, c("prior_predictive_plot", "prior_draws", "observed"))
   expect_s3_class(result$prior_predictive_plot, "gg")
 })
 
@@ -92,8 +92,9 @@ test_that("hbpc automatically detects response variable and data", {
   testthat::skip_if_not_installed("brms")
   result_auto <- suppressWarnings(hbpc(model = fit))
   
+  expect_s3_class(result_auto, "hbpc_results")
   expect_s3_class(result_auto$prior_predictive_plot, "gg")
-  expect_true(is.data.frame(result_auto$prior_summary) || is.list(result_auto$prior_summary))
+  expect_false(is.null(result_auto$prior_draws))
 })
 
 test_that("hbpc throws error for non-brms/hbmfit model", {
@@ -101,7 +102,7 @@ test_that("hbpc throws error for non-brms/hbmfit model", {
   testthat::skip_if_not_installed("brms")
   expect_error(
     hbpc(model = lm(y ~ x1, data = sample_data), data = sample_data, response_var = "y"),
-    "Input model must be a brmsfit or hbmfit object."
+    "'model' must be an hbmfit or brmsfit object."
   )
 })
 
@@ -110,11 +111,11 @@ test_that("hbpc throws error for invalid response variable name", {
   testthat::skip_if_not_installed("brms")
   expect_error(
     hbpc(model = fit, data = sample_data, response_var = "not_y"),
-    "not found in the data"
+    "not found in 'data'"
   )
 })
 
-test_that("hbpc gives warning when model is not sampling and not prior-only", {
+test_that("hbpc errors when model was not fit with sample_prior = 'only'", {
   .dev_skip()
   testthat::skip_if_not_installed("brms")
   dummy_model <- list(
@@ -125,10 +126,11 @@ test_that("hbpc gives warning when model is not sampling and not prior-only", {
     version = "2.20.0"
   )
   class(dummy_model) <- "brmsfit"
-  
-  expect_warning(
-    try(hbpc(dummy_model), silent = TRUE),
-    "For meaningful prior predictive checks"
+
+  # prior_check() cannot draw prior-predictive samples from a model that was
+  # not fit with sample_prior = "only"; it raises an informative error.
+  expect_error(
+    suppressWarnings(hbpc(dummy_model, data = sample_data, response_var = "y"))
   )
 })
 

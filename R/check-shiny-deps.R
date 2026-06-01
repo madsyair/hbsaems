@@ -48,6 +48,19 @@
 }
 
 
+# Internal: build the install.packages() command for a set of missing
+# packages, with each name double-quoted.  Returns NULL when nothing is
+# missing.  Factored out so the quoting logic is unit-testable independently
+# of which packages happen to be installed in the test environment.
+#' @noRd
+.build_install_cmd <- function(missing_pkgs) {
+  if (length(missing_pkgs) == 0L) return(NULL)
+  sprintf(
+    'install.packages(c(%s))',
+    paste(sprintf('"%s"', missing_pkgs), collapse = ", ")
+  )
+}
+
 #' Check Shiny App Dependencies
 #'
 #' Classifies and inspects the optional packages used by the Shiny dashboard.
@@ -87,13 +100,7 @@ check_shiny_deps <- function(verbose = TRUE) {
   crit_missing <- names(deps$critical)[!crit_status]
   opt_missing  <- names(deps$optional)[!opt_status]
 
-  install_cmd <- if (length(crit_missing) + length(opt_missing) > 0L) {
-    sprintf(
-      'install.packages(c(%s))',
-      paste(sprintf('"%s"', c(crit_missing, opt_missing)),
-            collapse = ", ")
-    )
-  } else NULL
+  install_cmd <- .build_install_cmd(c(crit_missing, opt_missing))
 
   if (verbose) {
     cat("\nhbsaems Shiny App Dependency Check\n")

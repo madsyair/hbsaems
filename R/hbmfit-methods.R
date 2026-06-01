@@ -224,9 +224,27 @@ print.hbcc_results <- function(x, ...) {
 #' @export
 summary.hbcc_results <- function(object, ...) {
   cat("\n===== Convergence Diagnostics Summary =====\n\n")
+  # NUTS sampler health first -- divergences are the most important signal.
+  if (!is.null(object$n_divergent) && !is.na(object$n_divergent)) {
+    flag <- if (object$n_divergent > 0L) "  <-- WARNING" else ""
+    cat(sprintf("Divergent transitions: %d (%.2f%%)%s\n",
+                object$n_divergent, 100 * object$prop_divergent, flag))
+  }
+  if (!is.null(object$ebfmi)) {
+    bad <- sum(object$ebfmi < 0.3, na.rm = TRUE)
+    cat(sprintf("E-BFMI (min over chains): %.3f%s\n",
+                min(object$ebfmi, na.rm = TRUE),
+                if (bad > 0L) "  <-- WARNING (< 0.3)" else ""))
+  }
+  if (!is.null(object$max_treedepth_hit) && !is.na(object$max_treedepth_hit))
+    cat(sprintf("Max-treedepth hit rate: %.2f%%\n",
+                100 * object$max_treedepth_hit))
   if (!is.null(object$rhat_ess)) {
-    cat("R-hat:\n");   print(summary(object$rhat_ess[, "Rhat"]))
+    cat("\nR-hat:\n");   print(summary(object$rhat_ess[, "Rhat"]))
     cat("\nBulk ESS:\n"); print(summary(object$rhat_ess[, "Bulk_ESS"]))
+    if (!all(is.na(object$rhat_ess[, "Tail_ESS"]))) {
+      cat("\nTail ESS:\n"); print(summary(object$rhat_ess[, "Tail_ESS"]))
+    }
   }
   if (!is.null(object$geweke)) {
     cat("\nGeweke test (Z-scores):\n"); print(object$geweke)

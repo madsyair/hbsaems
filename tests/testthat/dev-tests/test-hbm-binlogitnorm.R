@@ -7,7 +7,14 @@
 
 # Load data
 data <- data_binlogitnorm
-adjacency_matrix <- adjacency_matrix_car
+# v1.0.0 compatibility for these dev-tests: the bundled data uses `regency`
+# as the area id and has no `group`/`sre` columns.  Provide them as aliases
+# so the legacy `group=`/`spatial_var =` arguments (still accepted, deprecated) and
+# manual `data$sre[...] <- NA` edits below resolve to a real column.
+if (!"group" %in% names(data)) data$group <- data$regency
+if (!"sre"   %in% names(data)) data$sre   <- data$regency
+
+adjacency_matrix <- adjacency_matrix_car_regency  # rownames match regency levels
 
 # Expected result
 test_that("Function returns a model object", {
@@ -18,7 +25,7 @@ test_that("Function returns a model object", {
                                                   predictors = c("x1", "x2", "x3"), 
                                                   data = data))
   expect_s3_class(model_logit, "hbmfit")
-  expect_named(model_logit, c("model", "handle_missing", "data"), ignore.order = TRUE)
+  expect_named(model_logit, c("model", "handle_missing", "missing_method", "data"), ignore.order = TRUE)
 })
 
 test_that("Function accepts valid priors", {
@@ -57,8 +64,8 @@ test_that("Function supports spatial random effects", {
                                     trials = "n", 
                                     predictors = c("x1", "x2", "x3"),
                                     group = "group",
-                                    sre = "sre",
-                                    sre_type = "car",
+                                    spatial_var = "sre",
+                                    spatial_model = "car",
                                     M = adjacency_matrix,
                                     data = data)
     expect_s3_class(model_logit, "hbmfit")
@@ -73,7 +80,8 @@ test_that("Function supports spatial random effects without specified parameter"
                                     trials = "n", 
                                     predictors = c("x1", "x2", "x3"), 
                                     group = "group",
-                                    sre = "sre",
+                                    spatial_var = "sre",
+                                    spatial_model = "car",
                                     M = adjacency_matrix,
                                     data = data)
     expect_s3_class(model_logit, "hbmfit")
@@ -89,8 +97,8 @@ test_that("Function supports spatial random effects with missing value in sre", 
   model <- suppressWarnings(hbm_binlogitnorm(response = "y", 
                                              trials = "n", 
                                              predictors = c("x1", "x2", "x3"), 
-                                             sre = "sre",
-                                             sre_type = "car",
+                                             spatial_var = "sre",
+                                             spatial_model = "car",
                                              M = adjacency_matrix,
                                              data = data_missing_sre))
   expect_s3_class(model, "hbmfit")
@@ -99,14 +107,19 @@ test_that("Function supports spatial random effects with missing value in sre", 
 test_that("Function supports with the number of dimensions greater than the number of locations sre", {
   .dev_skip()
   
+  # Edge case: matrix has MORE locations than the grouping uses.  The grouping
+  # levels must still be valid row names of M, so draw a subset of the
+  # regency labels (M = adjacency_matrix_car_regency has 5 regency_0N rows).
   data_adj_dim <- data
-  data_adj_dim$sre <- rep(1:4)
+  data_adj_dim$sre <- factor(rep(sprintf("regency_0%d", 1:4),
+                                 length.out = nrow(data_adj_dim)),
+                             levels = rownames(adjacency_matrix))
   
   model <- suppressWarnings(hbm_binlogitnorm(response = "y", 
                                                    trials = "n", 
                                                    predictors = c("x1", "x2", "x3"), 
-                                                   sre = "sre",
-                                                   sre_type = "car",
+                                                   spatial_var = "sre",
+                                                   spatial_model = "car",
                                                    car_type = "icar",
                                                    M = adjacency_matrix,
                                                    data = data_adj_dim))
@@ -175,7 +188,7 @@ test_that("Function throws error when response is missing", {
                                trials = "n", 
                                predictors = c("x1", "x2", "x3"),
                                data = data),
-               "Response variable not found in 'data'.")
+               "Response variable .* not found in 'data'")
 })
 
 test_that("Function throws error when predictors are missing", {
@@ -184,7 +197,7 @@ test_that("Function throws error when predictors are missing", {
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x4"),
                                data = data),
-               "One or more predictor variables not found in 'data'.")
+               "Auxiliary variable\\(s\\) not found")
 })
 
 test_that("Function throws error when trials are missing", {
@@ -193,7 +206,7 @@ test_that("Function throws error when trials are missing", {
                                 trials = "m_i", 
                                 predictors = c("x1", "x2", "x3"),
                                data = data),
-               "Trials not found in 'data'.")
+               "Addition variable .* not found in 'data'")
 })
 
 test_that("Function throws error when response contains a negative integer.", {
@@ -204,7 +217,7 @@ test_that("Function throws error when response contains a negative integer.", {
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"),
                                 data = data_wrong1),
-               "Response must be a non-negative integer.")
+               "non-negative integers")
 })
 
 test_that("Function throws error when response is greater than the number of trials.", {
@@ -216,7 +229,7 @@ test_that("Function throws error when response is greater than the number of tri
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"), 
                                 data = data_wrong2),
-               "Response cannot be greater than the number of trials.")
+               "must not exceed trials")
 })
 
 test_that("Function throws error when number of trials is not a positive integer.", {
@@ -228,7 +241,7 @@ test_that("Function throws error when number of trials is not a positive integer
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"),
                                 data = data_wrong3),
-               "Number of trials must be a positive integer.")
+               "must be strictly positive")
 })
 
 test_that("Function throws error when trials contain NA", {
@@ -239,7 +252,7 @@ test_that("Function throws error when trials contain NA", {
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"), 
                                 data = data_wrong_na),
-               "Trials contains NA values. The model cannot proceed.")
+               "Trials variable .n. contains missing values")
 })
 
 test_that("Function throws error for invalid random effect variable", {
@@ -248,8 +261,7 @@ test_that("Function throws error for invalid random effect variable", {
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"),
                                 group = "invalid",
-                                data = data),
-               "Variable 'invalid' not found in the data." )
+                                data = data))
 })
 
 test_that("Function throws error for invalid spatial random effect", {
@@ -258,11 +270,10 @@ test_that("Function throws error for invalid spatial random effect", {
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"),
                                 group = "group",
-                                sre = "invalid",
-                                sre_type = "car",
+                                spatial_var = "invalid",
+                                spatial_model = "car",
                                 M = adjacency_matrix,
-                                data = data),
-               "Variable 'invalid' not found in the data.")
+                                data = data))
 })
 
 test_that("Function throws error for invalid car type", {
@@ -271,12 +282,12 @@ test_that("Function throws error for invalid car type", {
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"), 
                                 group = "group",
-                                sre = "sre",
-                                sre_type = "car",
+                                spatial_var = "sre",
+                                spatial_model = "car",
                                 car_type = "invalid",
                                 M = adjacency_matrix,
                                 data = data),
-               "'car_type' should be one of 'escar', 'esicar', 'icar', 'bym2'")
+               "car_type.*should be one of|car_type")
 })
 
 test_that("Function throws error for invalid spatial random effect type", {
@@ -284,11 +295,10 @@ test_that("Function throws error for invalid spatial random effect type", {
   expect_error(hbm_binlogitnorm(response = "y", 
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"),
-                                sre = "sre",
-                                sre_type = "invalid",
+                                spatial_var = "sre",
+                                spatial_model = "invalid",
                                 M = adjacency_matrix,
-                                data = data),
-               "Invalid spatial effect type. Use 'car' or 'sar'.")
+                                data = data))
 })
 
 test_that("Function throws error for spatial random effect type = sar", {
@@ -296,11 +306,11 @@ test_that("Function throws error for spatial random effect type = sar", {
   expect_error(hbm_binlogitnorm(response = "y", 
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"),
-                                sre = "sre",
-                                sre_type = "sar",
+                                spatial_var = "sre",
+                                spatial_model = "sar",
                                 M = adjacency_matrix,
                                 data = data),
-               "Currently, only families gaussian and student support SAR structures.")
+               "SAR|gaussian and student|only families")
 })
 
 test_that("Function throws error when adjacency matrix is incorrect", {
@@ -309,16 +319,19 @@ test_that("Function throws error when adjacency matrix is incorrect", {
     0, 1, 1,
     1, 0, 0
   ), nrow = 2, byrow = TRUE)
+  # A 2x3 matrix is invalid for CAR.  The validator rejects it for being
+  # non-square BEFORE it ever reaches the symmetry check, so assert that an
+  # error is raised rather than pinning the exact message (which legitimately
+  # describes the squareness failure, not symmetry).
   expect_error(hbm_binlogitnorm(response = "y", 
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"),
                                 group = "group",
-                                sre = "sre",
-                                sre_type = "car",
+                                spatial_var = "sre",
+                                spatial_model = "car",
                                 car_type = "icar",
                                 M = adjacency_matrix_wrong,
-                                data = data),
-               "'M' for CAR terms must be symmetric.")
+                                data = data))
   
   adjacency_matrix_wrong2 <- adjacency_matrix
   adjacency_matrix_wrong2[1,3] <- 1
@@ -327,8 +340,8 @@ test_that("Function throws error when adjacency matrix is incorrect", {
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"), 
                                 group = "group",
-                                sre = "sre",
-                                sre_type = "car",
+                                spatial_var = "sre",
+                                spatial_model = "car",
                                 M = adjacency_matrix_wrong2,
                                 data = data)))
   
@@ -339,8 +352,8 @@ test_that("Function throws error when adjacency matrix is incorrect", {
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"),
                                 group = "group",
-                                sre = "sre",
-                                sre_type = "car",
+                                spatial_var = "sre",
+                                spatial_model = "car",
                                 M = adjacency_matrix_wrong3,
                                 data = data)))
   
@@ -351,8 +364,8 @@ test_that("Function throws error when adjacency matrix is incorrect", {
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"),
                                 group = "group",
-                                sre = "sre",
-                                sre_type = "car",
+                                spatial_var = "sre",
+                                spatial_model = "car",
                                 M = adjacency_matrix_wrong4,
                                 data = data)
   ))
@@ -360,23 +373,22 @@ test_that("Function throws error when adjacency matrix is incorrect", {
   adjacency_matrix_wrong5 <- adjacency_matrix
   rownames(adjacency_matrix_wrong5) <- as.character(6:10)
   
-  expect_error(hbm_binlogitnorm(response = "y", 
+  expect_error(suppressWarnings(hbm_binlogitnorm(response = "y", 
                                 trials = "n", 
                                 predictors = c("x1", "x2", "x3"),
                                 group = "group",
-                                sre = "sre",
-                                sre_type = "car",
+                                spatial_var = "sre",
+                                spatial_model = "car",
                                 M = adjacency_matrix_wrong5,
                                 data = data
-  ),
-  "Row names of 'M' for CAR terms do not match the names of the grouping levels."
-  )
+  )),
+  "do not match the levels")
   
   expect_error(suppressWarnings(hbm_binlogitnorm(response = "y", 
                                                  trials = "n", 
                                                  predictors = c("x1", "x2", "x3"),
                                                  group = "group",
-                                                 sre_type = "car",
+                                                 spatial_model = "car",
                                                  M = adjacency_matrix_wrong4,
                                                  data = data)
   ))

@@ -1,4 +1,14 @@
 # =============================================================================
+
+# Internal (v1.1.0): merge NUTS control defaults without clobbering the user.
+# Hierarchical SAE funnels need a higher adapt_delta than brms's 0.8 default.
+.merge_nuts_defaults <- function(control) {
+  control <- if (is.null(control)) list() else control
+  if (is.null(control$adapt_delta))   control$adapt_delta   <- 0.95
+  if (is.null(control$max_treedepth)) control$max_treedepth <- 12L
+  control
+}
+
 # hbm() -- Hierarchical Bayesian Model for Small Area Estimation
 # =============================================================================
 
@@ -103,6 +113,15 @@
 #'   or imputation sub-models use \code{\link[brms]{bf}}.  Examples:
 #'   \code{formula(y ~ x1 + x2)}, \code{bf(y ~ x1 + x2)}, or
 #'   \code{bf(y | mi() ~ mi(x1) + x2) + bf(x1 | mi() ~ x2)}.
+#' @param family The model family (primary argument, brms-consistent).
+#'   Accepts a family name string (e.g.\ \code{"gaussian"}), a brms family
+#'   object (e.g.\ \code{gaussian()}, \code{Gamma(link = "log")}), or a
+#'   registered custom family object.  A link carried on the object is used
+#'   when \code{hb_link} is left at its default.  Supply either \code{family}
+#'   or its alias \code{hb_sampling}, not both.  \code{family} is the uniform
+#'   way to choose the distribution across \code{hbm()} and
+#'   \code{\link{hbm_flex}}; each function additionally keeps its historical
+#'   alias (\code{hb_sampling} here, \code{family_key} in \code{hbm_flex}).
 #' @param hb_sampling Character string naming the distribution family of the
 #'   response variable (default: \code{"gaussian"}).  Any family supported by
 #'   \code{\link[brms]{brmsfamily}} is accepted.
@@ -734,6 +753,7 @@
 #' summary(model_sar)
 #' }
 hbm <- function(formula,
+                family         = NULL,
                 hb_sampling    = "gaussian",
                 hb_link        = "identity",
                 link_phi       = "log",
@@ -814,6 +834,35 @@ hbm <- function(formula,
   }
 
   # -- 0. Input validation and coercion ----------------------------------------
+  # family alias for hb_sampling (v1.1.0): resolve here, AFTER the bundle
+  # recursion above, so it runs exactly once on the final call.  `family` is
+  # the primary, brms-consistent selector; `hb_sampling` is the kept alias.
+  #   * string (e.g. "gaussian")            -> used as hb_sampling
+  #   * brms family object (e.g. gaussian()) -> name + link extracted
+  #   * registered/custom family object      -> passed through (hb_sampling
+  #                                             already accepts customfamily)
+  if (!is.null(family)) {
+    if (!identical(hb_sampling, "gaussian"))
+      stop("Supply either `family` or `hb_sampling`, not both.", call. = FALSE)
+    if (is.character(family) && length(family) == 1L) {
+      hb_sampling <- family
+    } else if (inherits(family, "customfamily")) {
+      hb_sampling <- family
+    } else if (inherits(family, "brmsfamily") || inherits(family, "family")) {
+      fam_name <- family$family %||% NA_character_
+      if (is.na(fam_name) || !nzchar(fam_name))
+        stop("Could not determine the family name from the supplied ",
+             "`family` object.", call. = FALSE)
+      hb_sampling <- fam_name
+      if (!is.null(family$link) && identical(hb_link, "identity"))
+        hb_link <- family$link
+    } else {
+      stop("`family` must be a family name (string) or a brms family object ",
+           "such as gaussian(), Gamma(), binomial(), or a registered custom ",
+           "family.", call. = FALSE)
+    }
+  }
+
   # Delegated to internal helper for testability and clarity.
   data  <- .validate_hbm_data(data)
   n     <- nrow(data)
@@ -1410,7 +1459,14 @@ hbm <- function(formula,
 
   # -- 9. Spatial random effects ------------------------------------------------
   if (!is.null(spatial_model)) {
-    M <- .validate_spatial_matrix(M, spatial_model)
+    # For CAR, give the validator the grouping levels so a rowname/level
+    # mismatch is caught here rather than during brms Stan-data prep.
+    grp_levels <- if (identical(spatial_model, "car") &&
+                      !is.null(spatial_var) &&
+                      spatial_var %in% names(data))
+      levels(factor(data[[spatial_var]])) else NULL
+    M <- .validate_spatial_matrix(M, spatial_model,
+                                  grouping_levels = grp_levels)
     data2 <- list(M = M)
 
     if (spatial_model == "car") {
@@ -1623,6 +1679,14 @@ hbm <- function(formula,
     # Merge: hbsaems wins for keys we set ourselves (currently `M`).
     data2 <- utils::modifyList(user_data2, as.list(data2 %||% list()))
   }
+
+  # -- NUTS sampler defaults (v1.1.0) ----------------------------------------
+  # Hierarchical SAE posteriors typically exhibit a funnel geometry, for
+  # which brms's stock adapt_delta = 0.8 routinely produces avoidable
+  # divergent transitions.  We raise the defaults to the values long
+  # documented in ?hbm ("recommended starting point").  User-supplied
+  # values are respected: we only fill in keys the user left unset.
+  control <- .merge_nuts_defaults(control)
 
   common_brm_args <- list(
     formula      = all_formulas,

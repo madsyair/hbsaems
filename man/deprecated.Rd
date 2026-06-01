@@ -29,7 +29,7 @@ hbmc(
   ...
 )
 
-hbpc(model, data, response_var, ndraws_ppc = 50, ...)
+hbpc(model, data = NULL, response_var = NULL, ndraws_ppc = 50, ...)
 
 hbsae(model, newdata = NULL, ...)
 }

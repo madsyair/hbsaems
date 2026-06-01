@@ -19,7 +19,7 @@ test_that("run_sae_app throws an error when app directory is not found", {
   # Expect an error when the app directory is not found
   expect_error(
     run_sae_app(),
-    "App directory not found"
+    "directory was not found"
   )
 })
 

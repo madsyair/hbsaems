@@ -4,13 +4,48 @@
 \alias{sae_predict}
 \title{Generate Small Area Estimates}
 \usage{
-sae_predict(model, newdata = NULL, ...)
+sae_predict(
+  model,
+  newdata = NULL,
+  predict_type = c("epred", "response", "linpred", "proportion"),
+  ...
+)
 }
 \arguments{
 \item{model}{An \code{hbmfit} or \code{brmsfit} object.}
 
 \item{newdata}{Optional new \code{data.frame} for prediction at unsampled
 areas.  If \code{NULL} (default), the original data are used.}
+
+\item{predict_type}{Character; the posterior quantity to summarise.
+  One of:
+  \describe{
+    \item{\code{"epred"} (default, new in 1.1.0)}{Posterior of the area
+      mean \eqn{\theta_i = E[y_i \mid x_i, u_i]} via
+      \code{\link[brms]{posterior_epred}}.  This is the correct SAE
+      target; its per-area SD excludes observation-level likelihood
+      variance.}
+    \item{\code{"response"}}{Posterior predictive of a NEW observation
+      \eqn{\tilde y_i} via \code{\link[brms]{posterior_predict}}.  This
+      was the 1.0.x behaviour; use it when predicting fresh observations or
+      aggregate counts where observation variability is wanted.}
+    \item{\code{"linpred"}}{Linear predictor on the response scale via
+      \code{\link[brms]{posterior_linpred}} with \code{transform = TRUE}.
+      For a binomial family this is the area proportion \eqn{p_i}.}
+    \item{\code{"proportion"} (new in 1.1.0)}{The area proportion
+      \eqn{p_i}.  For a binomial family this divides the expected count by
+      the trials (\eqn{E[y_i]/n_i}), giving a quantity comparable across
+      areas with different sample sizes; identical to \code{"linpred"}.
+      For non-binomial families it equals \code{"epred"}.}
+  }
+
+  \strong{Binomial note.} For a binomial family \code{posterior_epred()}
+  returns the expected \emph{count} \eqn{n_i p_i}, which is not comparable
+  across areas with unequal \eqn{n_i}.  The SAE target is normally the
+  proportion \eqn{p_i}, so \code{predict_type = "epred"} on a binomial
+  model automatically returns \eqn{p_i} (with a warning); use
+  \code{"response"} for the expected count, or \code{"proportion"} to
+  request the proportion explicitly.}
 
 \item{...}{Additional arguments forwarded to
 \code{\link[brms]{posterior_predict}} (e.g.\ \code{ndraws},
@@ -36,8 +71,10 @@ For each area \eqn{i = 1, \ldots, n}, the function computes
       \widehat{\mathrm{sd}}_i^2 =
       \frac{1}{S - 1} \sum_{s=1}^{S}
       \left( y_{i}^{(s)} - \widehat{y}_i \right)^2,}
-where \eqn{y_{i}^{(s)}} are draws from the posterior predictive
-distribution and \eqn{S} is the number of draws.  The relative standard
+where \eqn{\theta_{i}^{(s)}} are posterior draws of the area-mean target
+(\code{predict_type = "epred"}, the default) -- or of a new observation
+\eqn{y_i^{(s)}} when \code{predict_type = "response"} -- and \eqn{S} is
+the number of draws.  The relative standard
 error is \eqn{\mathrm{RSE}_i = 100 \cdot |\widehat{\mathrm{sd}}_i / \widehat{y}_i|}.
 }
 \examples{

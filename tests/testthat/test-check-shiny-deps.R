@@ -64,9 +64,23 @@ test_that(".shiny_app_deps lists key optional pkgs introduced in v1.0.0", {
 # specification.
 
 test_that("install_cmd properly quotes package names", {
+  # Test the command builder directly with controlled input so the test is
+  # deterministic regardless of which packages are installed locally.
+  cmd <- hbsaems:::.build_install_cmd(c("pkgA", "pkgB"))
+  expect_type(cmd, "character")
+  expect_true(grepl('"pkgA"', cmd, fixed = TRUE))
+  expect_true(grepl('"pkgB"', cmd, fixed = TRUE))
+  expect_true(grepl("install.packages(c(", cmd, fixed = TRUE))
+  # Names with a dot (real CRAN package style) are quoted too.
+  expect_true(grepl('"my.pkg"',
+                    hbsaems:::.build_install_cmd("my.pkg"), fixed = TRUE))
+  # Nothing missing -> NULL, no command.
+  expect_null(hbsaems:::.build_install_cmd(character(0)))
+
+  # Integration: if real packages are missing in this environment, the live
+  # command must also quote each one.
   res <- check_shiny_deps(verbose = FALSE)
   if (!is.null(res$install_cmd)) {
-    # Every missing package must appear quoted in the command
     for (p in c(res$critical_missing, res$optional_missing)) {
       expect_true(
         grepl(sprintf('"%s"', p), res$install_cmd, fixed = TRUE),

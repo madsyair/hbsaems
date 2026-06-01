@@ -109,7 +109,7 @@ hbmc <- function(model,
 
 #' @rdname deprecated
 #' @export
-hbpc <- function(model, data, response_var, ndraws_ppc = 50, ...) {
+hbpc <- function(model, data = NULL, response_var = NULL, ndraws_ppc = 50, ...) {
   .Deprecated(
     new     = "prior_check",
     package = "hbsaems",

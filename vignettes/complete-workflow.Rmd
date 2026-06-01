@@ -1,8 +1,8 @@
 ---
-title: "Complete Workflow with hbsaems 1.0.0"
+title: "Complete Workflow with hbsaems 1.1.0"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Complete Workflow with hbsaems 1.0.0}
+  %\VignetteIndexEntry{Complete Workflow with hbsaems 1.1.0}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -61,7 +61,7 @@ RUN_DIAGNOSTICS <- (function() {
 library(hbsaems)
 ```
 
-A typical Bayesian SAE workflow with `hbsaems` v1.0.0 follows seven
+A typical Bayesian SAE workflow with `hbsaems` v1.1.0 follows seven
 steps, each backed by a single primary function.  This vignette walks
 through the canonical pipeline.
 
@@ -154,8 +154,9 @@ Two settings deserve attention:
   standard deviation so brms / Stan never tries to estimate it.
 * **`adapt_delta = 0.99`** -- Fay-Herriot likelihoods can produce
   mild funnel geometry between \eqn{\sigma_u} and the area random
-  effects \eqn{u_i} when many areas have small \eqn{D_i}.  Raising
-  `adapt_delta` from the brms default 0.95 to 0.99 buys a more
+  effects \eqn{u_i} when many areas have small \eqn{D_i}.  As of
+  v1.1.0 `hbsaems` already raises the default from brms's `0.8` to
+  `0.95`; pushing it further to `0.99` buys an even more
   conservative leapfrog step and eliminates the occasional
   divergent transition without re-parameterising the model.
 

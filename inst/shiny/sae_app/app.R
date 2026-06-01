@@ -583,7 +583,7 @@ ui <- shinydashboard::dashboardPage(
                                 conditionalPanel(
                                     condition = "input.dist_type == 'Custom'",
                                     column(6, selectInput("hb_family", "HB Family", choices = c(
-                                        "gaussian", "binomial", "poisson", "gamma", "beta", "lognormal",
+                                        "gaussian", "student", "binomial", "poisson", "gamma", "beta", "lognormal",
                                         "skew_normal", "shifted_lognormal", "negbinomial", "beta_binomial",
                                         "logistic_normal", "hurdle_poisson", "hurdle_negbinomial",
                                         "hurdle_gamma", "hurdle_lognormal", "zero_inflated_beta",
@@ -1032,6 +1032,22 @@ ui <- shinydashboard::dashboardPage(
                         fluidRow(
                             shinydashboard::box(
                                 title = "Data Prediction", width = 12, solidHeader = TRUE, status = "primary",
+                                selectInput(
+                                    "predict_type", "Prediction target",
+                                    choices = c(
+                                        "Area mean / epred (default)" = "epred",
+                                        "Proportion (binomial p_i)"   = "proportion",
+                                        "New observation / response"  = "response",
+                                        "Linear predictor"            = "linpred"
+                                    ),
+                                    selected = "epred"
+                                ),
+                                helpText(
+                                    "epred is the SAE target (the area mean). For a binomial",
+                                    "family it is auto-converted to the proportion; choose",
+                                    "'response' for the expected count. Reported RSE reflects",
+                                    "the chosen target."
+                                ),
                                 DT::DTOutput("prediction_results"),
                                 downloadButton("download_results", "Download")
                             ),
@@ -3067,7 +3083,7 @@ server <- function(input, output, session) {
         withProgress(message = "Generating predictions...", {
             withCallingHandlers(
                 {
-                    preds <- sae_predict(model_fit())
+                    preds <- sae_predict(model_fit(), predict_type = input$predict_type %||% "epred")
                     DT::datatable(round(preds$result_table, 4L),
                                   options = list(scrollX = TRUE, scrollY = "370px"))
                 },
@@ -3083,7 +3099,7 @@ server <- function(input, output, session) {
     output$download_results <- downloadHandler(
         filename = function() paste0("sae_predictions_", Sys.Date(), ".csv"),
         content  = function(file) {
-            preds <- sae_predict(model_fit())
+            preds <- sae_predict(model_fit(), predict_type = input$predict_type %||% "epred")
             utils::write.csv(preds$result_table, file, row.names = FALSE)
         }
     )
@@ -3143,7 +3159,7 @@ server <- function(input, output, session) {
         tryCatch(
             withCallingHandlers(
                 {
-                    preds <- sae_predict(model_fit(), newdata = new_df)
+                    preds <- sae_predict(model_fit(), newdata = new_df, predict_type = input$predict_type %||% "epred")
                     df    <- pred_data()
                     df[["prediction_result"]] <- preds$result_table$Mean
                     pred_data(df)
@@ -3388,7 +3404,7 @@ server <- function(input, output, session) {
 
         withProgress(message = "Applying post-processing...", {
             tryCatch({
-                base_pred <- sae_predict(model_fit())
+                base_pred <- sae_predict(model_fit(), predict_type = input$predict_type %||% "epred")
                 out <- switch(
                     op,
                     transform_log  = sae_transform(base_pred, fun = log),
@@ -3748,7 +3764,7 @@ server <- function(input, output, session) {
         cat(sprintf("\n=> Provide %d target value(s) above, in the same order.\n",
                     length(tab)))
         if (!is.null(model_fit())) {
-            preds <- tryCatch(sae_predict(model_fit()), error = function(e) NULL)
+            preds <- tryCatch(sae_predict(model_fit(), predict_type = input$predict_type %||% "epred"), error = function(e) NULL)
             if (!is.null(preds) && length(preds$pred) == length(g)) {
                 wts <- if (nzchar(input$bm_weights_var %||% ""))
                   d[[input$bm_weights_var]][seq_along(preds$pred)]
@@ -3765,7 +3781,7 @@ server <- function(input, output, session) {
         req(model_fit(), input$bm_groups_var, data())
         d <- data()
         g <- d[[input$bm_groups_var]]
-        preds <- tryCatch(sae_predict(model_fit()), error = function(e) NULL)
+        preds <- tryCatch(sae_predict(model_fit(), predict_type = input$predict_type %||% "epred"), error = function(e) NULL)
         req(preds)
         wts <- if (nzchar(input$bm_weights_var %||% ""))
           d[[input$bm_weights_var]][seq_along(preds$pred)]
@@ -3783,7 +3799,7 @@ server <- function(input, output, session) {
         req(model_fit())
         tryCatch({
             # 1. Get baseline SAE predictions
-            preds <- sae_predict(model_fit())
+            preds <- sae_predict(model_fit(), predict_type = input$predict_type %||% "epred")
 
             # 2. Resolve weights
             wts <- if (nzchar(input$bm_weights_var %||% "")) {

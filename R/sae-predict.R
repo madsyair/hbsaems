@@ -18,6 +18,35 @@
 #' @param model   An \code{hbmfit} or \code{brmsfit} object.
 #' @param newdata Optional new \code{data.frame} for prediction at unsampled
 #'   areas.  If \code{NULL} (default), the original data are used.
+#' @param predict_type Character; the posterior quantity to summarise.
+#'   One of:
+#'   \describe{
+#'     \item{\code{"epred"} (default, new in 1.1.0)}{Posterior of the area
+#'       mean \eqn{\theta_i = E[y_i \mid x_i, u_i]} via
+#'       \code{\link[brms]{posterior_epred}}.  This is the correct SAE
+#'       target; its per-area SD excludes observation-level likelihood
+#'       variance.}
+#'     \item{\code{"response"}}{Posterior predictive of a NEW observation
+#'       \eqn{\tilde y_i} via \code{\link[brms]{posterior_predict}}.  This
+#'       was the 1.0.x behaviour; use it when predicting fresh observations or
+#'       aggregate counts where observation variability is wanted.}
+#'     \item{\code{"linpred"}}{Linear predictor on the response scale via
+#'       \code{\link[brms]{posterior_linpred}} with \code{transform = TRUE}.
+#'       For a binomial family this is the area proportion \eqn{p_i}.}
+#'     \item{\code{"proportion"} (new in 1.1.0)}{The area proportion
+#'       \eqn{p_i}.  For a binomial family this divides the expected count by
+#'       the trials (\eqn{E[y_i]/n_i}), giving a quantity comparable across
+#'       areas with different sample sizes; identical to \code{"linpred"}.
+#'       For non-binomial families it equals \code{"epred"}.}
+#'   }
+#'
+#'   \strong{Binomial note.} For a binomial family \code{posterior_epred()}
+#'   returns the expected \emph{count} \eqn{n_i p_i}, which is not comparable
+#'   across areas with unequal \eqn{n_i}.  The SAE target is normally the
+#'   proportion \eqn{p_i}, so \code{predict_type = "epred"} on a binomial
+#'   model automatically returns \eqn{p_i} (with a warning); use
+#'   \code{"response"} for the expected count, or \code{"proportion"} to
+#'   request the proportion explicitly.
 #' @param ...     Additional arguments forwarded to
 #'   \code{\link[brms]{posterior_predict}} (e.g.\ \code{ndraws},
 #'   \code{re_formula}).
@@ -36,8 +65,10 @@
 #'       \widehat{\mathrm{sd}}_i^2 =
 #'       \frac{1}{S - 1} \sum_{s=1}^{S}
 #'       \left( y_{i}^{(s)} - \widehat{y}_i \right)^2,}
-#' where \eqn{y_{i}^{(s)}} are draws from the posterior predictive
-#' distribution and \eqn{S} is the number of draws.  The relative standard
+#' where \eqn{\theta_{i}^{(s)}} are posterior draws of the area-mean target
+#' (\code{predict_type = "epred"}, the default) -- or of a new observation
+#' \eqn{y_i^{(s)}} when \code{predict_type = "response"} -- and \eqn{S} is
+#' the number of draws.  The relative standard
 #' error is \eqn{\mathrm{RSE}_i = 100 \cdot |\widehat{\mathrm{sd}}_i / \widehat{y}_i|}.
 #'
 #' @examples
@@ -61,19 +92,34 @@
 #'   \code{\link{sae_transform}}, \code{\link{sae_scale}},
 #'   \code{\link{sae_filter}}
 #' @export
-sae_predict <- function(model, newdata = NULL, ...) {
+sae_predict <- function(model, newdata = NULL,
+                        predict_type = c("epred", "response", "linpred", "proportion"),
+                        ...) {
   UseMethod("sae_predict")
 }
 
 #' @export
-sae_predict.hbmfit <- function(model, newdata = NULL, ...) {
-  .sae_predict_impl(model, newdata = newdata, ...)
+sae_predict.default <- function(model, newdata = NULL,
+                                predict_type = c("epred", "response", "linpred", "proportion"),
+                                ...) {
+  stop("Input model must be a brmsfit or hbmfit object.", call. = FALSE)
 }
 
 #' @export
-sae_predict.brmsfit <- function(model, newdata = NULL, ...) {
+sae_predict.hbmfit <- function(model, newdata = NULL,
+                               predict_type = c("epred", "response", "linpred", "proportion"),
+                               ...) {
+  predict_type <- match.arg(predict_type)
+  .sae_predict_impl(model, newdata = newdata, predict_type = predict_type, ...)
+}
+
+#' @export
+sae_predict.brmsfit <- function(model, newdata = NULL,
+                                predict_type = c("epred", "response", "linpred", "proportion"),
+                                ...) {
+  predict_type <- match.arg(predict_type)
   tmp <- new_hbmfit(model, missing_method = NULL, data = model$data)
-  .sae_predict_impl(tmp, newdata = newdata, ...)
+  .sae_predict_impl(tmp, newdata = newdata, predict_type = predict_type, ...)
 }
 
 # Internal worker shared by the S3 dispatch above and the deprecated hbsae().
@@ -89,7 +135,10 @@ sae_predict.brmsfit <- function(model, newdata = NULL, ...) {
 # extract that slice and compute the summary on the 2-D matrix.
 # Power users who need predictions for the imputation responses can
 # pass `resp = <name>` via `...` to override.
-.sae_predict_impl <- function(model, newdata = NULL, ...) {
+.sae_predict_impl <- function(model, newdata = NULL,
+                              predict_type = c("epred", "response", "linpred", "proportion"),
+                              ...) {
+  predict_type <- match.arg(predict_type)
   brms_model <- model$model
   data_use   <- if (!is.null(newdata)) newdata else model$data
 
@@ -134,9 +183,63 @@ sae_predict.brmsfit <- function(model, newdata = NULL, ...) {
     dots$resp   <- first_resp
   }
 
-  # Posterior predictive draws (matrix: draws x areas)
-  pp_args     <- c(list(object = brms_model, newdata = data_use), dots)
-  pred_matrix <- do.call(brms::posterior_predict, pp_args)
+  # Posterior draws (matrix: draws x areas).
+  # predict_type selects the target quantity (v1.1.0):
+  #   "epred"      -> E[y_i | x_i, u_i]; for binomial this is the COUNT n_i*p_i
+  #   "response"   -> posterior predictive of a NEW observation y~_i (1.0.x)
+  #   "linpred"    -> linear predictor on the response scale (transform = TRUE);
+  #                   for binomial this is the PROPORTION p_i
+  #   "proportion" -> the area PROPORTION p_i (binomial: epred / n_i, identical
+  #                   to linpred; non-binomial: same as epred, with a note)
+  # For SAE the target is the area mean/proportion, so epred is the
+  # theoretically correct default for continuous families; its per-area SD is
+  # <= the response SD because it omits observation-level likelihood variance.
+  #
+  # BINOMIAL THEORY (verified against brms): posterior_epred() and
+  # posterior_predict() return the COUNT (n_i * p_i), which is NOT comparable
+  # across areas with different n_i.  The SAE target for binomial models is the
+  # PROPORTION p_i.  We therefore (a) provide predict_type = "proportion", and
+  # (b) when epred is used on a binomial family, automatically divide by the
+  # trials so the reported estimate is the proportion, warning the user.
+  fam <- tryCatch(brms_model$family$family, error = function(e) NA_character_)
+  is_binomial <- isTRUE(fam %in% c("binomial", "beta_binomial",
+                                   "zero_inflated_binomial"))
+
+  effective_type <- predict_type
+  divide_by_trials <- FALSE
+
+  if (predict_type == "proportion") {
+    if (is_binomial) {
+      # p_i = E[y_i]/n_i.  Use epred then divide by trials.
+      effective_type  <- "epred"
+      divide_by_trials <- TRUE
+    } else {
+      # Non-binomial: the "proportion" is just the mean response (epred).
+      effective_type <- "epred"
+      message("predict_type = 'proportion' on a non-binomial family ",
+              "(", fam, "); returning the posterior mean (epred), which is ",
+              "already the area-level target.")
+    }
+  } else if (predict_type == "epred" && is_binomial) {
+    # epred on binomial returns a COUNT (n_i * p_i), not a proportion, and is
+    # not comparable across areas with unequal n_i.  Convert to a proportion
+    # and tell the user, since the SAE target is almost always p_i.
+    divide_by_trials <- TRUE
+    warning("For a binomial family, posterior_epred() returns the expected ",
+            "COUNT (n_i * p_i), which is not comparable across areas with ",
+            "different trial counts. Returning the area PROPORTION p_i ",
+            "(= epred / n_i) instead. Use predict_type = 'response' for the ",
+            "expected count, or predict_type = 'proportion' to request this ",
+            "explicitly.", call. = FALSE)
+  }
+
+  engine <- switch(effective_type,
+                   epred    = brms::posterior_epred,
+                   response = brms::posterior_predict,
+                   linpred  = brms::posterior_linpred)
+  pp_args <- c(list(object = brms_model, newdata = data_use), dots)
+  if (effective_type == "linpred") pp_args$transform <- TRUE
+  pred_matrix <- do.call(engine, pp_args)
 
   # Defensive: even with `resp` supplied, posterior_predict() may return
   # a 3-D array if the user is on an older brms.  Drop singleton dims.
@@ -146,6 +249,20 @@ sae_predict.brmsfit <- function(model, newdata = NULL, ...) {
     } else {
       # Multiple responses still in result; fall back to first slice.
       pred_matrix <- pred_matrix[, , 1L, drop = TRUE]
+    }
+  }
+
+  # Binomial proportion: divide the count draws by the per-area trial count so
+  # the result is p_i (comparable across areas).  pred_matrix is draws x areas,
+  # so divide each column by its area's trials (recycled over draws via sweep).
+  if (divide_by_trials) {
+    trials <- .binomial_trials(brms_model, data_use)
+    if (is.null(trials) || length(trials) != ncol(pred_matrix)) {
+      warning("Could not extract a trials vector matching the prediction ",
+              "columns; returning the count without converting to a ",
+              "proportion.", call. = FALSE)
+    } else {
+      pred_matrix <- sweep(pred_matrix, 2L, trials, FUN = "/")
     }
   }
 
@@ -410,6 +527,31 @@ sae_filter.hbsae_results <- function(x, condition) {
 
 
 # =============================================================================
+# =============================================================================
+# .binomial_trials()  --  extract the per-observation trial counts n_i from a
+# fitted binomial brms model, aligned to the rows of `data_use`.
+#
+# brms stores the trials term as an addition term `trials(<var>)`; we read the
+# variable name from the model formula and pull that column from the data used
+# for prediction.  Returns NULL if it cannot be resolved (caller then falls
+# back to reporting the count with a warning).
+# =============================================================================
+.binomial_trials <- function(brms_model, data_use) {
+  trials_var <- tryCatch({
+    bt <- brms::brmsterms(brms_model$formula)
+    adf <- bt$adforms
+    if (!is.null(adf) && !is.null(adf$trials)) {
+      all.vars(adf$trials)[1L]
+    } else {
+      NULL
+    }
+  }, error = function(e) NULL)
+  if (is.null(trials_var) || !nzchar(trials_var)) return(NULL)
+  if (!trials_var %in% names(data_use)) return(NULL)
+  as.numeric(data_use[[trials_var]])
+}
+
+
 # .repopulate_fixed_cols()  --  internal helper for sae_predict()
 # =============================================================================
 

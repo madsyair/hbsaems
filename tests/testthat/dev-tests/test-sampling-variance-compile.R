@@ -39,6 +39,13 @@ if (!isTRUE(as.logical(Sys.getenv("_R_RUN_DEV_TESTS_", "false")))) {
 # 1. sampling_variance: family-compat gate accepts continuous families
 # ---------------------------------------------------------------------------
 
+# Helper: TRUE iff `x` is an error-message string that matches `pat`.
+# tryCatch(hbm(...), error = conditionMessage) returns a STRING on error and
+# the fitted hbmfit LIST on success; we only want to grepl the string case.
+.err_matches <- function(x, pat, fixed = TRUE) {
+  is.character(x) && length(x) == 1L && grepl(pat, x, fixed = fixed)
+}
+
 test_that("sampling_variance accepted for student family", {
   .dev_skip()
   data("data_fhnorm")
@@ -46,17 +53,17 @@ test_that("sampling_variance accepted for student family", {
   # The call should pass the gate; we tolerate any downstream sampler
   # error (since chains=1, iter=1 produces nothing meaningful).
   res <- tryCatch(
-    hbm(formula = brms::bf(y ~ x1),
+    suppressWarnings(hbm(formula = brms::bf(y ~ x1),
         data   = data_fhnorm,
         re     = ~ (1 | regency),
         hb_sampling = "student",
         sampling_variance = "D",
-        chains = 1, iter = 1, refresh = 0),
+        chains = 1, iter = 1, refresh = 0)),
     error = function(e) conditionMessage(e)
   )
   # Should NOT be the family-compat error
-  expect_false(grepl("residual SD parameter named", res, fixed = TRUE),
-               info = paste("Got error:", res))
+  expect_false(.err_matches(res, "residual SD parameter named"),
+               info = paste("Got:", if (is.character(res)) res else "fitted OK"))
 })
 
 test_that("sampling_variance accepted for lognormal family", {
@@ -65,16 +72,16 @@ test_that("sampling_variance accepted for lognormal family", {
   d_pos <- data_fhnorm
   d_pos$y <- abs(d_pos$y) + 1     # positive for lognormal
   res <- tryCatch(
-    hbm(formula = brms::bf(y ~ x1),
+    suppressWarnings(hbm(formula = brms::bf(y ~ x1),
         data   = d_pos,
         re     = ~ (1 | regency),
         hb_sampling = "lognormal",
         sampling_variance = "D",
-        chains = 1, iter = 1, refresh = 0),
+        chains = 1, iter = 1, refresh = 0)),
     error = function(e) conditionMessage(e)
   )
-  expect_false(grepl("residual SD parameter named", res, fixed = TRUE),
-               info = paste("Got error:", res))
+  expect_false(.err_matches(res, "residual SD parameter named"),
+               info = paste("Got:", if (is.character(res)) res else "fitted OK"))
 })
 
 
@@ -102,7 +109,7 @@ test_that("hbm_betalogitnorm: still works after refactor (n + deff route)", {
     error = function(e) conditionMessage(e)
   )
   # If an error fires it must NOT be about the translation
-  expect_false(grepl("Cannot supply both|non-positive", out, fixed = FALSE),
+  expect_false(.err_matches(out, "Cannot supply both|non-positive", fixed = FALSE),
                info = paste("Got:", out))
 })
 
@@ -118,13 +125,13 @@ test_that("Case 1: sampling_variance + fixed_params=NULL --> reaches Stan", {
   .dev_skip()
   data("data_fhnorm")
   out <- tryCatch(
-    hbm(brms::bf(y ~ x1), data = data_fhnorm, re = ~ (1 | regency),
+    suppressWarnings(hbm(brms::bf(y ~ x1), data = data_fhnorm, re = ~ (1 | regency),
         sampling_variance = "D",
-        chains = 1, iter = 1, refresh = 0),
+        chains = 1, iter = 1, refresh = 0)),
     error = function(e) conditionMessage(e)
   )
   # Allow any error EXCEPT our specific conflict messages
-  expect_false(grepl("Cannot supply both", out, fixed = TRUE),
+  expect_false(.err_matches(out, "Cannot supply both"),
                info = paste("Unexpected conflict:", out))
 })
 
@@ -133,17 +140,17 @@ test_that("Case 3: sampling_variance + fixed_params on other dpar --> reaches St
   data("data_fhnorm")
   # student family has both sigma AND nu; pin nu via fixed_params
   out <- tryCatch(
-    hbm(brms::bf(y ~ x1), data = data_fhnorm, re = ~ (1 | regency),
+    suppressWarnings(hbm(brms::bf(y ~ x1), data = data_fhnorm, re = ~ (1 | regency),
         hb_sampling = "student",
         sampling_variance = "D",
         fixed_params = list(nu = 4),
-        chains = 1, iter = 1, refresh = 0),
+        chains = 1, iter = 1, refresh = 0)),
     error = function(e) conditionMessage(e)
   )
   # Must NOT error about sigma conflict
-  expect_false(grepl("Cannot supply both `sampling_variance`",
-                      out, fixed = TRUE),
-               info = paste("Unexpected:", out))
+  expect_false(.err_matches(out, "Cannot supply both `sampling_variance`"),
+               info = paste("Unexpected:",
+                            if (is.character(out)) out else "fitted OK"))
 })
 
 

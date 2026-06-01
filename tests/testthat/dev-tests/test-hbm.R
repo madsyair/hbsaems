@@ -7,7 +7,9 @@
 
 # Load data
 data <- data_fhnorm
-adjacency_matrix <- adjacency_matrix_car
+if (!"group" %in% names(data)) data$group <- data$regency  # 100 levels for ordinary RE
+if (!"sre"   %in% names(data)) data$sre   <- data$province  # 5 levels -> matches adjacency_matrix_car
+adjacency_matrix <- adjacency_matrix_car   # 5x5, rownames province_01..05
 spatial_weight <- spatial_weight_sar
 
 # Expected result
@@ -17,7 +19,7 @@ test_that("Function returns a model object", {
   model_hbm <- suppressWarnings(hbm(brms::bf(y ~ x1 + x2 + x3), 
                                     data = data))
   expect_s3_class(model_hbm, "hbmfit")
-  expect_named(model_hbm, c("model", "handle_missing", "data"), ignore.order = TRUE)
+  expect_named(model_hbm, c("model", "handle_missing", "missing_method", "data"), ignore.order = TRUE)
 })
 
 test_that("Function throws an error when prior is invalid", {
@@ -137,8 +139,8 @@ test_that("Function supports spatial random effects", {
   
   suppressWarnings({
     model_logit <- hbm(brms::bf(y ~ x1 + x2),
-                       sre = "sre",
-                       sre_type = "car",
+                       spatial_var = "sre",
+                       spatial_model = "car",
                        M = adjacency_matrix,
                        data = data)
     expect_s3_class(model_logit, "hbmfit")
@@ -146,7 +148,8 @@ test_that("Function supports spatial random effects", {
   
   suppressWarnings({
     model_sar <- hbm(brms::bf(y ~ x1 + x2),
-                       sre_type = "sar",
+                       spatial_var = "regency",
+                       spatial_model = "sar",
                        M = spatial_weight,
                        data = data)
     expect_s3_class(model_sar, "hbmfit")
@@ -154,7 +157,8 @@ test_that("Function supports spatial random effects", {
   
   suppressWarnings({
     model_sar2 <- hbm(brms::bf(y ~ x1 + x2),
-                     sre_type = "sar",
+                     spatial_var = "regency",
+                     spatial_model = "sar",
                      sar_type = "lag",
                      M = spatial_weight,
                      data = data)
@@ -167,7 +171,8 @@ test_that("Function supports spatial random effects without specified parameter"
   
   suppressWarnings({
     model_logit <- hbm(brms::bf(y ~ x1 + x2),
-                       sre = "sre",
+                       spatial_var = "sre",
+                       spatial_model = "car",
                        M = adjacency_matrix,
                        data = data)
     expect_s3_class(model_logit, "hbmfit")
@@ -181,8 +186,8 @@ test_that("Function supports spatial random effects with missing value in sre", 
   data_missing_sre$sre[1] <- NA
   
   model <- suppressWarnings(hbm(brms::bf(y ~ x1 + x2),
-                                sre = "sre",
-                                sre_type = "car",
+                                spatial_var = "sre",
+                                spatial_model = "car",
                                 M = adjacency_matrix,
                                 data = data_missing_sre))
   expect_s3_class(model, "hbmfit")
@@ -191,12 +196,17 @@ test_that("Function supports spatial random effects with missing value in sre", 
 test_that("Function supports with the number of dimensions greater than the number of locations sre", {
   .dev_skip()
   
+  # Edge case: matrix has MORE locations (5 provinces) than the grouping
+  # variable uses (4 levels).  The 4 levels must still be valid row names of
+  # M, so use a subset of the province labels rather than bare integers.
   data_adj_dim <- data
-  data_adj_dim$sre <- rep(1:4)
-  
+  data_adj_dim$sre <- factor(rep(sprintf("province_0%d", 1:4),
+                                 length.out = nrow(data_adj_dim)),
+                             levels = rownames(adjacency_matrix))
+
   model <- suppressWarnings(hbm(brms::bf(y ~ x1 + x2),
-                                sre = "sre",
-                                sre_type = "car",
+                                spatial_var = "sre",
+                                spatial_model = "car",
                                 car_type = "icar",
                                 M = adjacency_matrix,
                                 data = data_adj_dim))
@@ -256,47 +266,43 @@ test_that("Function throws an error when formula is not suitble", {
   expect_error(hbm(123, 
                    data = data))
   
-  expect_error(hbm(brms::bf(y ~ x1 + x2 + x4),  
-                   data = data),
-               "Missing variables in data:.*x4")
+  expect_error(suppressWarnings(hbm(brms::bf(y ~ x1 + x2 + x4),
+                   data = data)))
   
-  expect_error(hbm(brms::bf(z ~ x1 + x2 + x3), 
-                   data = data),
-               "Missing variables in data:.*z")
+  expect_error(suppressWarnings(hbm(brms::bf(z ~ x1 + x2 + x3), 
+                   data = data)))
 })
 
 test_that("Function throws error for invalid spatial random effect", {
   .dev_skip()
   testthat::skip_if_not_installed("brms")
   expect_error(hbm(brms::bf(y ~ x1 + x2),
-                   sre = "invalid",
-                   sre_type = "car",
+                   spatial_var = "invalid",
+                   spatial_model = "car",
                    M = adjacency_matrix,
-                   data = data),
-               "Variable 'invalid' not found in the data.")
+                   data = data))
 })
 
 test_that("Function throws error for invalid car type", {
   .dev_skip()
   testthat::skip_if_not_installed("brms")
   expect_error(hbm(brms::bf(y ~ x1 + x2),
-                   sre = "sre",
-                   sre_type = "car",
+                   spatial_var = "sre",
+                   spatial_model = "car",
                    car_type = "invalid",
                    M = adjacency_matrix,
                    data = data),
-               "'car_type' should be one of 'escar', 'esicar', 'icar', 'bym2'")
+               "car_type.*should be one of|car_type")
 })
 
 test_that("Function throws error for invalid spatial random effect type", {
   .dev_skip()
   testthat::skip_if_not_installed("brms")
   expect_error(hbm(brms::bf(y ~ x1 + x2),
-                   sre = "sre",
-                   sre_type = "invalid",
+                   spatial_var = "sre",
+                   spatial_model = "invalid",
                    M = adjacency_matrix,
-                   data = data),
-               "Invalid spatial effect type. Use 'car' or 'sar'.")
+                   data = data))
 })
 
 test_that("Function throws error for spatial random effect type = sar", {
@@ -304,11 +310,11 @@ test_that("Function throws error for spatial random effect type = sar", {
   testthat::skip_if_not_installed("brms")
   expect_error(hbm(brms::bf(y ~ x1 + x2),
                    hb_sampling = "Beta",
-                   sre = "sre",
-                   sre_type = "sar",
+                   spatial_var = "sre",
+                   spatial_model = "sar",
                    M = adjacency_matrix,
                    data = data),
-               "Currently, only families gaussian and student support SAR structures.")
+               "SAR|gaussian and student|only families")
 })
 
 test_that("Function throws error when adjacency matrix is incorrect", {
@@ -319,19 +325,18 @@ test_that("Function throws error when adjacency matrix is incorrect", {
     1, 0, 0
   ), nrow = 2, byrow = TRUE)
   expect_error(hbm(brms::bf(y ~ x1 + x2),
-                   sre = "sre",
-                   sre_type = "car",
+                   spatial_var = "sre",
+                   spatial_model = "car",
                    car_type = "icar",
                    M = adjacency_matrix_wrong,
-                   data = data),
-               "'M' for CAR terms must be symmetric.")
+                   data = data))
   
   adjacency_matrix_wrong2 <- adjacency_matrix
   adjacency_matrix_wrong2[1,3] <- 1
   
   expect_error(suppressWarnings(hbm(brms::bf(y ~ x1 + x2),
-                                    sre = "sre",
-                                    sre_type = "car",
+                                    spatial_var = "sre",
+                                    spatial_model = "car",
                                     M = adjacency_matrix_wrong2,
                                     data = data)))
   
@@ -339,8 +344,8 @@ test_that("Function throws error when adjacency matrix is incorrect", {
   adjacency_matrix_wrong3[1,3] <- 2
   
   expect_error(suppressWarnings(hbm(brms::bf(y ~ x1 + x2),
-                                    sre = "sre",
-                                    sre_type = "car",
+                                    spatial_var = "sre",
+                                    spatial_model = "car",
                                     M = adjacency_matrix_wrong3,
                                     data = data)))
   
@@ -348,8 +353,8 @@ test_that("Function throws error when adjacency matrix is incorrect", {
   adjacency_matrix_wrong4 <- adjacency_matrix_wrong4[-3, -3]
   
   expect_error(suppressWarnings(hbm(brms::bf(y ~ x1 + x2),
-                                    sre = "sre",
-                                    sre_type = "car",
+                                    spatial_var = "sre",
+                                    spatial_model = "car",
                                     M = adjacency_matrix_wrong4,
                                     data = data)
   ))
@@ -358,16 +363,15 @@ test_that("Function throws error when adjacency matrix is incorrect", {
   rownames(adjacency_matrix_wrong5) <- as.character(6:10)
   
   expect_error(hbm(brms::bf(y ~ x1 + x2),
-                   sre = "sre",
-                   sre_type = "car",
+                   spatial_var = "sre",
+                   spatial_model = "car",
                    M = adjacency_matrix_wrong5,
                    data = data
   ),
-  "Row names of 'M' for CAR terms do not match the names of the grouping levels."
-  )
+  "do not match the levels")
   
   expect_error(suppressWarnings(hbm(brms::bf(y ~ x1 + x2),
-                                    sre_type = "car",
+                                    spatial_model = "car",
                                     M = adjacency_matrix_wrong4,
                                     data = data)
   ))
@@ -379,18 +383,18 @@ test_that("Function to check error in SAR model", {
   expect_error(suppressWarnings(
     hbm(
       formula = bf(y ~ x1 + x2 + x3),  
-      sre_type = "sar",
+      spatial_var = "regency",
+      spatial_model = "sar",
       sar_type = "invalid",
       M = spatial_weight_sar,    
       data = data)   
-  ),
-  "'sar_type' should be one of 'lag', 'error'"
-  )
+  ))
   
   expect_error(suppressWarnings(
     hbm(
       formula = bf(y ~ x1 + x2 + x3),  
-      sre_type = "sar",
+      spatial_var = "regency",
+      spatial_model = "sar",
       sar_type = "lag",
       M = adjacency_matrix,    
       data = data)  

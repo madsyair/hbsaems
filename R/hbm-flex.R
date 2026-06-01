@@ -33,7 +33,22 @@
 #' also call it directly once a custom family has been registered via
 #' \code{\link{register_hbsae_model}}.
 #'
-#' @param family_key Character.  The registry key of the desired family
+#' @param family The model family (primary argument).  Accepts EITHER a
+#'   character family name (e.g.\ \code{"gaussian"}, \code{"binomial"}) OR a
+#'   brms family object (e.g.\ \code{gaussian()}, \code{Gamma()}), OR a
+#'   registered custom family object (e.g.\
+#'   \code{brms_custom_loglogistic()$custom_family}).  The name is matched to
+#'   a registered spec, so a custom family reuses the same Stan code
+#'   (\code{stanvars}) as the key string would.  A custom family object must
+#'   already be registered via \code{\link{register_hbsae_brms_custom}}; an
+#'   unregistered custom family raises an informative error.  Supply either
+#'   \code{family} or its alias \code{family_key}, not both.  \code{family} is the
+#'   uniform way to choose the distribution across \code{\link{hbm}} and
+#'   \code{hbm_flex()}; each function additionally keeps its historical alias
+#'   (\code{family_key} here, \code{hb_sampling} in \code{hbm}).
+#' @param family_key Character.  Backward-compatible \strong{alias} for
+#'   \code{family} (the registry key of the desired family).  Not deprecated;
+#'   pass EITHER \code{family} (preferred) OR \code{family_key}, never both
 #'   (e.g.\ \code{"lognormal"}, \code{"binomial"}, \code{"gamma_log"}).
 #' @param response Character.  Name of the response variable column.
 #' @param auxiliary Character vector.  Names of auxiliary (fixed-effect)
@@ -163,7 +178,7 @@
 #' data("data_lnln")
 #' # Equivalent to hbm_lnln(...)
 #' fit <- hbm_flex(
-#'   family_key = "lognormal",
+#'   family = "lognormal",
 #'   response   = "y_obs",
 #'   auxiliary  = c("x1", "x2", "x3"),
 #'   area_var   = "district",         # area-level random effect: (1 | district)
@@ -175,10 +190,11 @@
 #' @seealso \code{\link{register_hbsae_model}},
 #'   \code{\link{list_hbsae_models}}, \code{\link{hbm}}
 #' @export
-hbm_flex <- function(family_key,
+hbm_flex <- function(family          = NULL,
                           response,
                           auxiliary       = NULL,
                           data,
+                          family_key      = NULL,
                           addition_var    = NULL,
                           area_var        = NULL,
                           area_re_structure = c("nested", "crossed"),
@@ -278,6 +294,41 @@ hbm_flex <- function(family_key,
     spatial_model <- sre_type
   }
 
+  # -- 0. Resolve `family` (object or string) to a registry key --------------
+  # Two equivalent, COMPLEMENTARY ways to choose the family (neither is
+  # deprecated):
+  #   * family_key = "gaussian"  -- concise; ideal for custom/registry families
+  #   * family     = gaussian()  -- the familiar brms form, also accepts a
+  #                                 string or a registered custom family object
+  # Supplying BOTH is rejected to avoid ambiguity, even when they happen to
+  # agree, so the call has exactly one source of truth for the family.
+  fam_link_override <- NULL
+  if (!is.null(family)) {
+    if (!is.null(family_key)) {
+      # Disambiguate the message: same target -> redundant; different -> clash.
+      resolved_tmp <- tryCatch(.resolve_family_to_key(family),
+                               error = function(e) NULL)
+      same <- !is.null(resolved_tmp) &&
+              identical(resolved_tmp$key, family_key)
+      stop(if (same)
+             paste0("Both `family` and `family_key` were supplied and both ",
+                    "refer to '", family_key, "'. Pass only one.")
+           else
+             paste0("Both `family` and `family_key` were supplied but they ",
+                    "differ (`family` -> '",
+                    (resolved_tmp$key %||% "?"), "', `family_key` -> '",
+                    family_key, "'). Pass only one."),
+           call. = FALSE)
+    }
+    resolved   <- .resolve_family_to_key(family)
+    family_key <- resolved$key
+    fam_link_override <- resolved$link
+  }
+  if (is.null(family_key))
+    stop("Provide a family: `family` (e.g. gaussian() or \"gaussian\"). ",
+         "The `family_key` argument is also accepted as an alias.",
+         call. = FALSE)
+
   # -- 1. Look up family spec ------------------------------------------------
   spec <- .get_model(family_key)
   if (is.null(spec))
@@ -285,8 +336,9 @@ hbm_flex <- function(family_key,
          "'. Use list_hbsae_models() to see registered keys.",
          call. = FALSE)
 
-  # Allow link override per-call; otherwise use family default
-  use_link <- link %||% spec$link %||% "identity"
+  # Allow link override per-call; precedence: explicit `link` arg >
+  # link carried on a supplied family() object > family spec default.
+  use_link <- link %||% fam_link_override %||% spec$link %||% "identity"
 
   # -- 2. Variable presence --------------------------------------------------
   if (!is.data.frame(data))
@@ -345,6 +397,20 @@ hbm_flex <- function(family_key,
   # Binomial-style: also validate addition var (positive integer)
   if (isTRUE(spec$has_addition_term) && family_key == "binomial") {
     n_vals <- data[[addition_var]]
+    # NEW in 1.1.0: trials must be fully observed.  The binomial likelihood is
+    # undefined without a known number of trials, so an area with NA trials
+    # cannot be modelled.  Missingness in the RESPONSE is fine (it is the SAE
+    # prediction target, handled by the handle_missing machinery); missingness
+    # in TRIALS is a hard error rather than a silent row drop, which would
+    # otherwise quietly remove a small area from the analysis.
+    if (anyNA(n_vals))
+      stop(sprintf(paste0(
+        "Trials variable '%s' contains missing values. The binomial ",
+        "likelihood is undefined without a known number of trials, so ",
+        "areas with NA trials cannot be modelled. Supply a complete '%s' ",
+        "column. (Missingness in the response '%s' is allowed and handled ",
+        "by SAE prediction; missingness in trials is not.)"),
+        addition_var, addition_var, response), call. = FALSE)
     if (any(n_vals <= 0, na.rm = TRUE))
       stop(sprintf("Trials variable '%s' must be strictly positive.",
                    addition_var), call. = FALSE)

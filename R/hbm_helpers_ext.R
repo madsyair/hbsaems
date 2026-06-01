@@ -648,7 +648,20 @@
 # Wraps check_spatial_weight() with the error/warning emission policy used
 # by hbm() in v1.0.0.  Returns the matrix unchanged on success; stops on
 # fatal incompatibility; issues warnings for soft violations.
-.validate_spatial_matrix <- function(M, spatial_model) {
+# .validate_spatial_matrix() -- Section 9 of hbm()
+#
+# Wraps check_spatial_weight() with the error/warning emission policy used
+# by hbm() in v1.0.0.  Returns the matrix unchanged on success; stops on
+# fatal incompatibility; issues warnings for soft violations.
+#
+# `grouping_levels` (optional): the levels of the area-grouping column that
+# the matrix must align with.  For CAR terms, brms requires the row names of
+# `M` to be exactly the grouping levels (a permutation is allowed; brms
+# reorders by name).  When supplied, we check this HERE -- before Stan code
+# generation/compilation -- so the user gets a fast, clear error instead of a
+# late brms error after a (potentially slow) compile.  Left NULL preserves
+# the previous behaviour.
+.validate_spatial_matrix <- function(M, spatial_model, grouping_levels = NULL) {
   if (is.null(M))
     stop("Spatial matrix `M` must be provided when `spatial_model` is specified.",
          call. = FALSE)
@@ -664,6 +677,46 @@
       "') for full details.",
       call. = FALSE
     )
+
+  # For CAR, the matrix must align by name with the grouping levels.  brms
+  # matches `M` to the `gr` factor by row name and aborts if they differ; we
+  # surface the same requirement early when the levels are known.
+  if (identical(spatial_model, "car") && !is.null(grouping_levels)) {
+    rn <- rownames(M)
+    glv <- as.character(grouping_levels)
+    if (is.null(rn)) {
+      stop(
+        "Row names are required for 'M' in CAR terms: `M` must have row ",
+        "names matching the levels of the spatial grouping variable (",
+        length(glv), " levels). Set rownames(M) to those levels.",
+        call. = FALSE
+      )
+    }
+    if (!setequal(rn, glv)) {
+      missing_in_M  <- setdiff(glv, rn)
+      extra_in_M    <- setdiff(rn, glv)
+      detail <- character(0)
+      if (length(missing_in_M))
+        detail <- c(detail, paste0(
+          "  - grouping levels absent from rownames(M): ",
+          paste(utils::head(missing_in_M, 5L), collapse = ", "),
+          if (length(missing_in_M) > 5L) ", ..." else ""))
+      if (length(extra_in_M))
+        detail <- c(detail, paste0(
+          "  - rownames(M) not present among grouping levels: ",
+          paste(utils::head(extra_in_M, 5L), collapse = ", "),
+          if (length(extra_in_M) > 5L) ", ..." else ""))
+      stop(
+        "Row names of 'M' for CAR terms do not match the levels of the ",
+        "spatial grouping variable.\n",
+        paste(detail, collapse = "\n"),
+        "\n  The row names of `M` must be exactly the grouping levels ",
+        "(order may differ; brms reorders by name).",
+        call. = FALSE
+      )
+    }
+  }
+
   for (w in spat_chk$warnings)
     warning(w, call. = FALSE, immediate. = TRUE)
   M

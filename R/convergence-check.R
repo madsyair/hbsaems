@@ -81,6 +81,23 @@ convergence_check.hbmfit <- function(model,
   results    <- list()
   plots      <- list()
 
+  # ---- Validate arguments (v1.1.0) -----------------------------------------
+  # Previously unknown plot/test names were silently swallowed (the plot loop
+  # wrapped each call in tryCatch(..., NULL)); only an incidental brms error
+  # made bad input fail.  Validate explicitly so mistakes are caught up front.
+  valid_tests <- c("rhat", "geweke", "heidel", "raftery")
+  valid_plots <- c("trace", "dens", "acf", "nuts_energy", "rhat", "neff")
+  bad_tests <- setdiff(diag_tests, valid_tests)
+  if (length(bad_tests))
+    stop("Unknown diag_tests: ", paste(shQuote(bad_tests), collapse = ", "),
+         ". Valid options: ", paste(valid_tests, collapse = ", "), ".",
+         call. = FALSE)
+  bad_plots <- setdiff(plot_types, valid_plots)
+  if (length(bad_plots))
+    stop("Unknown plot_types: ", paste(shQuote(bad_plots), collapse = ", "),
+         ". Valid options: ", paste(valid_plots, collapse = ", "), ".",
+         call. = FALSE)
+
   # ---- R-hat and ESS -------------------------------------------------------
   if ("rhat" %in% diag_tests) {
     rhat_vals <- brms::rhat(brms_model)
@@ -101,9 +118,12 @@ convergence_check.hbmfit <- function(model,
       n_iter   <- brms_model$fit@sim$iter
       n_chain  <- brms_model$fit@sim$chains
       ess_bulk <- brms::neff_ratio(brms_model) * n_iter * n_chain / 2
+      # 'posterior' unavailable: we can approximate Bulk ESS via neff_ratio
+      # but NOT Tail ESS.  Report Tail_ESS = NA rather than duplicating
+      # Bulk_ESS, which would falsely imply the tails were checked (v1.1.0).
       results$rhat_ess <- cbind(Rhat = rhat_vals,
                                 Bulk_ESS = ess_bulk,
-                                Tail_ESS = ess_bulk)
+                                Tail_ESS = NA_real_)
     }
   }
 
@@ -138,8 +158,48 @@ convergence_check.hbmfit <- function(model,
     )
   }
 
+  # ---- NUTS sampler diagnostics (v1.1.0) -----------------------------------
+  # Divergent transitions are the single most important diagnostic for
+  # hierarchical SAE models (they signal biased exploration of the funnel,
+  # not mere inefficiency).  Surface them as NUMBERS, not just the energy
+  # plot.  E-BFMI < 0.3 (Betancourt 2016) flags poor momentum resampling.
+  nuts <- tryCatch(brms::nuts_params(brms_model), error = function(e) NULL)
+  n_divergent <- NA_integer_; prop_divergent <- NA_real_
+  ebfmi <- NULL; max_td_hit <- NA_real_
+  if (!is.null(nuts)) {
+    dv <- nuts[nuts$Parameter == "divergent__", "Value"]
+    if (length(dv)) {
+      n_divergent    <- sum(dv)
+      prop_divergent <- mean(dv)
+    }
+    td <- nuts[nuts$Parameter == "treedepth__", "Value"]
+    mx <- tryCatch(brms_model$fit@stan_args[[1]]$control$max_treedepth,
+                   error = function(e) NULL)
+    if (length(td) && !is.null(mx)) max_td_hit <- mean(td >= mx)
+    en <- nuts[nuts$Parameter == "energy__", , drop = FALSE]
+    if (nrow(en)) {
+      # E-BFMI per chain: sum((E_t - E_{t-1})^2) / sum((E_t - mean E)^2)
+      ebfmi <- tapply(en$Value, en$Chain, function(e) {
+        sum(diff(e)^2) / sum((e - mean(e))^2)
+      })
+    }
+  }
+  if (!is.null(ebfmi) && any(ebfmi < 0.3, na.rm = TRUE))
+    warning("Low E-BFMI (< 0.3) in ", sum(ebfmi < 0.3, na.rm = TRUE),
+            " chain(s); the posterior may have heavy tails the sampler ",
+            "explores poorly. Consider reparameterisation or longer warmup.",
+            call. = FALSE)
+  if (!is.na(n_divergent) && n_divergent > 0L)
+    warning(n_divergent, " divergent transition(s) detected; estimates may ",
+            "be biased. Increase adapt_delta (e.g. 0.99) or reparameterise.",
+            call. = FALSE)
+
   structure(
     list(rhat_ess = results$rhat_ess,
+         n_divergent    = n_divergent,
+         prop_divergent = prop_divergent,
+         ebfmi          = ebfmi,
+         max_treedepth_hit = max_td_hit,
          geweke   = results$geweke,
          raftery  = results$raftery,
          heidel   = results$heidel,

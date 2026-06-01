@@ -5,10 +5,11 @@
 \title{Fit a Flexible HBSAE Model with Any Registered Family}
 \usage{
 hbm_flex(
-  family_key,
+  family = NULL,
   response,
   auxiliary = NULL,
   data,
+  family_key = NULL,
   addition_var = NULL,
   area_var = NULL,
   area_re_structure = c("nested", "crossed"),
@@ -60,8 +61,19 @@ hbm_flex(
 )
 }
 \arguments{
-\item{family_key}{Character.  The registry key of the desired family
-(e.g.\ \code{"lognormal"}, \code{"binomial"}, \code{"gamma_log"}).}
+\item{family}{The model family (primary argument).  Accepts EITHER a
+character family name (e.g.\ \code{"gaussian"}, \code{"binomial"}) OR a
+brms family object (e.g.\ \code{gaussian()}, \code{Gamma()}), OR a
+registered custom family object (e.g.\
+\code{brms_custom_loglogistic()$custom_family}).  The name is matched to
+a registered spec, so a custom family reuses the same Stan code
+(\code{stanvars}) as the key string would.  A custom family object must
+already be registered via \code{\link{register_hbsae_brms_custom}}; an
+unregistered custom family raises an informative error.  Supply either
+\code{family} or its alias \code{family_key}, not both.  \code{family} is the
+uniform way to choose the distribution across \code{\link{hbm}} and
+\code{hbm_flex()}; each function additionally keeps its historical alias
+(\code{family_key} here, \code{hb_sampling} in \code{hbm}).}
 
 \item{response}{Character.  Name of the response variable column.}
 
@@ -69,6 +81,11 @@ hbm_flex(
 variables; corresponds to area-level covariates in SAE literature.}
 
 \item{data}{A \code{data.frame}.}
+
+\item{family_key}{Character.  Backward-compatible \strong{alias} for
+\code{family} (the registry key of the desired family).  Not deprecated;
+pass EITHER \code{family} (preferred) OR \code{family_key}, never both
+(e.g.\ \code{"lognormal"}, \code{"binomial"}, \code{"gamma_log"}).}
 
 \item{addition_var}{Character or \code{NULL}.  Name of the addition term
 variable (e.g.\ trials for binomial).  Required when the family spec
@@ -230,7 +247,7 @@ library(hbsaems)
 data("data_lnln")
 # Equivalent to hbm_lnln(...)
 fit <- hbm_flex(
-  family_key = "lognormal",
+  family = "lognormal",
   response   = "y_obs",
   auxiliary  = c("x1", "x2", "x3"),
   area_var   = "district",         # area-level random effect: (1 | district)

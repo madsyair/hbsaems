@@ -55,24 +55,6 @@ data("data_fhnorm")
 str(data_fhnorm, max.level = 1)
 head(data_fhnorm[, c("regency", "province", "y", "D", "x1", "x2", "x3")], 4)
 
-## ----mini-fit, eval = RUN_DIAGNOSTICS, message = FALSE, warning = FALSE, cache = TRUE----
-# Mini fit -- iter = 200, chains = 1 -- for vignette demonstration only.
-# Do NOT use these settings for inference: the chains have not
-# converged at this length and the posterior will be biased.
-fit_demo <- suppressWarnings(
-  hbm(
-    formula           = brms::bf(y ~ x1 + x2 + x3),
-    data              = data_fhnorm,
-    re                = ~ (1 | regency),
-    sampling_variance = "D",
-    chains  = 1,
-    iter    = 200,
-    warmup  = 100,
-    refresh = 0,
-    seed    = 1
-  )
-)
-
 ## ----diagnostics, eval = RUN_DIAGNOSTICS--------------------------------------
 # Operate on the mini fit_demo above (NOT a substitute for production
 # diagnostics on full chains).

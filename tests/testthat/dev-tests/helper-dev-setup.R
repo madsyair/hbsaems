@@ -39,6 +39,12 @@ if (requireNamespace("hbsaems", quietly = TRUE)) {
 # ---------------------------------------------------------------------------
 # 2.  Gate: refuse to run on CRAN even by accident
 # ---------------------------------------------------------------------------
+# Load brms so dev-tests can call set_prior(), prior(), bf(), fixef() etc.
+# unqualified (matching how users write brms code interactively).
+if (requireNamespace("brms", quietly = TRUE)) {
+  suppressMessages(library(brms))
+}
+
 .dev_skip <- function() {
   testthat::skip_on_cran()
   if (!identical(Sys.getenv("NOT_CRAN"), "true") &&
@@ -48,6 +54,40 @@ if (requireNamespace("hbsaems", quietly = TRUE)) {
       "Set NOT_CRAN=true (or _R_RUN_DEV_TESTS_=true) to run development tests."
     )
   }
+}
+
+# ---------------------------------------------------------------------------
+# Compilation caching + scratch space (v1.1.0)
+# ---------------------------------------------------------------------------
+# Each hbm()/brm() call compiles a Stan model, which is the dominant cost and
+# the main consumer of /tmp.  Two mitigations, applied once at setup:
+#   (1) rstan auto_write: cache the compiled model next to its code so an
+#       IDENTICAL model is not recompiled on the next call;
+#   (2) point the scratch dir at a roomy, persistent cache so a full /tmp does
+#       not abort compilation midway ("No space left on device").
+# Both are no-ops if rstan is unavailable.
+if (requireNamespace("rstan", quietly = TRUE)) {
+  rstan::rstan_options(auto_write = TRUE)
+}
+# Persistent compile cache (override with HBSAEMS_DEV_CACHE if you like).
+.dev_cache_dir <- Sys.getenv("HBSAEMS_DEV_CACHE",
+                             unset = file.path(tempdir(), "hbsaems_dev_cache"))
+dir.create(.dev_cache_dir, showWarnings = FALSE, recursive = TRUE)
+# brms >= 2.x can reuse a compiled model passed as `file`; we expose a small
+# memoised fitter (below) that leverages this.
+
+# .dev_fit(): compile-once / reuse fitter for dev-tests.
+# Given a `key` (unique per distinct model) it stores the fitted hbmfit in a
+# session cache; repeat calls with the same key return the cached object
+# instead of refitting.  Use it for the MANY structural tests that only need
+# "does this return an hbmfit?" -- they can share one fit per model shape.
+.dev_fit_cache <- new.env(parent = emptyenv())
+.dev_fit <- function(key, expr) {
+  if (exists(key, envir = .dev_fit_cache, inherits = FALSE))
+    return(get(key, envir = .dev_fit_cache))
+  val <- force(expr)
+  assign(key, val, envir = .dev_fit_cache)
+  val
 }
 
 # Some legacy dev-tests reference `skip_if_no_stan()`; provide it as a

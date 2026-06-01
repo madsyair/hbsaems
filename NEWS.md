@@ -1,3 +1,90 @@
+# hbsaems 1.1.0
+
+Minor release with Bayesian-workflow improvements.  **Read the behaviour
+change below before upgrading production scripts.**
+
+## Behaviour change (IMPORTANT)
+
+* **`sae_predict()` now defaults to `predict_type = "epred"`** (the posterior
+  distribution of the area mean theta_i), replacing the previous
+  posterior-predictive-of-a-new-observation behaviour.  This is the
+  theoretically correct target for small area estimation: the reported `SD`
+  / `RSE_percent` now measure the uncertainty of the *estimator* theta_i and
+  are therefore **smaller** than in 1.0.x (which included observation-level
+  likelihood variance).  **Every RSE number your scripts produce will
+  change.**  To reproduce the old numbers exactly, pass
+  `predict_type = "response"`.  A third option, `"linpred"`, returns the
+  linear predictor on the response scale.
+
+## New features
+
+* Four SAE-oriented families added to the model registry, usable via
+  `hbm_flex()` / `hbm()` and `list_hbsae_models()`:
+  **`gamma`** (positive continuous, log link -- incomes/expenditures),
+  **`skew_normal`** (skewed continuous area means),
+  **`student`** (heavy-tailed, robust Fay-Herriot), and
+  **`hurdle_lognormal`** (positive continuous with excess zeros).  Each
+  carries the appropriate response-domain check (e.g. Gamma requires y > 0;
+  hurdle-lognormal allows y >= 0).
+
+* `hbm_flex()`'s `family` argument is now the primary way to choose the
+  family.  It accepts a string (e.g. `"gaussian"`, exactly like the old
+  `family_key`), a brms family object (e.g. `gaussian()`, `binomial()`), or a
+  registered custom family object (e.g.
+  `brms_custom_loglogistic()$custom_family`).  The family name is matched to a
+  registered spec, so custom distributions reuse the same Stan code
+  (stanvars); an unregistered custom family raises an informative error.  The
+  `family_key` argument is retained as a backward-compatible alias (not
+  deprecated).  Supply either `family` or `family_key`, not both.
+
+* `hbm()` gains a `family` argument mirroring `hbm_flex()`: pass a string
+  (e.g. `"gaussian"`) or a brms family object (e.g. `gaussian()`,
+  `Gamma(link = "log")`); a link carried on the object is honoured when
+  `hb_link` is left at its default.  `hb_sampling` is retained as a
+  backward-compatible alias.  Supply either `family` or `hb_sampling`, not
+  both.  `family` is thus the uniform distribution selector across `hbm()`
+  and `hbm_flex()`.
+
+* `sae_predict()` gains the `predict_type = c("epred", "response", "linpred",
+  "proportion")` argument (see above).  `model_average()` and
+  `sae_benchmark()` honour it.  For a **binomial** family, `posterior_epred()`
+  returns the expected COUNT (n_i * p_i), which is not comparable across areas
+  with unequal trial counts; `predict_type = "proportion"` returns the area
+  proportion p_i, and `predict_type = "epred"` on a binomial model now
+  auto-converts to p_i (with a warning).  Use `"response"` for the count.
+* `convergence_check()` now reports **divergent transitions**, **E-BFMI** per
+  chain, and the **max-treedepth hit rate** as numbers in `summary()` (not
+  just the energy plot), and warns when divergences occur or E-BFMI < 0.3.
+* `model_compare()` / `model_compare_all()` now check **Pareto-k** for
+  PSIS-LOO reliability: a `n_high_k` column is added to the ranking table and
+  a warning is issued when any k > 0.7.  The previously dead `reloo_args`
+  argument is now functional -- supplying it triggers `brms::reloo()` to
+  refit the high-k folds.
+
+## Default change
+
+* `hbm()` now defaults to `control = list(adapt_delta = 0.95,
+  max_treedepth = 12)` (the values long documented as the recommended
+  starting point) instead of brms's `adapt_delta = 0.8`.  Hierarchical SAE
+  funnels need the higher value to avoid spurious divergences.  User-supplied
+  `control` values are always respected.  Seed-level results may differ
+  slightly from 1.0.x.
+
+## Bug fixes
+
+* `convergence_check()` no longer reports `Tail_ESS = Bulk_ESS` in the
+  fallback path when the 'posterior' package is unavailable; it reports
+  `NA` rather than falsely implying the tails were checked.
+* `model_compare()` (and the deprecated `hbmc()`) accept a list of fitted
+  models again.  When `model_compare()` became an S3 generic in 1.0.0 it
+  dispatched only on `hbmfit`/`brmsfit`, so the pre-1.0.0 convention
+  `hbmc(model = list(m1, m2))` failed with "no applicable method for
+  'model_compare' applied to an object of class 'list'".  A
+  `model_compare.list()` method now unwraps a 1-2 element list to the
+  single/pairwise path (`hbmc_results`), routes a 3+ element list to
+  `model_compare_all()` (ranked `hbm_table`), and rejects an empty or
+  non-model list with an informative error.
+
 # hbsaems 1.0.0
 
 First stable release.  `hbsaems` fits **area-level** Hierarchical

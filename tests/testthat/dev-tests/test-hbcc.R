@@ -8,6 +8,20 @@ test_that("convergence_check runs and returns a list for a valid hbmfit", {
   expect_type(result, "list")
 })
 
+test_that("convergence_check reports NUTS diagnostics numerically (v1.1.0)", {
+  .dev_skip()
+  fit    <- .fit_for_hbcc()
+  result <- suppressWarnings(convergence_check(fit))
+  expect_true(all(c("n_divergent", "prop_divergent", "ebfmi",
+                    "max_treedepth_hit") %in% names(result)))
+  expect_true(is.numeric(result$n_divergent) || is.na(result$n_divergent))
+  # Tail_ESS must not be a silent copy of Bulk_ESS.
+  if (all(c("Tail_ESS", "Bulk_ESS") %in% colnames(result$rhat_ess))) {
+    expect_false(isTRUE(all.equal(result$rhat_ess[, "Tail_ESS"],
+                                  result$rhat_ess[, "Bulk_ESS"])))
+  }
+})
+
 test_that("convergence_check rejects unknown plot types", {
   .dev_skip()
   fit <- .fit_for_hbcc()

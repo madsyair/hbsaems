@@ -23,7 +23,7 @@ fit2 <- suppressWarnings(hbm(brms::bf(y ~ x1), data = data_dummy))
 
 test_that("hbm triggers reloo when high Pareto k detected", {
   .dev_skip()
-  
+
   set.seed(123)
   N <- 100
   x <- rnorm(N)
@@ -40,8 +40,33 @@ test_that("hbm triggers reloo when high Pareto k detected", {
     hb_sampling = "gaussian"
   ))
   
-  result <- suppressWarnings(hbmc(model = list(fit), moment_match = TRUE, run_prior_sensitivity= TRUE, sensitivity_var=c("b_Intercept", "b_x1")))
+  # With high-k outliers and reloo_args supplied, brms::reloo() is invoked
+  # (v1.1.0: reloo_args was previously a dead parameter).
+  result <- suppressWarnings(model_compare(
+    fit, reloo_args = list(chains = 1), moment_match = FALSE))
   expect_s3_class(result, "hbmc_results")
+  expect_false(is.null(result$loo1))
+
+  # Without reloo/moment_match, IF the fit produced high Pareto-k points, a
+  # warning must mention them.  The synthetic outlier fit is stochastic, so
+  # high-k is not guaranteed every run; only assert the warning when the LOO
+  # actually has high-k (otherwise the absence of a warning is correct).
+  warns <- character(0)
+  res2 <- withCallingHandlers(
+    suppressMessages(model_compare(fit)),
+    warning = function(w) {
+      warns <<- c(warns, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  loo_obj <- res2$loo1
+  k <- tryCatch(loo_obj$diagnostics$pareto_k, error = function(e) NULL)
+  if (!is.null(k) && any(k > 0.7)) {
+    expect_true(any(grepl("Pareto k", warns)),
+                info = paste("warnings:", paste(warns, collapse = " | ")))
+  } else {
+    succeed("No high Pareto-k in this fit; warning correctly absent.")
+  }
 })
 
 
@@ -56,8 +81,8 @@ test_that("hbmc() throws error when model list is empty", {
 
 test_that("hbmc runs with a valid hbmfit model and returns expected components", {
   .dev_skip()
-  result <- suppressWarnings(hbmc(model = list(a=fit, b=fit2), comparison_metrics = c("aaa", "waic", "bf"), plot_types = c("pp_check", "params", "bbb"), moment_match = FALSE, run_prior_sensitivity= TRUE, sensitivity_var=c("b_Intercept", "b_x1")))
-  result2 <- suppressWarnings(hbmc(model = list(fit, fit2), moment_match = TRUE, reloo_args = list(reloo = TRUE),run_prior_sensitivity= TRUE, sensitivity_var=c("b_Intercept", "b_x1")))
+  result <- suppressWarnings(hbmc(model = list(a=fit, b=fit2), comparison_metrics = c("aaa", "waic", "bf"), plot_types = c("pp_check", "params", "bbb"), moment_match = FALSE, run_prior_sensitivity= TRUE, sensitivity_vars=c("b_Intercept", "b_x1")))
+  result2 <- suppressWarnings(hbmc(model = list(fit, fit2), moment_match = TRUE, reloo_args = list(reloo = TRUE),run_prior_sensitivity= TRUE, sensitivity_vars=c("b_Intercept", "b_x1")))
   expect_s3_class(result, "hbmc_results")
   expect_s3_class(result2, "hbmc_results")
 })
@@ -75,6 +100,6 @@ test_that("Warning is issued when run_prior_sensitivity is TRUE but sensitivity_
 test_that("hbmc runs with skipping prior sensitivity analysis ", {
   .dev_skip()
   fit$model$prior <- NULL
-  result <- suppressWarnings(hbmc(model = list(a=fit), moment_match = FALSE, run_prior_sensitivity= TRUE, sensitivity_var=c("b_Intercept", "b_x1")))
+  result <- suppressWarnings(hbmc(model = list(a=fit), moment_match = FALSE, run_prior_sensitivity= TRUE, sensitivity_vars=c("b_Intercept", "b_x1")))
   expect_s3_class(result, "hbmc_results")
 })

@@ -20,7 +20,7 @@ test_that("hbm() returns an hbmfit and S3 methods work", {
     hbm(formula = brms::bf(y ~ x1 + x2),
         data    = d,
         re      = ~(1 | group),
-        chains  = 2, iter = 1000, warmup = 500,
+        chains  = 2, iter = 500, warmup = 250,
         cores   = 1, seed = 42, refresh = 0)
   ))
 
@@ -38,9 +38,11 @@ test_that("hbm() returns an hbmfit and S3 methods work", {
   expect_silent(p <- predict(fit))
   expect_true(is.matrix(p) || is.data.frame(p))
 
-  # Print / summary do not error
+  # Print / summary do not error.  With the short dev-iteration counts brms may
+  # emit a benign "some Rhats are > 1.05" convergence note; that is expected
+  # here (we are testing that the methods run, not convergence) so silence it.
   expect_output(print(fit))
-  expect_output(summary(fit))
+  expect_output(suppressWarnings(summary(fit)))
 })
 
 
@@ -52,7 +54,7 @@ test_that("convergence_check returns hbcc_results with rhat_ess", {
   d   <- data.frame(y = stats::rnorm(20), x1 = stats::rnorm(20))
   fit <- suppressWarnings(suppressMessages(
     hbm(formula = brms::bf(y ~ x1), data = d,
-        chains = 2, iter = 1000, warmup = 500, cores = 1,
+        chains = 2, iter = 500, warmup = 250, cores = 1,
         seed = 1, refresh = 0)
   ))
 
@@ -76,7 +78,7 @@ test_that("sae_predict returns hbsae_results with valid columns", {
   d   <- data.frame(y = stats::rnorm(20), x1 = stats::rnorm(20))
   fit <- suppressWarnings(suppressMessages(
     hbm(formula = brms::bf(y ~ x1), data = d,
-        chains = 2, iter = 1000, warmup = 500, cores = 1,
+        chains = 2, iter = 500, warmup = 250, cores = 1,
         seed = 1, refresh = 0)
   ))
 

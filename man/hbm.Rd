@@ -6,6 +6,7 @@
 \usage{
 hbm(
   formula,
+  family = NULL,
   hb_sampling = "gaussian",
   hb_link = "identity",
   link_phi = "log",
@@ -61,6 +62,16 @@ hbm(
 or imputation sub-models use \code{\link[brms]{bf}}.  Examples:
 \code{formula(y ~ x1 + x2)}, \code{bf(y ~ x1 + x2)}, or
 \code{bf(y | mi() ~ mi(x1) + x2) + bf(x1 | mi() ~ x2)}.}
+
+\item{family}{The model family (primary argument, brms-consistent).
+Accepts a family name string (e.g.\ \code{"gaussian"}), a brms family
+object (e.g.\ \code{gaussian()}, \code{Gamma(link = "log")}), or a
+registered custom family object.  A link carried on the object is used
+when \code{hb_link} is left at its default.  Supply either \code{family}
+or its alias \code{hb_sampling}, not both.  \code{family} is the uniform
+way to choose the distribution across \code{hbm()} and
+\code{\link{hbm_flex}}; each function additionally keeps its historical
+alias (\code{hb_sampling} here, \code{family_key} in \code{hbm_flex}).}
 
 \item{hb_sampling}{Character string naming the distribution family of the
 response variable (default: \code{"gaussian"}).  Any family supported by

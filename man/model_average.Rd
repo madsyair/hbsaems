@@ -8,6 +8,7 @@ model_average(
   ...,
   weights = NULL,
   method = c("manual", "stacking", "pseudobma"),
+  predict_type = c("epred", "response", "linpred", "proportion"),
   newdata = NULL
 )
 }
@@ -22,6 +23,10 @@ equal weights are used.}
 \code{"stacking"} (Yao et al. 2018), or \code{"pseudobma"}.  When
 \code{"stacking"} or \code{"pseudobma"}, \code{weights} must be
 \code{NULL}; an error is raised otherwise.}
+
+\item{predict_type}{Passed to \code{\link{sae_predict}} for each model:
+one of \code{"epred"} (default), \code{"response"}, \code{"linpred"},
+or \code{"proportion"}.}
 
 \item{newdata}{Optional new \code{data.frame} forwarded to
 \code{\link{sae_predict}}.}

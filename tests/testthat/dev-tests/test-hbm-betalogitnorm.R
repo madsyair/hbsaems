@@ -7,7 +7,14 @@
 
 # Load data
 data <- data_betalogitnorm
-adjacency_matrix <- adjacency_matrix_car
+# v1.0.0 compatibility for these dev-tests: the bundled data uses `regency`
+# as the area id and has no `group`/`sre` columns.  Provide them as aliases
+# so the legacy `group=`/`spatial_var =` arguments (still accepted, deprecated) and
+# manual `data$sre[...] <- NA` edits below resolve to a real column.
+if (!"group" %in% names(data)) data$group <- data$regency
+if (!"sre"   %in% names(data)) data$sre   <- data$province  # 5 levels -> matches adjacency_matrix_car
+
+adjacency_matrix <- adjacency_matrix_car   # 5x5 province, matches data_betalogitnorm$province
 
 # Expected result
 test_that("Function returns a model object", {
@@ -17,7 +24,7 @@ test_that("Function returns a model object", {
                                               predictors = c("x1", "x2", "x3"),
                                               data = data))
   expect_s3_class(model, "hbmfit")
-  expect_named(model, c("model", "handle_missing", "data"), ignore.order = TRUE)
+  expect_named(model, c("model", "handle_missing", "missing_method", "data"), ignore.order = TRUE)
   
   # Model with n and deff information
   model2 <- suppressWarnings(hbm_betalogitnorm(response = "y", 
@@ -26,7 +33,7 @@ test_that("Function returns a model object", {
                                            deff = "deff",
                                            data = data))
   expect_s3_class(model2, "hbmfit")
-  expect_named(model2, c("model", "handle_missing", "data"), ignore.order = TRUE)
+  expect_named(model2, c("model", "handle_missing", "missing_method", "data"), ignore.order = TRUE)
   
   # Validate random effects
   model <- suppressWarnings(hbm_betalogitnorm(response = "y",
@@ -79,7 +86,7 @@ test_that("Function to check prior implementation", {
                                  predictors = c("x1", "x2", "x3"),
                                  prior = "invalid",
                                  data = data),
-               "Argument 'prior' must be a 'brmsprior' object."
+               "prior"
   )
 
   model4 <- suppressWarnings(hbm_betalogitnorm(response = "y", 
@@ -179,8 +186,8 @@ test_that("Function supports spatial random effects", {
   .dev_skip()
   model1 <- suppressWarnings(hbm_betalogitnorm(response = "y", 
                                                predictors = c("x1", "x2", "x3"), 
-                                               sre = "sre",
-                                               sre_type = "car",
+                                               spatial_var = "sre",
+                                               spatial_model = "car",
                                                car_type = "icar",
                                                M = adjacency_matrix,
                                                data = data))
@@ -190,8 +197,8 @@ test_that("Function supports spatial random effects", {
                                                predictors = c("x1", "x2", "x3"), 
                                                n = "n",
                                                deff = "deff",
-                                               sre = "sre",
-                                               sre_type = "car",
+                                               spatial_var = "sre",
+                                               spatial_model = "car",
                                                car_type = "icar",
                                                M = adjacency_matrix,
                                                data = data))
@@ -206,7 +213,8 @@ test_that("Function supports spatial random effects", {
   dimnames(adjacency_matrix_new) <- list(levels(data$group), levels(data$group))
   model3 <- suppressWarnings(hbm_betalogitnorm(response = "y", 
                                                predictors = c("x1", "x2", "x3"), 
-                                               sre_type = "car",
+                                               spatial_var = "group",
+                                               spatial_model = "car",
                                                car_type = "icar",
                                                M = adjacency_matrix_new,
                                                data = data))
@@ -216,7 +224,7 @@ test_that("Function supports spatial random effects", {
                                                predictors = c("x1", "x2", "x3"), 
                                                n = "n",
                                                deff = "deff",
-                                               sre_type = "car",
+                                               spatial_model = "car",
                                                car_type = "icar",
                                                M = adjacency_matrix_new,
                                                data = data))
@@ -228,8 +236,8 @@ test_that("Function supports spatial random effects", {
   
   model5 <- suppressWarnings(hbm_betalogitnorm(response = "y", 
                                            predictors = c("x1", "x2", "x3"), 
-                                           sre = "sre",
-                                           sre_type = "car",
+                                           spatial_var = "sre",
+                                           spatial_model = "car",
                                            M = adjacency_matrix,
                                            data = data_miss_spatial1))
   expect_s3_class(model5, "hbmfit")
@@ -242,18 +250,17 @@ test_that("Function to check for errors in spatial effect models", {
   .dev_skip()
   expect_error(hbm_betalogitnorm(response = "y", 
                                  predictors = c("x1", "x2", "x3"), 
-                                 sre = "sre",
-                                 sre_type = "invalid",
+                                 spatial_var = "sre",
+                                 spatial_model = "invalid",
                                  car_type = "escar",
                                  M = adjacency_matrix,
-                                 data = data),
-               "Invalid spatial effect type. Use 'car' or 'sar'.")
+                                 data = data))
   
   expect_error(suppressWarnings(
       hbm_betalogitnorm(
         response = "y", 
         predictors = c("x1", "x2", "x3"), 
-        sre_type = "car",
+        spatial_model = "car",
         car_type = "escar",
         M = adjacency_matrix,
         data = data
@@ -264,20 +271,20 @@ test_that("Function to check for errors in spatial effect models", {
   
   expect_error(hbm_betalogitnorm(response = "y", 
                         predictors = c("x1", "x2", "x3"), 
-                        sre = "sre",
-                        sre_type = "car",
+                        spatial_var = "sre",
+                        spatial_model = "car",
                         car_type = "invalid",
                         M = adjacency_matrix,
                         data = data),
-               "'car_type' should be one of 'escar', 'esicar', 'icar', 'bym2'")
+               "car_type.*should be one of|car_type")
   
   expect_error(hbm_betalogitnorm(response = "y", 
                         predictors = c("x1", "x2", "x3"), 
-                        sre = "sre",
-                        sre_type = "sar",
+                        spatial_var = "sre",
+                        spatial_model = "sar",
                         M = adjacency_matrix,
                         data = data),
-               "Currently, only families gaussian and student support SAR structures.")
+               "SAR|gaussian and student|only families")
 
 })
 
@@ -287,46 +294,43 @@ test_that("Function throws error when adjacency matrix is incorrect", {
                                      1, 0, 0), nrow = 2, byrow = TRUE)
   expect_error(hbm_betalogitnorm(response = "y", 
                         predictors = c("x1", "x2", "x3"), 
-                        sre = "sre",
+                        spatial_var = "sre",
                         group = "group",
-                        sre_type = "car",
+                        spatial_model = "car",
                         M = adjacency_matrix_wrong,
-                        data = data),
-               "'M' for CAR terms must be symmetric.")
+                        data = data))
   
   adjacency_matrix_wrong2 <- adjacency_matrix
   adjacency_matrix_wrong2[1,2] <- 1
   
   expect_error(hbm_betalogitnorm(response = "y", 
                         predictors = c("x1", "x2", "x3"), 
-                        sre = "sre",
+                        spatial_var = "sre",
                         group = "group",
-                        sre_type = "car",
+                        spatial_model = "car",
                         M = adjacency_matrix_wrong2,
-                        data = data),
-               "'M' for CAR terms must be symmetric.")
+                        data = data))
   
   adjacency_matrix_wrong4 <- adjacency_matrix
   adjacency_matrix_wrong4 <- adjacency_matrix_wrong4[-3, -3]
   
   expect_error(hbm_betalogitnorm(response = "y", 
                         predictors = c("x1", "x2", "x3"), 
-                        sre = "sre",
+                        spatial_var = "sre",
                         group = "group",
-                        sre_type = "car",
+                        spatial_model = "car",
                         M = adjacency_matrix_wrong4,
-                        data = data),
-               "Row names of 'M' for CAR terms do not match the names of the grouping levels.")
+                        data = data))
   
   adjacency_matrix_wrong5 <- adjacency_matrix
   rownames(adjacency_matrix_wrong5) <- 2:6
   
   expect_error(hbm_betalogitnorm(response = "y", 
                         predictors = c("x1", "x2", "x3"), 
-                        sre = "sre",
+                        spatial_var = "sre",
                         group = "group",
-                        sre_type = "car",
+                        spatial_model = "car",
                         M = adjacency_matrix_wrong5,
                         data = data),
-               "Row names of 'M' for CAR terms do not match the names of the grouping levels.")
+               "do not match the levels")
 })

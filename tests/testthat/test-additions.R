@@ -1672,46 +1672,44 @@ test_that(".add_fixed_pforms supplies resp= for multivariate formulas", {
 
 test_that("update_hbm: newdata without offset col + same nrow -> warn & copy", {
   skip_if_not_installed("brms")
-  testthat::local_mocked_bindings(
-    brm = function(formula, data, ...)
-      structure(list(data = data, formula = formula),
-                class = c("brmsfit", "list")),
-    .package = "brms"
-  )
 
+  # Build a fake hbmfit whose stored data carries the hbsaems offset column,
+  # so update_hbm() must detect that newdata lacks it and auto-copy.  Using a
+  # fake object (not a real hbm() fit) keeps the test CRAN-safe and fast.
   data1 <- data.frame(
-    y = c(10, 12, 8, 11, 9),
-    x1 = stats::rnorm(5),
-    D = c(4, 2.25, 3.24, 4.84, 2.89),
-    area = factor(1:5)
+    y = c(10, 12, 8, 11, 9), x1 = stats::rnorm(5),
+    area = factor(1:5),
+    .hbsaems_sigma_fixed = sqrt(c(4, 2.25, 3.24, 4.84, 2.89))
   )
-  fit <- suppressWarnings(
-    hbm(formula = brms::bf(y ~ x1), data = data1,
-        re = ~ (1 | area), sampling_variance = "D")
-  )
-
-  data2 <- data.frame(
-    y    = c(11, 13, 9, 12, 10),
-    x1   = stats::rnorm(5),
-    D    = c(3, 2, 4, 3.5, 2.5),
-    area = factor(1:5)
+  fit <- structure(
+    list(model          = structure(list(data = data1), class = "brmsfit"),
+         data           = data1,
+         missing_method = "none"),
+    class = "hbmfit"
   )
 
+  data2 <- data.frame(            # same nrow, but NO offset column
+    y = c(11, 13, 9, 12, 10), x1 = stats::rnorm(5), area = factor(1:5)
+  )
+
+  # Robust mock: replace update.brmsfit in the brms namespace (S3 dispatch
+  # from stats::update finds it reliably across testthat versions, unlike
+  # local_mocked_bindings).
   captured_newdata <- NULL
-  testthat::local_mocked_bindings(
-    "update.brmsfit" = function(object, newdata = NULL, ...) {
+  orig_update <- getFromNamespace("update.brmsfit", "brms")
+  on.exit(assignInNamespace("update.brmsfit", orig_update, ns = "brms"),
+          add = TRUE)
+  assignInNamespace("update.brmsfit",
+    function(object, newdata = NULL, ...) {
       captured_newdata <<- newdata
-      object
-    },
-    .package = "brms"
-  )
+      structure(list(), class = "brmsfit")
+    }, ns = "brms")
 
   expect_warning(
     update_hbm(fit, newdata = data2),
     "missing hbsaems offset column"
   )
-
-  # The offset column must have been auto-copied
+  # The offset column must have been auto-copied into the newdata.
   expect_true(".hbsaems_sigma_fixed" %in% names(captured_newdata))
 })
 
@@ -1749,32 +1747,28 @@ test_that("update_hbm: newdata without offset col + different nrow -> error", {
 
 test_that("update_hbm: no offset col in original -> no special handling", {
   skip_if_not_installed("brms")
-  testthat::local_mocked_bindings(
-    brm = function(formula, data, ...)
-      structure(list(data = data, formula = formula),
-                class = c("brmsfit", "list")),
-    .package = "brms"
-  )
 
-  data1 <- data.frame(
-    y = c(10, 12, 8, 11, 9),
-    x1 = stats::rnorm(5),
-    area = factor(1:5)
+  data1 <- data.frame(            # NO offset / sampling_variance column
+    y = c(10, 12, 8, 11, 9), x1 = stats::rnorm(5), area = factor(1:5)
   )
-  # NO sampling_variance, NO fixed_params
-  fit <- suppressWarnings(
-    hbm(formula = brms::bf(y ~ x1), data = data1,
-        re = ~ (1 | area))
+  fit <- structure(
+    list(model          = structure(list(data = data1), class = "brmsfit"),
+         data           = data1,
+         missing_method = "none"),
+    class = "hbmfit"
   )
 
   data2 <- data1
   data2$y <- data2$y + 1
 
-  # Should NOT issue a warning since there are no offset columns
-  testthat::local_mocked_bindings(
-    "update.brmsfit" = function(object, ...) object,
-    .package = "brms"
-  )
+  orig_update <- getFromNamespace("update.brmsfit", "brms")
+  on.exit(assignInNamespace("update.brmsfit", orig_update, ns = "brms"),
+          add = TRUE)
+  assignInNamespace("update.brmsfit",
+    function(object, ...) structure(list(), class = "brmsfit"),
+    ns = "brms")
+
+  # No offset column exists, so update_hbm() must not warn about copying one.
   expect_no_warning(update_hbm(fit, newdata = data2))
 })
 

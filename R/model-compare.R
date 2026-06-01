@@ -17,6 +17,45 @@
 #' @name model-compare
 NULL
 
+# Internal (v1.1.0): count high Pareto-k and, if requested, run brms::reloo().
+# Returns the (possibly refit) loo object unchanged when not applicable.
+.high_pareto_k <- function(loo_obj, threshold = 0.7) {
+  if (is.null(loo_obj)) return(integer(0))
+  k <- tryCatch(loo_obj$diagnostics$pareto_k, error = function(e) NULL)
+  if (is.null(k)) return(integer(0))
+  which(k > threshold)
+}
+
+.maybe_reloo <- function(loo_obj, brms_model, moment_match, reloo_args) {
+  if (is.null(loo_obj) || is.null(brms_model)) return(loo_obj)
+  bad <- .high_pareto_k(loo_obj)
+  if (length(bad) == 0L) return(loo_obj)
+
+  want_reloo <- is.list(reloo_args) && length(reloo_args) > 0L
+  if (want_reloo) {
+    # Drop a possible reloo=TRUE flag; brms::reloo() refits unconditionally.
+    ra <- reloo_args[setdiff(names(reloo_args), "reloo")]
+    refit <- tryCatch(
+      do.call(brms::reloo, c(list(x = loo_obj, fit = brms_model), ra)),
+      error = function(e) {
+        warning("reloo() failed (", conditionMessage(e),
+                "); returning the PSIS-LOO with ", length(bad),
+                " high Pareto-k point(s) unrefit.", call. = FALSE)
+        NULL
+      }
+    )
+    if (!is.null(refit)) return(refit)
+    return(loo_obj)
+  }
+
+  if (!isTRUE(moment_match))
+    warning(length(bad), " observation(s) have Pareto k > 0.7; PSIS-LOO may ",
+            "be unreliable. Consider moment_match = TRUE or ",
+            "reloo_args = list() to refit those folds.", call. = FALSE)
+  loo_obj
+}
+
+
 
 #' Compare One or Two Fitted HBMs
 #'
@@ -104,8 +143,17 @@ model_compare.hbmfit <- function(model, model2 = NULL,
     }
   } else NULL
 
+  # PSIS-LOO reliability (v1.1.0).  PSIS-LOO is only trustworthy when all
+  # Pareto k < 0.7 (Vehtari, Gelman & Gabry 2017).  If high-k points exist:
+  #   * when the user asked for reloo (reloo_args non-empty), actually refit
+  #     the problematic folds via brms::reloo() -- previously reloo_args was
+  #     accepted but never used;
+  #   * otherwise emit a single informative warning recommending a fix.
+  loo1 <- .maybe_reloo(loo1, brms1, moment_match, reloo_args)
+
   loo2 <- if (!is.null(brms2) && "loo" %in% comparison_metrics)
     brms::loo(brms2) else NULL
+  loo2 <- .maybe_reloo(loo2, brms2, moment_match, reloo_args)
 
   # ---- WAIC -----------------------------------------------------------------
   waic1 <- if ("waic" %in% comparison_metrics) brms::waic(brms1) else NULL
@@ -170,6 +218,78 @@ model_compare.brmsfit <- function(model, model2 = NULL, ...) {
 }
 
 
+# Internal: coerce a single fit object to hbmfit (model_compare_all() only
+# accepts hbmfit).  Mirrors model_compare.brmsfit's coercion.
+.coerce_fit_to_hbmfit <- function(x) {
+  if (is.hbmfit(x)) return(x)
+  if (inherits(x, "brmsfit"))
+    return(new_hbmfit(x, missing_method = NULL, data = x$data))
+  stop("If 'model' is a list, every element must be a brmsfit or ",
+       "hbmfit object.", call. = FALSE)
+}
+
+#' @export
+model_compare.list <- function(model, model2 = NULL,
+                               ndraws_ppc            = 100,
+                               moment_match          = FALSE,
+                               moment_match_args     = list(),
+                               reloo_args            = list(),
+                               plot_types            = c("pp_check", "params"),
+                               comparison_metrics    = c("loo", "waic", "bf"),
+                               run_prior_sensitivity = FALSE,
+                               sensitivity_vars      = NULL,
+                               ...) {
+
+  # -- 1. Validate the list ----------------------------------------------------
+  if (length(model) == 0L)
+    stop("If 'model' is a list, it must contain at least one ",
+         "brmsfit/hbmfit object.", call. = FALSE)
+
+  is_fit <- vapply(
+    model,
+    function(x) is.hbmfit(x) || inherits(x, "brmsfit"),
+    logical(1L)
+  )
+  if (!all(is_fit))
+    stop("If 'model' is a list, every element must be a brmsfit or ",
+         "hbmfit object; element(s) ",
+         paste(which(!is_fit), collapse = ", "), " are not.",
+         call. = FALSE)
+
+  # -- 2. One or two models: keep the rich hbmc_results diagnostics ------------
+  #    (preserves the documented model_compare()/legacy hbmc() contract).
+  if (length(model) <= 2L) {
+    m1 <- model[[1L]]
+    m2 <- if (length(model) == 2L) model[[2L]] else model2
+    return(model_compare(
+      m1, model2            = m2,
+      ndraws_ppc            = ndraws_ppc,
+      moment_match          = moment_match,
+      moment_match_args     = moment_match_args,
+      reloo_args            = reloo_args,
+      plot_types            = plot_types,
+      comparison_metrics    = comparison_metrics,
+      run_prior_sensitivity = run_prior_sensitivity,
+      sensitivity_vars      = sensitivity_vars,
+      ...
+    ))
+  }
+
+  # -- 3. Three or more models: rank via model_compare_all() -------------------
+  #    The pairwise-only arguments (moment_match, reloo_args, plot_types, bf,
+  #    prior sensitivity) do not apply to an N-model ranking.
+  criterion <- if (all(c("loo", "waic") %in% comparison_metrics)) "both"
+               else if ("waic" %in% comparison_metrics)           "waic"
+               else                                                "loo"
+
+  models <- lapply(model, .coerce_fit_to_hbmfit)
+  if (is.null(names(models)) || any(!nzchar(names(models))))
+    names(models) <- paste0("model", seq_along(models))
+
+  do.call(model_compare_all, c(models, list(criterion = criterion)))
+}
+
+
 # =============================================================================
 # model_compare_all()  --  rank N models
 # =============================================================================
@@ -222,7 +342,15 @@ model_compare_all <- function(..., criterion = c("loo", "waic", "both")) {
       L$estimates["elpd_loo", "Estimate"], numeric(1L))
     res$LOO_SE    <- vapply(loo_list, function(L)
       L$estimates["elpd_loo", "SE"],       numeric(1L))
+    # PSIS-LOO reliability per model (v1.1.0): number of Pareto k > 0.7.
+    res$n_high_k  <- vapply(loo_list, function(L)
+      length(.high_pareto_k(L)), integer(1L))
     res$LOO_rank  <- rank(-res$ELPD_LOO)
+    if (any(res$n_high_k > 0L))
+      warning(sum(res$n_high_k > 0L), " model(s) have observations with ",
+              "Pareto k > 0.7; their LOO comparison may be unreliable. ",
+              "Refit with model_compare(..., reloo_args = list()) or ",
+              "moment_match = TRUE for the affected models.", call. = FALSE)
   }
 
   if (criterion %in% c("waic", "both")) {
@@ -282,6 +410,9 @@ model_compare_all <- function(..., criterion = c("loo", "waic", "both")) {
 #'   \code{"stacking"} (Yao et al. 2018), or \code{"pseudobma"}.  When
 #'   \code{"stacking"} or \code{"pseudobma"}, \code{weights} must be
 #'   \code{NULL}; an error is raised otherwise.
+#' @param predict_type Passed to \code{\link{sae_predict}} for each model:
+#'   one of \code{"epred"} (default), \code{"response"}, \code{"linpred"},
+#'   or \code{"proportion"}.
 #' @param newdata Optional new \code{data.frame} forwarded to
 #'   \code{\link{sae_predict}}.
 #'
@@ -308,9 +439,12 @@ model_compare_all <- function(..., criterion = c("loo", "waic", "both")) {
 #' @export
 model_average <- function(..., weights = NULL,
                             method = c("manual", "stacking", "pseudobma"),
+                            predict_type = c("epred", "response", "linpred",
+                                             "proportion"),
                             newdata = NULL) {
   models <- list(...)
   method <- match.arg(method)
+  predict_type <- match.arg(predict_type)
 
   if (length(models) < 2L)
     stop("model_average() requires at least two hbmfit objects.",
@@ -346,7 +480,9 @@ model_average <- function(..., weights = NULL,
   }
 
   # ---- Average ---------------------------------------------------------
-  ests    <- lapply(models, function(m) sae_predict(m, newdata = newdata))
+  ests    <- lapply(models, function(m)
+                    sae_predict(m, newdata = newdata,
+                                predict_type = predict_type))
   out <- do.call(sae_aggregate, c(ests, list(method = "weighted",
                                               weights = weights)))
   attr(out, "weights") <- weights
